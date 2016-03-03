@@ -41,6 +41,7 @@ setDefaults()
 
   # you should not leave this unchanged in the config file
   test ! ${QA_RESULTS} && setKWL QA_RESULTS=./QA_Results
+  test ! ${PROJECT_DATA} && setKWL PROJECT_DATA=./
 
   setKWL QA_HOST=$HOSTNAME
 
@@ -1029,9 +1030,9 @@ loadSetting()
   for(( i=0 ; i < ${#tmp[*]} ; ++i )) do
     test ${tmp[i]:0:1} = '/' && continue
 
-    if [ ${tmp[i]:0:2} = './'  ] ; then
+    if [ ${tmp[i]:0:1} = '.'  ] ; then
       tmp[${i}]=$(pwd)${tmp[i]:1}
-    elif [ ${tmp[i]:0:3} = '../'  ] ; then
+    elif [ ${tmp[i]:0:2} = '..'  ] ; then
       myPwd=$(pwd)
       tmp[${i}]=${myPwd%/*}${tmp[i]:2}
     else
@@ -2221,18 +2222,17 @@ test ${DATA_ROOT_FS} && setKWL PROJECT_DATA=${DATA_ROOT_FS}
 
 if [ $# -gt 0 ] ; then
   # any valid files specified on the command-line
-  fs=()
   for f in $* ; do
-    if [ -f $f  ] ; then
-      if [ $f = ${f#*/} ] ; then
-        fs[${#fs[*]}]=${pwd}/$f
-      else
-        fs[${#fs[*]}]=$f
-      fi
-    fi
+     if [ ${f:0:1} != '/' ] ; then
+        # just a (relative) filename on the command-line
+        sl_args=( ${sl_args[*]} $(pwd)/${f} )
+     else
+        sl_args=( ${sl_args[*]} ${f} )
+     fi
+
   done
 
-  sl_args=( ${sl_args[*]} ${*//,/ } )
+#  sl_args=( ${sl_args[*]} ${*//,/ } )
 fi
 
 set +f
