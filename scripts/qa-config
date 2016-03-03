@@ -40,7 +40,7 @@ setDefaults()
   # to the calling qaDirector
 
   # you should not leave this unchanged in the config file
-  test ! ${QA_RESULTS} && setKWL QA_RESULTS=${QA_HOME/%.qa-dkrz}/QA_Results
+  test ! ${QA_RESULTS} && setKWL QA_RESULTS=./QA_Results
 
   setKWL QA_HOST=$HOSTNAME
 
@@ -460,23 +460,26 @@ findEmbeddedConf()
   # Is there a QA_CONFIG assignment embedded in the current file?
   # This separates commented-out from enabled QA_CONF assignment
   # If fails, then try a backward comatibel approach
-  local item names name
-  names=( QA_CONF QC_CONF qa_conf qc_conf )
 
-  for name in ${names[*]} ; do
-    item="$(grep ${name}= ${currConf} 2> /dev/null )"
-    item="${item// /}"
-    item=( ${item} )           # several lines are possible
-    item=( ${item[*]%%\#*} )
-    item=( ${item[*]} )
-    item=${item#${name}=}
+  if [ $currConf ] ; then
+    local item names name
+    names=( QA_CONF QC_CONF qa_conf qc_conf )
 
-    test ${item} && break
-  done
+    for name in ${names[*]} ; do
+      item="$(grep ${name}= ${currConf} 2> /dev/null )"
+      item="${item// /}"
+      item=( ${item} )           # several lines are possible
+      item=( ${item[*]%%\#*} )
+      item=( ${item[*]} )
+      item=${item#${name}=}
 
-  # when item is empty, but a PROJECT or PORJECT_AS is going to be
-  # found, then use this
-  findProject $currConf
+      test ${item} && break
+    done
+
+    # when item is empty, but a PROJECT or PORJECT_AS is going to be
+    # found, then use this
+    findProject $currConf
+  fi
 
   if [ ! "${item}" ] ; then
      if [ ${PROJECT_AS} ] ; then
@@ -738,13 +741,17 @@ getPrecedence()
   # an invalid file would also break processing
   local j
 
-  for(( i=0 ; i < sz ; ++i )) ; do
-    # attach a chain of embedded conf-files
-    # sets also PROJECT if found in the sequence of conf-files.
-    if ! add2qaConf ${filePrecedence[i]} ; then
-      findEmbeddedConf ${filePrecedence[i]}
-    fi
-  done
+  if [ ${sz} -eq 0 ] ; then
+    findEmbeddedConf ${filePrecedence[i]}
+  else
+    for(( i=0 ; i < sz ; ++i )) ; do
+      # attach a chain of embedded conf-files
+      # sets also PROJECT if found in the sequence of conf-files.
+      if ! add2qaConf ${filePrecedence[i]} ; then
+        findEmbeddedConf ${filePrecedence[i]}
+      fi
+    done
+  fi
 
   return
 }
@@ -752,38 +759,20 @@ getPrecedence()
 getCurrPaths()
 {
   # where all the work is going to take place
-  if [ $QA_HOME ] ; then
-    test ! -d $QA_HOME/.qa-dkrz && mkdir -p $QA_HOME/.qa-dkrz 2> /dev/null
-  else
-    setKWL QA_HOME=~/.qa-dkrz
+  if [ ! $QA_HOME ] ; then
+    QA_HOME=~/.qa-dkrz
   fi
 
-  # the config filename and location
-  if [ -w ~ ] ; then
-    local cPath=~/.qa-dkrz
-    test ! -d $cPath && mkdir -p $cPath 2> /dev/null
-    setKWL CONFIG_FILE=$cPath/config.txt
-
-  elif [ -w "$QA_SRC" ] ; then
-    test ! -d $QA_SRC/.qa-dkrz && mkdir -p $QA_SRC/.qa-dkrz 2> /dev/null
-    setKWL CONFIG_FILE=$QA_SRC/.qa-dkrz/conf.txt
-
-  elif [ -w "$QA_HOME" ] ; then
-    test ! -d $QA_HOME && mkdir -p $QA_HOME/.qa-dkrz 2> /dev/null
-    setKWL CONFIG_FILE=$QA_HOME/config.txt
-
-  else
+  if ! mkdir -p $QA_HOME 2> /dev/null ; then
     std_out "${0##*/}::getCurrPaths():"
-    std_out "HOME and QA_DKRZ without write permissions,"
-    std_out "please restart with provided option --workspace=str"
+    std_out "could not mkdir $QA_HOME"
+    std_out "please restart with provided option --work=path"
     std_out flush
     exit 1
   fi
 
-  # the paths
-  test ! $QA_HOME && setKWL QA_HOME=~/.qa-dkrz
-
-  test ! -d $QA_HOME     && mkdir -p $QA_HOME 2> /dev/null
+  setKWL QA_HOME=$QA_HOME
+  setKWL CONFIG_FILE=$QA_HOME/config.txt
 
   return
 }
