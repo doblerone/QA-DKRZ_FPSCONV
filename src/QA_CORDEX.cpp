@@ -235,7 +235,8 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
       if( cvMap.count(x_e[x]) == 0 )
       {
         std::string key("7_3");
-        std::string capt("Fault in table " + pQA->table_DRS_CV.getFile());
+        std::string capt("Fault in table ");
+        capt += pQA->drs_cv_table.table_DRS_CV.getFile();
         capt += ": encoding";
         capt += hdhC::tf_assign("item", x_e[x]);
         capt += " not found in CV";
@@ -583,7 +584,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
       {
         std::string key("7_3");
         std::string capt("Fault in table ");
-        capt += pQA->table_DRS_CV.getFile() ;
+        capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding " ;
         capt += hdhC::tf_assign("item", x_e[x]) ;
         capt += " not found in CV";
@@ -4852,7 +4853,7 @@ QA_Exp::run(void)
 {
    bool isNoTable = inqTables() ;
 
-   if( pQA->table_DRS_CV.is )
+   if( pQA->drs_cv_table.table_DRS_CV.is )
    {
      DRS_CV drsFN(pQA);
      drsFN.run();

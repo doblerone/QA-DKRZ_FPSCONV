@@ -179,7 +179,7 @@ void
 SharedRecordFlag::adjustFlag(int num, size_t rec, int erase)
 {
   // adjust coded error flags written already to qa_<filename>.nc
-  if( pQA->nc->getNumOfRecords(name) == 0 )
+  if( pQA->nc->getNumOfRecords(name, true) == 0 )
     return;
 
   MtrxArr<int> ma_i;
@@ -486,7 +486,7 @@ Outlier::test(QA_Data *pQAD)
   std::vector<size_t> outRec;
   std::vector<double> outVal;
 
-  size_t recNum=pQA->nc->getNumOfRecords();
+  size_t recNum=pQA->nc->getNumOfRecords(true);  // force new inquiry
 
   // adjustment of outOptPrcnt: the effective percentage must be related
   // to the total number of data points in a way that 10 outlier must
@@ -1410,7 +1410,7 @@ QA_Data::flush(void)
 
        if( replicated )
      {
-         int nRecs=static_cast<int>( pQA->nc->getNumOfRecords() );
+         int nRecs=static_cast<int>( pQA->nc->getNumOfRecords(true) );
 
          replicated->test(nRecs, bufferCount, nextFlushBeg,
               pQA->qaExp.varMeDa.size() > 1 ? true : false );

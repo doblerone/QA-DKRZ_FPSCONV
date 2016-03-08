@@ -34,7 +34,10 @@ linked by a pointer.
 // Proceedings have to be coded in DRS_CV which is called by QA_PROJECT.run()
 struct DRS_CV_Table
 {
-   void read(hdhC::FileSplit&);
+   void applyOptions(std::vector<std::string>&);
+   void read(void);
+   void setParent(QA*);
+   void setPath(std::string& p){ tablePath=p;}
 
    std::map<std::string, std::string> cvMap;
    std::vector<std::string> fileEncoding;
@@ -49,7 +52,12 @@ struct DRS_CV_Table
    std::vector<std::string> section;
    std::vector<std::vector<std::string> > line;
 
+   struct hdhC::FileSplit table_DRS_CV;
+   std::string tablePath;
+
    QA* pQA;
+   Annotation* notes;
+
 };
 
 //! Struct containing dimensional properties to cross-check with table information.
@@ -178,7 +186,6 @@ class QA : public IObj
   //! Name of the netCDF file with results of the quality control
   std::string tablePath;
   struct hdhC::FileSplit qaFile;
-  struct hdhC::FileSplit table_DRS_CV;
   struct hdhC::FileSplit consistencyFile;
 
   std::string qaNcfileFlags;

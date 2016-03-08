@@ -115,7 +115,7 @@ QA::applyOptions(bool isPost)
      if( split[0] == "pP" || split[0] == "postProc"
        || split[0] == "post_proc")
      {
-//       enablePostProc=true;
+       enablePostProc=true;
        break;
      }
   }
@@ -214,30 +214,7 @@ QA::applyOptions(bool isPost)
           continue;
        }
      }
-
-     if( split[0] == "tCV"
-           || split[0] == "tableControlledVocabulary"
-                || split[0] == "table_controlled_vocabulary" )
-     {
-       if( split.size() == 2 )
-          table_DRS_CV.setFile(split[1]) ;
-
-       continue;
-     }
-
-     if( split[0] == "tP"
-          || split[0] == "tablePath" || split[0] == "table_path")
-     {
-       if( split.size() == 2 )
-          tablePath=split[1];
-
-       continue;
-     }
-
    }
-
-   if( table_DRS_CV.path.size() == 0 )
-      table_DRS_CV.setPath(tablePath);
 
    return;
 }
@@ -533,7 +510,10 @@ QA::init(void)
    qaExp.init(optStr);
 
    // DRS and CV specifications
-   drs_cv_table.read(table_DRS_CV);
+   drs_cv_table.setParent(this);
+   drs_cv_table.setPath(tablePath);
+   drs_cv_table.applyOptions(optStr);
+   drs_cv_table.read();
 
    // experiment specific obj: set parent, pass over options
    qaExp.run();
@@ -972,7 +952,7 @@ QA::postProc_outlierTest(void)
        std::vector<std::string> vars ;
        std::string statStr;
 
-       size_t recNum=nc->getNumOfRecords();
+       size_t recNum=nc->getNumOfRecords(true); // force new inquiry
        double val;
        std::vector<double> dv;
        MtrxArr<double> mv;
@@ -1211,8 +1191,44 @@ QA::storeTime(void)
 }
 
 void
-DRS_CV_Table::read(hdhC::FileSplit& fs)
+DRS_CV_Table::applyOptions(std::vector<std::string>& optStr)
 {
+  for( size_t i=0 ; i < optStr.size() ; ++i)
+  {
+     Split split(optStr[i], "=");
+
+     if( split[0] == "tCV"
+           || split[0] == "tableControlledVocabulary"
+                || split[0] == "table_controlled_vocabulary" )
+     {
+       if( split.size() == 2 )
+          table_DRS_CV.setFile(split[1]) ;
+
+       continue;
+     }
+
+     if( split[0] == "tP"
+          || split[0] == "tablePath" || split[0] == "table_path")
+     {
+       if( split.size() == 2 )
+          tablePath=split[1];
+
+       continue;
+     }
+
+   }
+
+   if( table_DRS_CV.path.size() == 0 )
+      table_DRS_CV.setPath(tablePath);
+
+   return;
+}
+
+void
+DRS_CV_Table::read(void)
+{
+  hdhC::FileSplit& fs = table_DRS_CV;
+
   ReadLine ifs(fs.getFile());
 
   if( ! ifs.isOpen() )
@@ -1379,3 +1395,12 @@ DRS_CV_Table::read(hdhC::FileSplit& fs)
 
   return;
 }
+
+void
+DRS_CV_Table::setParent(QA* p)
+{
+   pQA = p;
+   notes = p->notes;
+   return;
+}
+

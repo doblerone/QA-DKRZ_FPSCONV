@@ -21,6 +21,62 @@ are performed. Annotations are supplied via the Annotation class
 linked by a pointer.
 */
 
+struct DRS_CV
+{
+  DRS_CV(QA*);
+
+  void   applyOptions(std::vector<std::string>&);
+  void   checkModelName(std::string &aN, std::string &aV,
+            char model, std::string iN="", std::string iV="");
+
+  //! Match filename components and global attributes of the file.
+  void   checkFilename(std::string& fName, struct DRS_CV_Table&);
+  void   checkFilenameEncoding(Split&, struct DRS_CV_Table& );
+
+  //! Test optional global attribute
+  void   checkDrivingExperiment(void);
+
+  //! Is it NetCDF-4, is it compressed?
+  void   checkNetCDF(void);
+  void   checkPath(std::string&, struct DRS_CV_Table&);
+  void   checkProductName(std::string& drs_product,
+                   std::string prod_choice,
+                   std::map<std::string, std::string>& gM);
+ void    findFN_faults(Split&, Split&,
+                   std::map<std::string, std::string>&,
+                   std::string& text);
+  void   findPath_faults(Split&, Split&,
+                   std::map<std::string, std::string>&,
+                   std::string& text);
+  int    getPathBegIndex( Split& drs, Split& x_e,
+            std::map<std::string, std::string>& gM );
+
+  void run(void);
+
+  //! Test the time-period of the input file.
+  /*! If the end-date in the filename and the last time value
+      match within the uncertainty of 0.75% of the time-step, then
+      the file is assumed to be completely qa-processed.
+      Syntax of date ranges as given in CORDEX  DRS Syntax.*/
+  bool   testPeriod(Split&);
+  bool   testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)  ;
+  void   testPeriodCut(std::vector<std::string> &sd) ;
+  bool   testPeriodCut_CMOR_isGOD(std::vector<std::string> &sd, Date**);
+  void   testPeriodCutRegular(std::vector<std::string> &sd,
+              std::vector<std::string>& text);
+  bool   testPeriodDatesFormat(std::vector<std::string> &sd) ;
+  bool   testPeriodFormat(Split&, std::vector<std::string> &sd) ;
+
+  struct hdhC::FileSplit GCM_ModelnameTable;
+  struct hdhC::FileSplit RCM_ModelnameTable;
+
+  bool enabledCompletenessCheck;
+
+  Annotation* notes;
+  QA*         pQA;
+};
+
+
 //! Struct containing dimensional properties to cross-check with table information.
 struct DimensionMetaData
 {
@@ -75,7 +131,7 @@ class VariableMetaData
   int  finally(int errCode=0);
   void forkAnnotation(Annotation *p);
   void setAnnotation(Annotation *p);
-  void setParent(QA *p){pQA=p;}
+  void setParent(QA *p);
 
   //! Verify units % or 1 by data range
   void verifyPercent(void);
@@ -126,8 +182,11 @@ class QA_Exp
 
   std::vector<VariableMetaData> varMeDa;
 
+  Annotation* notes;
   NcAPI *nc;
   QA* pQA;
+
+  MtrxArr<double> tmp_mv;
 
   // the same buf-size for all buffer is required for testing replicated records
   size_t bufferSize;
@@ -148,7 +207,9 @@ class QA_Exp
   std::string frequency;
   std::string fVarname;
 
-  void  pushBackVarMeDa(Variable*);
+  std::string getVarnameFromFilename(void){return hdhC::empty;}
+  std::string getVarnameFromFilename(std::string str){return hdhC::empty;}
+  void        pushBackVarMeDa(Variable*);
 };
 
 #endif

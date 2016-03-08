@@ -38,7 +38,8 @@ ReadLine::~ReadLine()
   if( ! isExternalStream )
   {
     close() ; // closes the ifstream obj, if existing
-    delete FStream ;
+    if( FStream->is_open() )
+      delete FStream ;
   }
 
   return;
