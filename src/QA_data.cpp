@@ -708,11 +708,6 @@ Outlier::test(QA_Data *pQAD)
         std::string capt(ostr.str());
 
         ostr.str("");  // clear previous contents
-        VariableMetaData& vMD = pQA->qaExp.varMeDa[vMD_ix] ;
-
-        ostr << "variable=" << vMD.var->name;
-        ostr << ", "        << vMD.var->std_name;
-        ostr << ", units="  << vMD.var->units;
 
         MtrxArr<int> ma_i;
         for( size_t k=0 ; k < outRec.size() ; ++k )

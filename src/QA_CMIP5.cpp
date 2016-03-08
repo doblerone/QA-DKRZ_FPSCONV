@@ -116,7 +116,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
       {
         std::string key("7_3");
         std::string capt("Fault in table ");
-        capt += pQA->table_DRS_CV.getFile() ;
+        capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding ";
         capt += hdhC::tf_assign("item", x_e[x]) + " not found in CV";
         if( notes->inq( key, "DRS") )
@@ -593,7 +593,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
       {
         std::string key("7_3");
         std::string capt("Fault in table ");
-        capt += pQA->table_DRS_CV.getFile() ;
+        capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding not available in CV, found " ;
         capt += hdhC::tf_assign("item", x_e[x]) ;
 
