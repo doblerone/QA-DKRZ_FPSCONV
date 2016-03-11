@@ -20,15 +20,15 @@ See :ref:`installation` on how to install this tool. See the available options:
     the package was downloaded via 'conda install -c birdhouse qa-dkrz'.
       -C str     CF Convention string; taken from global attributes by default.
       -F path    Find recursively all nc-files from starting point 'path'.
-      -p str     Path to one or more netCDF files.
+      -p str     Path to one or more NetCDF files.
       -R         Apply also recommendations given by the CF conventions.
       --debug    Show execution commands.
       --help
       --param    Only for program development.
       --ts[=arg] Run the files provided in the Test-Suite for CF Conventions
-                 rules in QA-DKRZ/CF_TestSuite. If particular netCDF files are
+                 rules in QA-DKRZ/CF_TestSuite. If particular NetCDF files are
                  provided additionally, then only these are used. If a filename
-                 cannot be resolved unambigously, then use optional arg F[ail] or P[ass}.
+                 cannot be resolved unambiguously, then use optional arg F[ail] or P[ass}.
 
 
 CF Test Suite

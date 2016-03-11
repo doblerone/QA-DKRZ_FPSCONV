@@ -62,7 +62,7 @@ Some options act on other options:
 
 - Regular expressions may be applied to both path(s) and variable(s).
 
-- A variable is selected if the beginning of the name is unambigous,
+- A variable is selected if the beginning of the name is unambiguous,
   e.g. specifying 'tas' would select all tas, tasmax, and tasmin files.
   Note that every file name begins with ``variable_...`` for CMIP5/CORDEX, thus,
   use ``tas_`` for this alone.

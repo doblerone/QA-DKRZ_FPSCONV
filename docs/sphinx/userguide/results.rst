@@ -38,14 +38,14 @@ In more detail, there are (for experiment-name see :ref:`configuration`):
       **annotations.txt**
 
       * inform about missing variables, if a project defines a set of required
-        ones (present only shen there are any).
+        ones.
       * file names with a time-range stamp that violates project rules, e.g.
         overlapping with other files, syntax failure, etc. .
       * In fact copies of the tag-files describe below.
 
       **time_range.txt**
         tables of atomic time-ranges spanned by the variables for each frequency.
-        Shorter atomic ranges or noncontinous sub-temporal ranges are marked.
+        Shorter atomic ranges or non-continuous sub-temporal ranges are marked.
 
       **tag-files**
         a file for each annotation flag found in the corresponding log-file.
