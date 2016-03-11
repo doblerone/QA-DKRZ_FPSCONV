@@ -6,41 +6,49 @@ QA-DKRZ - Quality Assurance Tool for Climate Data
 
 :Version: 0.5.x
 
-The QA tool is a quality assurance checker for metadata in climate data (NetCDF files). The tool checks
-the `CF-Conventions`_ conformance (Climate and Forecast Conventions) and also projects conventions for CMIP5 and CORDEX.
+The Quality Assurance tool QA-DKRZ developed at DKRZ checks conformance
+of meta-data of climate simulations given in `NetCDF` format with conventions
+and rules of projects. At present, checking of CF Conventions, CMIP5, and CORDEX
+is supported.
 
 .. note:: The QA tool is still in a testing stage.
-
-.. _`CF-conventions`: http://cfconventions.org/
 
 Getting Started
 ===============
 
-The easiest way to install the QA tool is to use the conda package manager:
+The recommendated way to install QA-DKRZ is to use the conda package manager.
 
 .. code-block:: bash
 
    $ conda install -c birdhouse qa-dkrz
 
-See :ref:`installation` for details and how to install from source. 
+If a machine is not suited for Linux-64Bits or you would like to work
+with the sources, then see :ref:`installation`
+for details.
 
-You can now run for example the CF-checker on a NetCDF file:
+The success of the installation may be checked either by running
 
 .. code-block:: bash
 
-   $ dkrz-cf-checker -h
-   $ dkrz-cf-checker my_tasmax.nc
+   $ qa-dkrz --example
 
-See more :ref:`examples` to get started.
+(creating a directory `example`
+in the current path. More details in :ref:`results`)
+or by operating the stand-alone-checker with a NetCDF file of your choice.
+
+.. code-block:: bash
+
+   $ dkrz-cf-checker your-choice.nc
+
 
 Documentation
--------------
+=============
 
-QA Tool is using Sphinx, and the latest documentation can be found on `ReadTheDocs`_:
+QA-DKRZ is using Sphinx, and the latest documentation can be found on
+`ReadTheDocs`_.
 
-    http://qa-dkrz.readthedocs.org
+.. _ReadTheDocs: http://qa-dkrz.readthedocs.org
 
-.. _`ReadTheDocs`:  http://qa-dkrz.readthedocs.org
 
 Getting Help
 ============
@@ -62,14 +70,16 @@ to our issue tracker at https://github.com/IS-ENES-Data/QA-DKRZ/issues
 Contributing
 ============
 
-Development of `QA DKRZ` happens at Github: https://github.com/IS-ENES-Data/QA-DKRZ
+The sources of `QA-DKRZ` are available on Github:
+https://github.com/IS-ENES-Data/QA-DKRZ
 
 You are highly encouraged to participate in the development.
 
 License
 =======
 
-Please see the *Disclaimer of Warranty* (`DoW.txt`) file in the top distribution directory.
+Please see the *Disclaimer of Warranty* (`DoW.txt`) file in the top distribution
+directory.
 
 .. |build-status| image:: https://travis-ci.org/IS-ENES-Data/QA-DKRZ.svg?branch=master
    :target: https://travis-ci.org/IS-ENES-Data/QA-DKRZ

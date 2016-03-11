@@ -29,27 +29,21 @@ Make sure that you have
 .. note:: The installation is tested on 32-bit Centos 6 and
           Ubuntu/Debian 14.04 LTS.
 
-Please check that the ``conda`` package manager is on your ``PATH``. For example you may set the ``PATH`` environment variable as following:
+Please check that the ``conda`` package manager is on your ``PATH``.
+For example you may set the ``PATH`` environment variable as following:
 
 .. code-block:: bash
 
     $ export PATH=~/miniconda/bin:$PATH
     $ conda -h
 
-The QA tool package is on the `birdhouse anaconda channel <https://anaconda.org/birdhouse/qa-dkrz>`_.
-To install the QA tool just run the following command (all dependencies included):
+The QA-DKRZ package is available on the
+`birdhouse anaconda channel <https://anaconda.org/birdhouse/qa-dkrz>`_, which
+is installed by running the following command (all dependencies are included):
 
 .. code-block:: bash
 
    $ conda install -c http://conda.anaconda.org/birdhouse qa-dkrz
-
-
-Check the installation by running the CF-Checker with a NetCDF file:
-
-.. code-block:: bash
-
-   $ dkrz-cf-checker -h
-   $ dkrz-cf-checker my_tasmax.nc
 
 
 From Source
@@ -91,7 +85,7 @@ The full set of options is described by:
   $ ./install --help
 
 Building Libraries
-==================
+------------------
 
 If you decide to use your own set of libraries (accessing provided ones
 is preferred by respective settings in the install_configure file), then
@@ -126,14 +120,13 @@ switched off by
 
   $ /package-path/install --auto-up=disable
 
-, reversed by ``--auto-up``. In particular for the installation from sources,
+and reversed by ``--auto-up``. In particular for the installation from sources,
 i.e. using the ``git`` tool, the creation of an empty file ``.ignore_GitHub``
 in the QA-DKRZ path disables updating of the sources, too.
 
-Similar to that update processing works for the tables of projects
-using ``--auto-table-up``.
+Analogous for tables of projects: ``--auto-table-up``.
 
 .. note:: If enabled, then every qa-dkrz run triggers the install-tool
-          for a search of updates of the QA tool itself,
+          for a search of updates of QA-DKRZ itself,
           while updating of project tables is done only once a day.
 
