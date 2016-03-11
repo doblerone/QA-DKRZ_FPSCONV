@@ -4506,6 +4506,9 @@ QA_Exp::initDefaults(void)
 void
 QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
 {
+  if( !pQA->isCheckData )
+    return;
+  
   // a missing variable?
   for( size_t i=0 ; i < prevTargets.size() ; ++i)
   {

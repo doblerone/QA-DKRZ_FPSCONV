@@ -83,7 +83,7 @@ QA_Time::applyOptions(std::vector<std::string> &optStr)
 void
 QA_Time::finally(NcAPI *nc)
 {
-  if( !isTime)
+  if( ! (isTime || pQA->isCheckTime) )
     return;
 
   timeOutputBuffer.flush();

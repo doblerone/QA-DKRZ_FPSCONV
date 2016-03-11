@@ -1354,7 +1354,7 @@ DRS_CV::testPeriodCut_CMOR_isGOD(std::vector<std::string> &sd, Date**)
     }
   }
 
-  
+
   return isRet;
 }
 
@@ -4124,6 +4124,9 @@ QA_Exp::initDefaults(void)
 void
 QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
 {
+  if( !pQA->isCheckData )
+    return;
+
   // a missing variable?
   for( size_t i=0 ; i < prevTargets.size() ; ++i)
   {

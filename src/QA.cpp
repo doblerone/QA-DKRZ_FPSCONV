@@ -570,16 +570,19 @@ QA::init(void)
    else
      notes->setCheckTimeStr("PASS");
 
-   if( isCheckData )
-   {
+//   if( isCheckData )
+//   {
      if( checkDataBody() )
      {
        notes->setCheckDataStr(fail);
        return true;
      }
 
-     notes->setCheckDataStr("PASS");
+   if( !isCheckData )
+     notes->setCheckDataStr("OMIT");
 
+   if( isCheckData || isCheckTime )
+   {
      // set pointer to function for operating tests
      execPtr = &IObj::entry ;
      bool is = entry();
@@ -736,7 +739,7 @@ QA::initResumeSession(void)
   qaTime.timeOutputBuffer.setNextFlushBeg(currQARec);
   qaTime.setNextFlushBeg(currQARec);
 
-  if( qaTime.isTime )
+  if( qaTime.isTime && isCheckTime )
     qaTime.initResumeSession();
 
   return;
@@ -897,7 +900,7 @@ QA::openQA_Nc(InFile &in)
   else
     nc->create(qaFile.getFile(),  "NC_NETCDF4");
 
-  if( qaTime.time_ix > -1 )
+  if( qaTime.time_ix > -1 || !isCheckTime )
     qaTime.openQA_NcContrib(nc);
   else
   {

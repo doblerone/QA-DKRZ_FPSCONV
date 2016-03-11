@@ -1356,8 +1356,9 @@ QA_Data::disableTests(std::string name)
 int
 QA_Data::finally(int eCode)
 {
-  // write pending results to qa-file.nc. Modes are considered there
-  flush();
+  if( pQA->isCheckData )
+    // write pending results to qa-file.nc. Modes are considered there
+    flush();
 
   // annotation obj forked by the parent VMD
   notes->printFlags();
@@ -1469,6 +1470,9 @@ QA_Data::initBuffer(QA* p, size_t nxt, size_t mx)
 void
 QA_Data::initResumeSession(void)
 {
+  if( ! pQA->isCheckData )
+    return;
+
   // read data values from the previous QA run
   std::vector<double> dv;
   std::string statStr;
@@ -1552,6 +1556,9 @@ QA_Data::openQA_NcContrib(NcAPI *nc, Variable *var)
 
   nc->setAtt(vName, "original_dimensions", str );
   nc->copyAtts(pIn->nc, vName, vName);
+
+  if( !pQA->isCheckData )
+    return;
 
   // define qa-variables
   // either the real time-name of "fixed"
