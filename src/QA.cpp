@@ -435,14 +435,14 @@ QA::finally_data(int xCode)
   // read history from the qa-file.nc and append new entries
   appendToHistory();
 
-  // check for flags concerning the total data set,
-  // but exclude the case of no record
-  if( pIn->currRec > 0 )
-    for( size_t j=0 ; j < qaExp.varMeDa.size() ; ++j )
-      qaExp.varMeDa[j].qaData.checkFinally(qaExp.varMeDa[j].var);
-
   if( isCheckData )
   {
+    // check for flags concerning the total data set,
+    // but exclude the case of no record
+    if( pIn->currRec > 0 )
+      for( size_t j=0 ; j < qaExp.varMeDa.size() ; ++j )
+        qaExp.varMeDa[j].qaData.checkFinally(qaExp.varMeDa[j].var);
+
     for( size_t j=0 ; j < qaExp.varMeDa.size() ; ++j )
     {
        // write qa-results attributes about statistics
