@@ -41,6 +41,7 @@
 #include "parse.h"
 #include "qa.h"
 #include "qa_data.h"
+#include "qa_drs_cv_table.h"
 #include "qa_time.h"
 #include "qa_PT.h"
 
