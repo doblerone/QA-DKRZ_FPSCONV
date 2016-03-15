@@ -293,7 +293,7 @@ update()
       # look for a new conda-built package
       local tmp
       declare -a tmp
-      tmp=( $(conda search -c birdhouse qa-dkrz 2> /dev/null) )
+      tmp=( $(conda search -c birdhouse -c ioos qa-dkrz 2> /dev/null) )
 
       local i item
       for(( i=0 ; i < ${#tmp[*]} ; ++i )) ; do
@@ -302,7 +302,7 @@ update()
           item=${item}-${tmp[++i]}
 
           if ! . $QA_SRC/scripts/updateConfigFile.txt CONDA_BUILD=$item ; then
-            conda update -c birdhouse qa-dkrz &> /dev/null
+            conda update -c birdhouse -c ioos qa-dkrz &> /dev/null
 
             getRevNum packRev
 
