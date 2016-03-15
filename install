@@ -35,6 +35,7 @@ descript()
   echo "  --local=str       Path where lib and include directories are to be installed"
   echo "                    [default: QA_DKRZ/local] for both real and hard-links."
   echo "                    Note: unneccesary when install_configure points outside."
+  echo "  --make-once       run the make process only for this call, else inhibit."
   echo "  --show-inst       Display properties of the current installation."
   echo "  --up[date]        Update the QA package from the repository."
   echo "                    Note: not for netCDF, HDF5, udunits2 or zlib."
@@ -105,10 +106,9 @@ getCondaPath()
 
   local path=${1%/*}
   path=${path%/*}
-  path=${path}/opt/qa-dkrz
 
-  if [ -d $path ] ; then
-    eval ${2}=$path
+  if [ -d ${path%/*}/conda-meta  ] ; then
+    eval ${2}=$path/qa-dkrz
     return 0
   fi
 
