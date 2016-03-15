@@ -1580,7 +1580,7 @@ isAmong(std::string& item, std::vector<std::string>& set,
   //      "beg"  --> 2: sub-str on the left
   //      "end"  --> 3: sub-string to the right
   //      "find" --> 2: find anywhere
-  int imode;
+  int imode=-1;
   if( ! mode.size() )
     imode=0;
   else if( mode == "beg" )

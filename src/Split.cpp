@@ -265,7 +265,7 @@ Split::decompose(void)
 
       // Works for multiple separators.
       // Find position of a next separator
-      size_t pos=std::string::npos;
+      pos=std::string::npos;
       for( size_t i=0 ; i < sep.size() ; ++i)
       {
         size_t p;
