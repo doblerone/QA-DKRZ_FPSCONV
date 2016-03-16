@@ -7,7 +7,7 @@ Installation
 `QA-DKRZ` may be installed  either via the conda package manager or from source.
 
 The conda package manager installs a ready-to-use package, however without any
-sources. Also, 32-bit machines are required.
+sources. Also, 64-bit machines are required.
 
 If you want to have sources or use a different machine architecture, then the
 installation from source should be first choice.
@@ -26,7 +26,7 @@ Make sure that you have
    $ wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
    $ bash Miniconda-latest-Linux-x86_64.sh
 
-.. note:: The installation is tested on 32-bit Centos 6 and
+.. note:: The installation is tested on 64-bit Centos 6 and
           Ubuntu/Debian 14.04 LTS.
 
 Please check that the ``conda`` package manager is on your ``PATH``.
@@ -43,7 +43,7 @@ is installed by running the following command (all dependencies are included):
 
 .. code-block:: bash
 
-   $ conda install -c http://conda.anaconda.org/birdhouse qa-dkrz
+   $ conda install -c birdhouse -c ioos qa-dkrz
 
 
 From Source
