@@ -3,7 +3,7 @@
 // Macro option to enable output of all messages.
 // Please compile with '-D RAISE_ERRORS'
 
-QA::QA()
+QA::QA() : drs_cv_table()
 {
   initDefaults();
 }
