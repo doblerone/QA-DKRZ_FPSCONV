@@ -236,6 +236,12 @@ fi
 
 for(( i=0 ; i < ${#fs[*]} ; ++i )) ; do
   f=${fs[i]}
+
+  if [ ! -f $f ] ; then
+    echo "${f}: no such file"
+    continue
+  fi
+
   fPath=${f%/*}
   f=${f##*/}
 

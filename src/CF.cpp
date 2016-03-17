@@ -2891,7 +2891,7 @@ CF::scanStdNameTable(ReadLine& ifs, Variable& var, std::string testName)
   return false;
 }
 
-void
+bool
 CF::setCheck(std::string &s)
 {
    isCheck =true;
@@ -2944,12 +2944,12 @@ CF::setCheck(std::string &s)
      }
 
      isCheck=false;
-     return;
+     return isCheck;  // leads to exit
    }
 
    notes->setCheckCF_Str("PASS");
 
-   return;
+   return true;
 }
 
 bool
@@ -4398,10 +4398,14 @@ CF::chap261(void)
   }
 
   if( cFVersion.size() )
-    setCheck(cFVersion); // option-provided convention supersedes
+  {
+    if( !setCheck(cFVersion) ) // option-provided convention supersedes
+       return false;
+  }
   else if( glob_cv.size() )
   {
-    setCheck(glob_cv);
+    if( !setCheck(glob_cv) )
+       return false;
 
     if( cFVal == 14 )
       cFVersion="CF-1.4" ;
@@ -4411,7 +4415,8 @@ CF::chap261(void)
   else
   {
     cFVersion="CF-1.4";
-    setCheck(cFVersion); // by default
+    if( !setCheck(cFVersion) ) // by default
+       return false;
   }
 
   return true;

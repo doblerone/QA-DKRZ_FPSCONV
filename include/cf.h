@@ -201,7 +201,7 @@ template <typename T>
   bool   run(void);
   bool   scanStdNameTable(std::vector<int>& zx);
   bool   scanStdNameTable(ReadLine&, Variable&, std::string);
-  void   setCheck(std::string&);
+  bool   setCheck(std::string&);
   void   setFollowRecommendations(bool b){followRecommendations=b;}
 //  void   setTable(std::string p){ std_name_table=p; }
 
