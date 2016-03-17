@@ -178,6 +178,8 @@ QA_WORK=$QA_SRC
 fs=( $* )
 
 if [ ${isTestSuite:-f} = t ] ; then
+  ts_cmd_fs=($*)
+
   # generate the netcdf files
   count=$(find $QA_SRC/CF-TestSuite/Nc -name "*.nc" 2> /dev/null | grep -c .)
   if [ ${count} -lt 25 ] ; then  # sufficient to outnumber protected nc-files
@@ -201,18 +203,17 @@ if [ ${isTestSuite:-f} = t ] ; then
 
   startingDir=$QA_SRC/CF-TestSuite/Nc${tsCase}
 
-  if [ ${#startingDir} -gt 0 ] ; then
-    ts_fs=( $( find ${startingDir} -name "*.cn" ) )
-    ts_fs=( ${ts_fs[*]} $( find ${startingDir} -name "*.nc" | sort ) )
-  fi
+  ts_fs=( $( find ${startingDir} -name "*.cn" ) )
+  ts_fs=( ${ts_fs[*]} $( find ${startingDir} -name "*.nc" | sort ) )
 
   unset startingDir
 fi
 
 # not for the test suite
 if [ ${#startingDir} -gt 0 ] ; then
-  fs=( ${fs[*]} $( find ${startingDir} -name "*.cn" ) )
   fs=( ${fs[*]} $( find ${startingDir} -name "*.nc" | sort ) )
+elif [ ${#ts_fs[*]} -gt 0 ] ; then
+  fs=(${ts_fs[*]})  # the test-suite files
 fi
 
 param_T="\\n-t ${QA_SRC}/tables/projects/CF"
@@ -235,30 +236,23 @@ fi
 
 for(( i=0 ; i < ${#fs[*]} ; ++i )) ; do
   f=${fs[i]}
-
-  param=
-
-  # prepare parameters for the cf-checker.x
-  if [ ! "${fPath}" -a ${f/\//} != ${f} ] ; then
-     fPath=${f%/*}
-     f=${f##*/}
-  fi
+  fPath=${f%/*}
+  f=${f##*/}
 
   # only selected ones from the set of test files
-  if [ ${#ts_fs[*]} -gt 0 ] ; then
-    for(( i_ts=0 ; i_ts < ${#ts_fs[*]} ; ++i_ts )) ; do
-      if [ ${f} = ${ts_fs[i_ts]##*/} ] ; then
-        test ! "$fPath" && fPath=${ts_fs[i_ts]%/*}
-        break
-      fi
+  if [ ${#ts_cmd_fs[*]} -gt 0 ] ; then
+    for(( i_ts=0 ; i_ts < ${#ts_cmd_fs[*]} ; ++i_ts )) ; do
+      test ${f} = ${ts_cmd_fs[i_ts]} && break
     done
-    test ${i_ts} -eq ${#ts_fs[*]} && continue
+    test ${i_ts} -eq ${#ts_cmd_fs[*]} && continue
   fi
+
+  param=
 
   if [ "$fPath" ] ; then
     param="-p ${fPath}\\n"
   else
-    echo "Please, provide a path with optn -p"
+    echo "Please, provide a path with opt -p"
     exit 1
   fi
 

@@ -2898,23 +2898,26 @@ CF::setCheck(std::string &s)
 
    // note: cFVal=14 by default
 
-   if( s.find("1.3") < std::string::npos )
-   {
-     if( notes->inq(bKey + "261c") )
-     {
-        std::string capt("CF-1.3 is not implemented,");
-        capt += " using CF-1.4";
-
-        (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
-     }
-   }
-   else if( s.find("1.4") < std::string::npos )
+   if( s.find("1.4") < std::string::npos )
      ; // cFVal=14 by default
    else if( s.find("1.5") < std::string::npos )
      cFVal=15;
    else if( s.find("1.6") < std::string::npos )
      cFVal=16;
+   else if( s.find("1.0") < std::string::npos
+         || s.find("1.1") < std::string::npos
+           || s.find("1.2") < std::string::npos
+             || s.find("1.3") < std::string::npos )
+   {
+     if( notes->inq(bKey + "261c") )
+     {
+        std::string capt(s);
+        capt += " is not implemented, using CF-1.4 for the check";
+
+        (void) notes->operate(capt) ;
+        notes->setCheckCF_Str( fail );
+     }
+   }
    else if( s.find("1.7") < std::string::npos )
    {
      cFVal=16;  // fall back
@@ -2934,6 +2937,7 @@ CF::setCheck(std::string &s)
      if( notes->inq(tag) )
      {
        std::string capt("unknown Conventions=" + s);
+       capt += ", restart with providing a valid convention, e.g. '-C CF-1.4'";
 
        (void) notes->operate(capt) ;
        notes->setCheckCF_Str( fail );
