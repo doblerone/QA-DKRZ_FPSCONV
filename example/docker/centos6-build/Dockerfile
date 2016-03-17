@@ -4,7 +4,8 @@ MAINTAINER https://github.com/IS-ENES-Data/QA-DKRZ
 LABEL Description="Centos 6 build image to build qa-dkrz" Vendor="DKRZ" Version="0.1.0"
 
 # Prepare system
-RUN yum update -y && yum install -y gcc g++ git vim wget
+RUN yum update -y && \
+    yum install -y epel-release gcc-c++ glibc-devel git vim wget curl make tar bzip2 unzip
 
 # Add user hdh
 RUN useradd -d /home/hdh -m -u 1000 -g users hdh

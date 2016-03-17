@@ -821,7 +821,8 @@ shift $(( $OPTIND - 1 ))
 getSrcPath $0
 cd ${QA_SRC}
 
-export LD_LIBRARY_PATH=${QA_SRC}/local/lib64:${QA_SRC}/local/lib
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QA_SRC}/local/lib64:${QA_SRC}/local/lib
+#export LD_LIBRARY_PATH=/home/hdh/miniconda/lib
 export LD_RUN_PATH=${LD_LIBRARY_PATH}
 
 # compiler settings

@@ -3851,6 +3851,7 @@ runExample()
 
   \rm -rf results config.txt data tables qa-test.task
 
+echo ${TTY}
   echo "make examples in $dir " > $TTY
   echo "make qa_test.task " > $TTY
 
