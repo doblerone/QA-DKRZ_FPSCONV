@@ -13,9 +13,9 @@ descript()
   echo " -F path    Find recursively all nc-files from starting point 'path'."
   echo " -p str     Path to one or more netCDF Files; this is prefixed"
   echo "            only to netCDF-files without any path component."
-  echo " -R         Apply also recommendations given by CF conventions."
   echo " --debug    Show execution commands."
   echo " --help"
+  echo " --no-reco  No recommendations given by CF conventions."
   echo " --param    Only for program development."
   echo " --ts[=arg] Run the files provided in the Test-Suite for CF conventions"
   echo "            rules in QA-DKRZ/CF_TestSuite. If particular netCDF files are"
@@ -132,6 +132,7 @@ getSrcPath()
 test $# -eq 0 && descript
 
 # get execution path of QA scripts
+RC=t
 
 while getopts C:F:hp:R-: option ${args[*]}
 do
@@ -140,11 +141,13 @@ do
     F)  startingDir=$OPTARG ;;
     h)  descript ;;
     p)  fPath=${OPTARG} ;;
-    R)  RC=t ;;
+    R)   ;;  # for backward compatibility
     -)  if [ "$OPTARG" = "help" ] ; then
           descript
         elif [ "${OPTARG}" = "debug" ] ; then
           set -x
+        elif [ "${OPTARG}" = "no-reco" ] ; then
+          RC=f
         elif [ "${OPTARG}" = "param" ] ; then
           isParamFileOnly=t
         elif [ "${OPTARG}" = "test-suite" ] ; then
