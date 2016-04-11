@@ -379,11 +379,33 @@ QA::entry(void)
 int
 QA::finally(int xCode)
 {
-  if( nc )
-    xCode = finally_data(xCode) ;
+  setExit(xCode);
 
-  if( xCode != 63 && qaTime.isTime )
-    qaTime.finally( nc );
+  // write pending results to qa-file.nc. Modes are considered there
+  for( size_t i=0 ; i < qaExp.varMeDa.size() ; ++i )
+    setExit( qaExp.varMeDa[i].finally() );
+
+  if( xCode == 63 ||
+     ( nc == 0 && xCode ) || (currQARec == 0 && pIn->isTime ) )
+  { // qa is up-to-date or a forced exit right from the start;
+    // no data to write
+    if( xCode == 63 )
+      xCode=0 ;
+
+    isExit=true;
+
+    nc->close();
+    return xCode ;
+  }
+
+  if( nc )
+  {
+    if( qaTime.isTime )
+      qaTime.finally( nc );
+
+    // post-processing
+    xCode = finally_data(xCode) ;
+  }
 
   setExit(xCode);
 
@@ -399,12 +421,6 @@ QA::finally(int xCode)
 int
 QA::finally_data(int xCode)
 {
-  setExit(xCode);
-
-  // write pending results to qa-file.nc. Modes are considered there
-  for( size_t i=0 ; i < qaExp.varMeDa.size() ; ++i )
-    setExit( qaExp.varMeDa[i].finally() );
-
   // post processing, but not for conditions which indicate
   // incomplete checking.
   if( exitCode < 3 )
@@ -419,17 +435,6 @@ QA::finally_data(int xCode)
         notes->setCheckDataStr(fail);
       }
     }
-  }
-
-  if( exitCode == 63 ||
-     ( nc == 0 && exitCode ) || (currQARec == 0 && pIn->isTime ) )
-  { // qa is up-to-date or a forced exit right from the start;
-    // no data to write
-    if( exitCode == 63 )
-      exitCode=0 ;
-
-    isExit=true;
-    return exitCode ;
   }
 
   // read history from the qa-file.nc and append new entries
@@ -1048,8 +1053,6 @@ QA::postProc_outlierTest(void)
 
              start[0] += static_cast<size_t>(sz) ;
 
-// vals_max[10]=400.;
-// vals_min[10]=150.;
              // feed data to the statistics
              vMD.qaData.statMin.add( vals_min, sz );
              vMD.qaData.statMax.add( vals_max, sz );

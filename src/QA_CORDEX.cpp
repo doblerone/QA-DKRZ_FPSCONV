@@ -937,7 +937,9 @@ DRS_CV::testPeriod(Split& x_f)
       std::string key("5_7");
       if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
       {
-        std::string capt("Range of variable time_bnds is not centred around time values.");
+        std::string capt("Range of ");
+        capt += hdhC::tf_var("time_bnds") ;
+        capt += "is not centred around <time> value." ;
 
         (void) notes->operate(capt) ;
         notes->setCheckMetaStr( pQA->fail );
@@ -952,7 +954,8 @@ DRS_CV::testPeriod(Split& x_f)
       std::string key("5_8");
       if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
       {
-        std::string capt("Variable time_bnds is missing");
+        std::string capt(hdhC::tf_var("time_bnds"));
+        capt += "is missing";
 
         (void) notes->operate(capt) ;
         notes->setCheckMetaStr(pQA->fail);
@@ -1016,6 +1019,8 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
 
   // alignment of time bounds and period in the filename
   bool is[] = { true, true, true, true };
+  double dDiff[]={0., 0., 0., 0.};
+
   double uncertainty=0.1 ;
   if( pQA->qaExp.getFrequency() != "day" )
     uncertainty = 1.; // because of variable len of months
@@ -1023,28 +1028,33 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
   // time value: left-side
   Date myDate( *pDates[2] );
   myDate.addTime(-pQA->qaTime.refTimeStep/2.);
-  double dDiff = fabs(myDate - *pDates[0]) ;
-  is[0] = dDiff < uncertainty ;
+  dDiff[0] = fabs(myDate - *pDates[0]) ;
+  is[0] = dDiff[0] < uncertainty ;
 
   // time value: right-side
   myDate = *pDates[3] ;
   myDate.addTime(pQA->qaTime.refTimeStep/2.);
-  dDiff = fabs(myDate - *pDates[1]) ;
-  is[1] = dDiff < uncertainty ;
+  dDiff[1] = fabs(myDate - *pDates[1]) ;
+  is[1] = dDiff[1] < uncertainty ;
 
   if(pQA->qaTime.isTimeBounds)
   {
+    is[0] = is[1] = true;
+
     // time_bounds: left-side
     Date myDate = *pDates[4] ;
 //    myDate.addTime(-pQA->qaTime.refTimeStep/2.);
 //    dDiff = fabs(myDate - *pDates[0]) ;
-    is[2] = myDate == *pDates[4] ;
+    if( ! (is[2] = *pDates[0] == *pDates[4]) )
+      dDiff[2] = *pDates[4] - *pDates[0] ;
+
 
     // time_bounds: right-side
     myDate = *pDates[5] ;
 //    myDate.addTime(pQA->qaTime.refTimeStep/2.);
 //    dDiff = fabs(myDate - *pDates[1]) ;
-    is[3] = myDate == *pDates[5] ;
+    if( ! (is[3] = *pDates[1] == *pDates[5]) )
+      dDiff[3] = *pDates[5] - *pDates[1] ;
   }
 
   for(size_t i=0 ; i < 2 ; ++i)
@@ -1064,27 +1074,30 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
 
         std::string capt("Misaligned ");
         if( i == 0 )
-          capt += "begin" ;
+          capt += "start-time" ;
         else
-          capt += "end" ;
-        capt += " of periods in filename and ";
+          capt += "end-time" ;
+        capt += " in filename and ";
 
         size_t ix;
 
         if( pQA->qaTime.isTimeBounds )
         {
-          capt="time bounds: ";
+          capt +="of time bounds, found difference of ";
           ix = 4 + i ;
+          capt += hdhC::double2String(dDiff[2+i]);
+          capt += " day(s)";
         }
         else
         {
           capt="time values: ";
           ix = 2 + i ;
+
+          capt += sd[i] ;
+          capt += " vs. " ;
+          capt += pDates[ix]->str();
         }
 
-        capt += sd[i] ;
-        capt += " vs. " ;
-        capt += pDates[ix]->str();
 
         (void) notes->operate(capt) ;
         notes->setCheckMetaStr( pQA->fail );
