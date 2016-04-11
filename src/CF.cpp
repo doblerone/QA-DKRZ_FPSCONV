@@ -6648,6 +6648,12 @@ CF::chap56(void)
           (void) notes->operate(capt) ;
           notes->setCheckCF_Str( fail );
         }
+
+        if( var.isNoData )
+        {
+          var.countData=0;
+          var.addAuxCount(10);
+        }
       }
     }
   }
