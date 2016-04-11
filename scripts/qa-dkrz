@@ -1380,20 +1380,15 @@ getExperimentNameFromPath()
   local c expPathIndex M N
   N=${#pcs[*]}
 
+  # for multiple occurrences
+  local base_ix=0
   for(( c=0 ; c < N ; ++c )) ; do
-    if [ "${pcs[c]}" = ${EXP_PATH_BASE} ] ; then
-      # check for an occurrence different than the left most
-      if [ ${countEPB} -lt ${EXP_PATH_BASE_POS} ] ; then
-        countEPB=$(( countEPB+1))
-        continue
-      fi
+    test "${pcs[c]}" = ${EXP_PATH_BASE} && base_ix=$c
+  done
 
-      local ix
-      for(( ix=0 ; ix < ${#EXP_PATH_INDEX[*]} ; ++ix )) ; do
-        expPathIndex[ix]=$(( c + ${EXP_PATH_INDEX[ix]} ))
-      done
-      break
-    fi
+  local ix
+  for(( ix=0 ; ix < ${#EXP_PATH_INDEX[*]} ; ++ix )) ; do
+    expPathIndex[ix]=$(( base_ix + ${EXP_PATH_INDEX[ix]} ))
   done
 
   test ${#expPathIndex[*]} -eq 0 && expPathIndex=( ${EXP_PATH_INDEX[*]} )
@@ -2757,11 +2752,6 @@ initExperimentName()
       test ${t} -gt ${EXP_PATH_INDEX_MAX} && EXP_PATH_INDEX_MAX=${t}
     done
 
-    # for multiple occurrences
-    EXP_PATH_BASE_POS=0
-    if [ "${EXP_PATH_BASE/:/}" != "${EXP_PATH_BASE}" ] ; then
-      EXP_PATH_BASE_POS=${EXP_PATH_BASE##*:}
-    fi
   else
     EXP_NAME='all-scope'
   fi
@@ -3851,7 +3841,6 @@ runExample()
 
   \rm -rf results config.txt data tables qa-test.task
 
-echo ${TTY}
   echo "make examples in $dir " > $TTY
   echo "make qa_test.task " > $TTY
 

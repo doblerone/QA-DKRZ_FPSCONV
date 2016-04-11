@@ -909,9 +909,8 @@ initSession()
     cl=${comLine[i]}
 
     test ${cl:0:7} = '-E_SHOW'  \
-        && testCase=t \
-             && setKWL RESUME_SESSION=f \
-                 && break
+        && setKWL RESUME_SESSION=f \
+            && break
   done
 
   # current checksums; note: md5sum ouputs two items: checksum and filename
