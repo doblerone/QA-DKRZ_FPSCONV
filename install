@@ -101,8 +101,6 @@ getRevNum()
 
 getCondaPath()
 {
-  local conda=f
-
   local path=${1%/*}
   path=${path%/*}
 
@@ -119,8 +117,6 @@ getSrcPath()
   # extract the path to the root of the QA package
 
   # is it in a conda built?
-  getCondaPath $0 QA_SRC
-
   if getCondaPath $0 QA_SRC ; then
     export QA_SRC
     CONDA_ENV=t
