@@ -2998,25 +2998,12 @@ initT_CORDEX()
            git clone  https://github.com/IS-ENES-Data/IS-ENES-Data.github.io ) \
            &> /dev/null
        fi
-
-       test ! -d ${pth}/cordex_specs \
-                   && mkdir ${pth}/cordex_specs
-
-       wget --tries=3 -q -N \
-       --directory-prefix=${pth}/cordex_specs \
-       http://cordex.dmi.dk/joomla/images/CORDEX/RCMModelName.txt \
-       &> /dev/null
-
-       # concatenate files, when recently modified or new
-       # the target must be the first parameter
-       catFiles ${TABLE_PATH}/CORDEX_RCMModelName.txt \
-                ${pth}/IS-ENES-Data.github.io/CORDEX_RCMs_ToU.txt \
-                ${pth}/cordex_specs/RCMModelName.txt
-     else
-       catFiles ${TABLE_PATH}/CORDEX_RCMModelName.txt \
-                ${pth}/FallBack/CORDEX_RCMs_ToU.txt \
-                ${pth}/FallBack/RCMModelName.txt
      fi
+
+     # concatenate files, when recently modified or new
+     # the target must be the first parameter
+     catFiles ${TABLE_PATH}/CORDEX_RCMModelName_ToY.txt \
+              ${pth}/CORDEX_RCMs_ToU.txt
    fi
 
    return
