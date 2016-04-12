@@ -195,26 +195,27 @@ def initT(key, table, runTablePath):
 
     pDir=[]
 
-    if table[0:3] == 'CF_' and prj != 'CF':
-        pDir.append( os.path.join('tables', 'projects', 'CF') )
-
-    elif os.path.isfile(table):
+    # regular precedence of paths, i.e. highest first
+    if os.path.isfile(table):
         # absolute path
         pDir.append(table)
-
     else:
         # local file
         if os.path.isfile( os.path.join(pwd, table) ):
             pDir.append(os.path.join(pwd, table))
 
     if qaOpts.isOpt('USE_STRICT'):
-        # USE_STRICT: only the projects default directory
+        # USE_STRICT: only the project's default directory
         pDir.append(os.path.join('tables', 'projects', prj) )
     else:
-        pDir.append(os.path.join('tables', 'projects', prj) )
-        pDir.append(os.path.join('tables', 'projects') )
-        pDir.append(os.path.join('tables', prj) )
         pDir.append('tables')
+        pDir.append(os.path.join('tables', prj) )
+        pDir.append(os.path.join('tables', 'projects') )
+        pDir.append(os.path.join('tables', 'projects', prj) )
+
+    if prj != 'CF':
+        if table[0:3] == 'CF_' or table[0:3] == 'cf-':
+            pDir.append( os.path.join('tables', 'projects', 'CF') )
 
     if key.find('check_list') > -1:
         # concatenate existing files
@@ -237,6 +238,9 @@ def initT(key, table, runTablePath):
         for ix in range(len(pDir)):
             src = os.path.join(qaHome, pDir[ix], table)
             if os.path.isfile(src):
+                if not os.path.isdir(runTablePath):
+                    qa_util.mkdirP(runTablePath)
+
                 dest= os.path.join(runTablePath, table)
                 if qa_util.fGetModTime(src) > qa_util.fGetModTime(dest):
                     shutil.copyfile(src,dest)

@@ -58,6 +58,10 @@ class QaConfig(object):
 
         self.dOpts['CFG_FILE']=os.path.join(self.dOpts['QA_HOME'],
                                             self.dOpts['CFG_FILE'])
+        if not 'PROJECT' in self.dOpts.keys():
+            self.dOpts['PROJECT']=self.project
+        if not 'PROJECT_AS' in self.dOpts.keys():
+            self.dOpts['PROJECT_AS']=self.project
 
         self.ldOpts=[] # free mem
         self.lSelect=[]
@@ -203,11 +207,9 @@ class QaConfig(object):
             help="Proceed for a limited number of variables, unlimited by default.")
 
         parser.add_argument('-P', '--project', dest='PROJECT',
-            nargs='?', default='',
             help= "PROJECT name.")
 
         parser.add_argument('--project_as', '--project-as', dest = 'PROJECT_AS',
-            nargs='?', default='',
             help= "Use assigned project for processing but PROJECT name is kept.")
 
         parser.add_argument( '--qa_home', '--QA_HOME',  dest='QA_HOME',

@@ -153,7 +153,7 @@ def fGetModTime(f):
     try:
         st=os.stat(f)
     except OSError:
-        print 'qa_util.fGetModTime(' + f + '): no such file'
+#        print 'qa_util.fGetModTime(' + f + '): no such file'
         t=0
     else:
         t = st.st_mtime
