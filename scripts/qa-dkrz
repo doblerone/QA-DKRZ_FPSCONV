@@ -2916,9 +2916,6 @@ initT()
    pDir[2]=tables/${prj}
    pDir[3]=tables
 
-   # specialisation
-   test ${prj} = CORDEX && initT_CORDEX
-
    local ix p
 
    # implicitly and highest: local file and file with absolute path
@@ -2980,31 +2977,6 @@ initTcat()
    export ${table}=$target  # note: no value
 
    test ${fs[0]:0:4} = /tmp && \rm -f ${fs[0]}
-
-   return
-}
-
-initT_CORDEX()
-{
-   local pth=${QA_HOME}/${pDir[0]}
-
-   if [ "$table" = TABLE_RCM_NAME ] ; then
-     if [ ${NO_GIT:-f} = f -a ${NO_WGET:-f} = f ] ; then
-       if [ -d ${pth}/IS-ENES-Data.github.io ] ; then
-         ( cd ${pth}/IS-ENES-Data.github.io && \
-           git pull origin ) &> /dev/null
-       else
-         ( cd ${pth} && \
-           git clone  https://github.com/IS-ENES-Data/IS-ENES-Data.github.io ) \
-           &> /dev/null
-       fi
-     fi
-
-     # concatenate files, when recently modified or new
-     # the target must be the first parameter
-     catFiles ${TABLE_PATH}/CORDEX_RCMModelName_ToY.txt \
-              ${pth}/CORDEX_RCMs_ToU.txt
-   fi
 
    return
 }
