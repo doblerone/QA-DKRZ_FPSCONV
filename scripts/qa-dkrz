@@ -949,9 +949,7 @@ QA result path: ${target}\nRemoved QA results by following links."
     fi
 
     # also delete table entries
-    if [ $isClear = t ] ; then
-       rmBlock $EXP_LOGDIR/$CURR_EXP_NAME.log ${fBase[ix]}
-    fi
+    rmBlock $EXP_LOGDIR/$CURR_EXP_NAME.log ${fBase[ix]}
 
     if [ "$isMessage" != f ] ; then
       local note
@@ -969,10 +967,9 @@ QA result path: $QA_RESULTS/data\nDRS tree:\t${subPath}\n${note}"
 
       log_sessMessage "$headerText"
     fi
+    
+    return 0
   fi
-
-  test ${isCLEAR_ONLY:-f} = t && return 0  # no qa
-  test ${SHOW_CLEAR:-f}   = t && return 0  # no qa
 
   return 1
 }
@@ -4199,8 +4196,8 @@ testLocks()
       getExperimentName $1
     fi
 
-    # if CLEAR=only or SHOW_CLEAR was set, then try another variable
     if clear ; then
+      \rm -f $2
       return 0
     fi
   fi
