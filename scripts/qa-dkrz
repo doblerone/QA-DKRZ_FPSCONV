@@ -967,7 +967,7 @@ QA result path: $QA_RESULTS/data\nDRS tree:\t${subPath}\n${note}"
 
       log_sessMessage "$headerText"
     fi
-    
+
     return 0
   fi
 
@@ -4198,7 +4198,7 @@ testLocks()
 
     if clear ; then
       \rm -f $2
-      return 0
+      return 1
     fi
   fi
 
