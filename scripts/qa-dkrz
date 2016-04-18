@@ -4198,7 +4198,7 @@ testLocks()
 
     if clear ; then
       \rm -f $2
-      return 1
+      return 0
     fi
   fi
 
