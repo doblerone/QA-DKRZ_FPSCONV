@@ -1774,7 +1774,7 @@ getNextVariable()
   # apply rules, clearings, and test for qa_note files
   if \
 #trace \
-    testLocks $1 $qa_fl ; then
+    testLocks $1 qa_fl ; then
       nextFile=  # ignore, try next
       return 0
   fi
@@ -4196,15 +4196,18 @@ testLocks()
       getExperimentName $1
     fi
 
+    # if CLEAR=only or SHOW_CLEAR was set, then try another variable
     if clear ; then
-      \rm -f $2
-      return 0
+      eval $2=
+      return 1
     fi
   fi
 
+  eval dollar2=${!2}
+
   if \
 #trace \
-  checkLockFile $1 $2 ; then
+  checkLockFile $1 $dollar2 ; then
 #    if [ ${PROGRESS_BAR} ] ; then
 #      local num=$( ls -d ${PROJECT_DATA}/${subPath}/${1}*.nc \
 #                    | grep -c . )
