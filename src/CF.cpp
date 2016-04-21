@@ -8828,11 +8828,12 @@ CF::chap74b(Variable& var,
      std::string& str1 = method[t_ix[1]];
 
      size_t j;
-     std::string what;
+     std::string what(": was a ");
+     what += n_climatology;
+     what += "attribute intended? Found ";
 
      for( j=0 ; j < 2 ; ++j )
      {
-       what = "use of key-word=within in";
        size_t pos;
        if( (pos=str0.find(within)) < std::string::npos)
        {
@@ -8861,8 +8862,12 @@ CF::chap74b(Variable& var,
      {
         if( notes->inq(bKey + "74d", var.name) )
         {
-          std::string capt( hdhC::tf_att(var.name, n_cell_methods + " for a climatology:"));
-          capt += "Invalid " + what  ;
+          std::string capt;
+          if( what[0] == ':' )
+            capt = hdhC::tf_att(var.name, n_cell_methods);
+          else
+            capt = hdhC::tf_att(var.name, n_cell_methods + " for a climatology:");
+          capt += what  ;
           capt += hdhC::tf_val(var.getAttValue(n_cell_methods));
 
           (void) notes->operate(capt) ;
