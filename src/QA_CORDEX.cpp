@@ -3294,12 +3294,14 @@ QA_Exp::checkVarTableEntry_cell_methods(
   if( frequency == "fx" )
     return;
 
-  bool isOpt=false;
-
   // disjoint into words; this method ingnores spaces
   Split x_t_cm(t_DMD_entry.attMap[n_cell_methods]);
   Split x_t_cmo(t_DMD_entry.attMap[n_cell_methods_opt]);
   Split x_f_cm;
+
+  bool isOpt=false;
+  if( x_t_cmo.size() )
+      isOpt=true;
 
   int cm_ix = vMD.var->getAttIndex(pQA->n_cell_methods) ;
 
@@ -3324,7 +3326,7 @@ QA_Exp::checkVarTableEntry_cell_methods(
         return; // identical
     }
 
-    else if( x_f_cm.size() == x_t_cmo.size() )
+    if( x_f_cm.size() == x_t_cmo.size() )
     {
       size_t i;
       for( i=0 ; i < x_t_cmo.size() ; ++i )
@@ -3333,8 +3335,6 @@ QA_Exp::checkVarTableEntry_cell_methods(
 
       if( i == x_t_cmo.size() )
         return; // identical
-
-      isOpt=true;
     }
 
     // found a difference
