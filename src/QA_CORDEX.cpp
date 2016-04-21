@@ -3294,7 +3294,7 @@ QA_Exp::checkVarTableEntry_cell_methods(
   if( frequency == "fx" )
     return;
 
-  bool isOld=false;
+  bool isOpt=false;
 
   // disjoint into words; this method ingnores spaces
   Split x_t_cm(t_DMD_entry.attMap[n_cell_methods]);
@@ -3334,7 +3334,7 @@ QA_Exp::checkVarTableEntry_cell_methods(
       if( i == x_t_cmo.size() )
         return; // identical
 
-      isOld=true;
+      isOpt=true;
     }
 
     // found a difference
@@ -3345,12 +3345,14 @@ QA_Exp::checkVarTableEntry_cell_methods(
 
       if( cm_val.size() )
       {
-        capt = hdhC::tf_att(vMD.var->name, cm_name, cm_val) ;
+        capt = hdhC::tf_att(vMD.var->name, cm_name) ;
         capt += "does not match, found" ;
-        if( isOld )
-          capt += hdhC::tf_val(t_DMD_entry.attMap[n_cell_methods]) ;
-        else
+        capt += hdhC::tf_val(cm_val);
+        capt += " expected";
+        if( isOpt )
           capt += hdhC::tf_val(t_DMD_entry.attMap[n_cell_methods_opt]) ;
+        else
+          capt += hdhC::tf_val(t_DMD_entry.attMap[n_cell_methods]) ;
       }
       else
       {
