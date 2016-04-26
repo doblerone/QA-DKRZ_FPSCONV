@@ -21,11 +21,11 @@ Split::Split(const char* s) : str(s)
   sep.push_back(std::string("\t"));  // by default
 }
 
-Split::Split(std::string s, std::string sp, bool isContainer) : str(s)
+Split::Split(std::string s, std::string sp, bool eachCharIsSep) : str(s)
 {
   init();
 
-  addSeparator(sp, isContainer);
+  addSeparator(sp, eachCharIsSep);
 }
 
 Split::Split(std::string s, char sp) : str(s)
@@ -119,14 +119,14 @@ Split::addIgnore( std::string s, bool isStr)
 }
 
 void
-Split::addProtector( std::string s, bool isContainer)
+Split::addProtector( std::string s, bool eachCharIsSep)
 {
   if( s == ":alnum:" )
   {
     isProtectAlNum=true;
     return;
   }
-  else if(isContainer)
+  else if(eachCharIsSep)
   {
     std::string t;
     for( size_t i=0 ; i < s.size() ; ++i)
@@ -142,14 +142,14 @@ Split::addProtector( std::string s, bool isContainer)
 }
 
 void
-Split::addSeparator( std::string s, bool isContainer)
+Split::addSeparator( std::string s, bool eachCharIsSep)
 {
   if( s == ":alnum:" )
   {
     isAlNum=true;
     return;
   }
-  else if(isContainer)
+  else if(eachCharIsSep)
   {
     std::string t;
     for( size_t i=0 ; i < s.size() ; ++i)
@@ -779,23 +779,23 @@ Split::setIgnore( std::string s, bool isStr)
 }
 
 void
-Split::setProtector( std::string s, bool isContainer)
+Split::setProtector( std::string s, bool eachCharIsSep)
 {
   isDecomposed=false;
   protector.clear();
 
-  addProtector(s, isContainer);
+  addProtector(s, eachCharIsSep);
 
   return ;
 }
 
 void
-Split::setSeparator( std::string s, bool isContainer)
+Split::setSeparator( std::string s, bool eachCharIsSep)
 {
   isDecomposed=false;
   sep.clear();
 
-  addSeparator(s, isContainer);
+  addSeparator(s, eachCharIsSep);
 
   return ;
 }

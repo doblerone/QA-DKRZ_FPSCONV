@@ -155,8 +155,8 @@ class QA : public IObj
 
   //! Name of the netCDF file with results of the quality control
   std::string tablePath;
-  struct hdhC::FileSplit qaFile;
-  struct hdhC::FileSplit consistencyFile;
+  hdhC::FileSplit qaFile;
+  hdhC::FileSplit consistencyFile;
 
   std::string qaNcfileFlags;
 
@@ -185,14 +185,24 @@ class QA : public IObj
   bool isFileComplete;
   bool isFirstFile;
   bool isNotFirstRecord;
+  bool isOnlyCF;
   bool isPrintTimeBoundDates;
   bool isResumeSession;
 
   size_t nextRecords;
 
+  std::map<std::string, bool> mapCheckMode;
+/*
+  bool isCheckCF;
+  bool isCheckCV;
+  bool isCheckData;
+  bool isCheckDRS;
   bool isCheckMeta;
   bool isCheckTime;
-  bool isCheckData;
+*/
+
+  bool isRequiredVariable;
+  bool isRequiredGlobal;
 
   std::vector<std::string> excludedAttribute;
   std::vector<std::string> overruleAllFlagsOption;

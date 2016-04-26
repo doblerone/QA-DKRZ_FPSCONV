@@ -4089,14 +4089,24 @@ QA_Exp::init(std::vector<std::string>& optStr)
    // apply parsed command-line args
    applyOptions(optStr);
 
-   fVarname = getVarnameFromFilename();
-   getFrequency();
-   getSubTable() ;
+   if( pQA->mapCheckMode["META"]
+         || pQA->mapCheckMode["DRS"]
+            || pQA->mapCheckMode["CV"]
+              || pQA->mapCheckMode["TIME"] )
+   {
+     fVarname = getVarnameFromFilename();
+     getFrequency();
+     getSubTable() ;
 
-   notes->setCheckMetaStr("PASS");
+     if( pQA->mapCheckMode["META"]
+           || pQA->mapCheckMode["TIME"] )
+     {
+       notes->setCheckMetaStr("PASS");
 
-   // Create and set VarMetaData objects.
-   createVarMetaData() ;
+       // Create and set VarMetaData objects.
+       createVarMetaData() ;
+     }
+   }
 
    return;
 }
@@ -4139,7 +4149,7 @@ QA_Exp::initDefaults(void)
 void
 QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
 {
-  if( !pQA->isCheckData )
+  if( !pQA->mapCheckMode["DATA"] )
     return;
 
   // a missing variable?
@@ -4874,16 +4884,23 @@ QA_Exp::run(void)
 
    if( pQA->drs_cv_table.table_DRS_CV.is )
    {
-     DRS_CV drsFN(pQA);
-     drsFN.run();
+     if( pQA->mapCheckMode["DRS"] )
+     {
+       DRS_CV drsFN(pQA);
+       drsFN.run();
+     }
    }
 
-   // check variable type; uses DRS_CV_Table
-   checkVariableType();
+   if( pQA->mapCheckMode["META"]
+         || pQA->mapCheckMode["TIME"] )
+   {
+     // check variable type; uses DRS_CV_Table
+     checkVariableType();
 
-   if( !isNoTable )
-      // get meta data from file and compare with tables
-      checkMetaData(*(pQA->pIn));
+     if( !isNoTable )
+        // get meta data from file and compare with tables
+        checkMetaData(*(pQA->pIn));
+   }
 
    return ;
 }

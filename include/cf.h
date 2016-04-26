@@ -37,8 +37,8 @@ class CF : public IObj
   bool   init(void) ;
   void   linkObject(IObj *);
 
-  void   setFilename(hdhC::FileSplit& f) {file=f;}
-  void   setFilename(std::string f) {file.setFile(f);}
+  void   setFilename(hdhC::FileSplit& f) {fSplit=f;}
+  void   setFilename(std::string f) {fSplit.setFile(f);}
   void   setTablePath(std::string p) {tablePath=p;}
 
   void   chap(void);
@@ -226,10 +226,10 @@ template <typename T>
   std::string cFVersion;
 
   std::string tablePath;
-  struct hdhC::FileSplit file;
-  struct hdhC::FileSplit std_name_table;
-  struct hdhC::FileSplit area_table;
-  struct hdhC::FileSplit region_table;
+  hdhC::FileSplit fSplit;
+  hdhC::FileSplit std_name_table;
+  hdhC::FileSplit area_table;
+  hdhC::FileSplit region_table;
 
   ut_system*   unitSystem;
 

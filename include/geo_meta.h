@@ -402,7 +402,7 @@ the top-most layer, then it is reset to the first one.*/
             { dataProps.disableChecksum();}
   void fieldDataEnableChecksumWithClearedBits(size_t n)
             { dataProps.enableChecksumWithClearedBits(n);}
-  struct hdhC::FieldData
+  hdhC::FieldData
        fieldDataGet(void)
             { return dataProps.get(this);}
 */

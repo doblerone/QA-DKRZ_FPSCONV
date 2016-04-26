@@ -67,8 +67,8 @@ struct DRS_CV
   bool   testPeriodDatesFormat(std::vector<std::string> &sd) ;
   bool   testPeriodFormat(Split&, std::vector<std::string> &sd) ;
 
-  struct hdhC::FileSplit GCM_ModelnameTable;
-  struct hdhC::FileSplit RCM_ModelnameTable;
+  hdhC::FileSplit GCM_ModelnameTable;
+  hdhC::FileSplit RCM_ModelnameTable;
 
   bool enabledCompletenessCheck;
 

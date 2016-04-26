@@ -52,7 +52,7 @@ void
 void
   readOptions(std::vector<std::string> &argv);
 
-  struct hdhC::FileSplit file;
+  hdhC::FileSplit file;
 
 void
   setFilename(std::string f){file.setFile(f);}

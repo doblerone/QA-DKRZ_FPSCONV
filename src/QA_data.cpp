@@ -410,7 +410,7 @@ Outlier::test(QA_Data *pQAD)
 
   bool retCode = false;
 
-  if( ! pQA->isCheckData )
+  if( ! pQA->mapCheckMode["DATA"] )
     return retCode;
 
   std::vector<std::string> names;
@@ -1356,7 +1356,7 @@ QA_Data::disableTests(std::string name)
 int
 QA_Data::finally(int eCode)
 {
-  if( pQA->isCheckData )
+  if( pQA->mapCheckMode["DATA"] )
     // write pending results to qa-file.nc. Modes are considered there
     flush();
 
@@ -1470,7 +1470,7 @@ QA_Data::initBuffer(QA* p, size_t nxt, size_t mx)
 void
 QA_Data::initResumeSession(void)
 {
-  if( ! pQA->isCheckData )
+  if( ! pQA->mapCheckMode["DATA"] )
     return;
 
   // read data values from the previous QA run
@@ -1557,7 +1557,7 @@ QA_Data::openQA_NcContrib(NcAPI *nc, Variable *var)
   nc->setAtt(vName, "original_dimensions", str );
   nc->copyAtts(pIn->nc, vName, vName);
 
-  if( !pQA->isCheckData )
+  if( !pQA->mapCheckMode["DATA"] )
     return;
 
   // define qa-variables

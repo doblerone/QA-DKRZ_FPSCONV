@@ -88,7 +88,6 @@
     std::vector<IObj *> vIObj;
   } ;
 
-
 //  ####  simple functions ####
 /*! Where all the work is done: accessing of data,
  initialisation of base derived

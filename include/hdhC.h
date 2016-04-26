@@ -108,10 +108,17 @@ struct FieldDataMeta
   size_t size;
 };
 
-struct FileSplit
+class FileSplit
 {
-   FileSplit() : is(false) {;}
+   public:
+
+   FileSplit() {is=false;}
+   FileSplit(const FileSplit& fs) {copy(fs);}
+
+   FileSplit& operator=(const FileSplit&);
+
    void clear(void);
+   void copy(const FileSplit&);
 
    std::string
         getBasename(void){ return basename ; }

@@ -48,7 +48,7 @@ class Consistency
 
   std::vector<std::string> excludedAttributes;
 
-  struct hdhC::FileSplit consistencyTableFile;
+  hdhC::FileSplit consistencyTableFile;
 
   bool checkEnabled;
   bool status;

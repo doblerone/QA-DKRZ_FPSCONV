@@ -102,7 +102,7 @@ public:
            {srcStr.push_back(s); return;}
 
   int identNum;
-  struct hdhC::FileSplit file;
+  hdhC::FileSplit file;
 
   std::string vName;
   std::vector<std::string> srcStr;

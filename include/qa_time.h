@@ -105,7 +105,7 @@ class QA_Time
   std::string dateFormat ; // only for absolute dates as time values
   std::string maxDateRange;
 
-  struct hdhC::FileSplit timeTable;
+  hdhC::FileSplit timeTable;
 
   std::string fail;
   std::string notAvailable;

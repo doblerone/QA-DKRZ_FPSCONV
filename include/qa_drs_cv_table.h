@@ -27,7 +27,7 @@ public:
    std::vector<std::string> section;
    std::vector<std::vector<std::string> > line;
 
-   struct hdhC::FileSplit table_DRS_CV;
+   hdhC::FileSplit table_DRS_CV;
    std::string tablePath;
 
    QA* pQA;

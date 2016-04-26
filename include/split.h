@@ -45,7 +45,7 @@ class Split
   /*! By default, each character in the string is set as individual
    separator. If each char in string is a separator, set 'isContain' true.
    Note: no white-spaces by default with this constructor.*/
-  Split(std::string s, std::string sep, bool isContainer=false);
+  Split(std::string s, std::string sep, bool eachCharIsSep=false);
 
   //! Construct and split a string at char sep.
   Split(std::string s, char sep);
@@ -73,7 +73,7 @@ class Split
   void   addIgnore( std::string s, bool isStr=false);
 
   //! Add another separator to those already set.
-  void   addProtector( std::string s, bool isContainer=false);
+  void   addProtector( std::string s, bool eachCharIsSep=false);
 
   //! Add another separator to those already set.
   void   addProtector( char s){addProtector(std::string(1,s));}
@@ -82,7 +82,7 @@ class Split
   void   addSeparator( char s){addSeparator(std::string(1,s));}
 
   //! Add another separator to those already set.
-  void   addSeparator( std::string s, bool isContainer=false);
+  void   addSeparator( std::string s, bool eachCharIsSep=false);
 
   //! Strip leading and trailing characters
   /*! Ignored, when identical to a separation character */
@@ -165,7 +165,7 @@ class Split
   void   setItemsWithSeparator(void){ isItemsWithSep=true;}
 
   //! Protect tokenising until the next protector
-  void   setProtector( std::string, bool isContainer=false);
+  void   setProtector( std::string, bool eachCharIsSep=false);
 
   //! Set a new separator; replace former setting.
   void   setSeparator(char s){setSeparator(std::string(1,s));}
@@ -174,7 +174,7 @@ class Split
   /*! By default, each character in the string is set as individual
    sepaerator. If the entire string is a separator, isStr=true.
    If additionally s==:alnum:, the str and nums are separated.*/
-  void   setSeparator( std::string s, bool isContainer=false);
+  void   setSeparator( std::string s, bool eachCharIsSep=false);
 
   void   setStripSides(std::string s){stripSides.clear(); addStripSides(s);}
   void   setStripSides(void)         {stripSides.clear(); isStripSides=true;}

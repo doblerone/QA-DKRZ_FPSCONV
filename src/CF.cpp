@@ -2144,7 +2144,7 @@ CF::isBounds(Variable& var)
 bool
 CF::init()
 {
-  notes->setFilename(file);
+  notes->setFilename(fSplit);
 
   notes->init();  // safe
 
@@ -2455,6 +2455,8 @@ CF::linkObject(IObj *p)
     notes = dynamic_cast<Annotation*>(p) ;
   else if( className ==  "CF" )
     cF = dynamic_cast<CF*>(p) ;
+  else if( className == "QA" )
+    qA = dynamic_cast<QA*>(p) ;
   else if( className ==  "IN" )
     pIn = dynamic_cast<InFile*>(p) ;
 

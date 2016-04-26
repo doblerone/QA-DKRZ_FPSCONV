@@ -188,7 +188,7 @@ struct CMOR
   void   checkReqAtt_variable(Variable&);
 
   void   checkSource(void);
-  
+
   // the next one is applied to several checks
   void   checkStringValues(
             struct DimensionMetaData& f_DMD,
@@ -494,7 +494,7 @@ public:
   void   setVarMetaData(VariableMetaData& );
 
   //! Name of the netCDF file with results of the quality control
-  struct hdhC::FileSplit varReqTable;
+  hdhC::FileSplit varReqTable;
 
   std::vector<VariableMetaData> varMeDa;
 

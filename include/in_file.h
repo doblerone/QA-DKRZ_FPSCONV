@@ -110,6 +110,9 @@ public:
   /*! Open a file and fill struct Variable.*/
   bool   openNc( bool isNew=true );
 
+  void   pullVariablesMD(void);
+  void   pullGlobalMD(void);
+
   //! Set current record.
   /*! Purpose: Adjust the current record of a for-loop in a method.*/
   void   setCurrRec(size_t rec) {currRec=rec;}
@@ -121,12 +124,11 @@ public:
   void   setFilename(std::string f) {file.setFile(f);}
   void   setTablePath(std::string p) { ; }
 
-  struct hdhC::FileSplit file;
+  hdhC::FileSplit file;
 
   bool   enableEntry;
   bool   isInfNan;
   bool   isInit;
-  bool   isOnlyCF;
   bool   isPrintGMT;
   bool   isRecEndSet;
   bool   isRecSet; // true for individual rec properties
@@ -147,15 +149,18 @@ public:
   std::vector<size_t> dataVarIndex;
   bool                isTime;
   size_t  varSz;  // note: without a trailing NC_GLOBAL
+  std::vector<Variable> variable;  // the last item for global attribute
   NcAPI   nc;
 
 private:
   int    getDimPos(std::string &dName);
-
   bool   getNcAttVal(std::string vName,
               std::string aName, std::vector<double> &back);
-  void   getVariableMeta(Variable &);
-  void   getVariable(void);
+  void   getVariableAtt(Variable &);
+  // mode: 0: variables && global, 1: variables, 2: global
+  void   getVariableMD(std::vector<Variable>& variable, int mode=0);
+  void   getVariableMD(Variable &);
+  void   makeVariable (std::string name, Variable&, int id=-1);
   void   setGeoCellShape(Variable &var);
   void   setGeoLayer(Variable &var);
   void   setGeoParam(Variable & );

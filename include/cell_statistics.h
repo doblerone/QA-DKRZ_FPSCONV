@@ -25,7 +25,7 @@ public:
 
   void initDefaults(void);
 
-  struct hdhC::FileSplit file;
+  hdhC::FileSplit file;
 };
 
 #endif

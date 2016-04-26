@@ -791,7 +791,8 @@ updateIn(std::vector<InFile> &in)
   // start reading and processing
   for( size_t j=0 ; j < in.size() ; ++j )
   {
-    in[j].init();  // Note: error detection and exit in the method
+    // Note: error detection and exit in the method
+    in[j].init();
 
     // synchronise start and end records of the nc-file
     // to optional time limits.

@@ -52,12 +52,12 @@ public:
 
   //! Get the area-weighted average of the added field(s).
   /*! Has to be virtual due to templ. T fillingValue*/
-  virtual struct hdhC::FieldData
+  virtual hdhC::FieldData
                get(void) =0;
 
   //! Get range and counts if Inf, NaN, and _FillValue(s).
   /*! Has to be virtual due to templ. T fillingValue*/
-  virtual struct hdhC::FieldDataMeta
+  virtual hdhC::FieldDataMeta
                getMeta(void) =0;
 
   //! Get the checksum of the field
@@ -116,11 +116,11 @@ template<typename W>
               {isFillingValue = b;}
 
   //! Get the area-weighted average of the added field(s).
-  struct hdhC::FieldData
+  hdhC::FieldData
            get(void);
 
   //! Get range and counts if Inf, NaN, and _FillValue(s).
-  struct hdhC::FieldDataMeta
+  hdhC::FieldDataMeta
            getMeta(void);
 
   //! Get the checksum of the field
@@ -241,7 +241,7 @@ DataStatistics<T>::clear(void)
 }
 
 template<typename T>
-struct hdhC::FieldData
+hdhC::FieldData
 DataStatistics<T>::get(void)
 {
   hdhC::FieldData a;
@@ -289,7 +289,7 @@ DataStatistics<T>::get(void)
 }
 
 template<typename T>
-struct hdhC::FieldDataMeta
+hdhC::FieldDataMeta
 DataStatistics<T>::getMeta(void)
 {
   hdhC::FieldDataMeta a;

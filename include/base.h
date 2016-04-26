@@ -89,9 +89,8 @@ class Base : public IObj
   void initDefaults(void);
 
   bool isVarname( std::string &);
-  void makeVariable (NcAPI *, std::string name, int id=-1);
 
-  // uses struct hdhC::FileSplit
+  // uses class hdhC::FileSplit
   void setFilename(std::string f){file.setFile(f);}
 
   //! Connect a frequency distribution object.
@@ -104,15 +103,14 @@ class Base : public IObj
 //         {currRec=rec;}
   void setSrcStr(std::string s)
          {srcStr.push_back(s); return;}
-  void setSrcVariable(Variable &var, Base *p);
 
   void setTimeControl(TimeControl *p){ tC=p; return;}
 //  void setVarnameAndGD(std::string s);
-  void setVarProps(void);
-  void setVarPropsForOperation( void );
-  void setVarPropsNoOperation( void );
+//  void setVarProps(void);
+//  void setVarPropsForOperation( void );
+//  void setVarPropsNoOperation( void );
 
-  struct hdhC::FileSplit file;
+  hdhC::FileSplit file;
 
   std::string linkObjName;
   bool        isAllocate;
@@ -122,7 +120,6 @@ class Base : public IObj
   std::map<std::string, size_t> varNameMap;
 
   //see rules for varName and srcName in attach()
-  std::vector<Variable> variable;
   std::vector<std::string> variableNames;  // in the sequence of variable
 
   std::vector<Variable> srcVariable;

@@ -40,12 +40,6 @@ InFile::applyOptions(void)
         continue;
       }
 
-      if( split[0] == "oCF" )
-      {
-        isOnlyCF=true;
-        continue;
-      }
-
       if( split[0] == "path" )
       {
         setFilename(split[1] + "/");
@@ -296,8 +290,42 @@ InFile::getUnlimitedVars(void)
   return t0;
 }
 
+std::string
+InFile::getTimeUnit(void)
+{
+   std::string any;
+   return getTimeUnit(any);
+}
+
+std::string
+InFile::getTimeUnit(std::string &vName)
+{
+  // Assumption:
+  // the only variable depending on the UNLIMITED dimension
+  // as single dimension and having the same name,
+  // i.e. a variable representation of the unlimited dim.
+  // Special: time is defined but not as unlimited
+
+  if( unlimitedName.size() == 0 )
+  {
+    std::string str;
+    return str;  // no variable, no attribute
+  }
+
+  vName=unlimitedName;
+  std::vector<std::string> dn;
+  nc.getAttValues(dn, "units", unlimitedName) ;
+
+  if( dn.size() > 0 )
+     return dn[0];
+
+  std::string str;
+  return str;  // attribute not found
+}
+
+
 void
-InFile::getVariableMeta(Variable &var)
+InFile::getVariableAtt(Variable &var)
 {
   var.id = nc.getVarID( var.name );
 
@@ -414,125 +442,6 @@ InFile::getVariableMeta(Variable &var)
   return ;
 }
 
-void
-InFile::getVariable(void)
-{
-  std::vector<std::string> ds;
-
-  for( size_t i=0 ; i < variable.size() ; ++i )
-  {
-    Variable &var = variable[i] ;
-
-    var.pIn = this;
-
-    // names of the dimensions
-    ds = nc.getDimName( var.name );
-
-    for( size_t j=0 ; j < ds.size() ; ++j)
-    {
-      var.dimName.push_back( ds[j] );
-      var.dimSize.push_back( nc.getDimSize(ds[j]) );
-
-      for( size_t k=0 ; k < variable.size() ; ++k)
-      {
-        if( variable[k].name == ds[j] )
-        {
-          var.dim_ix.push_back(k);
-          break;
-        }
-      }
-    }
-
-    // get meta data of variables.
-    getVariableMeta(var);
-  }
-
-  // make all objects, but GeoMeta which is postponed
-  for( size_t i=0 ; i < varSz ; ++i )
-    variable[i].makeObj(isInfNan);
-
-  // check for CF Convention.
-  cF->setFilename(file);
-  (void) cF->run();
-
-  if( isOnlyCF )
-     return;
-
-  // vector with indexes for targets and record-type targets;
-  for( size_t i=0 ; i < varSz ; ++i )
-  {
-    if( variable[i].coord.isC[3] )
-    {
-       // time is coordinate variable
-       // note: this is global; not specific to variables
-       isTime=true ;
-       timeName=variable[i].name;
-    }
-    else if( variable[i].isDATA )
-    {
-      if( ! variable[i].isUnlimited() )
-        variable[i].isFixed = true;
-
-      dataVarIndex.push_back(i);
-
-      // inquire parameters for GeoMeta objects;
-      // make GeoMeta obj for geo-related fields
-      setGeoParam(variable[i]) ;
-    }
-  }
-
-  if( ! dataVarIndex.size() )
-  {
-    size_t pos;
-    std::string fName;
-    if( (pos = fName.find("_")) < std::string::npos )
-      fName = fName.substr(0,pos) ;
-
-    for( size_t i=0 ; i < varSz ; ++i )
-    {
-      if( fName == variable[i].name )
-      {
-        dataVarIndex.push_back(i);
-        break;
-      }
-    }
-  }
-
-  return ;
-}
-
-std::string
-InFile::getTimeUnit(void)
-{
-   std::string any;
-   return getTimeUnit(any);
-}
-
-std::string
-InFile::getTimeUnit(std::string &vName)
-{
-  // Assumption:
-  // the only variable depending on the UNLIMITED dimension
-  // as single dimension and having the same name,
-  // i.e. a variable representation of the unlimited dim.
-  // Special: time is defined but not as unlimited
-
-  if( unlimitedName.size() == 0 )
-  {
-    std::string str;
-    return str;  // no variable, no attribute
-  }
-
-  vName=unlimitedName;
-  std::vector<std::string> dn;
-  nc.getAttValues(dn, "units", unlimitedName) ;
-
-  if( dn.size() > 0 )
-     return dn[0];
-
-  std::string str;
-  return str;  // attribute not found
-}
 
 int
 InFile::getVarIndex(std::string s)
@@ -544,6 +453,127 @@ InFile::getVarIndex(std::string s)
 
    return ix ;
 }
+
+void
+InFile::getVariableMD(std::vector<Variable>& variable, int mode)
+{
+  // get and analyse all variables and create Variable objects
+  // mode: 0: variables && global, 1: variables, 2: global
+  bool is[2]={true, true};
+
+  if( mode == 1 )
+      is[1] = false;
+  else if( mode == 2 )
+      is[0] = false;
+
+  if(is[0])
+  {
+    std::vector<std::string> vName( nc.getVarName() );
+
+    // effective num of variables without any trailing NC_GLOBAL
+    varSz = vName.size();
+    for(size_t j=0 ; j < varSz; ++j)
+    {
+        variable.push_back( *new Variable );
+        makeVariable(vName[j], variable.back(), j );
+
+        vIx[ vName[j] ] = j ;
+        variableNames.push_back(variable.back().name);
+
+        getVariableMD(variable.back());
+    }
+  }
+
+  // a pseudo-variable for the global attributes
+  if( is[1] && nc.getAttSize("NC_GLOBAL") )
+  {
+    variable.push_back( *new Variable );
+    makeVariable("NC_GLOBAL", variable.back());
+
+    variable.back().isExcluded=true;
+    vIx[ "NC_GLOBAL" ] = variable.size() -1 ;
+
+    // get meta data of variables.
+    getVariableAtt(variable.back());
+
+    vIx[ "NC_GLOBAL" ] = variable.size() -1 ;
+  }
+
+  size_t pos;
+  std::string vName(file.getBasename());
+  if( (pos = vName.find("_")) < std::string::npos )
+    vName = vName.substr(0,pos) ;
+  else
+    vName.clear();
+
+  for( size_t i=0 ; i < varSz ; ++i )
+  {
+    if( vName == variable[i].name )
+    {
+      dataVarIndex.push_back(i);
+     break;
+    }
+  }
+
+  return;
+}
+
+
+void
+InFile::getVariableMD(Variable& var)
+{
+  std::vector<std::string> ds;
+
+  var.pIn = this;
+
+  // names of the dimensions
+  ds = nc.getDimName( var.name );
+
+  for( size_t j=0 ; j < ds.size() ; ++j)
+  {
+    var.dimName.push_back( ds[j] );
+    var.dimSize.push_back( nc.getDimSize(ds[j]) );
+
+    for( size_t k=0 ; k < variable.size() ; ++k)
+    {
+      if( variable[k].name == ds[j] )
+      {
+        var.dim_ix.push_back(k);
+        break;
+      }
+    }
+  }
+
+  // get meta data of variables.
+  getVariableAtt(var);
+
+  // make objects, but GeoMeta which is postponed
+  var.makeObj(isInfNan);
+
+/*  set in CF which is not executed, yet
+  if( var.coord.isC[3] )
+  {
+    // time is coordinate variable
+    // note: this is global; not specific to variables
+    isTime=true ;
+    timeName=var.name;
+  }
+  else if( var.isDATA )
+  {
+    if( ! var.isUnlimited() )
+      var.isFixed = true;
+
+    dataVarIndex.push_back(var.id);
+
+    // inquire parameters for GeoMeta objects;
+    // make GeoMeta obj for geo-related fields
+    setGeoParam(var) ;
+  }
+*/
+
+  return;
+}
+
 
 void
 InFile::help(void)
@@ -632,8 +662,9 @@ InFile::initDefault(void)
   enableEntry=false;
   isInfNan=true;
   isInit=false;
-  isOnlyCF=false;
   isPrintGMT=false;
+
+  varSz=0;
 
   // set pointer to member function init()
   execPtr = &IObj::init ;
@@ -680,34 +711,6 @@ InFile::initRecProperties(int endRec)
   return;
 }
 
-void
-InFile::linkObject(IObj *p)
-{
-  std::string className = p->getObjName();
-
-  if( className == "X" )
-    notes = dynamic_cast<Annotation*>(p) ;
-  else if( className ==  "CF" )
-    cF = dynamic_cast<CF*>(p) ;
-
-#ifndef CF_MACRO
-  else if( className == "FD_interface" )
-    fDI = dynamic_cast<FD_interface*>(p) ;
-  else if( className ==  "IN" )
-    pIn = dynamic_cast<InFile*>(p) ;
-  else if( className == "Oper" )
-    pOper = dynamic_cast<Oper*>(p) ;
-  else if( className == "Out" )
-    pOut = dynamic_cast<OutFile*>(p) ;
-  else if( className == "QA" )
-    qA = dynamic_cast<QA*>(p) ;
-  else if( className == "TC" )
-    tC = dynamic_cast<TimeControl*>(p) ;
-#endif
-
-  return;
-}
-
 bool
 InFile::isVarUnlimited(std::string vName)
 {
@@ -734,6 +737,53 @@ InFile::isVarUnlimited(std::string vName)
   }
 
   return is;
+}
+
+void
+InFile::linkObject(IObj *p)
+{
+  std::string className = p->getObjName();
+
+  if( className == "X" )
+    notes = dynamic_cast<Annotation*>(p) ;
+
+#ifndef CF_MACRO
+  else if( className == "FD_interface" )
+    fDI = dynamic_cast<FD_interface*>(p) ;
+  else if( className ==  "IN" )
+    pIn = dynamic_cast<InFile*>(p) ;
+  else if( className == "Oper" )
+    pOper = dynamic_cast<Oper*>(p) ;
+  else if( className == "Out" )
+    pOut = dynamic_cast<OutFile*>(p) ;
+  else if( className == "QA" )
+    qA = dynamic_cast<QA*>(p) ;
+  else if( className == "TC" )
+    tC = dynamic_cast<TimeControl*>(p) ;
+#endif
+
+  return;
+}
+
+void
+InFile::makeVariable (std::string name, Variable& var, int id)
+{
+  var.name=name;
+
+  var.pGM=0;
+  var.pDS=0;
+  var.id=-1;
+  var.pSrcBase=0;
+  var.pIn=0;
+  var.pNc=&nc;
+  var.setID(id);
+
+  if( id == -1 )  // global
+    varNameMap[name] = variable.size() ;
+  else
+    varNameMap[name] = id ;
+
+  return;
 }
 
 bool
@@ -774,27 +824,6 @@ InFile::openNc(bool isNew)
     return false;
   isInit=true;
 
-  // get and analyse all variables and create Variable objects
-  std::vector<std::string> var( nc.getVarName() );
-
-  // effective num of variables without any trailing NC_GLOBAL
-  varSz = var.size();
-  for(size_t j=0 ; j < varSz; ++j)
-  {
-    makeVariable( &nc, var[j] );
-
-    vIx[ var[j] ] = j ;
-    variableNames.push_back(variable.back().name);
-  }
-
-  // a pseudo-variable for the global attributes
-  if( nc.getAttSize("NC_GLOBAL") )
-  {
-    makeVariable( &nc, "NC_GLOBAL" );
-    variable.back().isExcluded=true;
-    vIx[ "NC_GLOBAL" ] = variable.size() -1 ;
-  }
-
   // time-range properties
   clearRecProperties();
 
@@ -816,10 +845,26 @@ InFile::openNc(bool isNew)
     initRecProperties( nc.getDimSize("time") );
   }
 
-  // properties to be stored in Variable; most inquired by CF
-  getVariable();
-
   return false;
+}
+
+void
+InFile::pullGlobalMD(void)
+{
+  // mode: 2: MD(global)
+  getVariableMD(variable, 2);
+
+  return;
+}
+
+
+void
+InFile::pullVariablesMD(void)
+{
+  // mode: 1: MD(variables)
+  getVariableMD(variable, 1);
+
+  return;
 }
 
 void

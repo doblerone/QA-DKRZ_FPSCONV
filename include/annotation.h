@@ -165,7 +165,7 @@ class Annotation : public IObj
 
   size_t recErrCountLimit;
 
-  struct hdhC::FileSplit file;
+  hdhC::FileSplit file;
 
   std::string project;
   std::string tablePath;

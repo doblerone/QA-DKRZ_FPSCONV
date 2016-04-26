@@ -83,7 +83,7 @@ QA_Time::applyOptions(std::vector<std::string> &optStr)
 void
 QA_Time::finally(NcAPI *nc)
 {
-  if( ! (isTime || pQA->isCheckTime) )
+  if( ! (isTime || pQA->mapCheckMode["TIME"]) )
     return;
 
   timeOutputBuffer.flush();
@@ -339,7 +339,7 @@ QA_Time::init(std::vector<std::string>& optStr)
 
      if( time_ix == -1 )
      {
-       if( pQA->isCheckTime )
+       if( pQA->mapCheckMode["TIME"] )
          name="fixed";
 
        return false;

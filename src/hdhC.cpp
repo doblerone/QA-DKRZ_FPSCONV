@@ -3,6 +3,15 @@
 namespace hdhC
 {
 
+FileSplit&
+FileSplit::operator=(const FileSplit& fs)
+{
+  if( this != &fs )
+    copy(fs);
+
+  return *this;
+}
+
 void
 FileSplit::clear()
 {
@@ -14,6 +23,16 @@ FileSplit::clear()
    return;
 }
 
+void
+FileSplit::copy(const FileSplit &fs)
+{
+  is = fs.is;
+  filename = fs.filename;
+  basename = fs.basename;
+  extension = fs.extension;
+  path = fs.path;
+  return;
+}
 std::string
 FileSplit::getFile(void)
 {
@@ -69,17 +88,7 @@ FileSplit::setExtension(std::string f)
 }
 
 // ----------------------------------------------------
-/*
-struct FileSplit
-FileSplit::setFile(std::string f)
-{
-   struct FileSplit fC;
 
-   setFile(f, fC);
-
-   return fC;
-}
-*/
 void
 FileSplit::setFile(hdhC::FileSplit& f)
 {

@@ -1290,7 +1290,7 @@ set_fd_par()
 set_IN_par()
 {
   # construct directive sequence for in. Called from run
-  par=IN::0:CF::0:X::0
+  par=IN::0:X::0
 
   test ${ARITHMETIC_MEAN:-f} = t && \
     par=${par}":aM"
@@ -1318,7 +1318,7 @@ set_qa_par()
  local s
  local i tmp
 
- par=QA::0:IN::0:X::0
+ par=QA::0:IN::0:CF::0:X::0
  s=:
 
  par=${par}":f=qa_$name.nc"
