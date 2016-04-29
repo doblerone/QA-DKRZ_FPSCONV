@@ -44,6 +44,13 @@ int main(int argc,char *argv[])
   // runs also the cf checker
   in.init();
 
+  in.pullMetaData('G');
+  in.pullMetaData('T');
+  in.pullMetaData('V');
+
+  cf.setFilename(in.file);
+  (void) cf.run();
+
   cf.notes->printFlags();
 
   return cf.notes->getExitValue() ;

@@ -2456,8 +2456,12 @@ CF::linkObject(IObj *p)
     notes = dynamic_cast<Annotation*>(p) ;
   else if( className ==  "CF" )
     cF = dynamic_cast<CF*>(p) ;
+
+#ifndef CF_MACRO
   else if( className == "QA" )
     qA = dynamic_cast<QA*>(p) ;
+#endif
+  
   else if( className ==  "IN" )
     pIn = dynamic_cast<InFile*>(p) ;
 
