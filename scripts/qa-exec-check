@@ -939,14 +939,7 @@ parseKey()
   test $# -gt 0 && key=$1
 
   if [ ${key} = CHECK ] ; then
-    local arr=( ${mess} )
-    sTxt[${#sTxt[*]}]="3check:"
-    if [ ${#arr[*]} -eq 8 ] ; then
-      sTxt[${#sTxt[*]}]="4${arr[0]} ${arr[1]}"
-      sTxt[${#sTxt[*]}]="4${arr[2]} ${arr[3]}"
-      sTxt[${#sTxt[*]}]="4${arr[4]} ${arr[5]}"
-      sTxt[${#sTxt[*]}]="4${arr[6]} ${arr[7]}"
-    fi
+    sTxt[${#sTxt[*]}]="3conclusion: \'${mess}\'"
 
     # checksum, creation_date and tracking_id, if available
     getChecksum

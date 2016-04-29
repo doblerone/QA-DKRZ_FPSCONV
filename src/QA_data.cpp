@@ -410,7 +410,7 @@ Outlier::test(QA_Data *pQAD)
 
   bool retCode = false;
 
-  if( ! pQA->mapCheckMode["DATA"] )
+  if( ! pQA->isCheckData )
     return retCode;
 
   std::vector<std::string> names;
@@ -725,7 +725,7 @@ Outlier::test(QA_Data *pQAD)
 
         if( (retCode=notes->operate(capt, ostr.str())) )
         {
-          notes->setCheckDataStr(pQA->fail);
+          notes->setCheckStatus(pQA->n_data, pQA->n_fail);
         }
       }
     }
@@ -1187,7 +1187,7 @@ ReplicatedRecord::report(std::vector<std::string> &range,
 
      // note: no update of record_flag variable; already done
      (void) notes->operate(capt, text) ;
-     notes->setCheckDataStr(pQA->fail);
+     notes->setCheckStatus(pQA->n_data, pQA->n_fail);
    }
 
    return;
@@ -1246,7 +1246,7 @@ QA_Data::checkFinally(Variable *var)
        text += name;
 
        if( notes->operate(capt, text) )
-         notes->setCheckDataStr(pQA->fail);
+         notes->setCheckStatus(pQA->n_data, pQA->n_fail);
 
        // erase redundant map entries
        notes->eraseAnnotation("R200");
@@ -1267,7 +1267,7 @@ QA_Data::checkFinally(Variable *var)
        text += name;
 
        if( notes->operate(capt, text) )
-         notes->setCheckDataStr(pQA->fail);
+         notes->setCheckStatus(pQA->n_data, pQA->n_fail);
 
        // erase redundant map entries
        notes->eraseAnnotation("R100");
@@ -1284,7 +1284,7 @@ QA_Data::checkFinally(Variable *var)
         std::string capt("all data records are identical") ;
 
         notes->operate(capt) ;
-        notes->setCheckDataStr(pQA->fail);
+        notes->setCheckStatus(pQA->n_data, pQA->n_fail);
 
         // erase redundant map entries
         notes->eraseAnnotation("R3200");
@@ -1356,7 +1356,7 @@ QA_Data::disableTests(std::string name)
 int
 QA_Data::finally(int eCode)
 {
-  if( pQA->mapCheckMode["DATA"] )
+  if( pQA->isCheckData )
     // write pending results to qa-file.nc. Modes are considered there
     flush();
 
@@ -1470,7 +1470,7 @@ QA_Data::initBuffer(QA* p, size_t nxt, size_t mx)
 void
 QA_Data::initResumeSession(void)
 {
-  if( ! pQA->mapCheckMode["DATA"] )
+  if( ! pQA->isCheckData )
     return;
 
   // read data values from the previous QA run
@@ -1557,7 +1557,7 @@ QA_Data::openQA_NcContrib(NcAPI *nc, Variable *var)
   nc->setAtt(vName, "original_dimensions", str );
   nc->copyAtts(pIn->nc, vName, vName);
 
-  if( !pQA->mapCheckMode["DATA"] )
+  if( !pQA->isCheckData )
     return;
 
   // define qa-variables
@@ -1882,7 +1882,7 @@ QA_Data::testConst(hdhC::FieldData &fA)
     capt += hdhC::tf_val(hdhC::itoa(pQA->pIn->currRec));
 
     (void) notes->operate(capt) ;
-    notes->setCheckDataStr(pQA->fail);
+    notes->setCheckStatus(pQA->n_data, pQA->n_fail);
   }
   return true;
 }
@@ -1902,7 +1902,7 @@ QA_Data::testInfNaN(hdhC::FieldData &fA)
     capt += hdhC::tf_val( hdhC::itoa(pIn->currRec));
 
     (void) notes->operate(capt) ;
-    notes->setCheckDataStr(pQA->fail);
+    notes->setCheckStatus(pQA->n_data, pQA->n_fail);
   }
 
   return true ;
@@ -1959,7 +1959,7 @@ QA_Data::testValidity(hdhC::FieldData &fA)
     capt += hdhC::tf_val(hdhC::itoa(pIn->currRec));
 
     (void) notes->operate(capt) ;
-    notes->setCheckDataStr(pQA->fail);
+    notes->setCheckStatus(pQA->n_data, pQA->n_fail);
   }
 
   return false ;

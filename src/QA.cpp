@@ -168,12 +168,6 @@ QA::applyOptions(bool isPost)
         continue;
      }
 
-     if( split[0] == "oCF" )
-     {
-        isOnlyCF=true;
-        continue;
-     }
-
      if( split[0] == "oT"
            || split[0] == "outlierTest"
                 || split[0] == "outlier_test" )
@@ -236,22 +230,21 @@ QA::checkDataBody(std::string vName)
     {
       Variable& var = pIn->variable[i];
       if( var.name == vName )
-        return pIn->nc.isEmptyData(var.name) ;
+        return ! pIn->nc.isEmptyData(var.name) ;
     }
   }
   else if( ! pIn->dataVarIndex.size() )
-    return true;
+    return false;
 
   std::vector<size_t> vs;
 
   for( size_t i=0 ; i < pIn->dataVarIndex.size() ; ++i)
   {
     Variable& var = pIn->variable[ pIn->dataVarIndex[i] ];
-    if( ! pIn->nc.isEmptyData(var.name) )
-    {
+    if( pIn->nc.isEmptyData(var.name) )
+      notes->setCheckStatus(n_data, n_fail);
+    else
       vs.push_back(pIn->dataVarIndex[i]) ;
-      notes->setCheckDataStr(fail);
-    }
   }
 
   if( vs.size() )
@@ -259,9 +252,9 @@ QA::checkDataBody(std::string vName)
     pIn->dataVarIndex = vs ;
   else
     // all data variables without any data
-    return true;
+    return false;
 
-  return false;
+  return true;
 }
 
 void
@@ -292,7 +285,7 @@ QA::checkConsistency(InFile &in, std::vector<std::string> &opt,
 void
 QA::closeEntry(void)
 {
-   if(mapCheckMode["DATA"])
+   if( isCheckData )
    {
      // data: structure defined in hdhC.h
      for( size_t i=0 ; i < qaExp.varMeDa.size() ; ++i )
@@ -338,7 +331,16 @@ QA::defaultPrjTableName(void)
 bool
 QA::entry(void)
 {
-   if(mapCheckMode["DATA"])
+   if( !isCheckData )
+     return true;
+
+   // no data section provided in the NetCDF file; enable
+   // a single loop
+   if( pIn->currRec == pIn->ncRecEnd )
+      ++pIn->ncRecEnd;
+
+   // records could have been reset by TC,
+   for( ; pIn->currRec < pIn->ncRecEnd ; pIn->currRec += pIn->recStride )
    {
      // read next field
      pIn->entry() ;
@@ -375,11 +377,14 @@ QA::entry(void)
          } while ( var.pGM->cycleLayers() ) ; //cycle through levels
        }
      }
+
+     // the final for this record
+     closeEntry();
+
+     isNotFirstRecord = true;
    }
 
-   // the final for this record
-   closeEntry();
-   return false;
+   return true;
 }
 
 int
@@ -401,8 +406,10 @@ QA::finally(int xCode)
     isExit=true;
 
     if(nc)
-      nc->close();
-    return xCode ;
+    {
+        nc->close();
+        nc=0;
+    }
   }
 
   if( nc )
@@ -412,6 +419,9 @@ QA::finally(int xCode)
 
     // post-processing
     xCode = finally_data(xCode) ;
+
+    nc->close();
+    nc=0;
   }
 
   setExit(xCode);
@@ -419,8 +429,6 @@ QA::finally(int xCode)
   // distinguish from a sytem crash (segmentation error)
   std::cout << "STATUS-BEG" << xCode << "STATUS-END";
   std::cout << std::flush;
-
-  nc->close();
 
   return exitCode ;
 }
@@ -439,7 +447,7 @@ QA::finally_data(int xCode)
         if( exitCode == 63 )
             exitCode=1;  // this is considered a change
 
-        notes->setCheckDataStr(fail);
+        notes->setCheckStatus(n_data, n_fail);
       }
     }
   }
@@ -447,7 +455,7 @@ QA::finally_data(int xCode)
   // read history from the qa-file.nc and append new entries
   appendToHistory();
 
-  if(mapCheckMode["DATA"])
+  if( isCheckData )
   {
     // check for flags concerning the total data set,
     // but exclude the case of no record
@@ -515,13 +523,31 @@ QA::init(void)
    applyOptions();
 
    if(isRequiredVariable)
-       pIn->pullVariablesMD();
+     pIn->pullMetaData('V');
+
+   if(isRequiredTime && !isRequiredVariable)
+     pIn->pullMetaData('T');
 
    if(isRequiredGlobal)
-       pIn->pullGlobalMD();
+     pIn->pullMetaData('G');
 
-   // DRS and CV specifications
-   if( mapCheckMode["DRS"] || mapCheckMode["CV"] )
+   initCheckStatus();
+
+   // check for CF Convention.
+   if(isCheckCF)
+   {
+     cF->setFilename(pIn->file);
+     (void) cF->run();
+   }
+
+   // exclude user-defined data variables from any checking
+   pIn->excludeVars();
+
+   qaTime.init(optStr);
+   qaExp.init(optStr);
+
+   // DRS specifications
+   if(isCheckDRS)
    {
      drs_cv_table.setParent(this);
      drs_cv_table.setPath(tablePath);
@@ -529,55 +555,31 @@ QA::init(void)
      drs_cv_table.read();
    }
 
-   if(mapCheckMode["CF"])
+   // experiment specific obj: set parent, pass over options
+   qaExp.run();
+
+   // check existance of any data at all
+   if( pIn->ncRecBeg == 0 && pIn->ncRecEnd == 0 )
    {
-      // check for CF Convention.
-      cF->setFilename(pIn->file);
-      (void) cF->run();
-   }
+      isCheckData=false;
 
-   if(mapCheckMode["TIME"])
-     qaTime.init(optStr);
-
-   if(mapCheckMode["DRS"]
-        || mapCheckMode["CV"]
-          || mapCheckMode["META"]
-            || mapCheckMode["DATA"] )
-   {
-      // exclude user-defined data variables from any checking
-      pIn->excludeVars();
-
-      qaExp.init(optStr);
-
-      // experiment specific obj: set parent, pass over options
-      qaExp.run();
-
-      // check existance of any data at all
-      if( (qaTime.isTime || mapCheckMode["DATA"] )
-            && pIn->ncRecBeg == 0 && pIn->ncRecEnd == 0 )
+      std::string key("6_15");
+      if( notes->inq( key, fileStr) )
       {
-         mapCheckMode["DATA"]=false;
+        std::string capt("No records in the file") ;
 
-         std::string key("6_15");
-         if( notes->inq( key, fileStr) )
-         {
-           std::string capt("No records in the file") ;
-
-           if( notes->operate(capt) )
-           {
-             notes->setCheckMetaStr( fail );
-             notes->setCheckTimeStr( fail );
-             notes->setCheckDataStr( fail );
-             setExit( notes->getExitValue() ) ;
-           }
-         }
+        if( notes->operate(capt) )
+        {
+          notes->setCheckStatus(n_data,  n_fail );
+          setExit( notes->getExitValue() ) ;
+        }
       }
    }
 
-   notes->setConstraintFreq( qaExp.getFrequency() );
-
-   if( mapCheckMode["DATA"] )
+   if(isCheckData || isCheckTimeValues)
    {
+     notes->setConstraintFreq( qaExp.getFrequency() );
+
      // enable detection of outlier and replicated records
      setProcessing();
 
@@ -587,52 +589,80 @@ QA::init(void)
 
      if( getExit() || qaExp.isUseStrict || qaTime.isNoProgress )
      {
-       mapCheckMode["DATA"]=false;
+       isCheckData=false;
        return true;
      }
+
    }
 
    // check consistency between sub-sequent files or experiments
-   checkConsistency(*pIn, optStr, tablePath) ;
+   if(isCheckCNSTY)
+      checkConsistency(*pIn, optStr, tablePath) ;
 
-   if( !mapCheckMode["TIME"] )
-     notes->setCheckTimeStr("OMIT");
-   else if( qaTime.isTime && checkDataBody(qaTime.name) )
+   if(isCheckTimeValues && !qaTime.isTime)
+      notes->setCheckStatus(n_time, "FIXED");
+
+   if(isCheckTimeValues)
    {
-     // time is defined, but there is no data
-     qaTime.isTime = false;
-     notes->setCheckTimeStr(fail);
+      if( qaTime.isTime)
+      {
+         if( !checkDataBody(qaTime.name) )
+         {
+           // time is defined, but there is no data
+           qaTime.isTime = false;
+           notes->setCheckStatus(n_time, n_fail);
+         }
+      }
    }
-   else if( ! qaTime.isTime )
-     notes->setCheckTimeStr("FIXED");
-   else
-     notes->setCheckTimeStr("PASS");
 
-//   if( isCheckData )
-//   {
-     if( checkDataBody() )
+   if( isCheckData )
+   {
+     if( !checkDataBody() )
      {
-       notes->setCheckDataStr(fail);
+       notes->setCheckStatus(n_data, n_fail);
        return true;
      }
+   }
 
-   if( !mapCheckMode["DATA"] )
-     notes->setCheckDataStr("OMIT");
-
-   if( mapCheckMode["TIME"] || mapCheckMode["DATA"] )
+   if( isCheckData || isCheckTimeValues )
    {
      // set pointer to function for operating tests
-     execPtr = &IObj::entry ;
-     bool is = entry();
-
-     if( getExit() || is )
-       return true;
-
-     isNotFirstRecord = true;
-     return false;
+//     execPtr = &IObj::entry ;
+     (void) entry();
    }
 
    return true;  // only meta-data check
+}
+
+void
+QA::initCheckStatus(void)
+{
+   if(isCheckCF)
+     cF->setCheckStatus("PASS");
+   else
+     cF->setCheckStatus(n_disabled);
+
+   if(isCheckDRS)
+     notes->setCheckStatus("DRS", "PASS");
+   else
+     notes->setCheckStatus("DRS", n_disabled);
+
+   if(isCheckCV)
+     notes->setCheckStatus("CV", "PASS");
+   else
+     notes->setCheckStatus( "CV", n_disabled);
+
+   if(isCheckTimeValues)
+     notes->setCheckStatus(n_time, "PASS");
+   else
+     notes->setCheckStatus(n_time, n_disabled);
+
+   if(isCheckData)
+     notes->setCheckStatus(n_data, "PASS");
+   else
+     notes->setCheckStatus(n_data, n_disabled);
+
+   return;
 }
 
 void
@@ -644,7 +674,7 @@ QA::initDataOutputBuffer(void)
     qaTime.sharedRecordFlag.initBuffer(this, currQARec, bufferSize);
   }
 
-  if(mapCheckMode["DATA"])
+  if( isCheckData )
     qaExp.initDataOutputBuffer();
 
   return;
@@ -670,7 +700,10 @@ QA::initDefaults(void)
   // time steps are regular. Unsharp logic (i.e. month
   // Jan=31, Feb=2? days is ok, but also numerical noise).
 
-  fail="FAIL";
+  n_data="DATA";
+  n_fail="FAIL";
+  n_time="TIME";
+  n_disabled="disabled";
   fileStr="file";
   notAvailable="not available";
   s_global="global";
@@ -700,13 +733,15 @@ QA::initDefaults(void)
   currQARec=0;
 
   // pre-set check-modes: all are used by default
-  mapCheckMode["CF"] = true;
-  mapCheckMode["CV"] = true;
-  mapCheckMode["DATA"] = true;
-  mapCheckMode["DRS"] = true;
-  mapCheckMode["META"] = true;
-  mapCheckMode["TIME"] = true;
+  isCheckCF=true;
+  isCheckCNSTY=true;
+  isCheckCV=true;
+  isCheckData=true;
+  isCheckDRS=true;
+  isCheckTime=true;
+  isCheckTimeValues=true;
 
+  isRequiredTime=true;
   isRequiredVariable=true;
   isRequiredGlobal=true;
 
@@ -783,7 +818,7 @@ QA::initResumeSession(void)
   qaTime.timeOutputBuffer.setNextFlushBeg(currQARec);
   qaTime.setNextFlushBeg(currQARec);
 
-  if( qaTime.isTime && mapCheckMode["TIME"] )
+  if( qaTime.isTime && isCheckTime )
     qaTime.initResumeSession();
 
   return;
@@ -901,7 +936,7 @@ QA::openQA_Nc(InFile &in)
       std::string capt("openQA_Nc(): undefined file.") ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckMetaStr(fail);
+      notes->setCheckStatus("QA_open", n_fail);
       setExit( notes->getExitValue() ) ;
       return;
     }
@@ -910,11 +945,6 @@ QA::openQA_Nc(InFile &in)
   nc = new NcAPI;
   if( notes )
     nc->setNotes(notes);
-
-  // don't create a netCDF file, when only meta data are to be checked.
-  // but, NcAPI object nc must exist.
-  if( ! (mapCheckMode["TIME"] || mapCheckMode["DATA"])  )
-    return;
 
   if( nc->open(qaFile.getFile(), "NC_WRITE", false) )
   {
@@ -944,13 +974,16 @@ QA::openQA_Nc(InFile &in)
   else
     nc->create(qaFile.getFile(),  "NC_NETCDF4");
 
-  if( qaTime.time_ix > -1 || !mapCheckMode["TIME"] )
-    qaTime.openQA_NcContrib(nc);
-  else
+  if( isCheckTimeValues)
   {
-    // dimensions
-    qaTime.name="fixed";
-    nc->defineDim("fixed", 1);
+    if( qaTime.time_ix > -1 )
+      qaTime.openQA_NcContrib(nc);
+    else
+    {
+      // dimensions
+      qaTime.name="fixed";
+      nc->defineDim("fixed", 1);
+    }
   }
 
     // create variable for the data statistics etc.
@@ -970,7 +1003,7 @@ QA::postProc(void)
 {
   bool retCode=false;
 
-  if( ! mapCheckMode["DATA"] )
+  if( ! isCheckData )
     return retCode;
 
   if( postProc_outlierTest() )
@@ -1116,13 +1149,15 @@ QA::postProc_outlierTest(void)
 void
 QA::setCheckMode(std::string m)
 {
-  mapCheckMode["CF"] = false;
-  mapCheckMode["CV"] = false;
-  mapCheckMode["DATA"] = false;
-  mapCheckMode["DRS"] = false;
-  mapCheckMode["META"] = false;
-  mapCheckMode["TIME"] = false;
+  isCheckCF=false;
+  isCheckCNSTY=false;
+  isCheckCV=false;
+  isCheckData=false;
+  isCheckDRS=false;
+  isCheckTime=false;
+  isCheckTimeValues=false;
 
+  isRequiredTime=false;
   isRequiredVariable=false;
   isRequiredGlobal=false;
 
@@ -1131,36 +1166,60 @@ QA::setCheckMode(std::string m)
   {
     if( cvs[j] == "cf" )
     {
-      mapCheckMode["CF"] = true;
+      isCheckCF=true ;
+
+      isRequiredTime=true;
       isRequiredVariable=true;
       isRequiredGlobal=true;
+
+    }
+    if( cvs[j] == "cnsty" )
+    {
+      isCheckCNSTY=true ;
     }
     else if( cvs[j] == "cv" )
     {
-      mapCheckMode["CV"] = true;
+      isCheckCV=true ;
+//      isCheckCNSTY=true ;
+      isCheckTime=true ;
+
+      isRequiredTime=true;
       isRequiredGlobal=true;
+      isRequiredVariable=true;
     }
     else if( cvs[j] == "data" )
     {
-      mapCheckMode["DATA"] = true;
+      isCheckTime=true ;
+      isCheckTimeValues=true ;
+      isCheckData=true ;
+
+      isRequiredTime=true;
       isRequiredVariable=true;
       isRequiredGlobal=true;
     }
     else if( cvs[j] == "drs" )
     {
-      mapCheckMode["DRS"] = true;
+      isCheckDRS=true ;
       isRequiredGlobal=true;
     }
     else if( cvs[j] == "meta" )
     {
-      mapCheckMode["META"] = true;
-      isRequiredVariable=true;
+      isCheckCF=true ;
+//      isCheckCNSTY=true ;
+      isCheckCV=true ;
+      isCheckDRS=true ;
+      isCheckTime=true ;
+
       isRequiredGlobal=true;
+      isRequiredTime=true;
+      isRequiredVariable=true;
     }
     else if( cvs[j] == "time" )
     {
-      mapCheckMode["TIME"] = true;
-      isRequiredVariable=true;
+      isCheckTime=true ;
+      isCheckTimeValues=true ;
+
+      isRequiredTime=true;
       isRequiredGlobal=true;
     }
   }

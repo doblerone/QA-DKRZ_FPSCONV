@@ -7,14 +7,12 @@
 #include "qa_data.h"
 #include "qa_drs_cv_table.h"
 #include "qa_time.h"
-#include "qa_PT.h"
+#include "qa_cnsty.h"
 
 #if defined CORDEX
   #include "qa_CORDEX.h"
 #elif defined CMIP5
   #include "qa_CMIP5.h"
-#else
-  #include "qa_NONE.h"
 #endif
 
 
@@ -105,6 +103,8 @@ class QA : public IObj
   static void
          help(void);
 
+  void   initCheckStatus(void);
+
   //! Initialisation of flushing gathered results to netCDF file.
   /*! Parameter indicates the number of variables. */
   void   initDataOutputBuffer(void);
@@ -191,16 +191,15 @@ class QA : public IObj
 
   size_t nextRecords;
 
-  std::map<std::string, bool> mapCheckMode;
-/*
   bool isCheckCF;
   bool isCheckCV;
+  bool isCheckCNSTY;
   bool isCheckData;
   bool isCheckDRS;
-  bool isCheckMeta;
   bool isCheckTime;
-*/
+  bool isCheckTimeValues;
 
+  bool isRequiredTime;
   bool isRequiredVariable;
   bool isRequiredGlobal;
 
@@ -222,7 +221,11 @@ class QA : public IObj
   static std::string tableSheet;
   static std::string tableSheetSub;
 
-  std::string fail;
+  std::string n_data;
+  std::string n_time;
+  std::string n_disabled;
+  std::string n_pass;
+  std::string n_fail;
   std::string fileStr;
   std::string notAvailable;
   std::string s_global;

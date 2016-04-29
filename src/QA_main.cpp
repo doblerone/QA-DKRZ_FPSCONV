@@ -31,14 +31,12 @@
 #include "QA_data.cpp"
 #include "QA_DRS_CV_Table.cpp"
 #include "QA_time.cpp"
-#include "QA_PT.cpp"
+#include "QA_cnsty.cpp"
 
 #if defined CORDEX
   #include "QA_CORDEX.cpp"
 #elif defined CMIP5
   #include "QA_CMIP5.cpp"
-#else
-  #include "QA_NONE.cpp"
 #endif
 
 #include "TimeControl.cpp"
@@ -119,12 +117,8 @@ bool entry(std::vector<IObj*> &vIObj)
   if( pin == 0 )
      return false;  // no InFile
 
-  // no data section provided in the NetCDF file; enable
-  // a single loop
-  if( pin->currRec == pin->ncRecEnd )
-    ++pin->ncRecEnd;
-
   // records could have been reset by TC,
+/*
   for( ; pin->currRec < pin->ncRecEnd
            ; pin->currRec += pin->recStride )
   {
@@ -137,13 +131,13 @@ bool entry(std::vector<IObj*> &vIObj)
     // given for the calculation of frequency distributions,
     // depending on the selections in the configuration.
     // (Time control is imbedded in the InFile object).
-
+*/
     // The called method return true, if a break condition was found,
     // e.g. termination due to a time constraint
     for( i=objLoopBeg ; i < loopObj.size() ; ++i )
        if( (loopObj[i]->*(loopObj[i]->execPtr))() )
          return false;
-  }  // record loop
+//  }  // record loop
 
   return false ;  // end of record or end of time window
 }
@@ -178,61 +172,66 @@ finally(IObjContainer &ioc)
     }
 
     // get check results
-    std::vector<Split> cRes;
+    std::map<std::string, std::string> status_id;
+    std::map<std::string, int> status_rank;
 
-    // precedence: N/A==4, FAIL==3, PASS==2, FIXED==1, OMIT==0
-    std::string cTag[5] = { "N/A", "OMIT", "FIXED", "PASS", "FAIL" };
-    size_t cTagSz = 5;
+    Split x_res;
+    x_res.setSeparator("|");
+    Split x_rank;
+    x_rank.setSeparator("=");
+    Split x_item;
+    x_item.setSeparator("%");
 
-    std::vector<std::vector<int> >   cRank;
-
-    // collect the check results from all annotation objects.
+    // Check conclusions from all annotation objects.
+    // When there are more than a single set of check results per annotation object,
+    // then these stre merged according to the ranking
+    // FAIL:4, PASS: 3, FIXED: 2, disabled: 1, N/A: 0
+    // getCheckRsults() returns: CF_conv:string=rank|meta-data:string=rank ...
     for( size_t i=0 ; i < ioc.an.size() ; ++i)
     {
       if( &ioc.an[i] )
       {
         ioc.an[i].printFlags();
 
-        cRes.push_back( Split( ioc.an[i].getCheckResults() ) );
-
-        size_t cRankSz = cRes.back().size() / 2;
-        cRank.push_back( std::vector<int>(cRankSz, 0) );
-
-        for( size_t j=0 ; j < cRankSz ; ++j)
+        x_res = ioc.an[i].getCheckStatus(true);
+        for( size_t i=0 ; i < x_res.size() ; ++i )
         {
-          for( size_t l=0 ; l < cTagSz ; ++l)
-          {
-            // cRes-index: 0: type, 1: result, 2: ...
-            if( cRes.back()[2*j + 1] == cTag[l] )
+            x_rank = x_res[i];
+            x_item = x_rank[0];
+            int rank = hdhC::string2Double(x_rank[1]);
+
+            if( status_id.count(x_rank[0]) == 0 )
             {
-              cRank.back()[j] = l;
-              break;
+              status_id[x_item[0]] = x_item[1] ;
+              status_rank[x_item[0]] = rank;
             }
-          }
+            else
+            {
+               if( rank >= status_rank[x_item[0]] )
+               {
+                  status_id[x_item[0]] = x_item[1] ;
+                  status_rank[x_item[0]] = rank;
+               }
+            }
         }
       }
     }
 
-    // When there are more than a single set of check results, then
-    // merge theses sets whith a ranking of precedence between 'N/A'
-    // and 'FAIL', the latter as highest.
-    for( size_t i=1 ; i < cRank.size() ; ++i )
-    {
-      for( size_t j=0 ; j < cRank[i].size() ; ++j )
-        if( cRank[i][j] > cRank[0][j] )
-           cRank[0][j] = cRank[i][j] ;
-    }
-
     // print check results
     std::string out( "CHECK-BEG" );
-    size_t N = cRank[0].size();
 
-    for( size_t i=0 ; i < N ; ++i )
+    std::map<std::string, std::string>::iterator it;
+
+    bool isComma=false;
+    for( it=status_id.begin() ; it != status_id.end() ; ++it )
     {
-      out += cRes[0][2*i] + " ";
-      out += cTag[ cRank[0][i] ];
-      if( i < N )
-        out += " ";
+      if(isComma)
+        out += ", ";
+      out += it->first;
+      out += ": ";
+      out += it->second;
+
+      isComma=true;
     }
 
     out += "CHECK-END";  // mark of the end of an output line
@@ -791,8 +790,7 @@ updateIn(std::vector<InFile> &in)
   // start reading and processing
   for( size_t j=0 ; j < in.size() ; ++j )
   {
-    // Note: error detection and exit in the method
-    in[j].init();
+    in[j].init();  // Note: error detection and exit in the method
 
     // synchronise start and end records of the nc-file
     // to optional time limits.

@@ -71,7 +71,7 @@ class Annotation : public IObj
   std::vector<std::string>
        getAnnotation(std::string tag, std::vector<std::string>& txt);
   std::string
-       getCheckResults(void);
+       getCheckStatus(bool with_rank=false);
   int  getExitValue(void);
   int  getFlag(void);
   void initDefaults(void);
@@ -127,10 +127,9 @@ class Annotation : public IObj
   //! Read a check-list file.
   void readConf(void);
 
-  void setCheckCF_Str(std::string s) {checkCF_Str=s;}
-  void setCheckMetaStr(std::string s) {checkMetaStr=s;}
-  void setCheckTimeStr(std::string s) {checkTimeStr=s;}
-  void setCheckDataStr(std::string s) {checkDataStr=s;}
+  //int: rank; -1 not provided
+  void setCheckStatus(std::string id, std::string s, bool add=false);
+
   void setConfVector(std::string txt, std::string brace);
   void setConstraintValue(std::string s){ constraintValue=s;}
   void setConstraintFreq(std::string s){ constraintFrq=s;}
@@ -195,13 +194,11 @@ class Annotation : public IObj
 
   size_t countMultipleTags;
 
-  // map occurrences of check strings
-  std::string checkCF_Str;
-  std::string checkMetaStr;
-  std::string checkDataStr;
-  std::string checkTimeStr ;
   std::string currName;
   std::string useAlways;
+
+  std::map<std::string, std::string> checkID;
+  std::map<std::string, int>         checkRank;
 
   bool isAccumText;
   bool isCheckResultsWasPrinted;

@@ -16,7 +16,7 @@ Base::operator=( const Base &b)
 {
   if( this != &b )
     copy(b);
-  
+
   return *this;
 }
 
@@ -188,7 +188,6 @@ Base::copy(const Base &b)
 bool
 Base::exceptionHandling(std::string key,
   std::string capt, std::string text,
-  std::vector<std::string> &checkType,
   std::string vName )
 {
    if( notes )
@@ -202,18 +201,7 @@ Base::exceptionHandling(std::string key,
      if( ! notes->inq(key, vName ) )
        return false;  // if discarded
 
-     for( size_t i=0 ; i < checkType.size() ; ++i )
-     {
-       if( checkType[i] == "meta" )
-         notes->setCheckMetaStr("FAIL");
-       else if( checkType[i] == "time" )
-         notes->setCheckTimeStr("FAIL");
-       else if( checkType[i] == "data" )
-         notes->setCheckDataStr("FAIL");
-       else if( checkType[i] == "cf" )
-         notes->setCheckCF_Str("FAIL");
-     }
-
+     notes->setCheckStatus("Base", "FAIL");
      return notes->operate(capt, text);
    }
 

@@ -7,7 +7,7 @@
 #include "qa.h"
 #include "qa_data.h"
 #include "qa_time.h"
-#include "qa_PT.h"
+#include "qa_cnsty.h"
 
 //! Quality Control Program Unit for CMIP5.
 /*! All the QA considerations are covered by this class.\n

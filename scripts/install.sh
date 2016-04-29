@@ -481,8 +481,6 @@ makeProject()
     if [ ${PROJECT} = CF ] ; then
       local cfc=CF-checker
       CXXFLAGS="${cxxFlags} -D CF_MACRO"
-#      export QA_PRJ_HEADER=qa_NONE.h
-#      export QA_PRJ_SRC=QA_NONE.cpp
 
     elif [ ${PROJECT} = MODIFY ] ; then
       MAKEFILE=Makefile_modify

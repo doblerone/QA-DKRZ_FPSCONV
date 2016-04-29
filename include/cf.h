@@ -202,6 +202,7 @@ template <typename T>
   bool   scanStdNameTable(std::vector<int>& zx);
   bool   scanStdNameTable(ReadLine&, Variable&, std::string);
   bool   setCheck(std::string&);
+  void   setCheckStatus(std::string);
   void   setFollowRecommendations(bool b){followRecommendations=b;}
 //  void   setTable(std::string p){ std_name_table=p; }
 
@@ -248,6 +249,7 @@ template <typename T>
   std::string n_cell_measures;
   std::string n_cell_methods;
   std::string n_cf_role;
+  std::string n_CF;
   std::string n_climatology;
   std::string n_compress;
   std::string n_Conventions;

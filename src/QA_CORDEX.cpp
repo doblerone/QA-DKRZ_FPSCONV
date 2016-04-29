@@ -91,7 +91,7 @@ DRS_CV::checkDrivingExperiment(void)
       capt += hdhC::tf_val(str) ;
 
       (void) notes->operate( capt) ;
-      notes->setCheckMetaStr(pQA->fail);
+      notes->setCheckStatus("DRS", pQA->n_fail);
     }
 
     return;
@@ -151,7 +151,7 @@ DRS_CV::checkDrivingExperiment(void)
         }
 
         (void) notes->operate( capt, text) ;
-        notes->setCheckMetaStr(pQA->fail);
+        notes->setCheckStatus("DRS", pQA->n_fail);
       }
     }
   }
@@ -179,7 +179,7 @@ DRS_CV::checkFilename(std::string& fName, struct DRS_CV_Table& drs_cv_table)
       std::string capt("filename requires a period");
 
       (void) notes->operate(capt) ;
-      notes->setCheckMetaStr(pQA->fail);
+      notes->setCheckStatus("DRS", pQA->n_fail);
     }
   }
 
@@ -244,7 +244,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
         if( notes->inq( key, "DRS") )
         {
           (void) notes->operate(capt) ;
-          notes->setCheckMetaStr(pQA->fail);
+          notes->setCheckStatus("DRS", pQA->n_fail);
         }
       }
 
@@ -308,14 +308,14 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
 
   if( text.size() )
   {
-    std::string capt("DRS CV filename:");
+    std::string capt("DRS (filename):");
 
     for(size_t i=0 ; i < text.size() ; ++i )
     {
       if( notes->inq( keys[i], "DRS") )
       {
         (void) notes->operate(capt+text[i]) ;
-        notes->setCheckMetaStr(pQA->fail);
+        notes->setCheckStatus("DRS", pQA->n_fail);
       }
     }
   }
@@ -351,7 +351,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 
          if( notes->operate(capt) )
          {
-           notes->setCheckMetaStr( pQA->fail );
+           notes->setCheckStatus("DRS", pQA->n_fail );
            pQA->setExit( notes->getExitValue() ) ;
          }
       }
@@ -415,7 +415,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 
        if( notes->operate(capt) )
        {
-         notes->setCheckMetaStr( pQA->fail );
+         notes->setCheckStatus("DRS",  pQA->n_fail );
          pQA->setExit( notes->getExitValue() ) ;
        }
      }
@@ -435,7 +435,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 
        if( notes->operate(capt) )
        {
-         notes->setCheckMetaStr( pQA->fail );
+         notes->setCheckStatus("DRS", pQA->n_fail );
          pQA->setExit( notes->getExitValue() ) ;
        }
      }
@@ -457,7 +457,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 
        if( notes->operate(capt) )
        {
-         notes->setCheckMetaStr( pQA->fail );
+         notes->setCheckStatus("DRS", pQA->n_fail );
          pQA->setExit( notes->getExitValue() ) ;
        }
      }
@@ -501,7 +501,7 @@ DRS_CV::checkNetCDF(void)
       text += s;
 
       (void) notes->operate( capt, text ) ;
-      notes->setCheckMetaStr( pQA->fail);
+      notes->setCheckStatus("DRS", pQA->n_fail);
     }
   }
 
@@ -529,7 +529,7 @@ DRS_CV::checkProductName(std::string& drs_product,
 
   if( notes->inq( key, "DRS") )
   {
-    std::string capt("DRS CV fault for path component <product>, found") ;
+    std::string capt("DRS fault for path component <product>, found") ;
     capt += hdhC::tf_val(drs_product) ;
     capt += ", expected one of";
     capt += hdhC::tf_val(prod_choice);
@@ -592,7 +592,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
         if( notes->inq( key, "DRS") )
         {
           (void) notes->operate(capt) ;
-          notes->setCheckMetaStr(pQA->fail);
+          notes->setCheckStatus("DRS", pQA->n_fail);
         }
       }
 
@@ -691,14 +691,14 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 
   if( text.size() )
   {
-    std::string capt("DRS CV path:");
+    std::string capt("DRS path:");
 
     for( size_t i=0 ; i < text.size() ; ++i )
     {
       if( notes->inq( keys[i], pQA->fileStr) )
       {
         (void) notes->operate(capt+text[i]) ;
-        notes->setCheckMetaStr(pQA->fail);
+        notes->setCheckStatus("DRS", pQA->n_fail);
       }
     }
   }
@@ -902,7 +902,7 @@ DRS_CV::testPeriod(Split& x_f)
        capt += hdhC::tf_val(sd[0] + "-" + sd[1]);
 
        (void) notes->operate(capt) ;
-       notes->setCheckMetaStr( pQA->fail );
+       notes->setCheckStatus("DRS", pQA->n_fail );
      }
 
      return false;
@@ -942,7 +942,7 @@ DRS_CV::testPeriod(Split& x_f)
         capt += "is not centred around <time> value." ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckMetaStr( pQA->fail );
+        notes->setCheckStatus("DRS", pQA->n_fail );
       }
     }
   }
@@ -958,7 +958,7 @@ DRS_CV::testPeriod(Split& x_f)
         capt += "is missing";
 
         (void) notes->operate(capt) ;
-        notes->setCheckMetaStr(pQA->fail);
+        notes->setCheckStatus("DRS", pQA->n_fail);
       }
     }
   }
@@ -991,7 +991,7 @@ DRS_CV::testPeriod(Split& x_f)
           {
             (void) notes->operate(capt + text[i]) ;
 
-            notes->setCheckMetaStr( pQA->fail );
+            notes->setCheckStatus("DRS", pQA->n_fail );
           }
         }
       }
@@ -1100,7 +1100,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
 
 
         (void) notes->operate(capt) ;
-        notes->setCheckMetaStr( pQA->fail );
+        notes->setCheckStatus("DRS", pQA->n_fail );
       }
     }
   }
@@ -1363,7 +1363,7 @@ DRS_CV::testPeriodCut_CMOR_isGOD(std::vector<std::string> &sd, Date**)
     {
       (void) notes->operate(capt) ;
 
-      notes->setCheckMetaStr( pQA->fail );
+      notes->setCheckStatus("DRS", pQA->n_fail );
     }
   }
 
@@ -1421,7 +1421,7 @@ DRS_CV::testPeriodDatesFormat(std::vector<std::string> &sd)
 
         (void) notes->operate(capt) ;
 
-        notes->setCheckMetaStr( pQA->fail );
+        notes->setCheckStatus("DRS", pQA->n_fail );
      }
   }
 
@@ -1458,7 +1458,7 @@ DRS_CV::testPeriodFormat(Split& x_f, std::vector<std::string> &sd)
       capt += ", found underscore";
 
       (void) notes->operate(capt) ;
-      notes->setCheckMetaStr( pQA->fail );
+      notes->setCheckStatus("DRS", pQA->n_fail );
     }
 
     --x_fSz;
@@ -1534,7 +1534,7 @@ DRS_CV::testPeriodFormat(Split& x_f, std::vector<std::string> &sd)
             capt += hdhC::tf_val(x_last[ix[0]]);
 
             (void) notes->operate(capt) ;
-            notes->setCheckMetaStr( pQA->fail );
+            notes->setCheckStatus("DRS", pQA->n_fail );
           }
         }
       }
@@ -1583,7 +1583,7 @@ DRS_CV::testPeriodFormat(Split& x_f, std::vector<std::string> &sd)
         capt += hdhC::tf_val(sep);
 
         (void) notes->operate(capt) ;
-        notes->setCheckMetaStr( pQA->fail );
+        notes->setCheckStatus("DRS", pQA->n_fail );
       }
     }
   }
@@ -1631,7 +1631,7 @@ QA_Exp::applyOptions(std::vector<std::string>& optStr)
             || split[0] == "use_strict" )
      {
        isUseStrict=true ;
-       pQA->setCheckMode("meta");
+       pQA->setCheckMode("drs,cv,time");
        continue;
      }
    }
@@ -1732,7 +1732,7 @@ QA_Exp::checkDimAxis(InFile &in,
       text += pQA->notAvailable ;
 
     (void) notes->operate(capt, text) ;
-    notes->setCheckMetaStr(pQA->fail);
+    notes->setCheckStatus("CV", pQA->n_fail);
   }
 
   return;
@@ -1762,7 +1762,7 @@ QA_Exp::checkDimChecksum(InFile &in,
     text += hdhC::double2String(f_DMD_entry.checksum) ;
 
     (void) notes->operate(capt, text) ;
-    notes->setCheckMetaStr(pQA->fail);
+    notes->setCheckStatus("AUX", pQA->n_fail);
   }
 
   return;
@@ -1802,7 +1802,7 @@ QA_Exp::checkDimLongName(InFile &in,
       text += pQA->notAvailable ;
 
     (void) notes->operate(capt, text) ;
-    notes->setCheckMetaStr(pQA->fail);
+    notes->setCheckStatus("CV", pQA->n_fail);
   }
 
   return;
@@ -1845,7 +1845,7 @@ QA_Exp::checkDimOutName(InFile &in,
       text += pQA->notAvailable ;
 
     (void) notes->operate(capt, text) ;
-    notes->setCheckMetaStr(pQA->fail);
+    notes->setCheckStatus("CV", pQA->n_fail);
   }
 
   return ;
@@ -1873,7 +1873,7 @@ QA_Exp::checkDimSize(InFile &in,
     text += hdhC::double2String(f_DMD_entry.size) ;
 
     (void) notes->operate(capt, text) ;
-    notes->setCheckMetaStr(pQA->fail);
+    notes->setCheckStatus("CV", pQA->n_fail);
   }
 
   return;
@@ -1917,7 +1917,7 @@ QA_Exp::checkDimStndName(InFile &in,
       text += pQA->notAvailable ;
 
     (void) notes->operate(capt, text) ;
-    notes->setCheckMetaStr(pQA->fail);
+    notes->setCheckStatus("CV", pQA->n_fail);
   }
 
   return;
@@ -1973,7 +1973,7 @@ QA_Exp::checkDimULD(
           text += "missing key string=days since" ;
 
         (void) notes->operate(capt, text) ;
-        notes->setCheckMetaStr(pQA->fail);
+        notes->setCheckStatus("CV", pQA->n_fail);
       }
     }
     else // deviating reference dates
@@ -2019,7 +2019,7 @@ QA_Exp::checkDimULD(
         }
 
         (void) notes->operate(capt, text) ;
-        notes->setCheckMetaStr(pQA->fail);
+        notes->setCheckStatus("CV", pQA->n_fail);
       }
     }
   }
@@ -2076,7 +2076,7 @@ QA_Exp::checkDimUnits(InFile &in,
       text += "not defined" ;
 
     (void) notes->operate(capt, text) ;
-    notes->setCheckMetaStr(pQA->fail);
+    notes->setCheckStatus("CV", pQA->n_fail);
   }
 
   return ;
@@ -2112,7 +2112,7 @@ QA_Exp::checkPressureCoord(InFile &in)
        capt += "in the filename is missing a pressure level." ;
 
        (void) notes->operate( capt ) ;
-       notes->setCheckMetaStr(pQA->fail);
+       notes->setCheckStatus("CV", pQA->n_fail);
      }
    }
 
@@ -2129,7 +2129,7 @@ QA_Exp::checkPressureCoord(InFile &in)
        std::string text("Expected: 200 500 or 850");
 
        (void) notes->operate( capt, text ) ;
-       notes->setCheckMetaStr(pQA->fail);
+       notes->setCheckStatus("CV", pQA->n_fail);
      }
    }
 
@@ -2160,7 +2160,7 @@ QA_Exp::checkPressureCoord(InFile &in)
        std::string capt("Auxiliary " + hdhC::tf_var("plev") + "is missing") ;
 
        (void) notes->operate( capt ) ;
-       notes->setCheckMetaStr(pQA->fail);
+       notes->setCheckStatus("CV", pQA->n_fail);
      }
 
      return ;
@@ -2177,7 +2177,7 @@ QA_Exp::checkPressureCoord(InFile &in)
        capt += " and " + hdhC::tf_assign("p(var-name)", pVarname);
 
        (void) notes->operate( capt) ;
-       notes->setCheckMetaStr(pQA->fail);
+       notes->setCheckStatus("CV", pQA->n_fail);
      }
    }
 
@@ -2222,7 +2222,7 @@ QA_Exp::checkPressureCoord(InFile &in)
          capt += ", expected" + hdhC::tf_assign("p", pVarname);
 
          (void) notes->operate(capt) ;
-         notes->setCheckMetaStr(pQA->fail);
+         notes->setCheckStatus("CV", pQA->n_fail);
        }
      }
    }
@@ -2312,7 +2312,7 @@ QA_Exp::domainCheck(void)
    {
      // Note: if the data file is produced by a model not using rotated
      // coordinates, then the checks will be discarded.
-     // The algo below works in case of faults.
+     // The algorithm below works in the case of faults.
      bool is=true;
 
      for( size_t i=0 ; i < pQA->pIn->varSz ; ++i )
@@ -2327,7 +2327,7 @@ QA_Exp::domainCheck(void)
           break;
        }
 
-//        // check attribute values for key-word 'rotated' and 'pole'
+       // check attribute values for key-word 'rotated' and 'pole'
        for( size_t j=0 ; j < var.attValue.size() ; ++j )
        {
          if( var.attValue[j][0].find("rotated") < std::string::npos
@@ -2388,10 +2388,14 @@ QA_Exp::domainCheck(void)
   std::string key = "7_6";
   if( notes->inq(key, pQA->fileStr) )
   {
-    std::string capt("CORDEX_domain does not match Table <1|2>") ;
+    std::string capt("CORDEX_domain does not match Table ") ;
+    if( isTbl_1st )
+      capt += "<1>";
+    else
+      capt += "<2>";
 
     (void) notes->operate(capt) ;
-    notes->setCheckMetaStr(pQA->fail);
+    notes->setCheckStatus("CV", pQA->n_fail);
   }
 
   return ;
@@ -2545,7 +2549,7 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
         capt += hdhC::tf_var(var_lat) ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckMetaStr(pQA->fail);
+      notes->setCheckStatus("CV", pQA->n_fail);
     }
 
     return;
@@ -2605,7 +2609,7 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
       capt += ", required is "  + t_resol;
 
       (void) notes->operate(capt) ;
-      notes->setCheckMetaStr(pQA->fail);
+      notes->setCheckStatus("CV", pQA->n_fail);
     }
 
     return;
@@ -2759,7 +2763,7 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
       capt += text1;
 
       (void) notes->operate(capt) ;
-      notes->setCheckMetaStr(pQA->fail);
+      notes->setCheckStatus("CV", pQA->n_fail);
     }
   }
 
@@ -2813,7 +2817,7 @@ QA_Exp::domainCheckDims(std::string item,
           capt += hdhC::tf_val(t_num_str);
 
           (void) notes->operate(capt) ;
-          notes->setCheckMetaStr(pQA->fail);
+          notes->setCheckStatus("CV", pQA->n_fail);
         }
 
         return;
@@ -2834,7 +2838,7 @@ QA_Exp::domainCheckDims(std::string item,
     capt += hdhC::tf_val(t_num_str);
 
     (void) notes->operate(capt) ;
-    notes->setCheckMetaStr(pQA->fail);
+    notes->setCheckStatus("CV", pQA->n_fail);
   }
 
   return ;
@@ -2942,7 +2946,7 @@ QA_Exp::domainCheckPole(std::string item,
       capt += hdhC::tf_val(t_num);
 
       (void) notes->operate(capt) ;
-      notes->setCheckMetaStr(pQA->fail);
+      notes->setCheckStatus("CV", pQA->n_fail);
     }
   }
 
@@ -2953,7 +2957,7 @@ QA_Exp::domainCheckPole(std::string item,
     capt += "is missing" ;
 
     (void) notes->operate(capt) ;
-    notes->setCheckMetaStr(pQA->fail);
+    notes->setCheckStatus("CV", pQA->n_fail);
   }
 
   return ;
@@ -3114,7 +3118,7 @@ QA_Exp::checkHeightValue(InFile &in)
          }
 
          (void) notes->operate( capt) ;
-         notes->setCheckMetaStr(pQA->fail);
+         notes->setCheckStatus("CV", pQA->n_fail);
        }
      }
    }
@@ -3199,7 +3203,7 @@ QA_Exp::createVarMetaData(void)
           }
 
           (void) notes->operate(capt) ;
-          notes->setCheckMetaStr( pQA->fail );
+          notes->setCheckStatus("CV", pQA->n_fail );
         }
       }
     }
@@ -3207,26 +3211,6 @@ QA_Exp::createVarMetaData(void)
     // some more properties
     vMD.attMap[n_long_name]     = var.getAttValue(pQA->n_long_name) ;
     vMD.attMap[n_positive]      = var.getAttValue(pQA->n_positive) ;
-  }
-
-  // Check varname from filename with those in the file.
-  // Is the shortname in the filename also defined in the nc-header?
-  for( i=0 ; i < pQA->pIn->varSz ; ++i )
-    if( fVarname == pQA->pIn->variable[i].name )
-      break;
-
-  if( i == pQA->pIn->varSz )
-  {
-     std::string key("1_4");
-     if( notes->inq( key, pQA->fileStr) )
-     {
-       std::string capt("variable ");
-       capt += hdhC::tf_assign("acronym", fVarname);
-       capt += " in the filename does not match any variable in the file" ;
-
-       (void) notes->operate(capt) ;
-       notes->setCheckMetaStr( pQA->fail );
-     }
   }
 
   if( pQA->pIn->dataVarIndex.size() > 1 )
@@ -3246,7 +3230,7 @@ QA_Exp::createVarMetaData(void)
        }
 
        (void) notes->operate(capt) ;
-       notes->setCheckMetaStr( pQA->fail );
+       notes->setCheckStatus("CV", pQA->n_fail );
      }
   }
 
@@ -3361,7 +3345,7 @@ QA_Exp::checkVarTableEntry_cell_methods(
       }
 
       (void) notes->operate(capt) ;
-      notes->setCheckMetaStr( pQA->fail );
+      notes->setCheckStatus("CV", pQA->n_fail );
     }
   }
 
@@ -3501,7 +3485,7 @@ QA_Exp::checkVarTableEntry_longName(
     }
 
     (void) notes->operate(capt) ;
-    notes->setCheckMetaStr( pQA->fail );
+    notes->setCheckStatus("CV", pQA->n_fail );
   }
 
   return;
@@ -3522,7 +3506,7 @@ QA_Exp::checkVarTableEntry_name(
       capt += "output variable name matches only for case-insensitivity" ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckMetaStr( pQA->fail );
+      notes->setCheckStatus("CV", pQA->n_fail );
     }
   }
 
@@ -3559,7 +3543,7 @@ QA_Exp::checkVarTableEntry_standardName(
 
       (void) notes->operate(capt) ;
 
-      notes->setCheckMetaStr( pQA->fail );
+      notes->setCheckStatus("CV", pQA->n_fail );
     }
   }
 
@@ -3584,7 +3568,7 @@ QA_Exp::checkVarTableEntry_units(
         capt += hdhC::tf_val(t_VMD_units);
 
         (void) notes->operate(capt) ;
-        notes->setCheckMetaStr( pQA->fail );
+        notes->setCheckStatus("CV", pQA->n_fail );
       }
   }
 
@@ -3660,7 +3644,7 @@ QA_Exp::checkVariableTypeX(size_t v, size_t i, size_t j, std::string& tName)
       capt += hdhC::tf_val(tAttValue);
 
       (void) notes->operate(capt) ;
-      notes->setCheckMetaStr( pQA->fail );
+      notes->setCheckStatus("CV", pQA->n_fail );
     }
   }
 
@@ -3989,7 +3973,7 @@ QA_Exp::getFrequency(void)
 
        if( notes->operate(capt) )
        {
-         notes->setCheckMetaStr(pQA->fail);
+         notes->setCheckStatus("CV",pQA->n_fail);
          pQA->setExit( notes->getExitValue() ) ;
         }
      }
@@ -4043,7 +4027,7 @@ QA_Exp::getSubTable(void)
 
        if( notes->operate(capt) )
        {
-         notes->setCheckMetaStr(pQA->fail);
+         notes->setCheckStatus("CV",pQA->n_fail);
          pQA->setExit( notes->getExitValue() ) ;
         }
      }
@@ -4089,22 +4073,38 @@ QA_Exp::init(std::vector<std::string>& optStr)
    // apply parsed command-line args
    applyOptions(optStr);
 
-   if( pQA->mapCheckMode["META"]
-         || pQA->mapCheckMode["DRS"]
-            || pQA->mapCheckMode["CV"]
-              || pQA->mapCheckMode["TIME"] )
+   if( pQA->isCheckDRS || pQA->isCheckCV || pQA->isCheckTime )
    {
      fVarname = getVarnameFromFilename();
      getFrequency();
      getSubTable() ;
+   }
 
-     if( pQA->mapCheckMode["META"]
-           || pQA->mapCheckMode["TIME"] )
+   if( pQA->isCheckCV || pQA->isCheckData )
+   {
+     // Create and set VarMetaData objects.
+     createVarMetaData() ;
+
+     // Check varname from filename with those in the file.
+     // Is the shortname in the filename also defined in the nc-header?
+     std::vector<std::string> vNames( pQA->pIn->nc.getVarName() ) ;
+     size_t i;
+     for( i=0 ; i < vNames.size() ; ++i )
+       if( fVarname == vNames[i] )
+         break;
+
+     if( i == vNames.size() )
      {
-       notes->setCheckMetaStr("PASS");
+       std::string key("1_4");
+       if( notes->inq( key, pQA->fileStr) )
+       {
+         std::string capt("variable ");
+         capt += hdhC::tf_assign("acronym", fVarname);
+         capt += " in the filename does not match any variable in the file" ;
 
-       // Create and set VarMetaData objects.
-       createVarMetaData() ;
+         (void) notes->operate(capt) ;
+         notes->setCheckStatus("CV", pQA->n_fail );
+       }
      }
    }
 
@@ -4149,7 +4149,7 @@ QA_Exp::initDefaults(void)
 void
 QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
 {
-  if( !pQA->mapCheckMode["DATA"] )
+  if( !pQA->isCheckData )
     return;
 
   // a missing variable?
@@ -4170,7 +4170,7 @@ QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
 
          if( notes->operate(capt) )
          {
-           notes->setCheckMetaStr( pQA->fail );
+           notes->setCheckStatus("Consistency", pQA->n_fail );
            pQA->setExit( notes->getExitValue() ) ;
          }
        }
@@ -4195,7 +4195,7 @@ QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
 
          if( notes->operate(capt) )
          {
-           notes->setCheckMetaStr( pQA->fail );
+           notes->setCheckStatus("Consistency", pQA->n_fail );
            pQA->setExit( notes->getExitValue() ) ;
          }
        }
@@ -4223,7 +4223,7 @@ QA_Exp::inqTables(void)
 
         if( notes->operate(capt) )
         {
-          notes->setCheckMetaStr( pQA->fail );
+          notes->setCheckStatus("QA_path", pQA->n_fail );
           pQA->setExit( notes->getExitValue() ) ;
         }
      }
@@ -4415,7 +4415,7 @@ QA_Exp::reqAttCheck(void)
             capt += "does not match required value=1.E20";
 
             (void) notes->operate(capt) ;
-            notes->setCheckMetaStr( pQA->fail );
+            notes->setCheckStatus("CV", pQA->n_fail );
           }
         }
       }
@@ -4443,7 +4443,7 @@ QA_Exp::reqAttCheck(void)
         capt += ", then both should be defined";
 
         (void) notes->operate(capt) ;
-        notes->setCheckMetaStr( pQA->fail );
+        notes->setCheckStatus("CV", pQA->n_fail );
       }
     }
   }
@@ -4550,7 +4550,7 @@ QA_Exp::reqAttCheckCloudValues(
        }
 
        (void) notes->operate(capt, ostr.str()) ;
-       notes->setCheckMetaStr( pQA->fail );
+       notes->setCheckStatus("CV", pQA->n_fail );
      }
   }
 
@@ -4590,7 +4590,7 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
          capt += "is missing" ;
 
          (void) notes->operate(capt) ;
-         notes->setCheckMetaStr( pQA->fail );
+         notes->setCheckStatus("CV", pQA->n_fail );
 
          continue;
        }
@@ -4613,7 +4613,7 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
            capt += rqValue;
 
            (void) notes->operate(capt) ;
-           notes->setCheckMetaStr( pQA->fail );
+           notes->setCheckStatus("CV", pQA->n_fail );
 
            continue;
          }
@@ -4675,7 +4675,7 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
              capt += aV ;
 
              (void) notes->operate(capt) ;
-             notes->setCheckMetaStr( pQA->fail );
+             notes->setCheckStatus("CV", pQA->n_fail );
            }
          }
        }
@@ -4693,7 +4693,7 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
            capt += hdhC::tf_val(rqValue) ;
 
            (void) notes->operate(capt) ;
-           notes->setCheckMetaStr( pQA->fail );
+           notes->setCheckStatus("CV", pQA->n_fail );
 
            continue;
          }
@@ -4753,7 +4753,7 @@ QA_Exp::reqAttCheckVariable(Variable &var)
          capt += "is missing";
 
          (void) notes->operate(capt) ;
-         notes->setCheckMetaStr( pQA->fail );
+         notes->setCheckStatus("CV", pQA->n_fail );
 
          continue;
        }
@@ -4778,7 +4778,7 @@ QA_Exp::reqAttCheckVariable(Variable &var)
              capt += "missing " + hdhC::tf_att("plev_bnds");
 
              (void) notes->operate(capt) ;
-             notes->setCheckMetaStr( pQA->fail );
+             notes->setCheckStatus("CV", pQA->n_fail );
            }
          }
 
@@ -4794,7 +4794,7 @@ QA_Exp::reqAttCheckVariable(Variable &var)
              capt += "for cloud amounts is missing";
 
              (void) notes->operate(capt) ;
-             notes->setCheckMetaStr( pQA->fail );
+             notes->setCheckStatus("CV", pQA->n_fail );
            }
          }
        }
@@ -4833,7 +4833,7 @@ QA_Exp::reqAttCheckVariable(Variable &var)
            capt += hdhC::tf_val(rqValue);
 
            (void) notes->operate(capt) ;
-           notes->setCheckMetaStr( pQA->fail );
+           notes->setCheckStatus("CV", pQA->n_fail );
 
            continue;
          }
@@ -4866,7 +4866,7 @@ QA_Exp::reqAttCheckVariable(Variable &var)
            capt += hdhC::tf_val(rqValue);
 
            (void) notes->operate(capt) ;
-           notes->setCheckMetaStr( pQA->fail );
+           notes->setCheckStatus("CV", pQA->n_fail );
 
            continue;
          }
@@ -4884,20 +4884,21 @@ QA_Exp::run(void)
 
    if( pQA->drs_cv_table.table_DRS_CV.is )
    {
-     if( pQA->mapCheckMode["DRS"] )
+     if(pQA->isCheckDRS)
      {
        DRS_CV drsFN(pQA);
        drsFN.run();
      }
    }
 
-   if( pQA->mapCheckMode["META"]
-         || pQA->mapCheckMode["TIME"] )
+   if(pQA->isCheckCV)
    {
      // check variable type; uses DRS_CV_Table
      checkVariableType();
 
-     if( !isNoTable )
+     if( isNoTable )
+       notes->setCheckStatus("CV", pQA->n_fail);
+     else
         // get meta data from file and compare with tables
         checkMetaData(*(pQA->pIn));
    }
@@ -4934,7 +4935,7 @@ QA_Exp::varReqTableCheck(InFile &in, VariableMetaData &vMD,
 
          if( notes->operate(capt) )
          {
-           notes->setCheckMetaStr( pQA->fail );
+           notes->setCheckStatus("CV", pQA->n_fail );
 
            pQA->setExit( notes->getExitValue() ) ;
          }
@@ -4994,7 +4995,7 @@ QA_Exp::varReqTableCheck(InFile &in, VariableMetaData &vMD,
      capt += "Not found in the CORDEX_variables_requirement table";
 
      (void) notes->operate(capt) ;
-     notes->setCheckMetaStr( pQA->fail );
+     notes->setCheckStatus("CV", pQA->n_fail );
    }
 
    // variable not found in the standard table.
@@ -5032,7 +5033,7 @@ VariableMetaData::verifyPercent(void)
           capt += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckMetaStr( pQA->fail );
+          notes->setCheckStatus("CV", pQA->n_fail );
         }
       }
    }
@@ -5052,7 +5053,7 @@ VariableMetaData::verifyPercent(void)
           capt += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckMetaStr( pQA->fail );
+          notes->setCheckStatus("MD(variable)", pQA->n_fail );
         }
       }
    }

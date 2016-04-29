@@ -48,7 +48,7 @@ DRS_CV_Table::read(void)
 
         if( notes->operate(capt) )
         {
-          pQA->notes->setCheckMetaStr( pQA->fail );
+          pQA->notes->setCheckStatus("QA_path", pQA->n_fail );
           pQA->setExit( notes->getExitValue() ) ;
         }
      }
@@ -179,7 +179,7 @@ DRS_CV_Table::read(void)
         capt += s0 ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckMetaStr(pQA->fail);
+        notes->setCheckStatus("QA_DRS_CV_table", pQA->n_fail);
       }
 
       break;

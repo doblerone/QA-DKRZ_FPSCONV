@@ -340,32 +340,24 @@ Annotation::getAnnotation(std::string tag, std::vector<std::string>& txt)
 }
 
 std::string
-Annotation::getCheckResults(void)
+Annotation::getCheckStatus(bool withRank)
 {
-  // brief summery of the QA findings, which are currently
-  // collected in vectors, but are eventually merged.
+  std::map<std::string, std::string>::iterator it;
+  std::string out;
 
-  // default: omission
-  std::string NA("N/A");
+  for( it=checkID.begin() ; it != checkID.end() ; ++it )
+  {
+    const std::string& f=it->first;
+    const std::string& s=it->second;
 
-  if( checkCF_Str.size() == 0 )
-    checkCF_Str = NA ;
-  if( checkMetaStr.size() == 0 )
-    checkMetaStr = NA ;
-  if( checkTimeStr.size() == 0 )
-    checkTimeStr = NA ;
-  if( checkDataStr.size() == 0 )
-    checkDataStr = NA ;
+    if( out.size() )
+        out += '|';
 
-  std::string out("CF_conv: ");
-
-  out += checkCF_Str ;
-  out += " meta_data: " ;
-  out += checkMetaStr ;
-  out += " time_values: " ;
-  out += checkTimeStr ;
-  out += " data: " ;
-  out += checkDataStr ;
+    out += f + "%";
+    out += s ;
+    if( withRank )
+      out += "=" + hdhC::itoa(checkRank[f]) ;
+  }
 
   return out;
 }
@@ -890,7 +882,7 @@ Annotation::printCheckResult(void)
 
   std::string out( "CHECK-BEG" );
 
-  out += getCheckResults() ;
+  out += getCheckStatus() ;
 
   out += "CHECK-END";  // mark of the end of an output line
   std::cout << out << std::endl;
@@ -1308,6 +1300,42 @@ Annotation::readConf(void)
 
   ifs.close();
   return;
+}
+
+void
+Annotation::setCheckStatus(std::string id, std::string s, bool isAdd)
+{
+   // precedence: FAIL:4, PASS: 3, FIXED: 2, disabled: 1, N/A: 0
+   // if rnk > -1, then this is applied. Else, extracted from string s
+   int rnk = 0;
+
+   if( s.find("FAIL") < std::string::npos )
+     rnk=4;
+   else if( s.find("PASS") < std::string::npos )
+     rnk=3;
+   else if( s.find("FIXED") < std::string::npos )
+     rnk=2;
+   else if( s.find("disabled") < std::string::npos )
+     rnk=1;
+   else if( s.find("N/A") < std::string::npos )
+     rnk=0;
+
+   if( rnk > checkRank[id] )
+   {
+       checkRank[id] = rnk;
+       checkID[id] = s;
+   }
+   else if(isAdd)
+   {
+     if(checkID.count(id))
+        checkID[id] += ",";
+
+     checkID[id] += s;
+   }
+   else
+     checkID[id] = s;
+
+   return;
 }
 
 void

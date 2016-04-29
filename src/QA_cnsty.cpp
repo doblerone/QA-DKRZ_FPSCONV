@@ -1,9 +1,9 @@
-#include "qa_PT.h"
+#include "qa_cnsty.h"
 
 Consistency::Consistency(QA *p0, InFile *p1,
     std::vector<std::string> &opt, std::string tPath )
 {
-   qa  = p0;
+   pQA = p0;
    pIn = p1;
    checkEnabled=true;
 
@@ -63,7 +63,7 @@ Consistency::check(void)
   {
      Variable& var = pIn->variable[pIn->dataVarIndex[i]];
 
-     std::string entryID( qa->qaExp.getTableEntryID(var.name) );
+     std::string entryID( pQA->qaExp.getTableEntryID(var.name) );
 
      if( check(var, entryID) )
      {
@@ -300,7 +300,7 @@ BREAK:
               capt += " across experiment or sub-temporal files";
 
               (void) notes->operate(capt) ;
-              notes->setCheckMetaStr( "FAIL" );
+              notes->setCheckStatus("Consistency","FAIL" );
             }
 
             break;  // try next
@@ -331,13 +331,13 @@ BREAK:
               capt += "is missing " ;
             }
 
-            if( qa->currQARec )
+            if( pQA->currQARec )
               capt += "across sub-temporal files";
             else
               capt += "across experiments";
 
             (void) notes->operate(capt) ;
-            notes->setCheckMetaStr( "FAIL" );
+            notes->setCheckStatus("Consistency","FAIL" );
           }
         }
       }
@@ -362,7 +362,7 @@ BREAK:
         capt += "missing across experiments or sub-temporal files";
 
         (void) notes->operate(capt) ;
-        notes->setCheckMetaStr( "FAIL" );
+        notes->setCheckStatus("Consistency","FAIL" );
       }
     }
   }
@@ -446,7 +446,7 @@ BREAK:
             }
 
             (void) notes->operate(capt) ;
-            notes->setCheckMetaStr( "FAIL" );
+            notes->setCheckStatus("Consistency","FAIL" );
           }
         }
       }
@@ -467,7 +467,7 @@ BREAK:
         capt += "across experiments or sub-temporal files";
 
         (void) notes->operate(capt) ;
-        notes->setCheckMetaStr( "FAIL" );
+        notes->setCheckStatus("Consistency","FAIL" );
       }
     }
   }
@@ -647,7 +647,7 @@ Consistency::lockFile(std::string &fName )
          std::string capt("consistency-check table is locked for 1/2 hour") ;
 
          (void) notes->operate(capt) ;
-         qa->setExit( notes->getExitValue() ) ;
+         pQA->setExit( notes->getExitValue() ) ;
       }
     }
   }
@@ -660,7 +660,7 @@ Consistency::lockFile(std::string &fName )
         std::string capt("could not lock the consistency-check table") ;
 
         if( notes->operate(capt) )
-          qa->setExit( notes->getExitValue() ) ;
+          pQA->setExit( notes->getExitValue() ) ;
      }
 
      return true;
@@ -734,8 +734,8 @@ Consistency::write(Variable &dataVar, std::string& entryID)
 
       if( notes->operate(capt) )
       {
-        notes->setCheckMetaStr( qa->fail );
-        qa->setExit( notes->getExitValue() ) ;
+        notes->setCheckStatus("QA_PT_table", pQA->n_fail );
+        pQA->setExit( notes->getExitValue() ) ;
       }
     }
   }

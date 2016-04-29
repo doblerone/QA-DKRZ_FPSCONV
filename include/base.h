@@ -69,7 +69,6 @@ class Base : public IObj
   //! Error messages are written to a file.
   bool exceptionHandling(std::string key,
             std::string capt, std::string text,
-            std::vector<std::string> &checkType,
             std::string vName="") ;
   void exceptionError(std::string );
   void exceptionWarning(std::string );

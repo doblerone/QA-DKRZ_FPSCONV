@@ -1,5 +1,5 @@
-#ifndef _QA_PT_H
-#define _QA_PT_H
+#ifndef _QA_CONSISTENCY_H
+#define _QA_CONSISTENCY_H
 
 #include "hdhC.h"
 #include "date.h"
@@ -55,7 +55,7 @@ class Consistency
 
   Annotation *notes;
   InFile     *pIn;
-  QA         *qa;  //the parent
+  QA         *pQA;  //the parent
 } ;
 
 #endif

@@ -140,7 +140,7 @@ InFile::entry(void)
   {
     Variable &var = variable[dataVarIndex[i]];
 
-    if( currRec && var.isFixed )
+    if( currRec && currRec >= nc.getNumOfRecords(var.name) )
       continue;
 
     var.getData(currRec);
@@ -455,33 +455,65 @@ InFile::getVarIndex(std::string s)
 }
 
 void
-InFile::getVariableMD(std::vector<Variable>& variable, int mode)
+InFile::getVariableMD(std::vector<Variable>& variable, char mode)
 {
   // get and analyse all variables and create Variable objects
-  // mode: 0: variables && global, 1: variables, 2: global
-  bool is[2]={true, true};
+  // mode: 0: variables && global (includes time)
+  //       1: variables (includes time)
+  //       2: global
+  //       3: time
 
-  if( mode == 1 )
-      is[1] = false;
-  else if( mode == 2 )
-      is[0] = false;
+  bool is[3]={true, true, true};  // all
 
-  if(is[0])
+  if( mode == 'V' )
   {
-    std::vector<std::string> vName( nc.getVarName() );
+      is[1] = false;
+      is[2] = false;
+  }
+  else if( mode == 'G' )
+  {
+      is[0] = false;
+      is[2] = false;
+  }
+  else if( mode == 'T' )
+  {
+      is[0] = false;
+      is[1] = false;
+  }
 
-    // effective num of variables without any trailing NC_GLOBAL
-    varSz = vName.size();
-    for(size_t j=0 ; j < varSz; ++j)
-    {
-        variable.push_back( *new Variable );
-        makeVariable(vName[j], variable.back(), j );
+  if(is[0] || is[2])
+  {
+     std::vector<std::string> vName( nc.getVarName() );
+     std::string vFilename(file.getBasename());
 
-        vIx[ vName[j] ] = j ;
-        variableNames.push_back(variable.back().name);
+     if(is[2])
+     {
+       vName.clear();
+       vName.push_back( nc.getUnlimitedDimVarName() );
+       if( vName.size() && !vName[0].size() )
+         vName.clear();
+     }
+     else
+     {
+       size_t pos;
+       if( (pos = vFilename.find("_")) < std::string::npos )
+         vFilename = vFilename.substr(0,pos) ;
+     }
 
-        getVariableMD(variable.back());
-    }
+     varSz = vName.size();
+     for(size_t j=0 ; j < varSz; ++j)
+     {
+         variable.push_back( *new Variable );
+         makeVariable(vName[j], variable.back(), j );
+
+         vIx[ vName[j] ] = j ;
+         variableNames.push_back(variable.back().name);
+
+         if( vFilename == variable.back().name )
+           dataVarIndex.push_back(variable.back().id);
+
+         getVariableMD(variable.back());
+     }
   }
 
   // a pseudo-variable for the global attributes
@@ -497,22 +529,6 @@ InFile::getVariableMD(std::vector<Variable>& variable, int mode)
     getVariableAtt(variable.back());
 
     vIx[ "NC_GLOBAL" ] = variable.size() -1 ;
-  }
-
-  size_t pos;
-  std::string vName(file.getBasename());
-  if( (pos = vName.find("_")) < std::string::npos )
-    vName = vName.substr(0,pos) ;
-  else
-    vName.clear();
-
-  for( size_t i=0 ; i < varSz ; ++i )
-  {
-    if( vName == variable[i].name )
-    {
-      dataVarIndex.push_back(i);
-     break;
-    }
   }
 
   return;
@@ -550,26 +566,26 @@ InFile::getVariableMD(Variable& var)
   // make objects, but GeoMeta which is postponed
   var.makeObj(isInfNan);
 
-/*  set in CF which is not executed, yet
-  if( var.coord.isC[3] )
+  // is it time or somethiong alike?
+  if( nc.isVarUnlimited(var.name) && nc.isDimUnlimited(var.name) )
   {
     // time is coordinate variable
     // note: this is global; not specific to variables
     isTime=true ;
     timeName=var.name;
   }
-  else if( var.isDATA )
+
+  size_t iid = static_cast<size_t>(var.id);
+
+  if( hdhC::isAmong(iid, dataVarIndex) )
   {
     if( ! var.isUnlimited() )
       var.isFixed = true;
-
-    dataVarIndex.push_back(var.id);
 
     // inquire parameters for GeoMeta objects;
     // make GeoMeta obj for geo-related fields
     setGeoParam(var) ;
   }
-*/
 
   return;
 }
@@ -619,10 +635,7 @@ InFile::init(void)
 
       std::string text ;
 
-      std::vector<std::string> checkType;
-      checkType.push_back("meta");
-
-      if( exceptionHandling(key, capt, text, checkType) )
+      if( exceptionHandling(key, capt, text) )
           finally(3);
     }
     else
@@ -648,7 +661,6 @@ InFile::initDefault(void)
   Base::setObjName("IN");
 
   notes=0;
-  cF=0;
   pIn=0;
   fDI=0;
   pOper=0;
@@ -849,20 +861,10 @@ InFile::openNc(bool isNew)
 }
 
 void
-InFile::pullGlobalMD(void)
+InFile::pullMetaData(char c)
 {
   // mode: 2: MD(global)
-  getVariableMD(variable, 2);
-
-  return;
-}
-
-
-void
-InFile::pullVariablesMD(void)
-{
-  // mode: 1: MD(variables)
-  getVariableMD(variable, 1);
+  getVariableMD(variable, c);
 
   return;
 }

@@ -43,14 +43,12 @@
 #include "qa_data.h"
 #include "qa_drs_cv_table.h"
 #include "qa_time.h"
-#include "qa_PT.h"
+#include "qa_cnsty.h"
 
 #if defined CORDEX
   #include "qa_CORDEX.h"
 #elif defined CMIP5
   #include "qa_CMIP5.h"
-#else
-  #include "qa_NONE.h"
 #endif
 
 #include "time_control.h"

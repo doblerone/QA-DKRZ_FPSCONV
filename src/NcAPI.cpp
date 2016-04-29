@@ -145,10 +145,7 @@ NcAPI::close(void)
 
       std::string capt("Could not close NetCDF file.");
 
-      std::vector<std::string> checkType;
-      checkType.push_back("meta");
-
-      exceptionHandling(key, capt, "", checkType);
+      exceptionHandling(key, capt);
     }
 
     isThisOpen=false;
@@ -373,10 +370,7 @@ NcAPI::copyAtt(NcAPI &from, int varid_from, int varid, std::string aName)
     text += getVarnameFromVarID(varid);
     text += ">";
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
   }
   else if(status2 )  // status2 was onnly set for status==0
   {
@@ -392,10 +386,7 @@ NcAPI::copyAtt(NcAPI &from, int varid_from, int varid, std::string aName)
     text += aName;
     text += ">";
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
   }
 
   return ;
@@ -436,10 +427,7 @@ NcAPI::copyAtts(NcAPI &from, int varid_from, int varid,
       text += getVarnameFromVarID(varid);
       text += ">";
 
-      std::vector<std::string> checkType;
-      checkType.push_back("meta");
-
-      exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+      exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
     }
   }
 
@@ -513,10 +501,7 @@ NcAPI::copyGlobalAtts(NcAPI &from, int varid_from, int varid,
       text += getVarnameFromVarID(varid);
       text += ">" ;
 
-      std::vector<std::string> checkType;
-      checkType.push_back("meta");
-
-      exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+      exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
     }
   }
 
@@ -607,10 +592,7 @@ NcAPI::copyChunking(NcAPI &from, int varid_from, int varid_to)
     text += getVarnameFromVarID(varid_to);
     text += ">";
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid_to));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid_to));
   }
 
   return;
@@ -761,10 +743,7 @@ NcAPI::copyDeflate(NcAPI &from, int varid_from, int varid_to)
     text += getVarnameFromVarID(varid_to);
     text += ">" ;
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid_to));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid_to));
  }
 
   return;
@@ -817,10 +796,7 @@ NcAPI::copyEndian(NcAPI &from, int varid_from, int varid_to)
     text += getVarnameFromVarID(varid_to);
     text += ">" ;
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid_to));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid_to));
   }
 
   return;
@@ -847,10 +823,7 @@ NcAPI::copyFillValue(NcAPI &from, int varid_from, int varid_to)
     text += getVarnameFromVarID(varid_to);
     text += ">" ;
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid_to));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid_to));
   }
   else if( no_fill == 1 )
     return;  // no fill mode for this variable (only NC4)
@@ -869,10 +842,7 @@ NcAPI::copyFillValue(NcAPI &from, int varid_from, int varid_to)
       text += getVarnameFromVarID(varid_to);
       text += ">" ;
 
-      std::vector<std::string> checkType;
-      checkType.push_back("meta");
-
-      exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid_to));
+      exceptionHandling(key, capt, text, getVarnameFromVarID(varid_to));
     }
   }
 
@@ -907,10 +877,7 @@ NcAPI::copyFletcher32(NcAPI &from, int varid_from, int varid_to)
     text += ">, variable (to) <";
     text += getVarnameFromVarID(varid_to);
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid_to));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid_to));
   }
 
   return;
@@ -933,10 +900,7 @@ NcAPI::copyGlobalAtts(NcAPI &from)
     std::string capt("Could not get number of global attributes.");
     std::string text ;
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType);
+    exceptionHandling(key, capt, text);
   }
 
   if( attNum == 0 )
@@ -1165,10 +1129,7 @@ NcAPI::create(std::string f, std::string mode, bool isExitOnError)
       std::string capt("Could not do nc_create().");
       std::string text ;
 
-      std::vector<std::string> checkType;
-      checkType.push_back("meta");
-
-      exceptionHandling(key, capt, text, checkType);
+      exceptionHandling(key, capt, text);
 
       isThisOpen=false;
       return isThisOpen;
@@ -1212,10 +1173,7 @@ NcAPI::defineDim(std::string name, size_t dimsize)
     text += name ;
     text += ">:";
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, name);
+    exceptionHandling(key, capt, text, name);
   }
 
   if( dimsize == NC_UNLIMITED )
@@ -1285,10 +1243,7 @@ NcAPI::defineVar(std::string vName, nc_type type,
       text += vName;
       text += ">";
 
-      std::vector<std::string> checkType;
-      checkType.push_back("meta");
-
-      exceptionHandling(key, capt, text, checkType, vName);
+      exceptionHandling(key, capt, text, vName);
     }
   }
 
@@ -1313,10 +1268,7 @@ NcAPI::defineVar(std::string vName, nc_type type,
     text += vName;
     text += ">";
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, vName);
+    exceptionHandling(key, capt, text, vName);
   }
 
   // update layout contents
@@ -1448,10 +1400,7 @@ NcAPI::delAtt(std::string aName, int varid)
             text += aName;
             text += ">";
 
-            std::vector<std::string> checkType;
-            checkType.push_back("meta");
-
-            exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+            exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
           }
 
           // clear for specific global attribute
@@ -1489,10 +1438,7 @@ NcAPI::delAtt(std::string aName, int varid)
             text += ">, attribute <";
             text += aName;
 
-            std::vector<std::string> checkType;
-            checkType.push_back("meta");
-
-            exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+            exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
           }
 
           // clear for specific global attribute
@@ -1554,7 +1500,6 @@ NcAPI::exceptionError(std::string str)
 void
 NcAPI::exceptionHandling(std::string key,
   std::string capt, std::string text,
-  std::vector<std::string> &checkType,
   std::string vName)
 {
    if( status )
@@ -1583,15 +1528,7 @@ NcAPI::exceptionHandling(std::string key,
 
      (void) notes->operate(capt, text);
 
-     for( size_t i=0 ; i < checkType.size() ; ++i )
-     {
-       if( checkType[i] == "meta" )
-         notes->setCheckMetaStr("FAIL");
-       else if( checkType[i] == "time" )
-         notes->setCheckTimeStr("FAIL");
-       else if( checkType[i] == "data" )
-         notes->setCheckDataStr("FAIL");
-     }
+      notes->setCheckStatus("NC", "FAIL");
    }
    else
    {
@@ -1910,10 +1847,7 @@ NcAPI::generateParseAtt(ReadLine &rC, std::string vName)
       std::string capt("TypeName=string is a still ToDo.");
       std::string text ;
 
-      std::vector<std::string> checkType;
-      checkType.push_back("meta");
-
-      exceptionHandling(key, capt, text, checkType);
+      exceptionHandling(key, capt, text);
     }
   } // end of loop over a block
 }
@@ -1982,10 +1916,7 @@ NcAPI::generateParseVar(ReadLine &rC,
       std::string capt("Dimensions in the conf-file are inconsistent.");
       std::string text ;
 
-      std::vector<std::string> checkType;
-      checkType.push_back("meta");
-
-      exceptionHandling(key, capt, text, checkType, vName);
+      exceptionHandling(key, capt, text, vName);
     }
   }
 
@@ -2131,10 +2062,7 @@ NcAPI::getAttID(std::string &attName, int varid )
     text += getVarnameFromVarID(varid);
     text += ">";
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
   }
 
   if( varid < 0 )
@@ -2424,10 +2352,7 @@ NcAPI::getAttValues(std::vector<Type> &v, std::string attName, std::string varNa
     text += attName ;
     text += ">";
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, varName);
+    exceptionHandling(key, capt, text, varName);
   }
 
   if( isTextType )
@@ -2449,10 +2374,7 @@ NcAPI::getAttValues(std::vector<Type> &v, std::string attName, std::string varNa
     text += attName ;
     text += ">" ;
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, varName);
+    exceptionHandling(key, capt, text, varName);
   }
 
   return ;
@@ -2596,10 +2518,7 @@ NcAPI::getAttValues(std::vector<std::string> &v, std::string attName, std::strin
     text += attName;
     text += ">";
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, varName);
+    exceptionHandling(key, capt, text, varName);
   }
 
   return ;
@@ -2844,13 +2763,7 @@ NcAPI::getData(int varid, size_t rec, size_t leg)
     text += vName;
     text += ">: ";
 
-    std::vector<std::string> checkType;
-    if( vName == getUnlimitedDimVarName() )
-      checkType.push_back("time");
-    else
-      checkType.push_back("data");
-
-    exceptionHandling(key, capt, text, checkType, vName);
+    exceptionHandling(key, capt, text, vName);
   }
 
   delete [] curr_count ;
@@ -2961,13 +2874,7 @@ NcAPI::getData(MtrxArr<ToT> &to, int varid, size_t rec)
       text +=  vName;
       text += ">";
 
-      std::vector<std::string> checkType;
-      if( vName == getUnlimitedDimVarName() )
-        checkType.push_back("time");
-      else
-        checkType.push_back("data");
-
-      exceptionHandling(key, capt, text, checkType, vName);
+      exceptionHandling(key, capt, text, vName);
       return to[to_ix];
     }
     break;
@@ -3080,13 +2987,7 @@ NcAPI::getData(std::vector<std::string> &v, std::string varName, size_t rec )
     text += varName;
     text += ">";
 
-    std::vector<std::string> checkType;
-    if( varName == getUnlimitedDimVarName() )
-      checkType.push_back("time");
-    else
-      checkType.push_back("data");
-
-    exceptionHandling(key, capt, text, checkType, varName);
+    exceptionHandling(key, capt, text, varName);
   }
 
   return ;
@@ -3243,10 +3144,7 @@ NcAPI::get_FillValueStr(int vid, std::vector<std::string>& fV)
      std::string capt("types of variable <" + vName + "> and ");
      capt += str_FV + "/" + str_MV + " do not match" ;
 
-     std::vector<std::string> checkType;
-     checkType.push_back("meta");
-
-     exceptionHandling(key, capt, "", checkType, vName);
+     exceptionHandling(key, capt, "", vName);
      return isR;
    }
 
@@ -3333,10 +3231,7 @@ NcAPI::get_FillValue(std::string& vName,
      std::string capt("types of variable <" + vName + "> and ");
      capt += str_FV + "/" + str_MV + " do not match" ;
 
-     std::vector<std::string> checkType;
-     checkType.push_back("meta");
-
-     exceptionHandling(key, capt, "", checkType, vName);
+     exceptionHandling(key, capt, "", vName);
      mode=0;
      return isR;
    }
@@ -3423,10 +3318,7 @@ NcAPI::getLayout(void)
     std::string key="NC_2_1";
     std::string capt("nc_inq() error.");
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, "", checkType);
+    exceptionHandling(key, capt);
   }
 
   status=nc_inq_format(ncid, &layout.format) ;
@@ -3435,10 +3327,7 @@ NcAPI::getLayout(void)
     std::string key="NC_2_2";
     std::string capt("nc_inq_format() error.");
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, "", checkType);
+    exceptionHandling(key, capt);
   }
 
   // inquire dim IDs
@@ -3455,10 +3344,7 @@ NcAPI::getLayout(void)
        std::string text("dimension=");
        capt += name_buf ;
 
-       std::vector<std::string> checkType;
-       checkType.push_back("meta");
-
-       exceptionHandling(key, capt, text, checkType);
+       exceptionHandling(key, capt, text);
      }
 
      layout.dimName.push_back( name_buf );
@@ -3501,10 +3387,7 @@ NcAPI::getLayout(void)
        std::string text("variable=");
        text += vName ;
 
-       std::vector<std::string> checkType;
-       checkType.push_back("meta");
-
-       exceptionHandling(key, capt, text, checkType, vName);
+       exceptionHandling(key, capt, text, vName);
      }
 
      layout.varName.push_back( name_buf);
@@ -3554,10 +3437,7 @@ NcAPI::getLayout(void)
          text += ", attribute=";
          text += name_buf;
 
-         std::vector<std::string> checkType;
-         checkType.push_back("meta");
-
-         exceptionHandling(key, capt, text, checkType, vName);
+         exceptionHandling(key, capt, text, vName);
        }
 
        nc_type aType;
@@ -3572,10 +3452,7 @@ NcAPI::getLayout(void)
          text += ", attribute=";
          text += name_buf;
 
-         std::vector<std::string> checkType;
-         checkType.push_back("meta");
-
-         exceptionHandling(key, capt, text, checkType, vName);
+         exceptionHandling(key, capt, text, vName);
        }
 
        status=nc_inq_attlen(ncid, id, name_buf, &len) ;
@@ -3589,10 +3466,7 @@ NcAPI::getLayout(void)
          text += ", attribute=";
          text += name_buf;
 
-         std::vector<std::string> checkType;
-         checkType.push_back("meta");
-
-         exceptionHandling(key, capt, text, checkType, vName);
+         exceptionHandling(key, capt, text, vName);
        }
 
        addAttToLayout( id, name_buf, aType, len) ;
@@ -3639,10 +3513,7 @@ NcAPI::getLayout(void)
        text += ", status(nc_inq_var_deflate()=";
        text += hdhC::itoa(status);
 
-       std::vector<std::string> checkType;
-       checkType.push_back("meta");
-
-       exceptionHandling(key, capt, text, checkType, vName);
+       exceptionHandling(key, capt, text, vName);
        layout.deflate[vName] = -1;
      }
      else
@@ -3678,10 +3549,7 @@ NcAPI::getLayout(void)
        text += ", status(nc_inq_var_chunking()=";
        text += hdhC::itoa(status);
 
-       std::vector<std::string> checkType;
-       checkType.push_back("meta");
-
-       exceptionHandling(key, capt, text, checkType, vName);
+       exceptionHandling(key, capt, text, vName);
        layout.storage[vName]=-1;
      }
      else
@@ -3707,10 +3575,7 @@ NcAPI::getLayout(void)
        text += ", status(nc_inq_var_endian()=";
        text += hdhC::itoa(status);
 
-       std::vector<std::string> checkType;
-       checkType.push_back("meta");
-
-       exceptionHandling(key, capt, text, checkType, vName);
+       exceptionHandling(key, capt, text, vName);
 
        layout.endian[vName]=-1;
      }
@@ -3736,10 +3601,7 @@ NcAPI::getLayout(void)
        text += ", status(nc_inq_var_fletcher32()=";
        text += hdhC::itoa(status);
 
-       std::vector<std::string> checkType;
-       checkType.push_back("meta");
-
-       exceptionHandling(key, capt, text, checkType, vName);
+       exceptionHandling(key, capt, text, vName);
        layout.fletcher32[vName] = fletcher32;
      }
      else
@@ -3793,10 +3655,7 @@ NcAPI::getLayout(void)
 
      std::string capt("Could not get number of global attributes.");
 
-     std::vector<std::string> checkType;
-     checkType.push_back("meta");
-
-     exceptionHandling(key, capt, "", checkType);
+     exceptionHandling(key, capt);
    }
 
    if( attNum == 0 )
@@ -3814,10 +3673,7 @@ NcAPI::getLayout(void)
        text += name_buf;
        text += ">";
 
-       std::vector<std::string> checkType;
-       checkType.push_back("meta");
-
-       exceptionHandling(key, capt, text, checkType);
+       exceptionHandling(key, capt, text);
      }
 
      layout.globalAttName.push_back( name_buf );
@@ -3833,10 +3689,7 @@ NcAPI::getLayout(void)
        text += name_buf;
        text += ">";
 
-       std::vector<std::string> checkType;
-       checkType.push_back("meta");
-
-       exceptionHandling(key, capt, text, checkType);
+       exceptionHandling(key, capt, text);
      }
 
      layout.globalAttType.push_back( type );
@@ -3851,10 +3704,7 @@ NcAPI::getLayout(void)
        text += name_buf;
        text += ">";
 
-       std::vector<std::string> checkType;
-       checkType.push_back("meta");
-
-       exceptionHandling(key, capt, text, checkType);
+       exceptionHandling(key, capt, text);
      }
 
      layout.globalAttValSize.push_back( len );
@@ -3901,10 +3751,7 @@ NcAPI::getNumOfRecords(bool force)
       std::string capt("Could not get number of records.");
       std::string text ;
 
-      std::vector<std::string> checkType;
-      checkType.push_back("meta");
-
-      exceptionHandling(key, capt, text, checkType);
+      exceptionHandling(key, capt, text);
     }
     else
       layout.dimSize[ layout.unlimitedDimID ] = len;
@@ -4071,10 +3918,7 @@ NcAPI::getVarType(std::string vName)
     std::string text("variable=");
     text += vName ;
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, vName);
+    exceptionHandling(key, capt, text, vName);
   }
 
   return layout.varType[varid];
@@ -4727,10 +4571,7 @@ NcAPI::open(std::string f, std::string mode, bool isExitOnError)
       std::string capt("Could not open file.");
       std::string text ;
 
-      std::vector<std::string> checkType;
-      checkType.push_back("meta");
-
-      exceptionHandling(key, capt, text, checkType);
+      exceptionHandling(key, capt, text);
       exit(1);
     }
     else
@@ -4786,10 +4627,7 @@ NcAPI::putData(size_t rec, int varid, Type *arr )
     text += getVarnameFromVarID(varid);
     text += ">";
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
   }
 
   return ;
@@ -4827,10 +4665,7 @@ NcAPI::putData(size_t rec_beg, size_t rec_count, int varid, Type *arr )
     std::string text("variable=");
     text += getVarnameFromVarID(varid);
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
     return;
   }
 
@@ -4880,10 +4715,7 @@ NcAPI::putData(size_t rec, int varid, FromT *from,
     std::string text("variable=");
     text += getVarnameFromVarID(varid);
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
   }
 
   delete [] to ;
@@ -4912,11 +4744,7 @@ NcAPI::putDat1(size_t rec_beg, int varid, Type *arr )
     std::string text("variable=");
     text += getVarnameFromVarID(varid);
 
-
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
   }
 
   return ;
@@ -4940,10 +4768,7 @@ NcAPI::setAtt(std::string vName, std::string aName,
     std::string text("variable=");
     text += vName;
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, vName);
+    exceptionHandling(key, capt, text, vName);
   }
 
   // get varid
@@ -5014,10 +4839,7 @@ NcAPI::setAtt(int varid, std::string aName, std::vector<T> &values)
     text += ", attribute=";
     text += aName;
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
    }
 
    // keep layout adjusted
@@ -5076,10 +4898,7 @@ NcAPI::setAtt(int varid, std::string aName, T *arr, size_t len)
      text += ", attribute=";
      text += aName;
 
-     std::vector<std::string> checkType;
-     checkType.push_back("meta");
-
-     exceptionHandling(key, capt, text, checkType, vName);
+     exceptionHandling(key, capt, text, vName);
    }
 
    // keep layout adjusted
@@ -5197,10 +5016,7 @@ NcAPI::setChunking(int varid, size_t storage, size_t *chunkSize, size_t sz)
     std::string text("variable=");
     text += getVarnameFromVarID(varid);
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
   }
 
   return;
@@ -5226,10 +5042,7 @@ NcAPI::setDeflate(int varid, int shuffle, int deflate, int deflate_level)
     std::string text("variable=");
     text += getVarnameFromVarID(varid);
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
   }
 
   return;
@@ -5252,10 +5065,7 @@ NcAPI::setEndian(int varid, int endian)
     std::string text("variable=");
     text += getVarnameFromVarID(varid);
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
   }
 
   return;
@@ -5330,10 +5140,7 @@ NcAPI::setFletcher32(int varid, int f)
     std::string text("variable=");
     text += getVarnameFromVarID(varid);
 
-    std::vector<std::string> checkType;
-    checkType.push_back("meta");
-
-    exceptionHandling(key, capt, text, checkType, getVarnameFromVarID(varid));
+    exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
   }
 
   return;

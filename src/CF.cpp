@@ -321,7 +321,7 @@ CF::attributeSpellCheck(void)
           capt += CF::attName[eDMin_ix] + "?";
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         // correction for internal use
@@ -373,7 +373,7 @@ CF::checkCoordinateFillValueAtt(Variable& var)
           capt += hdhC::tf_att(n_missing_value) ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
    }
 
@@ -404,7 +404,7 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux)
       capt += "No data" ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
 
     return;
@@ -514,7 +514,7 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
           }
 
           (void) notes->operate(capt0 + capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
 
@@ -590,7 +590,7 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
               capt += mv.indicesStr(i) ;
 
               (void) notes->operate(capt0+capt) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
             }
           }
         }
@@ -671,7 +671,7 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
         capt += "," + hdhC::tf_val(hdhC::double2String(mv[i]));
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -690,7 +690,7 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
     capt += "," + hdhC::tf_val(hdhC::double2String(mv[dif_ix]));
 
     (void) notes->operate(capt) ;
-    notes->setCheckCF_Str( fail );
+    notes->setCheckStatus( n_CF, fail );
   }
 
   return;
@@ -770,7 +770,7 @@ CF::checkGroupRelation(void)
           capt += "seems to be unrelated to any other " + n_variable ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
     }
@@ -826,7 +826,7 @@ CF::checkGroupRelation(void)
       capt += hdhC::tf_val(dimensions[i]) ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -872,7 +872,7 @@ CF::checkSN_Modifier(Variable& var)
         capt += "with too many modifiers" ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -892,7 +892,7 @@ CF::checkSN_Modifier(Variable& var)
       capt += "undefined modifier";
 
     (void) notes->operate(capt) ;
-    notes->setCheckCF_Str( fail );
+    notes->setCheckStatus( n_CF, fail );
   }
 
   return ;
@@ -956,7 +956,7 @@ CF::entry(void)
         capt += "must have data" ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
 
       else if( notes->inq(bKey + "0e", var.name) )
@@ -965,7 +965,7 @@ CF::entry(void)
         capt += "No data" ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -1051,7 +1051,7 @@ CF::finalAtt_axis(void)
           capt += hdhC::tf_val(var.getAttValue(n_axis));
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
 
@@ -1063,7 +1063,7 @@ CF::finalAtt_axis(void)
           capt += "should not have " + hdhC::tf_att(n_axis);
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
       else if( var.coord.isCoordVar || cFVal > 15 )
@@ -1091,7 +1091,7 @@ CF::finalAtt_axis(void)
             capt += hdhC::tf_val(text);
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
       }
@@ -1183,7 +1183,7 @@ CF::finalAtt_axis(void)
           }
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
 
@@ -1200,7 +1200,7 @@ CF::finalAtt_axis(void)
           capt += ">";
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
     }
@@ -1224,7 +1224,7 @@ CF::finalAtt_axis(void)
         capt += "must not have " + hdhC::tf_att(n_axis);
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -1251,7 +1251,7 @@ CF::finalAtt_axis(void)
               capt += "Y";
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
       }
@@ -1303,7 +1303,7 @@ CF::finalAtt_coordinates_A(void)
             capt += "contains a non-existing " + hdhC::tf_var(ca_vvs[i][j]) ;
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
       }
@@ -1439,7 +1439,7 @@ CF::finalAtt_coordinates_B(void)
               capt += hdhC::tf_val(aux.name);
 
               (void) notes->operate(capt) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
             }
           }
 
@@ -1452,7 +1452,7 @@ CF::finalAtt_coordinates_B(void)
               capt += hdhC::tf_att(n_coordinates) ;
 
               (void) notes->operate(capt) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
             }
           }
         }
@@ -1484,7 +1484,7 @@ CF::finalAtt_coordinates_C(void)
         capt += "should not have " + hdhC::tf_att(n_coordinates);
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -1518,7 +1518,7 @@ CF::finalAtt_positive(void)
            capt += hdhC::tf_val(var.attValue[j][0]) ;
 
            (void) notes->operate(capt) ;
-           notes->setCheckCF_Str( fail );
+           notes->setCheckStatus( n_CF, fail );
          }
        }
        else if( notes->inq(bKey + "43c", var.name) )
@@ -1529,7 +1529,7 @@ CF::finalAtt_positive(void)
          capt += "al Z-coordinate with non-pressure " + n_units ;
 
          (void) notes->operate(capt) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
        }
      }
 
@@ -1542,7 +1542,7 @@ CF::finalAtt_positive(void)
           capt += "is only allowed for vertical " + n_coordinates ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
        }
      }
 
@@ -1569,7 +1569,7 @@ CF::finalAtt_units(void)
         capt += n_units + " are missing";
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -1599,7 +1599,7 @@ CF::final_dataVar(void)
     std::string capt("Warning: No data variable in the file" ) ;
 
     (void) notes->operate(capt) ;
-    notes->setCheckCF_Str( fail );
+    notes->setCheckStatus( n_CF, fail );
   }
 
   return;
@@ -1674,7 +1674,7 @@ CF::findAmbiguousCoords(void)
               capt += ">";
 
               (void) notes->operate(capt) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
             }
          }
       }
@@ -2065,7 +2065,7 @@ CF::hasBounds(Variable& var)
            capt += hdhC::tf_var(var.attValue[j][0]);
 
            (void) notes->operate(capt) ;
-           notes->setCheckCF_Str( fail );
+           notes->setCheckStatus( n_CF, fail );
          }
        }
        else
@@ -2120,7 +2120,7 @@ CF::isBounds(Variable& var)
             capt += *(str[n]) + " at the same time" ;
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
 
@@ -2187,6 +2187,7 @@ CF::initDefaults()
   n_calendar="calendar";
   n_cell_measures="cell_measures";
   n_cell_methods="cell_methods";
+  n_CF="CF";
   n_cf_role="cf_role";
   n_climatology="climatology";
   n_compress="compress";
@@ -2587,7 +2588,7 @@ CF::postAnnotations(void)
       if( !i && newTag[t].size() && notes->inq(newTag[t], spec)  )
       {
         (void) notes->operate(capt[t]) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -2727,7 +2728,7 @@ CF::scanStdNameTable(std::vector<int> &zx)
       std::string capt("fatal: the CF-standard-name table could not be opened");
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
 
     return false;
@@ -2917,7 +2918,7 @@ CF::setCheck(std::string &s)
         capt += " is not implemented, using CF-1.4 for the check";
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
      }
    }
    else if( s.find("1.7") < std::string::npos )
@@ -2930,7 +2931,7 @@ CF::setCheck(std::string &s)
         capt += " falling back to CF-1.6" ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
      }
    }
    else
@@ -2942,16 +2943,23 @@ CF::setCheck(std::string &s)
        capt += ", restart with providing a valid convention, e.g. '-C CF-1.4'";
 
        (void) notes->operate(capt) ;
-       notes->setCheckCF_Str( fail );
+       notes->setCheckStatus( n_CF, fail );
      }
 
      isCheck=false;
      return isCheck;  // leads to exit
    }
 
-   notes->setCheckCF_Str("PASS");
-
    return true;
+}
+
+void
+CF::setCheckStatus(std::string s)
+{
+  if(notes)
+    notes->setCheckStatus( n_CF,s);
+
+  return;
 }
 
 bool
@@ -3155,7 +3163,7 @@ CF::timeUnitsFormat(Variable& var, bool isAnnot)
         capt += hdhC::tf_val(var.units);
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -3659,7 +3667,7 @@ CF::chap21(void)
       std::string capt("the extension of the filename should be '.nc'") ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -3682,7 +3690,7 @@ CF::chap22(void)
         capt += "should not be type NC_STRING";
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -3699,7 +3707,7 @@ CF::chap22(void)
           capt += "should not be type NC_STRING";
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
     }
@@ -3797,7 +3805,7 @@ CF::chap23(void)
        std::string capt(fault[i]) ;
 
        (void) notes->operate(capt) ;
-       notes->setCheckCF_Str( fail );
+       notes->setCheckStatus( n_CF, fail );
      }
    }
 
@@ -3896,7 +3904,7 @@ CF::chap23_reco(void)
         capt += what[i];
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
    }
 
@@ -3942,7 +3950,7 @@ CF::chap24(void)
          capt += "Dimensions should have different names" ;
 
          (void) notes->operate(capt) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
        }
      }
    }
@@ -4018,7 +4026,7 @@ CF::chap24_reco(void)
             capt += "should be T,Z,Y,X" ;
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
 
           break;
@@ -4041,7 +4049,7 @@ CF::chap24_reco(void)
           text += var.getDimNameStr(true);
 
           (void) notes->operate(capt, text) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
 */
@@ -4073,7 +4081,7 @@ CF::chap251(void)
           capt += "s deprecated";
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
 
@@ -4148,7 +4156,7 @@ CF::chap251(void)
                           + var.attValue[jxVRange][1]);
 
                (void) notes->operate(capt) ;
-               notes->setCheckCF_Str( fail );
+               notes->setCheckStatus( n_CF, fail );
              }
            }
 
@@ -4168,7 +4176,7 @@ CF::chap251(void)
                  text += ", " + hdhC::tf_assign(n_valid_max, var.attValue[jxVMax][0]) + "]" ;
 
                  (void) notes->operate(capt, text) ;
-                 notes->setCheckCF_Str( fail );
+                 notes->setCheckStatus( n_CF, fail );
                }
              }
            }
@@ -4188,7 +4196,7 @@ CF::chap251(void)
                  text += ", " + hdhC::tf_assign(n_valid_max, var.attValue[jxVMax][0]) ;
 
                  (void) notes->operate(capt, text) ;
-                 notes->setCheckCF_Str( fail );
+                 notes->setCheckStatus( n_CF, fail );
                }
              }
            }
@@ -4207,7 +4215,7 @@ CF::chap251(void)
                  text += ", " + hdhC::tf_assign(n_valid_min, var.attValue[jxVMin][0]) ;
 
                  (void) notes->operate(capt, text) ;
-                 notes->setCheckCF_Str( fail );
+                 notes->setCheckStatus( n_CF, fail );
                }
              }
            }
@@ -4244,7 +4252,7 @@ CF::chap251(void)
              capt += " are different";
 
              (void) notes->operate(capt) ;
-             notes->setCheckCF_Str( fail );
+             notes->setCheckStatus( n_CF, fail );
            }
          }
       }
@@ -4285,7 +4293,7 @@ CF::chap26(void)
          capt += hdhC::tf_att(var.name, aName) + "is empty" ;
 
          (void) notes->operate(capt) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
        }
 
        size_t k;
@@ -4305,7 +4313,7 @@ CF::chap26(void)
                 capt += hdhC::tf_val(pIn->nc.getTypeStr(var.type)) ;
 
                 (void) notes->operate(capt) ;
-                notes->setCheckCF_Str( fail );
+                notes->setCheckStatus( n_CF, fail );
               }
             }
           }
@@ -4321,7 +4329,7 @@ CF::chap26(void)
                 capt += pIn->nc.getTypeStr(var.attType[j]) ;
 
                 (void) notes->operate(capt) ;
-                notes->setCheckCF_Str( fail );
+                notes->setCheckStatus( n_CF, fail );
               }
             }
           }
@@ -4337,7 +4345,7 @@ CF::chap26(void)
                 capt += pIn->nc.getTypeStr(var.attType[j]) ;
 
                 (void) notes->operate(capt) ;
-                notes->setCheckCF_Str( fail );
+                notes->setCheckStatus( n_CF, fail );
               }
             }
           }
@@ -4370,7 +4378,7 @@ CF::chap261(void)
       capt += hdhC::tf_att(hdhC::empty, n_Conventions) ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
   else if( glob_cv.substr(0,3) != "cf-" )
@@ -4395,7 +4403,7 @@ CF::chap261(void)
       }
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -4500,7 +4508,7 @@ CF::chap3_reco(void)
             capt += "Use "  + n_standard_name + " or " + n_long_name;
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
      }
@@ -4537,7 +4545,7 @@ CF::chap33(void)
           capt += "is not CF conform" ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         continue; // disable the following units check
@@ -4567,7 +4575,7 @@ CF::chap33(void)
             capt += hdhC::tf_assign(n_standard_name, var.snTableEntry.std_name) ;
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
 
@@ -4582,7 +4590,7 @@ CF::chap33(void)
             capt += hdhC::tf_val(var.units) ;
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
       }
@@ -4604,7 +4612,7 @@ CF::chap33(void)
             capt += var.snTableEntry.amip ;
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
       }
@@ -4625,7 +4633,7 @@ CF::chap33(void)
             capt += var.snTableEntry.grib;
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
       }
@@ -4696,7 +4704,7 @@ CF::chap34(void)
           std::string capt(hdhC::tf_att(var.name, n_ancillary_variables));
 
           (void) notes->operate(capt + text) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
      }
    }
@@ -4798,7 +4806,7 @@ CF::chap35(void)
               }
 
               (void) notes->operate(capt, text) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
             }
           }
         }
@@ -4823,7 +4831,7 @@ CF::chap35(void)
               text += pIn->nc.getVarTypeStr(var.name) ;
 
               (void) notes->operate(capt, text) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
             }
           }
 
@@ -4842,7 +4850,7 @@ CF::chap35(void)
                  capt += "should be non-zero" ;
 
                  (void) notes->operate(capt) ;
-                 notes->setCheckCF_Str( fail );
+                 notes->setCheckStatus( n_CF, fail );
                }
 
                break;
@@ -4859,7 +4867,7 @@ CF::chap35(void)
             capt += "Missing " + hdhC::tf_att("flag_meanings");
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
 
@@ -4892,7 +4900,7 @@ CF::chap35(void)
                 capt += hdhC::tf_val(hdhC::itoa(pf[k1]->size())) ;
 
                 (void) notes->operate(capt) ;
-                notes->setCheckCF_Str( fail );
+                notes->setCheckStatus( n_CF, fail );
               }
             }
 
@@ -4939,7 +4947,7 @@ CF::chap35(void)
               capt += " '_', '-', '.', '+', and '@'. Found " + t ;
 
               (void) notes->operate(capt) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
           }
         }
 
@@ -4992,7 +5000,7 @@ CF::chap35_reco(void)
                     capt += "should equal the flag_values entry";
 
                     (void) notes->operate(capt) ;
-                    notes->setCheckCF_Str( fail );
+                    notes->setCheckStatus( n_CF, fail );
                  }
                  break;
               }
@@ -5168,7 +5176,7 @@ CF::chap41(Variable& var)
         capt += " coordinate, but " + hdhC::tf_att(n_units) + "is missing";
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -5188,7 +5196,7 @@ CF::chap41(Variable& var)
         capt += " coordinate, but the " + n_standard_name + " is missing";
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -5219,7 +5227,7 @@ CF::chap41(Variable& var)
       capt += hdhC::tf_assign(n_units, var.units) ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -5555,7 +5563,7 @@ CF::chap432(Variable& var,
       text += var.name + hdhC::colon + hdhC::tf_assign(n_formula_terms, var.attValue[att_ft_ix][0]) ;
 
       (void) notes->operate(capt, text) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -5570,7 +5578,7 @@ CF::chap432(Variable& var,
         capt += hdhC::tf_assign(n_units, units) ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -5664,7 +5672,7 @@ CF::chap432_checkSNvsFT( Variable& var,
       capt += hdhC::tf_val(var.attName[att_ft_ix]) ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -5677,7 +5685,7 @@ CF::chap432_checkSNvsFT( Variable& var,
       capt += n_standard_name + " is missing";
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
   else
@@ -5691,7 +5699,7 @@ CF::chap432_checkSNvsFT( Variable& var,
         capt += "suggests a missing " + hdhC::tf_att(n_formula_terms) ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
 
       if( units.size() == 0 || units == "1" ) // another evidence of dim-less Z
@@ -5728,7 +5736,7 @@ CF::chap432_deprecatedUnits(Variable& var, std::string &units)
         capt += "is deprecated";
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -5919,7 +5927,7 @@ CF::chap432_verify_FT(
           capt += hdhC::tf_val(att_ft_pv[j].first + hdhC::blank + att_ft_pv[j].second) ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         continue;
@@ -5947,7 +5955,7 @@ CF::chap432_verify_FT(
                   capt += ", but found " + n_dimension + "less" ;
 
                   (void) notes->operate(capt) ;
-                  notes->setCheckCF_Str( fail );
+                  notes->setCheckStatus( n_CF, fail );
               }
             }
             else
@@ -5976,7 +5984,7 @@ CF::chap432_verify_FT(
                   }
 
                   (void) notes->operate(capt) ;
-                  notes->setCheckCF_Str( fail );
+                  notes->setCheckStatus( n_CF, fail );
                 }
               }
             }
@@ -6008,7 +6016,7 @@ CF::chap432_verify_FT(
              capt += hdhC::tf_val(paramVarUnits[k].second) ;
 
              (void) notes->operate(capt) ;
-             notes->setCheckCF_Str( fail );
+             notes->setCheckStatus( n_CF, fail );
            }
 
            break;
@@ -6037,7 +6045,7 @@ CF::chap432_verify_FT(
           capt += ", found" + hdhC::tf_val(var.attValue[att_ft_ix][0]) ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         break;
@@ -6107,7 +6115,7 @@ CF::chap44(Variable& var)
               capt += "may only be attached to the time coordinate";
 
               (void) notes->operate(capt) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
             }
           }
         }
@@ -6135,7 +6143,7 @@ CF::chap44(Variable& var)
         capt += hdhC::tf_att(n_units) + "is missing";
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -6164,7 +6172,7 @@ CF::chap44a_reco(Variable& var)
       capt += "reference time in the year 0-1-1 is deprecated" ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
    }
 
    return;
@@ -6215,7 +6223,7 @@ CF::chap441(Variable& var)
       capt += "is misspelled, did you mean" + hdhC::tf_val(v_cal) + "?" ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -6245,7 +6253,7 @@ CF::chap441(Variable& var)
         capt += hdhC::tf_val(hdhC::getVector2Str(var.attValue[ml])) ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -6256,7 +6264,7 @@ CF::chap441(Variable& var)
     capt += "requires " + hdhC::tf_att(n_month_lengths) ;
 
     (void) notes->operate(capt) ;
-    notes->setCheckCF_Str( fail );
+    notes->setCheckStatus( n_CF, fail );
   }
 
   // if att=leap_month is defined, then leap_year is required
@@ -6291,7 +6299,7 @@ CF::chap441(Variable& var)
     if( capt.size() && notes->inq(bKey + "441c", var.name) )
     {
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -6304,7 +6312,7 @@ CF::chap441(Variable& var)
       capt += "is ignored because " + n_leap_year + " is not specified" ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -6367,7 +6375,7 @@ CF::chap5_reco(void)
              capt += hdhC::tf_val(dimensions[i]) ;
 
              (void) notes->operate(capt) ;
-             notes->setCheckCF_Str( fail );
+             notes->setCheckStatus( n_CF, fail );
            }
         }
       }
@@ -6391,7 +6399,7 @@ CF::chap5_reco(void)
               capt += "should not match the name of any of its " + n_dimension + "s" ;
 
               (void) notes->operate(capt) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
             }
           }
         }
@@ -6586,7 +6594,7 @@ CF::chap56(void)
              capt += hdhC::tf_var(var.getAttValue(n_grid_mapping));
 
              (void) notes->operate(capt) ;
-             notes->setCheckCF_Str( fail );
+             notes->setCheckStatus( n_CF, fail );
            }
          }
 
@@ -6597,7 +6605,7 @@ CF::chap56(void)
            capt += hdhC::tf_att(n_grid_mapping +"_name");
 
            (void) notes->operate(capt) ;
-           notes->setCheckCF_Str( fail );
+           notes->setCheckStatus( n_CF, fail );
          }
 
          else if( retVal > 2 && notes->inq(bKey + "56g") )
@@ -6610,7 +6618,7 @@ CF::chap56(void)
            capt += hdhC::tf_val(pIn->variable[retVal-3].getAttValue(gmn));
 
            (void) notes->operate(capt) ;
-           notes->setCheckCF_Str( fail );
+           notes->setCheckStatus( n_CF, fail );
          }
 
          continue;
@@ -6648,7 +6656,7 @@ CF::chap56(void)
           capt += ", but an " + hdhC::tf_att(n_grid_mapping) + "is missing" ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         if( var.isNoData )
@@ -6737,7 +6745,7 @@ CF::chap56_gridMappingVar(Variable& var, std::string &s, std::string gmn)
           capt += " should not have " + n_dimension + "s" ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
      }
    }
@@ -6762,7 +6770,7 @@ CF::chap56_attProps(
         capt += "Missing coordinates attribute" ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
      }
    }
 
@@ -6811,7 +6819,7 @@ CF::chap56_attProps(
          capt += " for any " + n_variable ;
 
          (void) notes->operate(capt) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
        }
      }
    }
@@ -6925,7 +6933,7 @@ CF::chap6(void)
              text += dv.getDimNameStr(true);
 
              (void) notes->operate(capt, text) ;
-             notes->setCheckCF_Str( fail );
+             notes->setCheckStatus( n_CF, fail );
           }
         }
       }
@@ -6973,7 +6981,7 @@ CF::chap6(void)
           std::string capt("fatal: the CF-standardized-region-names table could not be opened");
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
     }
@@ -6997,7 +7005,7 @@ CF::chap6(void)
               capt += " requires " + n_standard_name + "=region";
 
               (void) notes->operate(capt) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
           }
         }
 
@@ -7022,7 +7030,7 @@ CF::chap6(void)
             }
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
       }
@@ -7038,7 +7046,7 @@ CF::chap6(void)
           capt += "is specified, but data, i.e. labels, are missing";
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -7171,7 +7179,7 @@ CF::chap71(void)
         text += " vs. " + var_has.getDimNameStr(true);
 
         (void) notes->operate(capt, text) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -7199,7 +7207,7 @@ CF::chap71(void)
         text += " vs. " + var_has.getDimNameStr(true);
 
         (void) notes->operate(capt, text) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -7217,7 +7225,7 @@ CF::chap71(void)
         capt += hdhC::tf_var(var_has.getDimNameStr(true)) ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -7238,7 +7246,7 @@ CF::chap71(void)
         text += pIn->nc.getVarTypeStr(var_is.name);
 
         (void) notes->operate(capt, text) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -7288,7 +7296,7 @@ CF::chap71(void)
            capt += "are different" ;
 
            (void) notes->operate(capt) ;
-           notes->setCheckCF_Str( fail );
+           notes->setCheckStatus( n_CF, fail );
          }
        }
     }
@@ -7316,7 +7324,7 @@ CF::chap71(void)
             capt += hdhC::tf_att( *s[i]) ;
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
       }
@@ -7362,7 +7370,7 @@ CF::chap72(void)
         capt += "requires missing name area: or volume:" ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
 
       var.attValue[jx][0]="CF failed" ;
@@ -7381,7 +7389,7 @@ CF::chap72(void)
           capt += ", required is area: or volume:";
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
     }
@@ -7440,7 +7448,7 @@ CF::chap72(void)
             capt += " by" + hdhC::tf_val(cm) ;
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
 
           continue;
@@ -7482,7 +7490,7 @@ CF::chap72(void)
             capt += ", found" + hdhC::tf_val(mvar.units);
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         // The dimensions of the measure variable should be the same as or a subset of
@@ -7500,7 +7508,7 @@ CF::chap72(void)
               capt += hdhC::tf_var(var.getDimNameStr(true));
 
               (void) notes->operate(capt) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
             }
 
             break;
@@ -7627,7 +7635,7 @@ CF::chap73(void)
         capt += "Comment without a closing paranthesis" ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -7664,7 +7672,7 @@ CF::chap73(void)
          capt += hdhC::tf_val(cm);
 
          (void) notes->operate(capt) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
       }
 
       var.attValue[jx][0].clear() ;
@@ -7679,7 +7687,7 @@ CF::chap73(void)
         capt += "requires format name: method, found" + hdhC::tf_val(cm) ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
 
       var.attValue[jx][0].clear() ;
@@ -7713,7 +7721,7 @@ CF::chap73(void)
                capt += "should be replaced by area:";
 
                (void) notes->operate(capt) ;
-               notes->setCheckCF_Str( fail );
+               notes->setCheckStatus( n_CF, fail );
              }
 
              // replace by area:
@@ -7895,7 +7903,7 @@ CF::chap73_cellMethods_Comment(std::string &par, Variable& var)
            std::string text("found=" + par);
 
            (void) notes->operate(capt, text) ;
-           notes->setCheckCF_Str( fail );
+           notes->setCheckStatus( n_CF, fail );
         }
       }
       else
@@ -7909,7 +7917,7 @@ CF::chap73_cellMethods_Comment(std::string &par, Variable& var)
            std::string text("found=" + par);
 
            (void) notes->operate(capt, text) ;
-           notes->setCheckCF_Str( fail );
+           notes->setCheckStatus( n_CF, fail );
         }
       }
 
@@ -7924,7 +7932,7 @@ CF::chap73_cellMethods_Comment(std::string &par, Variable& var)
          capt += "provides incomplete non-standardised information" ;
 
          (void) notes->operate(capt) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
       }
 
       return true ;
@@ -7951,7 +7959,7 @@ CF::chap73_cellMethods_Comment(std::string &par, Variable& var)
         capt += hdhC::tf_val(par);
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
      }
 
      return true;
@@ -7992,7 +8000,7 @@ CF::chap73_cellMethods_Method(std::string &str0, Variable& var)
       capt += "with invalid " + hdhC::tf_assign("method", x_methods[0]) ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
 
     return true;
@@ -8018,7 +8026,7 @@ CF::chap73_cellMethods_Method(std::string &str0, Variable& var)
         capt += ", expected where|over|within" ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
 
       return true;
@@ -8073,7 +8081,7 @@ CF::chap73_cellMethods_Name(std::string &name, Variable& var)
       capt += "Invalid name" + hdhC::tf_val(x_name[x]+hdhC::colon);
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -8177,7 +8185,7 @@ CF::chap73_inqBounds(Variable& var,
         capt += "-" + n_variable;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -8282,7 +8290,7 @@ CF::chap73b_reco(Variable& var, std::vector<std::string> &cm_name )
       }
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 */
@@ -8338,7 +8346,7 @@ CF::chap733(std::string &method, Variable& var, std::string mode)
     if( notes->inq(key, var.name) )
     {
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
 
     return true;  // no where |over clause specified
@@ -8366,7 +8374,7 @@ CF::chap733(std::string &method, Variable& var, std::string mode)
         std::string capt("fatal: area-type table could not be opened");
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -8412,7 +8420,7 @@ CF::chap733(std::string &method, Variable& var, std::string mode)
           capt += txt[i] ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         return true;
@@ -8430,7 +8438,7 @@ CF::chap733(std::string &method, Variable& var, std::string mode)
           capt += "-condition declares invalid area_type" + hdhC::tf_val(type) ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         return true;
@@ -8457,7 +8465,7 @@ CF::chap733(std::string &method, Variable& var, std::string mode)
             capt += " in <where type1 over type2> should not have more than a single area-type string" ;
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
 
           return true;
@@ -8499,7 +8507,7 @@ CF::chap733(std::string &method, Variable& var, std::string mode)
          }
 
          (void) notes->operate(capt) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
 
          return true;
       }
@@ -8521,7 +8529,7 @@ CF::chap733(std::string &method, Variable& var, std::string mode)
          capt += hdhC::tf_val(tVar.name);
 
          (void) notes->operate(capt) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
       }
 
       return true;
@@ -8572,7 +8580,7 @@ CF::chap734a(std::string& name)
       std::string capt("fatal: the CF-standarad-name table could not be opened");
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
 
     return false ;
@@ -8692,7 +8700,7 @@ CF::chap734b(Variable& var,
           capt += "> with bounds" ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
     }
@@ -8732,7 +8740,7 @@ CF::chap74a(void)
           capt += ", but found in " + hdhC::tf_var(var.name);
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
     }
@@ -8754,7 +8762,7 @@ CF::chap74a(void)
     capt += " specifies " + hdhC::tf_att(n_cell_methods);
 
     (void) notes->operate(capt) ;
-    notes->setCheckCF_Str( fail );
+    notes->setCheckStatus( n_CF, fail );
   }
 
   return;
@@ -8800,7 +8808,7 @@ CF::chap74b(Variable& var,
         text += hdhC::tf_assign(n_cell_methods, var.getAttValue(n_cell_methods));
 
         (void) notes->operate(capt, text) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -8873,7 +8881,7 @@ CF::chap74b(Variable& var,
           capt += hdhC::tf_val(var.getAttValue(n_cell_methods));
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         return false;
@@ -8922,7 +8930,7 @@ CF::chap74b(Variable& var,
           capt += "Invalid condition" + hdhC::tf_val(method[t_ix[state]]) ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         return false;
@@ -8942,7 +8950,7 @@ CF::chap74b(Variable& var,
       capt += hdhC::tf_att(timeName, n_climatology, hdhC::upper) + "is missing" ;
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -9018,7 +9026,7 @@ CF::chap81(Variable& var)
         capt += " have to be the same type";
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
 
       return;
@@ -9060,7 +9068,7 @@ CF::chap81(Variable& var)
         text += pIn->nc.getTypeStr(var.type);
 
         (void) notes->operate(capt, text) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
 
@@ -9097,7 +9105,7 @@ CF::chap81(Variable& var)
          text += pIn->nc.getTypeStr(var.type);
 
          (void) notes->operate(capt, text) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
        }
      }
   }
@@ -9115,7 +9123,7 @@ CF::chap81(Variable& var)
        capt += n_variable + " should not be" + hdhC::tf_val("int") ;
 
        (void) notes->operate(capt) ;
-       notes->setCheckCF_Str( fail );
+       notes->setCheckStatus( n_CF, fail );
      }
   }
 
@@ -9176,7 +9184,7 @@ CF::chap81(Variable& var)
         capt += " have to be the same" ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -9215,7 +9223,7 @@ CF::chap82(Variable& var)
         capt += hdhC::tf_val(pIn->nc.getTypeStr(var.type)) ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
 
       isFailed=true;
@@ -9236,7 +9244,7 @@ CF::chap82(Variable& var)
           capt += "names a non-existing " + n_dimension ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         isFailed=true;
@@ -9258,7 +9266,7 @@ CF::chap82(Variable& var)
          capt += ", but a " + hdhC::tf_att(n_compress) + "is missing";
 
          (void) notes->operate(capt) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
        }
 
        isFailed=true;
@@ -9308,7 +9316,7 @@ CF::chap82(Variable& var)
            capt += "apply C index convention";
 
            (void) notes->operate(capt) ;
-           notes->setCheckCF_Str( fail );
+           notes->setCheckStatus( n_CF, fail );
          }
        }
        else
@@ -9326,7 +9334,7 @@ CF::chap82(Variable& var)
            capt += "apply FORTRAN index convention";
 
            (void) notes->operate(capt) ;
-           notes->setCheckCF_Str( fail );
+           notes->setCheckStatus( n_CF, fail );
          }
        }
        else
@@ -9349,7 +9357,7 @@ CF::chap82(Variable& var)
         }
 */
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -9403,7 +9411,7 @@ CF::chap9(void)
          }
 
          (void) notes->operate(capt) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
        }
     }
 
@@ -9442,7 +9450,7 @@ CF::chap9(void)
           capt += "should not be a global " + n_attribute;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
      }
   }
@@ -9495,7 +9503,7 @@ CF::chap9(void)
           }
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
 
@@ -9532,7 +9540,7 @@ CF::chap9(void)
           capt += hdhC::tf_att(hdhC::empty, n_cf_role, str +"_id") ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
     }
@@ -9559,7 +9567,7 @@ CF::chap9(void)
             capt += "should have " + hdhC::tf_att(n_cf_role);
 
             (void) notes->operate(capt) ;
-            notes->setCheckCF_Str( fail );
+            notes->setCheckStatus( n_CF, fail );
           }
         }
       }
@@ -9635,7 +9643,7 @@ CF::chap9(void)
           }
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
     }
@@ -9656,7 +9664,7 @@ CF::chap9(void)
           capt += hdhC::tf_att(n_featureType) ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
       else
@@ -9677,7 +9685,7 @@ CF::chap9(void)
           }
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         isFeatureType = true;
@@ -9747,7 +9755,7 @@ CF::chap9_featureType(
               capt += validFT_vs[eDMin_ix] + "?";
 
               (void) notes->operate(capt) ;
-              notes->setCheckCF_Str( fail );
+              notes->setCheckStatus( n_CF, fail );
             }
 
             // correction for internal use
@@ -9774,7 +9782,7 @@ CF::chap9_featureType(
       }
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -9799,7 +9807,7 @@ CF::chap9_featureType(
         capt += hdhC::tf_val(vs_featureType[j]) ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -9824,7 +9832,7 @@ CF::chap9_featureType(
          capt += hdhC::tf_var(var.name);
 
          (void) notes->operate(capt) ;
-         notes->setCheckCF_Str( fail );
+         notes->setCheckStatus( n_CF, fail );
        }
     }
 
@@ -10172,7 +10180,7 @@ CF::chap9_sample_dimension(std::vector<size_t>& dv_ix)
         capt += "is only allowed for index variables";
 
         (void) notes->operate(capt) ;
-        notes->setCheckCF_Str( fail );
+        notes->setCheckStatus( n_CF, fail );
       }
     }
   }
@@ -10208,7 +10216,7 @@ CF::chap9_sample_dimension(std::vector<size_t>& dv_ix)
           capt += "does not name a valid dimension";
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
 
         continue;
@@ -10250,7 +10258,7 @@ CF::chap9_sample_dimension(std::vector<size_t>& dv_ix)
           capt += hdhC::itoa(vi_dSz.back()) ;
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
     }
@@ -10316,7 +10324,7 @@ CF::chap9_sample_dimension(std::vector<size_t>& dv_ix)
           capt += hdhC::tf_att(n_sample_dimension);
 
           (void) notes->operate(capt) ;
-          notes->setCheckCF_Str( fail );
+          notes->setCheckStatus( n_CF, fail );
         }
       }
     }
@@ -10368,7 +10376,7 @@ CF::chap9_sample_dimension(std::vector<size_t>& dv_ix)
       }
 
       (void) notes->operate(capt) ;
-      notes->setCheckCF_Str( fail );
+      notes->setCheckStatus( n_CF, fail );
     }
 
     return;
@@ -10404,7 +10412,7 @@ CF::chap9_sample_dimension(std::vector<size_t>& dv_ix)
     capt += hdhC::tf_att(n_instance_dimension);
 
     (void) notes->operate(capt) ;
-    notes->setCheckCF_Str( fail );
+    notes->setCheckStatus( n_CF, fail );
   }
 
   return ;

@@ -314,8 +314,7 @@ public:
 
     void
        exceptionHandling(std::string key,
-            std::string capt, std::string text,
-            std::vector<std::string> &checkType,
+            std::string capt, std::string text="",
             std::string vName="") ;
 
 //! Error messages are written to a file. Exits immediately.

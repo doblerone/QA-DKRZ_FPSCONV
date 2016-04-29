@@ -83,7 +83,7 @@ QA_Time::applyOptions(std::vector<std::string> &optStr)
 void
 QA_Time::finally(NcAPI *nc)
 {
-  if( ! (isTime || pQA->mapCheckMode["TIME"]) )
+  if( ! (isTime || pQA->isCheckTime ) )
     return;
 
   timeOutputBuffer.flush();
@@ -281,43 +281,13 @@ QA_Time::getTimeBoundsValues(double* pair, size_t rec, double offset)
 }
 
 bool
-QA_Time::initTimeBounds(double offset)
-{
-  if( timeBounds_ix == -1 )
-  {
-    firstTimeBoundsValue[0]=0.;
-    firstTimeBoundsValue[1]=0.;
-    lastTimeBoundsValue[0]=0.;
-    lastTimeBoundsValue[1]=0.;
-    return false;
-  }
-
-  (void) pIn->nc.getData(ma_tb, boundsName, 0 );
-  double** m2D =ma_tb.getM();
-  firstTimeBoundsValue[0]=m2D[0][0] + offset;
-  firstTimeBoundsValue[1]=m2D[0][1] + offset;
-
-  size_t rec = pIn->nc.getNumOfRows(boundsName)-1;
-  (void) pIn->nc.getData(ma_tb, boundsName, rec );
-
-  size_t i = pIn->nc.getRecLegIndex(timeBounds_ix, rec) ;
-
-  m2D =ma_tb.getM();
-  lastTimeBoundsValue[0]=m2D[i][0] + offset;
-  lastTimeBoundsValue[1]=m2D[i][1] + offset;
-
-  ANNOT_ACCUM="ACCUM";
-
-  return true;
-}
-
-bool
 QA_Time::init(std::vector<std::string>& optStr)
 {
-   if( pIn->cF && pIn->cF->time_ix > -1 )
+   name = pIn->nc.getUnlimitedDimVarName();
+
+   if( name.size() )
    {
-     name = pIn->cF->timeName;
-     time_ix  = pIn->cF->time_ix;
+     time_ix  = pIn->nc.getVarID(name);
      isTime=true;
      boundsName = pIn->variable[time_ix].bounds ;
    }
@@ -339,7 +309,7 @@ QA_Time::init(std::vector<std::string>& optStr)
 
      if( time_ix == -1 )
      {
-       if( pQA->mapCheckMode["TIME"] )
+       if( pQA->isCheckTime )
          name="fixed";
 
        return false;
@@ -387,59 +357,6 @@ QA_Time::init(std::vector<std::string>& optStr)
    return true;
 }
 
-void
-QA_Time::initDefaults(void)
-{
-   notes=0;
-   pIn=0;
-   pQA=0;
-
-   currTimeStep=0 ;
-   prevTimeValue=MAXDOUBLE;
-   prevTimeBoundsValue[0]=0.;
-   prevTimeBoundsValue[1]=0.;
-   refTimeStep=0.;
-
-   firstTimeValue=0.;
-   currTimeValue=0.;
-   lastTimeValue=0.;
-
-   firstTimeBoundsValue[0]=0.;
-   currTimeBoundsValue[0]=0.;
-   lastTimeBoundsValue[0]=0.;
-   firstTimeBoundsValue[1]=0.;
-   currTimeBoundsValue[1]=0.;
-   lastTimeBoundsValue[1]=0.;
-
-   // time steps are regular. Unsharp logic (i.e. month
-   // Jan=31, Feb=2? days is ok, but also numerical noise).
-
-   isFormattedDate=false;
-   isMaxDateRange=false;
-   isNoCalendar=true;
-   isNoProgress=false;
-   isPrintTimeBoundDates=false;
-   isReferenceDate=true ;
-   isRegularTimeSteps=true;
-   isSingleTimeValue=false;
-   isTime=false;
-   isTimeBounds=false;
-
-   time_ix = -1 ;
-   timeBounds_ix = -1 ;
-
-   refTimeOffset=0.; // !=0, if there are different reference dates
-
-   bufferCount=0;
-   maxBufferSize=1500;
-
-   timeTableMode=UNDEF;
-
-   fail="FAIL";
-   notAvailable="N/A";
-
-   return;
-}
 
 bool
 QA_Time::initAbsoluteTime(std::string &units)
@@ -543,6 +460,61 @@ QA_Time::initAbsoluteTime(std::string &units)
   }
 
   return false;
+}
+
+
+void
+QA_Time::initDefaults(void)
+{
+   notes=0;
+   pIn=0;
+   pQA=0;
+
+   currTimeStep=0 ;
+   prevTimeValue=MAXDOUBLE;
+   prevTimeBoundsValue[0]=0.;
+   prevTimeBoundsValue[1]=0.;
+   refTimeStep=0.;
+
+   firstTimeValue=0.;
+   currTimeValue=0.;
+   lastTimeValue=0.;
+
+   firstTimeBoundsValue[0]=0.;
+   currTimeBoundsValue[0]=0.;
+   lastTimeBoundsValue[0]=0.;
+   firstTimeBoundsValue[1]=0.;
+   currTimeBoundsValue[1]=0.;
+   lastTimeBoundsValue[1]=0.;
+
+   // time steps are regular. Unsharp logic (i.e. month
+   // Jan=31, Feb=2? days is ok, but also numerical noise).
+
+   isFormattedDate=false;
+   isMaxDateRange=false;
+   isNoCalendar=true;
+   isNoProgress=false;
+   isPrintTimeBoundDates=false;
+   isReferenceDate=true ;
+   isRegularTimeSteps=true;
+   isSingleTimeValue=false;
+   isTime=false;
+   isTimeBounds=false;
+
+   time_ix = -1 ;
+   timeBounds_ix = -1 ;
+
+   refTimeOffset=0.; // !=0, if there are different reference dates
+
+   bufferCount=0;
+   maxBufferSize=1500;
+
+   timeTableMode=UNDEF;
+
+   fail="FAIL";
+   notAvailable="N/A";
+
+   return;
 }
 
 bool
@@ -690,6 +662,37 @@ QA_Time::initResumeSession(void)
      static_cast<bool>(pQA->nc->getAttValue("isTimeBoundsTest", name));
 
    return;
+}
+
+bool
+QA_Time::initTimeBounds(double offset)
+{
+  if( timeBounds_ix == -1 )
+  {
+    firstTimeBoundsValue[0]=0.;
+    firstTimeBoundsValue[1]=0.;
+    lastTimeBoundsValue[0]=0.;
+    lastTimeBoundsValue[1]=0.;
+    return false;
+  }
+
+  (void) pIn->nc.getData(ma_tb, boundsName, 0 );
+  double** m2D =ma_tb.getM();
+  firstTimeBoundsValue[0]=m2D[0][0] + offset;
+  firstTimeBoundsValue[1]=m2D[0][1] + offset;
+
+  size_t rec = pIn->nc.getNumOfRows(boundsName)-1;
+  (void) pIn->nc.getData(ma_tb, boundsName, rec );
+
+  size_t i = pIn->nc.getRecLegIndex(timeBounds_ix, rec) ;
+
+  m2D =ma_tb.getM();
+  lastTimeBoundsValue[0]=m2D[i][0] + offset;
+  lastTimeBoundsValue[1]=m2D[i][1] + offset;
+
+  ANNOT_ACCUM="ACCUM";
+
+  return true;
 }
 
 void
@@ -870,7 +873,7 @@ QA_Time::initTimeTable(void)
 
          if( notes->operate(capt, text) )
          {
-           notes->setCheckTimeStr(fail);
+           notes->setCheckStatus("TIME", fail);
            pQA->setExit( notes->getExitValue() ) ;
          }
        }
@@ -941,7 +944,7 @@ QA_Time::parseTimeTable(size_t rec)
 
           if( notes->operate(capt, text) )
           {
-            notes->setCheckTimeStr(fail);
+            notes->setCheckStatus("TIME", fail);
             pQA->setExit( notes->getExitValue() ) ;
           }
         }
@@ -982,7 +985,7 @@ QA_Time::parseTimeTable(size_t rec)
 
          if( notes->operate(capt, text) )
          {
-            notes->setCheckTimeStr(fail);
+            notes->setCheckStatus("TIME", fail);
             pQA->setExit( notes->getExitValue() ) ;
          }
        }
@@ -1018,7 +1021,7 @@ QA_Time::parseTimeTable(size_t rec)
 
          if( notes->operate(capt, ostr.str()) )
          {
-            notes->setCheckTimeStr(fail);
+            notes->setCheckStatus("TIME", fail);
             pQA->setExit( notes->getExitValue() ) ;
          }
        }
@@ -1188,9 +1191,7 @@ QA_Time::sync(void)
 
      if( notes->operate(capt, ostr.str()) )
      {
-       notes->setCheckMetaStr(fail);
-       notes->setCheckTimeStr(fail);
-       notes->setCheckDataStr(fail);
+       notes->setCheckStatus("TIME", fail);
 
        pQA->setExit( notes->getExitValue() ) ;
      }
@@ -1246,7 +1247,7 @@ QA_Time::testTimeBounds(NcAPI &nc)
       ostr  << " " << refDate.getDate(currTimeBoundsValue[1]).str();
 
       (void) notes->operate(capt, ostr.str()) ;
-      notes->setCheckTimeStr(fail);
+      notes->setCheckStatus("TIME", fail);
     }
   }
 
@@ -1319,7 +1320,7 @@ QA_Time::testTimeBounds(NcAPI &nc)
         ostr << refDate.getDate(currTimeBoundsValue[1]).str() << "]";
 
         (void) notes->operate(capt, ostr.str()) ;
-        notes->setCheckTimeStr(fail);
+        notes->setCheckStatus("TIME", fail);
       }
     }
   }
@@ -1381,7 +1382,7 @@ QA_Time::testTimeBounds(NcAPI &nc)
         text += refDate.getDate(currTimeBoundsValue[1]).str() + "]";
 
         (void) notes->operate(capt, text) ;
-        notes->setCheckTimeStr(fail);
+        notes->setCheckStatus("TIME", fail);
       }
     }
   }
@@ -1487,8 +1488,7 @@ QA_Time::testTimeStep(void)
 
       if( notes->operate(capt, ostr.str()) )
       {
-        notes->setCheckTimeStr(fail);
-        notes->setCheckDataStr(fail);
+        notes->setCheckStatus("TIME", fail);
 
         pQA->setExit( notes->getExitValue() ) ;
       }
@@ -1548,7 +1548,7 @@ QA_Time::testTimeStep(void)
 
         if( notes->operate(capt, text) )
         {
-          notes->setCheckTimeStr(fail);
+          notes->setCheckStatus("TIME", fail);
 
           pQA->setExit( notes->getExitValue() ) ;
         }
@@ -1638,7 +1638,7 @@ QA_Time::testTimeStep(void)
 
       if( notes->operate(capt, text) )
       {
-        notes->setCheckTimeStr(fail);
+        notes->setCheckStatus("TIME", fail);
         pQA->setExit( notes->getExitValue() ) ;
       }
     }
