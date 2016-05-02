@@ -11,7 +11,7 @@ cordex()
 
      git fetch && git reset --hard origin/master &> /dev/null
    else
-     git clone /https://is-enes-data.github.io
+     git clone https://github.com/IS-ENES-Data/IS-ENES-Data.github.io
    fi
 
    return
@@ -44,6 +44,8 @@ done
 shift $(( $OPTIND - 1 ))
 
 test $# -eq 1  && cd $1 &> /dev/null
+
+test ! "$prj" && prj=${1##*/}
 
 # search for updates only once a day
 today=$( date '+%Y%m%d' )
