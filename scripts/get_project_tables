@@ -1,0 +1,59 @@
+#! /bin/bash
+
+cordex()
+{
+   if [ -d IS-ENES-Data.github.io ] ; then
+     cd IS-ENES-Data.github.io
+
+     if [ "$(getGitBranch)" != master ] ; then
+       git checkout master &> /dev/null
+     fi
+
+     git fetch && git reset --hard origin/master &> /dev/null
+   else
+     git clone /https://is-enes-data.github.io
+   fi
+
+   return
+}
+
+getGitBranch()
+{
+   git branch | grep '*' | awk '{print $2}'
+   return
+}
+
+# main
+while getopts hP:-: option ${sArgs[*]}
+do
+  case $option in
+    h)  ;;
+    P)  prj=${OPTARG} ;;
+    -) if [ ${OPTARG%=*} = "config_file" ] ; then
+         CONFIG_FILE=${OPTARG##*=}
+       elif [ ${OPTARG} == 'debug' ] ; then
+         set -x
+       elif [ ${OPTARG%=*} = "qa_path" ] ; then
+         QA_SRC=${OPTARG##*=}
+       fi
+       ;;
+   \?) exit 1 ;;
+  esac
+done
+
+shift $(( $OPTIND - 1 ))
+
+test $# -eq 1  && cd $1 &> /dev/null
+
+# search for updates only once a day
+today=$( date '+%Y%m%d' )
+
+if ! . $QA_SRC/scripts/updateConfigFile.txt ${prj}_LAST_TABLE_UPDATE=$today  ; then
+  exit
+fi
+
+if [ "$prj" = CORDEX ] ; then
+  cordex
+fi
+
+

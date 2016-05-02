@@ -338,6 +338,15 @@ update()
   if . $QA_SRC/scripts/updateConfigFile.txt \
           ${AUTO_TABLE_UPDATE:-AUTO_TABLE_UPDATE} \
               || [ ${FORCE_RSYNC:-f} = t ] ; then
+
+    if [ "${PROJECT}" != CF ] ; then
+      ${QA_SRC}/scripts/get_project_tables -P "$PROJECT" \
+          --qa_path=${QA_SRC} \
+          --config_file=$CONFIG_FILE \
+          ${QA_HOME}/tables/projects/${PROJECT}
+    fi
+
+
     if [ "$QA_HOME" != "$QA_SRC" ] ; then
       rsync -auz $QA_SRC/tables $QA_HOME &> /dev/null
     fi
