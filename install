@@ -338,6 +338,15 @@ update()
   if . $QA_SRC/scripts/updateConfigFile.txt \
           ${AUTO_TABLE_UPDATE:-AUTO_TABLE_UPDATE} \
               || [ ${FORCE_RSYNC:-f} = t ] ; then
+
+    if [ "${project}" != CF ] ; then
+      ${QA_SRC}/scripts/get_project_tables \
+          --qa_path=${QA_SRC} \
+          --config_file=$CONFIG_FILE \
+          ${QA_HOME}/tables/projects/${project} 
+    fi
+
+
     if [ "$QA_HOME" != "$QA_SRC" ] ; then
       rsync -auz $QA_SRC/tables $QA_HOME &> /dev/null
     fi
@@ -473,18 +482,22 @@ for pck in $* ; do
     FORCE_RSYNC=t
   else
     coll[${#coll[*]}]=$pck  # collect project names
+    project=$pck
   fi
 done
 
 getSrcPath $zeroArg  # sets also CONDA_ENV
 getCurrPaths
-update
 
 if . $QA_SRC/scripts/updateConfigFile.txt DEFAULT_PROJECT ; then
   defPrj=--default_project=${DEFAULT_PROJECT#*=}
 else
   defPrj=--default_project=$defaultProject
 fi
+
+test ! "$project" && project=${defPrj#*=}
+
+update
 
 test ${CONDA_ENV} && exit  # miniconda built executables
 
