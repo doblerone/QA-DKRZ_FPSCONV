@@ -3,9 +3,9 @@
 ReadLine::ReadLine()
    : isExternalStream(false)
 {
-  init();
-
   FStream = new std::ifstream ;
+
+  init();
 }
 
 ReadLine::ReadLine( std::string file, bool testExistence )
@@ -330,7 +330,12 @@ ReadLine::readLine(bool isVoid)
     if( cbuf == '\n' || cbuf == '\r' )
     {
       if( (cbuf = stream->peek()) == '\n' )
-        cbuf = stream->get();
+      {
+        if( (isEof = stream->eof()) )
+            return false;
+
+          cbuf = stream->get();
+      }
 
       return false ;  // Zeile erfolgreich gelesen
     }
@@ -353,7 +358,7 @@ ReadLine::readLine(bool isVoid)
         isLeading=false;
     }
 
-    // skip fom #-char to the end of tzhe line
+    // skip fom #-char to the end of the line
     if( isSkipComment && cbuf == commentChar )
       isSkip=true;
 
