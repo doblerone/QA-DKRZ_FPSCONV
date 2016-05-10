@@ -341,9 +341,9 @@ update()
 
     if [ "${project}" != CF ] ; then
       ${QA_SRC}/scripts/get_project_tables \
-          --qa_path=${QA_SRC} \
+          --qa_path=${QA_SRC} ${DEBUG} \
           --config_file=$CONFIG_FILE \
-          ${QA_HOME}/tables/projects/${project} 
+          ${QA_HOME}/tables/projects/${project}
     fi
 
 
@@ -352,7 +352,7 @@ update()
     fi
 
     ${QA_SRC}/scripts/get_cfconventions \
-        --qa_path=${QA_SRC} \
+        --qa_path=${QA_SRC} ${DEBUG} \
         --config_file=$CONFIG_FILE \
         ${QA_HOME}/tables/projects/CF
   fi
@@ -431,6 +431,7 @@ do
         elif [ "${UOPTARG:0:5}" = BUILD ] ; then
           isBuild=t
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=install' ] ; then
+          DEBUG='--debug'
           set -x
         elif [ "${UOPTARG%%=*}" = HELP ] ; then
           descript

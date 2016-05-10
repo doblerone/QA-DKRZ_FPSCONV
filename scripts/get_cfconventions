@@ -160,6 +160,8 @@ do
     h)  ;;
     -) if [ ${OPTARG%=*} = "config_file" ] ; then
          CONFIG_FILE=${OPTARG##*=}
+       elif [ ${OPTARG} == 'debug' ] ; then
+         set -x
        elif [ ${OPTARG%=*} = "qa_path" ] ; then
          QA_SRC=${OPTARG##*=}
        fi
