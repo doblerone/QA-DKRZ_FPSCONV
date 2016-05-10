@@ -96,7 +96,7 @@
   test ! "${value}" && return 1
 
   # new
-  sed -i "$((uCF_blkEnd)) a${item}" $CONFIG_FILE &> /dev/null
+  sed -i "$((uCF_blkEnd-1)) a${item}" $CONFIG_FILE &> /dev/null
 
   return 0
 #}
