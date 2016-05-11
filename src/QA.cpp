@@ -331,7 +331,7 @@ QA::defaultPrjTableName(void)
 bool
 QA::entry(void)
 {
-   if( !isCheckData )
+   if( !(isCheckData || isCheckTimeValues) )
      return true;
 
    // no data section provided in the NetCDF file; enable
