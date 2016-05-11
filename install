@@ -339,6 +339,10 @@ update()
           ${AUTO_TABLE_UPDATE:-AUTO_TABLE_UPDATE} \
               || [ ${FORCE_RSYNC:-f} = t ] ; then
 
+    if [ "$QA_HOME" != "$QA_SRC" ] ; then
+      rsync -auz $QA_SRC/tables $QA_HOME &> /dev/null
+    fi
+
     if [ "${project}" != CF ] ; then
       ${QA_SRC}/scripts/get_project_tables \
           --qa_path=${QA_SRC} ${DEBUG} \
@@ -346,10 +350,6 @@ update()
           ${QA_HOME}/tables/projects/${project}
     fi
 
-
-    if [ "$QA_HOME" != "$QA_SRC" ] ; then
-      rsync -auz $QA_SRC/tables $QA_HOME &> /dev/null
-    fi
 
     ${QA_SRC}/scripts/get_cfconventions \
         --qa_path=${QA_SRC} ${DEBUG} \
