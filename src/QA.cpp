@@ -1006,7 +1006,7 @@ QA::postProc(void)
   if( ! isCheckData )
     return retCode;
 
-  if( postProc_outlierTest() )
+  if( outlierOpts.size() && postProc_outlierTest() )
      retCode=true;
 
   return retCode;
