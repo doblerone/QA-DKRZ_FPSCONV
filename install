@@ -337,7 +337,7 @@ update()
 
   if . $QA_SRC/scripts/updateConfigFile.txt \
           ${AUTO_TABLE_UPDATE:-AUTO_TABLE_UPDATE} \
-              || [ ${FORCE_RSYNC:-f} = t ] ; then
+              || [ ${isForceUp:-f} = t ] ; then
 
     if [ "$QA_HOME" != "$QA_SRC" ] ; then
       rsync -auz $QA_SRC/tables $QA_HOME &> /dev/null
@@ -346,7 +346,7 @@ update()
     if [ "${project}" != CF ] ; then
       ${QA_SRC}/scripts/get_project_tables \
           --qa_path=${QA_SRC} ${DEBUG} \
-          --config_file=$CONFIG_FILE \
+          --config_file=$CONFIG_FILE ${isForceUp:+--force-update} \
           ${QA_HOME}/tables/projects/${project}
     fi
 
@@ -433,6 +433,9 @@ do
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=install' ] ; then
           DEBUG='--debug'
           set -x
+        elif [ "${UOPTARG}" = FORCE-UPDATE -o "${UOPTARG}" = FORCE_UPDATE ] ; then
+          isForceUp=t
+          isUpdateQA=t
         elif [ "${UOPTARG%%=*}" = HELP ] ; then
           descript
           exit
@@ -480,7 +483,7 @@ for pck in $* ; do
     udunits=${pck}
   elif [ ${PCK:0:7} = QA_HOME ] ; then
     QA_HOME=${PCK:8}
-    FORCE_RSYNC=t
+    isForceUp=t
   else
     coll[${#coll[*]}]=$pck  # collect project names
     project=$pck

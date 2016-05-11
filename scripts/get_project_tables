@@ -33,6 +33,8 @@ do
          CONFIG_FILE=${OPTARG##*=}
        elif [ ${OPTARG} == 'debug' ] ; then
          set -x
+       elif [ ${OPTARG} == 'force-update' ] ; then
+         isForceUp=t
        elif [ ${OPTARG%=*} = "qa_path" ] ; then
          QA_SRC=${OPTARG##*=}
        fi
@@ -50,8 +52,10 @@ test ! "$prj" && prj=${1##*/}
 # search for updates only once a day
 today=$( date '+%Y%m%d' )
 
-if ! . $QA_SRC/scripts/updateConfigFile.txt ${prj}_LAST_TABLE_UPDATE=$today  ; then
-  exit
+if [ ${isForceUp:-f} = f ] ; then
+  if ! . $QA_SRC/scripts/updateConfigFile.txt ${prj}_LAST_TABLE_UPDATE=$today  ; then
+    exit
+  fi
 fi
 
 if [ "$prj" = CORDEX ] ; then
