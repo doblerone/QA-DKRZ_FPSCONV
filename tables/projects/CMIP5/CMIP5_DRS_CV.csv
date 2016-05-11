@@ -28,7 +28,7 @@ BEGIN: DRS
 # Special format: <DRS-CV name> = global attribute name.
 # Components of directory and file structure.
 # Note that requested values are not part of the DRS_CV check.
-  <activity>          = project_id
+  <activity>          = project_id  = CMIP5
   <product>           = product     = output | output1 | output2 | unsolicited
   <institute>         = institute_id
   <model>             = model_id

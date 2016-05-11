@@ -387,8 +387,17 @@ ReadLine::readLine(bool isVoid)
       if( cbuf == '\n' || cbuf == '\r')
       {
         cbuf = stream->get();
-        if( cbuf == '\n' || cbuf == '\r')
-          cbuf = stream->get();
+
+        // skip leading blanks and tabs
+        while( !(isEof = stream->eof()) )
+        {
+            cbuf = stream->peek();
+            if( cbuf == ' ' || cbuf == '\t')
+              cbuf = stream->get();
+            else
+              break;
+
+        }
 
         continue;
       }

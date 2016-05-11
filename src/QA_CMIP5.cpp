@@ -918,12 +918,10 @@ DRS_CV::run(void)
   DRS_CV_Table& drs_cv_table = pQA->drs_cv_table ;
 
   // check the path
-  if(pQA->isCheckDRS)
-    checkPath(pQA->pIn->file.path, drs_cv_table) ;
+  checkPath(pQA->pIn->file.path, drs_cv_table) ;
 
   // compare filename to netCDF global attributes
-  if(pQA->isCheckCV)
-    checkFilename(pQA->pIn->file.basename, drs_cv_table);
+  checkFilename(pQA->pIn->file.basename, drs_cv_table);
 
   return;
 }
@@ -3144,7 +3142,7 @@ CMOR::checkReqAtt_variable(Variable &var)
 void
 CMOR::checkSource(void)
 {
-  // global attribure 'source'
+  // global attribute 'source'
   Variable& glob = pQA->pIn->variable[pQA->pIn->varSz] ;
 
   std::string n_source("source");
@@ -3168,6 +3166,9 @@ CMOR::checkSource(void)
   x_word.setProtector("()",true);
 
   Split x_brackets;
+  x_brackets.setSeparator("()", true);
+
+  Split x_brackets_items;
 
   for( size_t i=0; i < x_colon.size() ; ++i )
   {
@@ -3263,19 +3264,22 @@ CMOR::checkSource(void)
 
     for( ; j < x_word.size() ; ++j )
     {
-      size_t last = x_word[j].size() - 2;
+//      size_t last = x_word[j].size() - 1;
 
-      if( x_word[j][0] == '(' && x_word[j][last] == ')' )
+      x_brackets = x_colon[i];
+
+//      if( x_word[j][0] == '(' && x_word[j][last] == ')' )
+      if( x_brackets.size() > 1 )
       {
         foundBrackets=true;
-        x_brackets = x_word[j].substr(1,last-1);
+//        x_brackets_items = x_word[j].substr(1,last-1);
+        x_brackets_items = x_brackets[1];
 
-        bool isA = (x_brackets.size() == 1 && dscr_ix != 2 )
+        bool isA = (x_brackets_items.size() == 1 && dscr_ix != 2 )
                     ? true : false ;   // sea ice: or land:
 
         if( !isA )
-          isA = x_brackets.size() != 2 ? true : false;
-        if( x_brackets.size() == 1  )
+          isA = x_brackets_items.size() == 2 ? false : true ;
 
         if(isA)
         {
@@ -3284,7 +3288,7 @@ CMOR::checkSource(void)
           {
             std::string capt(hdhC::tf_att(n_global, n_source, hdhC::colon));
             capt += "faulty term (<technical_name>, <resolution_and_levels>), found";
-            capt += hdhC::tf_val(x_brackets.getStr()) ;
+            capt += hdhC::tf_val(x_brackets_items.getStr()) ;
 
             (void) notes->operate(capt) ;
             notes->setCheckStatus("CV", pQA->n_fail);
