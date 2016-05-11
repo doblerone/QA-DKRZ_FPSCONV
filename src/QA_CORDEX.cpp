@@ -751,7 +751,34 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
   std::string n_ast="*";
   int x_eSz = x_e.size();
   int drsSz = drs.size() ;
-  int drsBeg = drsSz - x_eSz ;
+  int drsBeg=-1;
+
+  if( drsSz > x_eSz )
+  {
+    std::vector<int> count(drsSz, 0);
+
+    for( int i=0 ; i < drsSz ; ++i )
+    {
+      for( int j=0 ; j < x_eSz ; ++j )
+      {
+        int k = i+j;
+        if( k < drsSz && drs[k] == gM[ x_e[j] ] )
+          ++count[i];
+      }
+    }
+
+    // highest count determines drsBeg
+    int countMax=count[0];
+    drsBeg=0;
+    for( size_t i=1 ; i < count.size() ; ++i )
+    {
+      if( countMax < count[i] )
+      {
+        countMax = count[i];
+        drsBeg = i;
+      }
+    }
+  }
 
   if( drsBeg < 0)
   {
@@ -782,10 +809,10 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
           continue;
       }
 
-      text = " global  " ;
-      text += hdhC::tf_att(hdhC::empty,x_e[j],t) ;
-      text += " vs." ;
-      text += hdhC::tf_val(drs[drsBeg+j]) ;
+      text = " check failed, path component " ;
+      text += hdhC::tf_assign(x_e[j],drs[drsBeg+j]) ;
+      text += " does not match global attribute value " ;
+      text += hdhC::tf_val(t) ;
 
       break;
     }

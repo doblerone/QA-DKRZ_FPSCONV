@@ -320,7 +320,9 @@ ReadLine::readLine(bool isVoid)
   prevLine = line;
   line.erase();
   bool isSkip;
-  bool isLeading=true;
+  bool isLeading=false;
+  if( vc_skipLeadingChar.size() )
+    isLeading=true;
 
   // variable number of columns
   while( !(isEof = stream->eof()) )
@@ -340,7 +342,7 @@ ReadLine::readLine(bool isVoid)
       return false ;  // Zeile erfolgreich gelesen
     }
 
-    if(isLeading && vc_skipLeadingChar.size())
+    if(isLeading)
     {
       bool is=false;
       for( size_t i=0 ; i < vc_skipLeadingChar.size() ; ++i )
@@ -403,7 +405,7 @@ ReadLine::readLine(bool isVoid)
       }
     }
 
-    line += cbuf ;  // line enthaelt alle SPACE-Chars
+    line += cbuf ;  // line contains all white chars
   }
 
   if( (isEof=stream->eof()) )
