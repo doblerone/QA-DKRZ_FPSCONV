@@ -8,10 +8,10 @@ CC="/usr/bin/gcc"
 CXX="/usr/bin/g++"
 
 # C compiler options
-CFLAGS="-O2 -Wall"
+CFLAGS="-Wall"
 
 # C++ compiler options
-CXXFLAGS="-O2 -Wall -D NC4"
+CXXFLAGS="-Wall -D NC4"
 
 # Path to libraries (netcdf4 and related, uuid, udunits).
 # Prefix of '-L' may be skipped.
