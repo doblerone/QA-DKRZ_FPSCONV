@@ -2461,7 +2461,7 @@ CF::linkObject(IObj *p)
   else if( className == "QA" )
     qA = dynamic_cast<QA*>(p) ;
 #endif
-  
+
   else if( className ==  "IN" )
     pIn = dynamic_cast<InFile*>(p) ;
 
@@ -5030,9 +5030,41 @@ CF::chap4(void)
      // check (aux) coordinate vars, eventually the data
      if( !var.isChecked && chap4(var) )
      {
+        // special for scalars: if a coordinate and there is no other coordinate of
+        // the same type, then is is a real coordinate var
+        if(var.isScalar)
+        {
+          bool is=true;
+
+          for( size_t i=0 ; i < pIn->varSz ; ++i )
+          {
+             Variable& varj = pIn->variable[i] ;
+             if(var.name != varj.name)
+             {
+                if(varj.coord.isCoordVar)
+                {
+                  for(size_t l=0 ; l < 4 ; ++l )
+                  {
+                    if(var.coord.isC[l] && varj.coord.isC[l])
+                    {
+                      is=false;
+                      break;
+                    }
+
+                    if(!is)
+                      break;
+                  }
+                }
+             }
+          }
+
+          if(is)
+            var.coord.isCoordVar = true;
+        }
+
         bool is = var.coord.isCoordVar ? true : false ;
 
-        // aux coord vars for chap9 features are tested elsewhwere
+        // aux coord vars for chap9 features are tested else where
         if( cFVal > 15 && !is )
           continue ;
 
