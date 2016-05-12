@@ -10325,7 +10325,7 @@ CF::chap9_sample_dimension(std::vector<size_t>& dv_ix)
         continue;
 //      if( var.getAttIndex(n_instance_dimension) == -1 )
 //       continue;
-      if( !var.dimName.size() == 1 )
+      if( var.dimName.size() != 1 )
         continue;
 
       // the sum of values must match the dimension of the data variables
