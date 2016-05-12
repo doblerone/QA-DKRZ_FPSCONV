@@ -3033,7 +3033,7 @@ CMOR::checkReqAtt_global(void)
           else if( !hdhC::isAmong(aV, vs_rqValue) )
           {
             // there is a value. is it the requested one?
-            std::string key("2_8");
+            std::string key("2_2");
             if( notes->inq( key, pQA->s_global ) )
             {
               std::string capt(pQA->s_global);
@@ -3359,7 +3359,30 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
 
   pQA->pIn->nc.getData(vs_values, f_DMD.var->name);
 
-  if( vs_values.size() != x_tVal.size() )
+  bool is=true;
+  if( t_DMD.attMap[CMOR::n_CMOR_dimension] == "plevs")
+  {
+      // There are 17 mandatory levels and up to 6 additional levels
+      // requested of models with sufficient resolution in the stratosphere.
+      if( vs_values.size() > static_cast<size_t>(23) )
+      {
+         std::string key("4_4p");
+         if( notes->inq( key, f_DMD.var->name) )
+         {
+           std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
+           capt += "provision of more than the requested max(17+6) levels, found";
+           capt += hdhC::tf_val(hdhC::double2String(vs_values.size()));
+
+           (void) notes->operate(capt) ;
+           notes->setCheckStatus("CV", pQA->n_fail);
+           pQA->setExit( notes->getExitValue() ) ;
+         }
+
+         is=false;
+      }
+  }
+
+  if( is && vs_values.size() != x_tVal.size() )
   {
     std::string key("4_4");
 
@@ -3435,7 +3458,30 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
   MtrxArr<double> ma;
   pQA->pIn->nc.getData(ma, f_DMD.var->name);
 
-  if( ma.size() != x_tVal.size() )
+  bool is=true;
+  if( t_DMD.attMap[CMOR::n_CMOR_dimension] == "plevs")
+  {
+      // There are 17 mandatory levels and up to 6 additional levels
+      // requested of models with sufficient resolution in the stratosphere.
+      if( ma.size() > static_cast<size_t>(23) )
+      {
+         std::string key("4_4p");
+         if( notes->inq( key, f_DMD.var->name) )
+         {
+           std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
+           capt += " max. no. of levels=(17+6), found";
+           capt += hdhC::tf_val(hdhC::double2String(ma.size()));
+
+           (void) notes->operate(capt) ;
+           notes->setCheckStatus("CV", pQA->n_fail);
+           pQA->setExit( notes->getExitValue() ) ;
+         }
+
+         is=false;
+      }
+  }
+
+  if( is && ma.size() != x_tVal.size() )
   {
     std::string key("4_4");
 
