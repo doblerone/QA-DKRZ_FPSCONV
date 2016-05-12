@@ -3455,8 +3455,17 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
 {
   Split x_tVal( t_DMD.attMap[cName]) ;
 
+  std::string effName(f_DMD.var->name);
+
+  if( cName == n_bounds_values || cName == n_bounds_requested )
+  {
+     // switch from current dim-var to corresponding dim-bnd-var
+     if(f_DMD.var->bounds.size())
+         effName=f_DMD.var->bounds;
+  }
+
   MtrxArr<double> ma;
-  pQA->pIn->nc.getData(ma, f_DMD.var->name);
+  pQA->pIn->nc.getData(ma, effName);
 
   bool is=true;
   if( t_DMD.attMap[CMOR::n_CMOR_dimension] == "plevs")
