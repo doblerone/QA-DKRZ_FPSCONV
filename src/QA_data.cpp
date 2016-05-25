@@ -522,30 +522,6 @@ Outlier::test(QA_Data *pQAD)
           extrMin = extr[j];
     }
 
-    int extrMaxSign=1;
-    if( extrMax < 0. )
-      extrMaxSign=-1;
-
-    int extrMinSign=1;
-    if( extrMin < 0. )
-      extrMinSign=-1;
-
-    if( extrMaxSign == extrMinSign )
-    {
-      if( extrMaxSign == 1 )
-      {
-        if( extrMax > 1. && extrMin < 0.001)
-          continue;  // discard this minimum
-        else if( fabs(extrMax - extrMin) < 1.e-08 )
-          continue;
-      }
-      else
-      {
-        if( extrMin < -1. && extrMax > -0.001)
-          continue;  // discard this maximum
-      }
-    }
-
     // find number of extreme values exceeding N*sigma
     size_t n=0;
     size_t countConst=1;
@@ -671,26 +647,26 @@ Outlier::test(QA_Data *pQAD)
         // fine for absolute and relative Dates
         // search the maximum outlier
 
-        size_t outRecMax;
-        double outValMax;
+        size_t outlRec;
+        double outlValue;
         std::string currDateStrMax;
 
-        outRecMax = outRec[0] ;
-        outValMax = outVal[0] ;
+        outlRec = outRec[0] ;
+        outlValue = outVal[0] ;
 
         double cT = pQA->nc->getData(ma_time, "time", outRec[0]) ;
         currDateStrMax = pQA->qaTime.refDate.getDate(cT).str();
 
         for( size_t k=1 ; k < outRec.size() ; ++k )
         {
-          if ( outVal[k] < outValMax )
+          if ( outVal[k] < outlValue )
             continue;
 
           cT = pQA->nc->getData(ma_time, "time", outRec[k]) ;
           currDateStrMax = pQA->qaTime.refDate.getDate(cT).str();
 
-          outValMax = outVal[k] ;
-          outRecMax = outRec[k] ;
+          outlValue = outVal[k] ;
+          outlRec = outRec[k] ;
         }
 
         std::ostringstream ostr(std::ios::app);
@@ -701,9 +677,9 @@ Outlier::test(QA_Data *pQAD)
           ostr << name << ", ";
         ostr << "rec# ";
 
-        ostr << outRecMax ;
+        ostr << outlRec ;
         ostr << ", value=" ;
-        ostr << std::setw(12) << std::setprecision(5) << outValMax;
+        ostr << std::setw(12) << std::setprecision(5) << outlValue;
 
         std::string capt(ostr.str());
 
@@ -1468,7 +1444,7 @@ QA_Data::initBuffer(QA* p, size_t nxt, size_t mx)
 }
 
 void
-QA_Data::initResumeSession(void)
+QA_Data::initResumeSession(std::string& nomen)
 {
   if( ! pQA->isCheckData )
     return;
@@ -1478,7 +1454,7 @@ QA_Data::initResumeSession(void)
   std::string statStr;
   std::string s0;
 
-  s0 = name + "_max";
+  s0 = nomen + "_max";
   pQA->nc->getAttValues( dv, "valid_range", s0);
   statStr  ="sampleMin=" ;
   statStr += hdhC::double2String( dv[0] );
@@ -1488,7 +1464,7 @@ QA_Data::initResumeSession(void)
   statStr += pQA->nc->getAttString("statistics", s0) ;
   statMax.setSampleProperties( statStr );
 
-  s0 = name + "_min";
+  s0 = nomen + "_min";
   pQA->nc->getAttValues( dv, "valid_range", s0);
   statStr  ="sampleMin=" ;
   statStr += hdhC::double2String( dv[0] );
@@ -1498,7 +1474,7 @@ QA_Data::initResumeSession(void)
   statStr += pQA->nc->getAttString("statistics", s0) ;
   statMin.setSampleProperties( statStr );
 
-  s0 = name + "_ave";
+  s0 = nomen + "_ave";
   pQA->nc->getAttValues( dv, "valid_range", s0);
   statStr  ="sampleMin=" ;
   statStr += hdhC::double2String( dv[0] );
@@ -1508,7 +1484,7 @@ QA_Data::initResumeSession(void)
   statStr += pQA->nc->getAttString("statistics", s0) ;
   statAve.setSampleProperties( statStr );
 
-  s0 = name + "_std_dev";
+  s0 = nomen + "_std_dev";
   pQA->nc->getAttValues( dv, "valid_range", s0);
   statStr  ="sampleMin=" ;
   statStr += hdhC::double2String( dv[0] );

@@ -175,7 +175,7 @@ class QA_Data
   void   initBuffer(QA*, size_t next=0, size_t max=1500);
 
   //! Initialisiation of a resumed session.
-  void   initResumeSession(void);
+  void   initResumeSession(std::string& name);
 
   void   openQA_NcContrib(NcAPI*, Variable *var);
 

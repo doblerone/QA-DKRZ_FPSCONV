@@ -821,6 +821,10 @@ QA::initResumeSession(void)
   if( qaTime.isTime && isCheckTime )
     qaTime.initResumeSession();
 
+  // variables data statistics etc.
+  for( size_t m=0 ; m < qaExp.varMeDa.size() ; ++m )
+    qaExp.varMeDa[m].qaData.initResumeSession(qaExp.varMeDa[m].var->name);
+
   return;
 }
 
