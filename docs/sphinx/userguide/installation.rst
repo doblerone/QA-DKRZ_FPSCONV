@@ -43,7 +43,7 @@ is installed by running the following command (all dependencies are included):
 
 .. code-block:: bash
 
-   $ conda install -c birdhouse -c ioos qa-dkrz
+   $ conda install -c birdhouse -c conda-forge qa-dkrz
 
 
 From Source
