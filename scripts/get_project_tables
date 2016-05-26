@@ -12,6 +12,7 @@ cordex()
      git fetch && git reset --hard origin/master &> /dev/null
    else
      git clone https://github.com/IS-ENES-Data/IS-ENES-Data.github.io
+     ln -sf IS-ENES-Data.github.io/CORDEX_RCMs_ToU.txt CORDEX_RCMs_ToU.txt
    fi
 
    return
