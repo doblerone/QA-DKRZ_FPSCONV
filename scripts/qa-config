@@ -2200,13 +2200,8 @@ done
 
 if [ ${PROJECT} ] ; then
   test ! ${PROJECT_AS} && setKWL PROJECT_AS=${PROJECT}
-else
-  if [ ${PROJECT_AS} ] ; then
-    setKWL PROJECT=${PROJECT_AS}
-  else
-    setKWL PROJECT=NONE
-    setKWL PROJECT_AS=NONE
-  fi
+elif [ ${PROJECT_AS} ] ; then
+  setKWL PROJECT=${PROJECT_AS}
 fi
 
 # command-line overwrites configuration file assignments
@@ -2350,8 +2345,12 @@ fi
 
 set +f
 
-# almost everything is done here
-loadSetting
+if [ ${PROJECT} ] ; then
+  # almost everything is done here
+  loadSetting
+else
+  std_out flush "PROJECT option is missing"
+fi
 
 output
 

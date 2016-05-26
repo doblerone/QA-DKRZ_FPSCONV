@@ -1818,8 +1818,10 @@ getNextVariable()
     fi
   fi
 
-  nextFile="$(echo ${nV_fls[*]} | ${QA_BIN#*:}/syncFiles.x \
-     $syncOpts -P ${nextPath} )"
+#  nextFile="$(echo ${nV_fls[*]} | ${QA_BIN#*:}/syncFiles.x \
+#     $syncOpts -P ${nextPath} )"
+  nextFile="$( ${QA_BIN#*:}/syncFiles.x \
+     $syncOpts -P ${nextPath} ${nV_fls[*]} )"
 
   status=$?
 
@@ -2516,7 +2518,11 @@ init()
     exit
   fi
 
-  test ! ${PROJECT} && PROJECT=NONE
+  if [ ! ${PROJECT} ] ; then
+    std_out flush "PROJECT option is missing"
+    exit 1
+  fi
+
   test ! ${PROJECT_AS} && PROJECT_AS=${PROJECT}
 
   # package update requested and required?
@@ -3585,17 +3591,17 @@ operatePipes()
 
       # anything extraordinary in a record of a sub-temporal file must stop
       # the pipe; p_nF -eq 0 means that the pipe is empty
-      ls ${QA_RESULTS}/data/${subPath}/qa_lock_*.txt ${notes} &> /dev/null
-      local stt=$?
+      ls ${QA_RESULTS}/data/${subPath}/qa_lock_*.txt &> /dev/null
+      local sts=$?
 
-      if [ ${stt} -eq 0 ] ; then
+#      if [ ${sts} -eq 0 ] ; then
         # no processing due to a lock-file
 #        if [ ${PROGRESS_BAR} ] ; then
-          local num=${#p_nF[*]}
+#          local num=${#p_nF[*]}
 #        fi
-      fi
+#      fi
 
-      if [ ${#p_nF[*]} -eq 0 -o ${#stt} -eq 0 ] ; then
+      if [ ${#p_nF[*]} -eq 0 -o ${sts} -eq 0 ] ; then
         countActivePipes=$(( countActivePipes - 1 ))
         nF_EXP[${nFcurr}]=
         nF_TP[${nFcurr}]=

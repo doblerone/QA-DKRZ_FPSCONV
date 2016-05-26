@@ -90,7 +90,7 @@ class QA : public IObj
   std::string
          getAttValue(size_t v_ix, size_t a_ix);
 
-  int    getExitCode(void){return exitCode;}
+  int    getExitCode(int e=-1);
 
   //! Get path componenents.
   /*! mode: "total": filename with total path, "file": filename,
@@ -161,7 +161,7 @@ class QA : public IObj
   std::string qaNcfileFlags;
 
   int exitCode;
-  bool isExit;
+  bool is_exit;
 
   Annotation* notes;
   DRS_CV_Table drs_cv_table;
@@ -244,7 +244,7 @@ class QA : public IObj
                    struct DimensionMetaData &nc_entry,
                    struct DimensionMetaData &tbl_entry, std::string att="");
   void        appendToHistory();
-  bool        getExit(void);
+  bool        isExit(void);
   std::string getSubjectsIntroDim(VariableMetaData &vMD,
                    struct DimensionMetaData &nc_entry,
                    struct DimensionMetaData &tbl_entry, bool isColon=true);

@@ -165,9 +165,9 @@ finally(IObjContainer &ioc)
     {
       if( &ioc.qA[i] )
       {
-        int rV = ioc.qA[i].notes->getExitValue();
-        retVal = ( retVal > rV ) ? retVal : rV ;
-        retVal = ioc.qA[i].finally( retVal );
+        retVal = ioc.qA[i].notes->getExitValue(retVal);
+        retVal = ioc.qA[i].getExitCode(retVal);
+        retVal = ioc.qA[i].finally(retVal);
       }
     }
 

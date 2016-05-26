@@ -363,18 +363,23 @@ Annotation::getCheckStatus(bool withRank)
 }
 
 int
-Annotation::getExitValue(void)
+Annotation::getExitValue(int e_in)
 {
-  if( isExit[4] )  // stop session
-    return 4;
-  if( isExit[3] )  // stop immediately and lock
-    return 3;
-  if( isExit[2] )  // stop after meta-data check and lock
-    return 2;
-  if( isExit[1] )  // issue warning
-    return 1;
+  int retVal=0;
 
-  return 0;
+  if( isExit[4] )  // stop session
+    retVal = 4;
+  else if( isExit[3] )  // stop immediately and lock
+    retVal = 3;
+  else if( isExit[2] )  // stop after meta-data check and lock
+    retVal = 2;
+  else if( isExit[1] )  // issue warning
+    retVal = 1;
+
+  if( e_in > retVal )
+      retVal = e_in;
+
+  return retVal;
 }
 
 bool

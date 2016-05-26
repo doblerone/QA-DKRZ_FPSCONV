@@ -308,7 +308,7 @@ QA::closeEntry(void)
    }
 
    // This here is only for the regular QA time series file
-   if( qaTime.isTime )
+   if( qaTime.isTime && isCheckTimeValues )
      storeTime();
 
    ++currQARec;
@@ -331,8 +331,8 @@ QA::defaultPrjTableName(void)
 bool
 QA::entry(void)
 {
-   if( !(isCheckData || isCheckTimeValues) )
-     return true;
+//   if( !(isCheckData || isCheckTimeValues) )
+//     return true;
 
    // no data section provided in the NetCDF file; enable
    // a single loop
@@ -403,7 +403,7 @@ QA::finally(int xCode)
     if( xCode == 63 )
       xCode=0 ;
 
-    isExit=true;
+    is_exit=true;
 
     if(nc)
     {
@@ -476,16 +476,15 @@ QA::finally_data(int xCode)
   return exitCode ;
 }
 
-bool
-QA::getExit(void)
+int
+QA::getExitCode(int e_in)
 {
-  // note that isExit==true was forced
-  if( exitCode > 1 || isExit )
-    return true;
+  // note that is_exit==true was forced
+  if( exitCode < e_in )
+    return e_in;
 
-  return false;
+  return exitCode;
 }
-
 
 void
 QA::help(void)
@@ -576,28 +575,16 @@ QA::init(void)
       }
    }
 
-   if(isCheckData || isCheckTimeValues)
+   if( isCheckData )
    {
-     notes->setConstraintFreq( qaExp.getFrequency() );
-
-     // enable detection of outlier and replicated records
-     setProcessing();
-
-     // open netCDF for creating, continuation or resuming qa_<varname>.nc.
-     // note that this must happen before checkMetaData which uses currQARec
-     openQA_Nc(*pIn);
-
-     if( getExit() || qaExp.isUseStrict || qaTime.isNoProgress )
+     if( !checkDataBody() )
      {
-       isCheckData=false;
-       return true;
+       isCheckData = false;
+       notes->setCheckStatus(n_data, n_fail);
+       setExit(2);
+//       return true;
      }
-
    }
-
-   // check consistency between sub-sequent files or experiments
-   if(isCheckCNSTY)
-      checkConsistency(*pIn, optStr, tablePath) ;
 
    if(isCheckTimeValues && !qaTime.isTime)
       notes->setCheckStatus(n_time, "FIXED");
@@ -611,18 +598,33 @@ QA::init(void)
            // time is defined, but there is no data
            qaTime.isTime = false;
            notes->setCheckStatus(n_time, n_fail);
+           setExit(2);
          }
       }
    }
 
-   if( isCheckData )
+   if(isCheckData || isCheckTimeValues)
    {
-     if( !checkDataBody() )
+     notes->setConstraintFreq( qaExp.getFrequency() );
+
+     // enable detection of outlier and replicated records
+     setProcessing();
+
+     // open netCDF for creating, continuation or resuming qa_<varname>.nc.
+     // note that this must happen before checkMetaData which uses currQARec
+     openQA_Nc(*pIn);
+
+     if( isExit() || qaExp.isUseStrict || qaTime.isNoProgress )
      {
-       notes->setCheckStatus(n_data, n_fail);
+       isCheckData=false;
        return true;
      }
+
    }
+
+   // check consistency between sub-sequent files or experiments
+   if(isCheckCNSTY)
+      checkConsistency(*pIn, optStr, tablePath) ;
 
    if( isCheckData || isCheckTimeValues )
    {
@@ -720,7 +722,7 @@ QA::initDefaults(void)
   enablePostProc=false;
   enableVersionInHistory=true;
 
-  isExit=false;
+  is_exit=false;
   isFileComplete=true;
   isFirstFile=false;
   isNotFirstRecord=false;
@@ -826,6 +828,16 @@ QA::initResumeSession(void)
     qaExp.varMeDa[m].qaData.initResumeSession(qaExp.varMeDa[m].var->name);
 
   return;
+}
+
+bool
+QA::isExit(void)
+{
+  // note that is_exit==true was forced
+  if( exitCode > 1 || is_exit )
+    return true;
+
+  return false;
 }
 
 void

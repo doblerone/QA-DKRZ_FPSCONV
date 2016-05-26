@@ -72,7 +72,7 @@ class Annotation : public IObj
        getAnnotation(std::string tag, std::vector<std::string>& txt);
   std::string
        getCheckStatus(bool with_rank=false);
-  int  getExitValue(void);
+  int  getExitValue(int e=-1);
   int  getFlag(void);
   void initDefaults(void);
 
