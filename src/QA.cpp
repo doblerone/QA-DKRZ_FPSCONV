@@ -420,6 +420,18 @@ QA::finally(int xCode)
     // post-processing
     xCode = finally_data(xCode) ;
 
+    if(isRequiredGlobal)
+    {
+        Variable& glob = pIn->variable[pIn->varSz] ;
+
+        if( glob.isValidAtt("creation_date") )
+           std::cout << "CREATE-BEG" << glob.getAttValue("creation_date")
+                                     << "CREATE-END";
+        if( glob.isValidAtt("tracking_id") )
+           std::cout << "TRACK-BEG"  << glob.getAttValue("tracking_id")
+                                     << "TRACK-END";
+    }
+
     nc->close();
     nc=0;
   }
