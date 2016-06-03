@@ -569,7 +569,7 @@ QA::init(void)
    // experiment specific obj: set parent, pass over options
    qaExp.run();
 
-   // check existance of any data at all
+   // check existence of any data at all
    if( pIn->ncRecBeg == 0 && pIn->ncRecEnd == 0 )
    {
       isCheckData=false;
