@@ -176,7 +176,7 @@ DRS_CV::checkFilename(std::string& fName, struct DRS_CV_Table& drs_cv_table)
     std::string key("1_6a");
     if( notes->inq( key, pQA->qaTime.name) )
     {
-      std::string capt("filename requires a period");
+      std::string capt("filename requires StartTime-EndTime");
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("DRS", pQA->n_fail);

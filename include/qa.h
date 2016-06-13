@@ -13,6 +13,8 @@
   #include "qa_CORDEX.h"
 #elif defined CMIP5
   #include "qa_CMIP5.h"
+#elif defined CLIPC
+  #include "qa_CLIPC.h"
 #endif
 
 
