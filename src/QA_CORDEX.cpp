@@ -191,8 +191,8 @@ DRS_CV::checkFilename(std::string& fName, struct DRS_CV_Table& drs_cv_table)
 void
 DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_table )
 {
-  // fileEncodingName: name of the encoding type
-  // fileEncoding:     sequence of DRS path components
+  // fNameEncodingStr: name of the encoding type
+  // fNameEncoding:     sequence of DRS path components
   // encodingMap:      name in encoding vs. name of global attribute (or *)
 
   if( x_filename.size() == 0 )
@@ -203,7 +203,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
 
   Variable& globalVar = pQA->pIn->variable[ pQA->pIn->varSz ] ;
   std::string n_ast="*";
-  size_t enc_sz = drs_cv_table.fileEncoding.size() ;
+  size_t enc_sz = drs_cv_table.fNameEncoding.size() ;
 
   Split x_enc[enc_sz];
   std::vector<size_t> countCI(enc_sz, 0);
@@ -220,15 +220,15 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
     std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
 
     // could have a trailing ".nc" item; if yes, then remove this beforehand
-    if( drs_cv_table.fileEncoding[ds].rfind(".nc") < std::string::npos )
+    if( drs_cv_table.fNameEncoding[ds].rfind(".nc") < std::string::npos )
     {
-      std::string& t = drs_cv_table.fileEncoding[ds];
+      std::string& t = drs_cv_table.fNameEncoding[ds];
       // is it trailing?
       if( t.substr(t.size()-3) == ".nc" )
         x_e = t.substr(0, t.size()-3) ;
     }
     else
-      x_e = drs_cv_table.fileEncoding[ds] ;
+      x_e = drs_cv_table.fNameEncoding[ds] ;
 
     for(size_t x=0 ; x < x_e.size() ; ++x )
     {
@@ -544,7 +544,7 @@ DRS_CV::checkProductName(std::string& drs_product,
 void
 DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 {
-  // pathEncodingName: name of the encoding type
+  // pathEncodingStr: name of the encoding type
   // pathEncoding:     sequence of DRS path components
   // encodingMap:      name in encoding vs. name of global attribute (or *)
 

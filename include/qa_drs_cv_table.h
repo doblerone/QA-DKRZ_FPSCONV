@@ -10,15 +10,20 @@ public:
 
    DRS_CV_Table(){;}
    void applyOptions(std::vector<std::string>&);
+   // note that also the input string is cleared from any separator
+   std::string
+        getSeparator(std::string&);
    void read(void);
    void setParent(QA*);
    void setPath(std::string& p){ tablePath=p;}
 
    std::map<std::string, std::string> cvMap;
-   std::vector<std::string> fileEncoding;
-   std::vector<std::string> fileEncodingName;
+   std::vector<std::string> fNameEncoding;
+   std::vector<std::string> fNameEncodingStr;
+   std::vector<std::string> fNameSep;
    std::vector<std::string> pathEncoding;
-   std::vector<std::string> pathEncodingName;
+   std::vector<std::string> pathEncodingStr;
+   std::vector<std::string> pathSep;
 
    std::vector<std::string> varName;
    std::vector<std::vector<std::string> > attName;

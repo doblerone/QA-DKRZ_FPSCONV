@@ -32,6 +32,32 @@ DRS_CV_Table::applyOptions(std::vector<std::string>& optStr)
    return;
 }
 
+std::string
+DRS_CV_Table::getSeparator(std::string& s0)
+{
+    std::string sep;
+    std::string t0;
+    size_t p0, p1;
+
+    if( (p0=s0.find('>')) < std::string::npos)
+    {
+        if( (p1=s0.find('<', p0)) < std::string::npos)
+        {
+            if( p0+2 == p1 )
+            {
+                sep = s0[p0+1] ;
+
+                for( size_t i=0 ; i < s0.size(); ++i )
+                    if( !( s0[i] == '<' || s0[i] == '>') )
+                        t0 += s0[i];
+            }
+        }
+    }
+
+    s0 = t0;
+    return sep;
+}
+
 void
 DRS_CV_Table::read(void)
 {
@@ -62,7 +88,7 @@ DRS_CV_Table::read(void)
   // parse table; trailing ':' indicates variable or 'global'
   ifs.skipWhiteLines();
   ifs.skipComment();
-  ifs.skipCharacter("<>");
+//  ifs.skipCharacter("<>");
   ifs.clearSurroundingSpaces();
 
   Split x_item;
@@ -94,17 +120,32 @@ DRS_CV_Table::read(void)
           {
             isDS=true;
             isFE=false;
-            pathEncodingName.push_back(s0.substr(0, pos-3));
-            pathEncoding.push_back(
-              hdhC::stripSides( s0.substr(++pos)) );
+            pathEncodingStr.push_back("");
+            pathEncoding.push_back("");
+
+            // get separator and cleared s0
+            if( pathSep.size() < pathEncoding.size() )
+            {
+                pathSep.push_back( getSeparator(s0) );
+                pathEncodingStr.back() = s0.substr(0, pos-3) ;
+                pathEncoding.back() = hdhC::stripSides( s0.substr(++pos)) ;
+            }
+
           }
           else if( s0.substr(pos-3, 4) == "-FE:" )
           {
             isDS=false;
             isFE=true;
-            fileEncodingName.push_back(s0.substr(0, pos-3));
-            fileEncoding.push_back(
-              hdhC::stripSides( s0.substr(++pos)) );
+            fNameEncodingStr.push_back("");
+            fNameEncoding.push_back("");
+
+            // get separator and cleared s0
+            if( fNameSep.size() < fNameEncoding.size() )
+            {
+                fNameSep.push_back( getSeparator(s0) );
+                fNameEncodingStr.back() = s0.substr(0, pos-3) ;
+                fNameEncoding.back() = hdhC::stripSides( s0.substr(++pos)) ;
+            }
           }
         }
         else if( s0[0] == '!' )
@@ -112,7 +153,7 @@ DRS_CV_Table::read(void)
           if(isDS)
             pathEncoding.back() += hdhC::stripSides( s0.substr(1)) ;
           else if(isFE)
-            fileEncoding.back() += hdhC::stripSides( s0.substr(1)) ;
+            fNameEncoding.back() += hdhC::stripSides( s0.substr(1)) ;
         }
         else
         {
