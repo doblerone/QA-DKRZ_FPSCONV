@@ -183,7 +183,7 @@ bind_checksum()
      email="-m ${email// /,}"
   fi
 
-  if [ ${#EXP_PATH_INDEX[*]} -gt 0 ] ; then
+  if [ ${#LOG_PATH_INDEX[*]} -gt 0 ] ; then
     getExperimentName ${subPath}
   else
     getExperimentName ${fs[0]}
@@ -193,7 +193,7 @@ bind_checksum()
   ${QA_SRC}/scripts/checkSum -b ${QA_BIN#*:} $type \
       -q ${QA_RESULTS} ${YAML:+--yaml} ${CS_NO_HISTORY:+--no_history} \
       ${CS_STAND_ALONE:+-w}  $email ${CS_TABLE:+-t} ${CS_TABLE} \
-      ${CURR_EXP_NAME:+-x} ${CURR_EXP_NAME} \
+      ${CURR_LOG_FNAME:+-x} ${CURR_LOG_FNAME} \
       -P ${PROJECT_DATA} -S ${subPath} ${fs[*]}
 
   return $?
@@ -299,7 +299,7 @@ callQaConfig()
 
   test ${RESUME_SESSION:-f} = t && log_sessMessage "session resumed."
 
-  test ${EXP_PATH_INDEX:-f} = f && DISABLE_CONSISTENCY_CHECK=t
+  test ${LOG_PATH_INDEX:-f} = f && DISABLE_CONSISTENCY_CHECK=t
 
   # always set
   PATH=${QA_BIN#*:}:$PATH
@@ -338,7 +338,7 @@ callQaExecutor()
   # this is the ultimative test (and unnecessary)
   test $# -eq 0 && return
 
-  local EXP_NAME=$CURR_EXP_NAME
+  local LOG_FNAME=$CURR_LOG_FNAME
 
   nextFile=$1
   nextPeriod=$( getDateRange $nextFile )
@@ -389,8 +389,8 @@ callQaExecutor()
           EMAIL_TO \
           EXCLUDE_ATTRIBUTE \
           EXCLUDE_VARIABLE \
-          EXP_LOGDIR \
-          EXP_NAME \
+          LOG_FNAME_DIR \
+          LOG_FNAME \
           FD_BARS \
           FD_EXPLICIT_PROPS \
           FD_PLAIN \
@@ -626,8 +626,8 @@ checkClosedMessages()
   fs=( $( ls $PROC_POOL/*.closed 2> /dev/null ) )
 
   for f in ${fs} ; do
-    expName="$( grep EXP_NAME= $f )"
-    expName=${expName#EXP_NAME=}
+    expName="$( grep LOG_FNAME= $f )"
+    expName=${expName#LOG_FNAME=}
 
     # experiment log-file
     ffs=( $( ls $PROC_POOL/experiments/$expName.*.log 2> /dev/null ) )
@@ -635,8 +635,19 @@ checkClosedMessages()
       if \
          tryCom get_status \
          test -s $ff  ; then
+
+         if [ ${STDOUT_RESULTS} ] ; then
+            while read line ; do
+                word=( ${line} )
+                test ${word[0]} = 'file:'      && echo -e "\n${line}"
+                test ${word[0]} = 'data_path:' && echo "${line}"
+                test ${word[0]} = 'caption:'   && echo "${line}"
+            done < ${ff}
+         fi
+
          tryCom \
-         cat "$ff" >> $EXP_LOGDIR/${expName}.log
+         cat "$ff" >> $LOG_FNAME_DIR/${expName}.log
+
          tryCom \
          \rm -f "$ff"
 
@@ -657,11 +668,11 @@ checkClosedMessages()
            # remove obsolete entries, thus we have to read one by one
            while read line ; do
              items=( ${line} )
-             if grep -q ${items[3]} $EXP_LOGDIR/${expName}.time &> /dev/null ] ; then
-                sed -i "/${items[3]}/d" $EXP_LOGDIR/${expName}.time
+             if grep -q ${items[3]} $LOG_FNAME_DIR/${expName}.time &> /dev/null ] ; then
+                sed -i "/${items[3]}/d" $LOG_FNAME_DIR/${expName}.time
              fi
 
-             echo "$line" >> $EXP_LOGDIR/${expName}.time
+             echo "$line" >> $LOG_FNAME_DIR/${expName}.time
            done < $ff
            \rm -f "$ff"
         fi
@@ -949,7 +960,7 @@ QA result path: ${target}\nRemoved QA results by following links."
     fi
 
     # also delete table entries
-    rmBlock $EXP_LOGDIR/$CURR_EXP_NAME.log ${fBase[ix]}
+    rmBlock $LOG_FNAME_DIR/$CURR_LOG_FNAME.log ${fBase[ix]}
 
     if [ "$isMessage" != f ] ; then
       local note
@@ -980,13 +991,13 @@ copyPreamble()
 
   test ${isShow:-f} = t && return
 
-  if [ -e $EXP_LOGDIR/${CURR_EXP_NAME}.log ] ; then
+  if [ -e $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log ] ; then
 :
 #    # a new qa svn revision number?
 #    local rev_0 rev_1
 
 #    # i) grep revision num save in
-#    rev_0=( $(grep 'qa_svn_revision' $EXP_LOGDIR/${CURR_EXP_NAME}.log 2> /dev/null \
+#    rev_0=( $(grep 'qa_svn_revision' $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log 2> /dev/null \
 #         | awk -F: '{print $2}') )
 
 #    if [ ! ${rev_0[0]} ] ; then
@@ -1011,7 +1022,7 @@ copyPreamble()
 #      log
 #    fi
   elif [ -f ${SESSION_LOGDIR}/session.prmbl ] ; then
-       cp ${SESSION_LOGDIR}/session.prmbl $EXP_LOGDIR/${CURR_EXP_NAME}.log
+       cp ${SESSION_LOGDIR}/session.prmbl $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log
 #       local rev_1
 #       getRevNum rev_1
 
@@ -1222,8 +1233,8 @@ getAllExps()
       subPath=${line[1]}
       PROJECT_DATA=${PROJECT_DATAV[${line[0]}]}
 
-      # generate an experiment name; CURR_EXP_NAME gets a 'return value'
-      if [ ${#EXP_PATH_INDEX[*]} -gt 0 ] ; then
+      # generate an experiment name; CURR_LOG_FNAME gets a 'return value'
+      if [ ${#LOG_PATH_INDEX[*]} -gt 0 ] ; then
         getExperimentName ${subPath}
       else
         local fs=( $( ls ${PROJECT_DATA}/${subPath}/*.nc 2> /dev/null) )
@@ -1232,7 +1243,7 @@ getAllExps()
 
       if [ ${SHOW_EXP:-f} = t ] ; then
         std_out ttyOnly "\r${blank}\r"
-        std_out ttyOnly "EXP_NAME=${CURR_EXP_NAME}\n"
+        std_out ttyOnly "LOG_FNAME=${CURR_LOG_FNAME}\n"
         std_out ttyOnly "PATH=${PROJECT_DATA}/${subPath}\n\n"
       fi
     done
@@ -1295,30 +1306,30 @@ getDateRange()
 
 ##//! Determine experiments to be processed during this session
 ##/*!
-## The format of experiment names is ruled by the EXP_PATH_INDEX configuration option.
+## The format of experiment names is ruled by the LOG_PATH_INDEX configuration option.
 ##*/
 
 getExperimentName()
 {
-  # find and set CURR_EXP_NAME
+  # find and set CURR_LOG_FNAME
 
-  if [ ${EXP_NAME} ] ; then
-    CURR_EXP_NAME=${EXP_NAME:-all-scope}
-  elif [ ${EXP_FNAME_PATTERN} ] ; then
+  if [ ${LOG_FNAME} ] ; then
+    CURR_LOG_FNAME=${LOG_FNAME:-all-scope}
+  elif [ ${LOG_FNAME_PATTERN} ] ; then
     getExperimentNameFromFile $1
-  elif [ ${EXP_PATH_INDEX} ] ; then
+  elif [ ${LOG_PATH_INDEX} ] ; then
     getExperimentNameFromPath $1
   fi
 
   local iex
-  for(( iex=0 ; iex < ${#EXP_NAMES[*]} ; ++iex )) ; do
-    if [ ${EXP_NAMES[iex]} = ${CURR_EXP_NAME} ] ; then
+  for(( iex=0 ; iex < ${#LOG_FNAMES[*]} ; ++iex )) ; do
+    if [ ${LOG_FNAMES[iex]} = ${CURR_LOG_FNAME} ] ; then
       return
     fi
   done
 
   # a new entry
-  EXP_NAMES[${#EXP_NAMES[*]}]=${CURR_EXP_NAME}
+  LOG_FNAMES[${#LOG_FNAMES[*]}]=${CURR_LOG_FNAME}
 
   copyPreamble
 
@@ -1329,16 +1340,16 @@ getExperimentNameFromFile()
 {
   # see function initExperimentName()
 
-  # EXP_NAME was defined in initExperimentName() and will never be
+  # LOG_FNAME was defined in initExperimentName() and will never be
   # changed again
 
   # decompose the path
   local pc=${1%.nc}
-  local pcs=( ${pc//${EXP_PAT_SEP}/ } )
+  local pcs=( ${pc//${LOG_PAT_SEP}/ } )
 
   local i
-  CURR_EXP_NAME=
-  for(( i=EXP_PAT_BEG ; i < ${EXP_PAT_END:-${#pcs[*]}} ; ++i )) ; do
+  CURR_LOG_FNAME=
+  for(( i=LOG_PAT_BEG ; i < ${LOG_PAT_END:-${#pcs[*]}} ; ++i )) ; do
     if expr match ${pcs[i]} 'v[[:digit:]]' &> /dev/null
     then
       continue
@@ -1349,11 +1360,11 @@ getExperimentNameFromFile()
       continue
     fi
 
-    CURR_EXP_NAME=${CURR_EXP_NAME}${pcs[i]}_
+    CURR_LOG_FNAME=${CURR_LOG_FNAME}${pcs[i]}_
   done
-  CURR_EXP_NAME=${CURR_EXP_NAME%_}
+  CURR_LOG_FNAME=${CURR_LOG_FNAME%_}
 
-  test ! ${CURR_EXP_NAME} && CURR_EXP_NAME=no-exp-name-found
+  test ! ${CURR_LOG_FNAME} && CURR_LOG_FNAME=no-exp-name-found
   return
 }
 
@@ -1362,7 +1373,7 @@ getExperimentNameFromPath()
   # extract the name of the experiment from subPath
   # see function initExperimentName()
 
-  # EXP_NAME was defined in initExperimentName() and will never be
+  # LOG_FNAME was defined in initExperimentName() and will never be
   # changed again
 
   # decompose the path
@@ -1371,7 +1382,7 @@ getExperimentNameFromPath()
   pcs=( ${pcs//\// } )
 
   # check for path component 'output'
-  test ! ${EXP_PATH_BASE} && EXP_PATH_BASE=${pcs[0]}
+  test ! ${LOG_PATH_BASE} && LOG_PATH_BASE=${pcs[0]}
 
   local countEPB=0
   local c expPathIndex M N
@@ -1380,28 +1391,28 @@ getExperimentNameFromPath()
   # for multiple occurrences
   local base_ix=0
   for(( c=0 ; c < N ; ++c )) ; do
-    test "${pcs[c]}" = ${EXP_PATH_BASE} && base_ix=$c
+    test "${pcs[c]}" = ${LOG_PATH_BASE} && base_ix=$c
   done
 
   local ix
-  for(( ix=0 ; ix < ${#EXP_PATH_INDEX[*]} ; ++ix )) ; do
-    expPathIndex[ix]=$(( base_ix + ${EXP_PATH_INDEX[ix]} ))
+  for(( ix=0 ; ix < ${#LOG_PATH_INDEX[*]} ; ++ix )) ; do
+    expPathIndex[ix]=$(( base_ix + ${LOG_PATH_INDEX[ix]} ))
   done
 
-  test ${#expPathIndex[*]} -eq 0 && expPathIndex=( ${EXP_PATH_INDEX[*]} )
+  test ${#expPathIndex[*]} -eq 0 && expPathIndex=( ${LOG_PATH_INDEX[*]} )
 
   # compose the name
-  CURR_EXP_NAME=
+  CURR_LOG_FNAME=
   for c in ${expPathIndex[*]} ; do
     if [ $c -lt $N ] ; then
       # subtract the reversed positional index from array size
-      CURR_EXP_NAME=${CURR_EXP_NAME}${pcs[c]}_
+      CURR_LOG_FNAME=${CURR_LOG_FNAME}${pcs[c]}_
     else
-      CURR_EXP_NAME=unknownExp
+      CURR_LOG_FNAME=unknownExp
       break
     fi
   done
-  CURR_EXP_NAME=${CURR_EXP_NAME%_}
+  CURR_LOG_FNAME=${CURR_LOG_FNAME%_}
 
   return
 }
@@ -1628,7 +1639,7 @@ getNextVariable()
 
   # get files with fBase (temporal information added)
   if [ ${QUERY_NON_NC_FILE:-f} = t ] ; then
-    nV_fls=( $( find ${nextPath} -maxdepth 1 -type f -name "*" 2> /dev/null ) )
+    nV_fls=( $( find ${nextPath} -maxdepth 1 -type f -name "${1}*" 2> /dev/null ) )
   else
     nV_fls=( $( find ${nextPath} -maxdepth 1 -name "${1}*.nc" 2> /dev/null ) )
   fi
@@ -1645,58 +1656,63 @@ getNextVariable()
   # check for broken symbolic links
   local f l is
 
-  for(( l=${#nV_fls[*]} - 1 ; l >= 0 ; --l )) ; do
-    f=$nextPath/${nV_fls[l]}
-    if [ -h $f -a ! -e $f ] ; then
-      if [ ${IGNORE_BROKEN_LINKS:-f} = t ] ; then
-        continue
-      else
-        y_impact=L2
-        y_caption='broken link'
-        y_tag=M2
-        initLog ${nV_fls[l]}
+  if [ ${ACCEPT_EVERY_FILE:-f} = t ] ; then
+    nextFile=( ${nV_fls[*]} )
+    return 1
+  fi
+
+    for(( l=${#nV_fls[*]} - 1 ; l >= 0 ; --l )) ; do
+      f=$nextPath/${nV_fls[l]}
+      if [ -h $f -a ! -e $f ] ; then
+        if [ ${IGNORE_BROKEN_LINKS:-f} = t ] ; then
+          continue
+        else
+          y_impact=L2
+          y_caption='broken link'
+          y_tag=M2
+          initLog ${nV_fls[l]}
+
+          is=t
+        fi
+      fi
+    done
+    if [ ${is:-f} = t ] ; then
+      nextFile=  # ignore, try next
+      return 0
+    fi
+
+    for(( l=0 ;  l < ${#nV_fls[*]} ; ++l )) ; do
+      f=$nextPath/${nV_fls[l]}
+      local num=${#nV_fls[*]}
+
+      if [ ! -s $nextPath/${nV_fls[l]} ] ; then
+        if [ ${QUERY_EMPTY_FILE:-f} = t ] ; then
+          y_impact=L2
+          y_caption='empty data file'
+          y_tag=M3
+          initLog ${nV_fls[l]}
+          unset nV_fls[${l}]
+        fi
 
         is=t
-      fi
+      elif ! expr match ${nV_fls[l]} "${1}.*\.nc" &> /dev/null ; then
+        if [ ${QUERY_NON_NC_FILE:-f} = t ] ; then
+          y_caption="invalid filename, found ${nV_fls[l]}"
+          y_impact=L1
+          y_tag=M6
+          initLog ${nV_fls[l]}
+          unset nV_fls[${l}]
+        fi
+
+        is=t
+     fi
+    done
+    if [ ${is:-f} = t ] ; then
+      nextFile=  # ignore, try next
+      return 0
     fi
-  done
-  if [ ${is:-f} = t ] ; then
-    nextFile=  # ignore, try next
-    return 0
-  fi
 
-  for(( l=0 ;  l < ${#nV_fls[*]} ; ++l )) ; do
-    f=$nextPath/${nV_fls[l]}
-    local num=${#nV_fls[*]}
-
-    if [ ! -s $nextPath/${nV_fls[l]} ] ; then
-      if [ ${QUERY_EMPTY_FILE:-f} = t ] ; then
-        y_impact=L2
-        y_caption='empty data file'
-        y_tag=M3
-        initLog ${nV_fls[l]}
-        unset nV_fls[${l}]
-      fi
-
-      is=t
-    elif ! expr match ${nV_fls[l]} "${1}.*\.nc" &> /dev/null ; then
-      if [ ${QUERY_NON_NC_FILE:-f} = t ] ; then
-        y_caption="invalid filename, found ${nV_fls[l]}"
-        y_impact=L1
-        y_tag=M6
-        initLog ${nV_fls[l]}
-        unset nV_fls[${l}]
-      fi
-
-      is=t
-    fi
-  done
-  if [ ${is:-f} = t ] ; then
-    nextFile=  # ignore, try next
-    return 0
-  fi
-
-  nV_fls=( ${nV_fls[*]} )
+    nV_fls=( ${nV_fls[*]} )
 
   # check read permission on each file; this must be done prior the
   # call to syncFiles.x, because no permission would cause a
@@ -1816,6 +1832,11 @@ getNextVariable()
       nextFile=  # ignore, try next
       return 0
     fi
+  fi
+
+  if [ ${NO_SEQUENCE_CHECK:-f} = t ] ; then
+    nextFile=( ${nV_fls[*]} )
+    return 1
   fi
 
 #  nextFile="$(echo ${nV_fls[*]} | ${QA_BIN#*:}/syncFiles.x \
@@ -2052,17 +2073,21 @@ getPaths()
         SELECT_PATH_LIST[${#SELECT_PATH_LIST[*]}]=${PROJECT_DATAV[i]##*/}
         PROJECT_DATAV[i]=${PROJECT_DATAV[i]%/*}
       else
-        # a directory or something with RegExpr
-        splitAtRegExp ${PROJECT_DATAV[i]}
-
-        if [ ! ${splitRE_1} ] ; then
-          SELECT_PATH_LIST[${#SELECT_PATH_LIST[*]}]='.*'
-        else
-          SELECT_PATH_LIST[${#SELECT_PATH_LIST[*]}]=${splitRE_1}
-          PROJECT_DATAV[i]=${splitRE_0}
-        fi
-
+        SELECT_PATH_LIST[${#SELECT_PATH_LIST[*]}]=${PROJECT_DATAV[i]##*/}
         SELECT_VAR_LIST[${#SELECT_VAR_LIST[*]}]='.*'
+        PROJECT_DATAV[i]=${PROJECT_DATAV[i]%/*}
+
+        # a directory or something with RegExpr
+#        splitAtRegExp ${PROJECT_DATAV[i]}
+
+#        if [ ! ${splitRE_1} ] ; then
+#          SELECT_PATH_LIST[${#SELECT_PATH_LIST[*]}]='.*'
+#        else
+#          SELECT_PATH_LIST[${#SELECT_PATH_LIST[*]}]=${splitRE_1}
+#          PROJECT_DATAV[i]=${splitRE_0}
+#        fi
+
+#        SELECT_VAR_LIST[${#SELECT_VAR_LIST[*]}]='.*'
       fi
     done
   fi
@@ -2359,7 +2384,7 @@ getSelectedPaths()
         break
       fi
 
-      if expr match "$currDir" "${basePath}/${SELECT_PATH_LIST[s]}" &> /dev/null
+      if expr match "${currDir}" "${basePath}/${SELECT_PATH_LIST[s]}" &> /dev/null
       then
 
         for entry in ${entries[*]} ; do
@@ -2650,16 +2675,16 @@ init()
        getAllExps
      else
        if [ ${ONLY_SUMMARY} = all ] ; then
-        EXP_NAMES=( $(ls -d ${QA_RESULTS}/check_logs/*.log) )
-        EXP_NAMES=( ${EXP_NAMES[*]##*/} )
+        LOG_FNAMES=( $(ls -d ${QA_RESULTS}/check_logs/*.log) )
+        LOG_FNAMES=( ${LOG_FNAMES[*]##*/} )
        else
-        EXP_NAMES=( ${ONLY_SUMMARY//,/ } )
+        LOG_FNAMES=( ${ONLY_SUMMARY//,/ } )
        fi
 
        local i
-       for(( i=0 ; i < ${#EXP_NAMES[*]} ; ++i )) ; do
-         if [ ${EXP_NAMES[i]} != ${EXP_NAMES[i]%.log} ] ; then
-           EXP_NAMES[${i}]=${EXP_NAMES[i]%.log}
+       for(( i=0 ; i < ${#LOG_FNAMES[*]} ; ++i )) ; do
+         if [ ${LOG_FNAMES[i]} != ${LOG_FNAMES[i]%.log} ] ; then
+           LOG_FNAMES[${i}]=${LOG_FNAMES[i]%.log}
          fi
        done
      fi
@@ -2714,49 +2739,49 @@ init()
 
 initExperimentName()
 {
-  # provided EXP_NAME has preference
-  if [ ${EXP_NAME} ] ; then
-    unset EXP_FNAME_PATTERN
-    unset EXP_PATH_INDEX
+  # provided LOG_FNAME has preference
+  if [ ${LOG_FNAME} ] ; then
+    unset LOG_FNAME_PATTERN
+    unset LOG_PATH_INDEX
 
-  elif [ ${EXP_FNAME_PATTERN} ] ; then
-    local items=( ${EXP_FNAME_PATTERN//\// } )
+  elif [ ${LOG_FNAME_PATTERN} ] ; then
+    local items=( ${LOG_FNAME_PATTERN//\// } )
     local item
-    EXP_PAT_BEG=0
-    EXP_PAT_SEP=_
+    LOG_PAT_BEG=0
+    LOG_PAT_SEP=_
 
     for item in ${items[*]} ; do
       if [ ${item:0:1} = b ] ; then
-        EXP_PAT_BEG=${item:1}
+        LOG_PAT_BEG=${item:1}
       elif [ ${item:0:1} = e ] ; then
-        EXP_PAT_END=${item:1}
+        LOG_PAT_END=${item:1}
       elif [ ${item:0:1} = s ] ; then
-        EXP_PAT_SEP=${item:1}
+        LOG_PAT_SEP=${item:1}
       fi
     done
 
-    unset EXP_PATH_INDEX
+    unset LOG_PATH_INDEX
 
-  elif [ ${EXP_PATH_INDEX} ] ; then
+  elif [ ${LOG_PATH_INDEX} ] ; then
     # extract the name of the experiment from subPath
-    # Explanation: look for EXP_PATH_INDEX in a configuration file
+    # Explanation: look for LOG_PATH_INDEX in a configuration file
 
     # we need a real array
-    EXP_PATH_INDEX=( ${EXP_PATH_INDEX//,/ } )
-    EXP_PATH_INDEX_MAX=100  # exceeds any number of path components
+    LOG_PATH_INDEX=( ${LOG_PATH_INDEX//,/ } )
+    LOG_PATH_INDEX_MAX=100  # exceeds any number of path components
 
     # note: the highest number points to the most left-side
     # path component
 
-    EXP_PATH_INDEX_MAX=0
+    LOG_PATH_INDEX_MAX=0
 
     local t
-    for t in ${EXP_PATH_INDEX[*]} ; do
-      test ${t} -gt ${EXP_PATH_INDEX_MAX} && EXP_PATH_INDEX_MAX=${t}
+    for t in ${LOG_PATH_INDEX[*]} ; do
+      test ${t} -gt ${LOG_PATH_INDEX_MAX} && LOG_PATH_INDEX_MAX=${t}
     done
 
   else
-    EXP_NAME='all-scope'
+    LOG_FNAME='all-scope'
   fi
 
   return
@@ -2769,10 +2794,7 @@ initLog()
   sTxt[$((ix++))]="3file: $1"
   sTxt[$((ix++))]="3data_path: ${nextPath}"
   sTxt[$((ix++))]="3result_path: ${QA_DATADIR}/${subPath}"
-  sTxt[$((ix++))]="3check:"
-  sTxt[$((ix++))]="4meta_data: ${y_meta_data:-FAIL}"
-  sTxt[$((ix++))]="4time_values: ${y_time_values:-OMIT}"
-  sTxt[$((ix++))]="4data: ${y_data:-OMIT}"
+  sTxt[$((ix++))]="3conclusion: FAIL"
   sTxt[$((ix++))]="3events:"
   sTxt[$((ix++))]="3 - event:"
   sTxt[$((ix++))]="7caption: \'${y_caption}\'"
@@ -2836,7 +2858,7 @@ initProjectTableName()
 initTables()
 {
   # extract the name of the experiment from subPath
-  # Explanation: look for EXP_PATH_INDEX in a configuration file
+  # Explanation: look for LOG_PATH_INDEX in a configuration file
 
   # we need a real array
   PT_PATH_INDEX=( ${PT_PATH_INDEX//,/ } )
@@ -3223,12 +3245,12 @@ log()
   fi
 
   local out
-  if [ ${EXP_PATH_INDEX[0]} ] ; then
+  if [ ${LOG_PATH_INDEX[0]} ] ; then
     getExperimentName ${subPath}
   else
     getExperimentName ${netxFile[0]}
   fi
-  out=$EXP_LOGDIR/${CURR_EXP_NAME}.log
+  out=$LOG_FNAME_DIR/${CURR_LOG_FNAME}.log
 
   s_out="${s_out} - date: $( date +'%FT%T' )"
 
@@ -3317,10 +3339,10 @@ log_expMessage()
 
 #  if [ ${QA_HOST} = $HOSTNAME ] ; then
     tryCom \
-    echo -e "${str}" >> $EXP_LOGDIR/${CURR_EXP_NAME}.log
+    echo -e "${str}" >> $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log
 #  else
 #    tryRemote ssh ${QA_HOST} \
-#      echo -e ${str} >> $EXP_LOGDIR/${CURR_EXP_NAME}.log
+#      echo -e ${str} >> $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log
 #  fi
 
    return
@@ -3534,7 +3556,7 @@ operatePipes()
     eval nFstore[${j}]=${xyz}
 
 #trace \
-    if [ ${EXP_PATH_INDEX[0]} ] ; then
+    if [ ${LOG_PATH_INDEX[0]} ] ; then
       getExperimentName ${subPath}
     else
       getExperimentName ${nextFile[0]}
@@ -3543,7 +3565,7 @@ operatePipes()
 #trace \
     getProjectTableName ${subPath}
 
-    nF_EXP[${j}]=$CURR_EXP_NAME
+    nF_EXP[${j}]=$CURR_LOG_FNAME
     nF_TP[${j}]=$PROJECT_TABLE
     nF_SUBPATH[${j}]=${subPath}
     nF_name[${j}]=${fBase[ix]}
@@ -3584,7 +3606,7 @@ operatePipes()
       metaW=${nFstore[nFcurr]}
 
       p_nF=(${!metaV})
-      CURR_EXP_NAME=${nF_EXP[nFcurr]}
+      CURR_LOG_FNAME=${nF_EXP[nFcurr]}
       PROJECT_TABLE=${nF_TP[nFcurr]}
 
       subPath=${nF_SUBPATH[nFcurr]}
@@ -3845,7 +3867,7 @@ sendEMail()
   fi
 
   local sendSub
-  sendSub="QA ${PROJECT} ${CURR_EXP_NAME}: ${sendSubject}"
+  sendSub="QA ${PROJECT} ${CURR_LOG_FNAME}: ${sendSubject}"
 
   # activate backslash escaped chars
   local sendT
@@ -4047,7 +4069,7 @@ taskSum()
     pidBuf[i]=''
   done
 
-  while [ ${exp_ix} -lt ${#EXP_NAMES[*]} ] ; do
+  while [ ${exp_ix} -lt ${#LOG_FNAMES[*]} ] ; do
     for(( i=0 ; i < pidBufMax ; ++i )) ; do
       if [ "${pidBuf[i]}" ] ; then
         if ! ps -p ${pidBuf[i]} -o pid= &> /dev/null  ; then
@@ -4064,7 +4086,7 @@ taskSum()
     if [ ${isStart} = t ] ; then
       /bin/bash ${QA_SRC}/scripts/taskSummary ${DEBUG_X} \
         -p ${QA_RESULTS}/check_logs --src=$QA_SRC \
-        ${cvr} ${ers} ${prj} ${qrs} ${tcl} ${EXP_NAMES[exp_ix]} &
+        ${cvr} ${ers} ${prj} ${qrs} ${tcl} ${LOG_FNAMES[exp_ix]} &
 
       pidBuf[i]=$!
       isStart=f
@@ -4196,7 +4218,7 @@ testLocks()
   # conditions for clearing are described in the configuration file
   if [ ${CLEAR} ] ; then
 #trace \
-    if [ ${EXP_PATH_INDEX[0]} ] ; then
+    if [ ${LOG_PATH_INDEX[0]} ] ; then
       getExperimentName ${subPath}
     else
       getExperimentName $1

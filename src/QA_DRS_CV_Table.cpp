@@ -35,9 +35,14 @@ DRS_CV_Table::applyOptions(std::vector<std::string>& optStr)
 std::string
 DRS_CV_Table::getSeparator(std::string& s0)
 {
+    size_t p0, p1;
+    p0 = s0.find('>') ;
+
+    if( p0 == std::string::npos )
+        return "_"; // default
+
     std::string sep;
     std::string t0;
-    size_t p0, p1;
 
     if( (p0=s0.find('>')) < std::string::npos)
     {
@@ -54,7 +59,7 @@ DRS_CV_Table::getSeparator(std::string& s0)
         }
     }
 
-    s0 = t0;
+    s0 = hdhC::clearChars(t0, "<>");
     return sep;
 }
 
@@ -88,8 +93,8 @@ DRS_CV_Table::read(void)
   // parse table; trailing ':' indicates variable or 'global'
   ifs.skipWhiteLines();
   ifs.skipComment();
-//  ifs.skipCharacter("<>");
   ifs.clearSurroundingSpaces();
+  ifs.skipCharacter("<>");
 
   Split x_item;
   x_item.setSeparator("=");
@@ -97,11 +102,25 @@ DRS_CV_Table::read(void)
 
   bool isDS=false;
   bool isFE=false;
+  std::string DS_sep("/");
+  std::string FE_sep("_");
 
   while( ! ifs.getLine(s0) )
   {
     if( s0.size() == 0 )
       continue;
+
+    if( s0.substr(0,6) == "DS-SEP" )
+    {
+        DS_sep = s0.substr(7);
+        continue;
+    }
+
+    if( s0.substr(0,6) == "FE-SEP" )
+    {
+        FE_sep = s0.substr(7);
+        continue;
+    }
 
     if( s0 == "BEGIN: DRS" )
     {
@@ -120,32 +139,17 @@ DRS_CV_Table::read(void)
           {
             isDS=true;
             isFE=false;
-            pathEncodingStr.push_back("");
-            pathEncoding.push_back("");
-
-            // get separator and cleared s0
-            if( pathSep.size() < pathEncoding.size() )
-            {
-                pathSep.push_back( getSeparator(s0) );
-                pathEncodingStr.back() = s0.substr(0, pos-3) ;
-                pathEncoding.back() = hdhC::stripSides( s0.substr(++pos)) ;
-            }
-
+            pathSep.push_back( DS_sep );
+            pathEncodingStr.push_back(s0.substr(0, pos-3)) ;
+            pathEncoding.push_back(hdhC::stripSides( s0.substr(++pos)) );
           }
           else if( s0.substr(pos-3, 4) == "-FE:" )
           {
             isDS=false;
             isFE=true;
-            fNameEncodingStr.push_back("");
-            fNameEncoding.push_back("");
-
-            // get separator and cleared s0
-            if( fNameSep.size() < fNameEncoding.size() )
-            {
-                fNameSep.push_back( getSeparator(s0) );
-                fNameEncodingStr.back() = s0.substr(0, pos-3) ;
-                fNameEncoding.back() = hdhC::stripSides( s0.substr(++pos)) ;
-            }
+            fNameSep.push_back( FE_sep );
+            fNameEncodingStr.push_back(s0.substr(0, pos-3)) ;
+            fNameEncoding.push_back(hdhC::stripSides( s0.substr(++pos))) ;
           }
         }
         else if( s0[0] == '!' )

@@ -10,6 +10,9 @@
 # Special Blocks are framed by BEGIN: name and END: name, each alone
 # on a line.
 
+DS-SEP=/
+FE-SEP=_
+
 BEGIN: DRS
 # possible DRS paths with names (including blanks) from the DRS-CV.
 # DS: directory structure, FE: filename encoding.

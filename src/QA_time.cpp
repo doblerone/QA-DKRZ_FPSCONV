@@ -193,7 +193,7 @@ QA_Time::getDRSformattedDateRange(std::vector<Date> &period,
   // x=s for a sharp deadline and x=e for extended maximum period.
   // Defaults for x=s.
 
-  if( sd.size() == 2 && isMaxDateRange )
+  if( sd.size() == 2 && sd[1].size() && isMaxDateRange )
   {
     if( maxDateRange.size() == 0 )
       maxDateRange = "Ye-Me-De-hs-ms-ss" ;
@@ -249,16 +249,22 @@ QA_Time::getDRSformattedDateRange(std::vector<Date> &period,
   {
     for( size_t i=0 ; i < sd.size() ; ++i )
     {
-      period[i].setUnits( refDate.getUnits() );
-      period[i].setDate(iso[i], calendar) ;
+      if( sd[i].size() )
+      {
+         period[i].setUnits( refDate.getUnits() );
+         period[i].setDate(iso[i], calendar) ;
+      }
     }
   }
   else
   {
     for( size_t i=0 ; i < sd.size() ; ++i )
     {
-      period.push_back( Date(iso[i], calendar) );
-      period.back().setUnits( refDate.getUnits() );
+      if( sd[i].size() )
+      {
+         period.push_back( Date(iso[i], calendar) );
+         period.back().setUnits( refDate.getUnits() );
+      }
     }
   }
 
@@ -283,13 +289,23 @@ QA_Time::getTimeBoundsValues(double* pair, size_t rec, double offset)
 bool
 QA_Time::init(std::vector<std::string>& optStr)
 {
+   if( !pQA->isCheckTime )
+      return (isTime=false) ;
+
    name = pIn->nc.getUnlimitedDimVarName();
 
    if( name.size() )
    {
-     time_ix  = pIn->nc.getVarID(name);
-     isTime=true;
-     boundsName = pIn->variable[time_ix].bounds ;
+     for( size_t i=0 ; i < pIn->varSz ; ++i )
+     {
+       if( pIn->variable[i].name == "time" )
+       {
+          time_ix = i;
+          isTime=true;
+          boundsName = pIn->variable[time_ix].getAttValue("bounds") ;
+          break;
+       }
+     }
    }
    else
    {
@@ -302,7 +318,7 @@ QA_Time::init(std::vector<std::string>& optStr)
          time_ix = static_cast<int>(i) ;
          isTime=true;
 
-         boundsName = pIn->variable[i].bounds ;
+         boundsName = pIn->variable[time_ix].getAttValue("bounds") ;
          break;
        }
      }

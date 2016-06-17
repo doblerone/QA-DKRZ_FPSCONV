@@ -1228,6 +1228,9 @@ QA::setCheckMode(std::string m)
     else if( cvs[j] == "drs" )
     {
       isCheckDRS=true ;
+      isCheckTime=true ;
+
+      isRequiredTime=true;
       isRequiredGlobal=true;
     }
     else if( cvs[j] == "meta" )

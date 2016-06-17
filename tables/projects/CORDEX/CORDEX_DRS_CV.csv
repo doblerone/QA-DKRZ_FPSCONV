@@ -11,6 +11,9 @@
 # literally in a vector of vectors corresponding to name stored in a vector.
 # The interpretation of such lines is left to the QA_Exp class.
 
+DS-SEP=/
+FE-SEP=_
+
 BEGIN: DRS
 # possible DRS paths with names (including blanks) from the DRS-CV.
 # DS: directory structure, FE: filename encoding.

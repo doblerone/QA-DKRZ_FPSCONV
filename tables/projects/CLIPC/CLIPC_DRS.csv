@@ -1,0 +1,90 @@
+# A comment begins with '#'; leading or trailing blanks are discarded.
+# '!' at the beginning of a line indicates a continous line, whose leading blanks
+# are ingored.
+# Variables or keyword 'global' are indicated by a trailing ':'.
+# Attributes must not have a trailing ':'.
+# Requested value by a plain assignment, one out of several |-separated values,
+# as well as ranges [val1, val2].
+# Special Blocks are framed by BEGIN: name and END: name, each alone
+# on a line, where name==DRS is decomposed in function DRS_CV_Table.read().
+# Another kind of block is introduced by BEGIN_LINE: name. Each line is stored
+# literally in a vector of vectors corresponding to name stored in a vector.
+# The interpretation of such lines is left to the QA_Exp class.
+
+DS-SEP=/
+FE-SEP=_
+
+BEGIN: DRS
+
+# possible DRS paths with names (including blanks) from the DRS-CV.
+# DS: directory structure, FE: filename encoding.
+# Embracing <> may be omitted
+  MODEL-DS: <activity>.<product>.<package>.<institution>.<model>.<ExperimentName>\
+             .<EnsembleMember>.[<RCMName>].[<RCMVersionID>].[<domain>].[<BcName>].\
+             .[<BcObsName>].[<BcRefPeriod>].<frequency>.<Reference_period>\
+             .<VariableName>.<version>
+
+  MODEL-FE:<VariableName>_<package>_<institution>_<GCMName>_<ExperimentName>_\
+           <EnsembleMember>_[IndicatorRealisation]_[<RCMName>]_[<RCMVersionID>]_\
+           [<domain>]_[<BcName>]_[<BcObsName>]_[<BcRefPeriod>]_<frequency>\
+           _<StartTime-EndTime>_[Reference_period>]_[tile-nnnnn].nc
+
+
+  GENERAL-DS: <activity>.<product>.<package>.<domain>.<institution>.<sourceDataID>\
+             .<frequency>.[<Reference_period>].<VariableName.<version>
+
+  GENERAL-FE:<VariableName>_<package>_<institution>_<sourceDataID>_<frequency>_\
+             <StartTime-EndTime>_[Reference_period>]_[tile-nnnnn].nc
+
+
+# Note that requested values are not part of the DRS_CV check.
+#
+#  DRS                     CV for global Attributes
+# ====                     ========================
+
+  <activity>             = activity
+  <BcName>               = BcName
+  <BcObsName>            = BcObsName
+  <BcRefPeriod>          = BcRefPeriod
+  <domain>               = domain
+  <EnsembleMember>       = EnsembleMember
+  <ExperimentName>       = ExperimentName
+  <frequency>            = frequency
+  <GCMName>              = GCMName
+  <institution>          = institution
+  <IndicatorRealisation> = IndicatorRealisation
+  <package>              = package
+  <product>              = product
+  <RCMName>              = RCMName
+  <RCMVersionID>         = RCMVersionID
+  <Reference_period>     = Reference_period
+  <sourceDataID>         = sourceDataID
+  <StartTime-EndTime>    = StartTime-EndTime
+  <tile-nnnnn>           = tile_nnnnn
+  <VariableName>         = VariableName
+  <version>              = version
+
+END: DRS
+
+global:
+  activity            = clipc
+  BcName
+  BcObsName
+  BcRefPeriod         = bcref-YYYY-YYYY
+  domain
+  EnsembleMember
+  ExperimentName
+  frequency           = yr|mon|day|6hr|3hr|subhr|monClim|yrClim|fx
+  GCMName
+  institution              # when multiple, then the preceding one
+  IndicatorRealisation
+  package                  # no dots
+  product             = gcm-|rcm-|obs-|reana-|multi-|nonClimatic-|ensemble- |-derived
+  RCMName
+  RCMVersionID
+  Reference_period    = YYYY-YYYY
+  sourceDataID
+  StartTime-EndTime   = YYYYMMDD-YYYYMMDD
+  tile_nnnn           = tile-nnnnn
+  VariableName
+  version             = vYYYYMMDD

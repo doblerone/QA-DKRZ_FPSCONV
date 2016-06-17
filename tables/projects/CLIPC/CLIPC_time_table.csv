@@ -1,0 +1,33 @@
+# Syntax: Standard table, sub_table,experiment(mode)[  experiment(mode)]
+
+# MIP table: As specified in the standard table
+# sub_table: Exactly as given in the MIP table (but only
+#            the first 10 character are significant).
+#            If none, then don't forget the ','.
+# experiment: Experiment_id attribute (multiples WITHOUT ',').
+# (mode): keyword or period of the current netCDF file belongs to.
+#         If more then a single one, then separate by '|'.
+# Note: No space between 'experiment' and '(mode)'.
+# Definitions:
+#       'regular': Full time check of each record.
+#       'disable': No time check at all.
+#        'orphan': No time check across files or experiments (1st rec),
+#                  full time check of all other records.
+# 'date_0-date_1': Period of an experiment. Format: DRS syntax
+# singular values: Integers denote arbitrary sequence of years,
+#                  prefix 'N' indicates the number of required records.
+#          '+int': Period length of 'int' years from the begin given
+#                  by the first time record.
+# Empty lines are ignored. Spaces are insignificant, except for
+# the MIP table and the sub-table string.
+# Continued lines require ':' in front of a new line line.
+
+3hr,,any(regular)
+
+6hr,,any(regular)
+
+day,,any(regular)
+
+mon,,any(regular)
+
+sem,,any(regular)

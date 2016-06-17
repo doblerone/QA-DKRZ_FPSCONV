@@ -1227,8 +1227,8 @@ naming()
   initSession
 
   # sub-dir for experiment logs
-  setKWL EXP_LOGDIR=${QA_RESULTS}/check_logs
-  mkdir -p $EXP_LOGDIR
+  setKWL LOG_FNAME_DIR=${QA_RESULTS}/check_logs
+  mkdir -p $LOG_FNAME_DIR
 
   if ! mkdir -p ${QA_RESULTS}/data ; then
     sendSubject='QA: initialisation error'

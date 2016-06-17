@@ -461,63 +461,62 @@ InFile::getVariableMD(std::vector<Variable>& variable, char mode)
   // mode: 0: variables && global (includes time)
   //       1: variables (includes time)
   //       2: global
-  //       3: time
+  //       3: time [ + time_bnds]
 
-  bool is[3]={true, true, true};  // all
+  std::vector<std::string> fVar( nc.getVarName() );
+  std::vector<std::string> actName;
+
+  bool isGlobal = false;
 
   if( mode == 'V' )
-  {
-      is[1] = false;
-      is[2] = false;
-  }
+    actName = fVar;
   else if( mode == 'G' )
-  {
-      is[0] = false;
-      is[2] = false;
-  }
+      isGlobal = true;
   else if( mode == 'T' )
   {
-      is[0] = false;
-      is[1] = false;
+      std::string tName( nc.getUnlimitedDimVarName() );
+
+      if( tName.size() )
+      {
+        for( size_t i=0 ; i < variable.size() ; ++i)
+          if(variable[i].name == tName)
+            return;
+
+        actName.push_back( tName) ;
+        std::string bndsName( nc.getAttString("bounds", tName) );
+        if( bndsName.size() && nc.isVariableValid(bndsName) )
+           actName.push_back( bndsName );
+      }
   }
 
-  if(is[0] || is[2])
+  std::string vFilename(file.getBasename());
+  for(size_t j=0 ; j < actName.size(); ++j)
   {
-     std::vector<std::string> vName( nc.getVarName() );
-     std::string vFilename(file.getBasename());
+     variable.push_back( *new Variable );
+     makeVariable(actName[j], variable.back(), j );
 
-     if(is[2])
-     {
-       vName.clear();
-       vName.push_back( nc.getUnlimitedDimVarName() );
-       if( vName.size() && !vName[0].size() )
-         vName.clear();
-     }
-     else
-     {
-       size_t pos;
-       if( (pos = vFilename.find("_")) < std::string::npos )
-         vFilename = vFilename.substr(0,pos) ;
-     }
+     vIx[ actName[j] ] = j ;
+     variableNames.push_back(variable.back().name);
 
-     varSz = vName.size();
-     for(size_t j=0 ; j < varSz; ++j)
-     {
-         variable.push_back( *new Variable );
-         makeVariable(vName[j], variable.back(), j );
+     if( vFilename == variable.back().name )
+       dataVarIndex.push_back(variable.back().id);
 
-         vIx[ vName[j] ] = j ;
-         variableNames.push_back(variable.back().name);
-
-         if( vFilename == variable.back().name )
-           dataVarIndex.push_back(variable.back().id);
-
-         getVariableMD(variable.back());
-     }
+     getVariableMD(variable.back());
   }
+
+  for( size_t i=0 ; i < variable.size() ; ++i)
+  {
+    if(variable[i].name == "NC_GLOBAL")
+    {
+      varSz = variable.size() -1;
+      return;
+    }
+  }
+
+  varSz = variable.size();
 
   // a pseudo-variable for the global attributes
-  if( is[1] && nc.getAttSize("NC_GLOBAL") )
+  if( isGlobal && nc.getAttSize("NC_GLOBAL") )
   {
     variable.push_back( *new Variable );
     makeVariable("NC_GLOBAL", variable.back());
