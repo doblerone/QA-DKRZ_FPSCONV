@@ -536,7 +536,7 @@ QA::init(void)
    std::string vName(qaExp.getVarnameFromFilename());
 
    if(isRequiredVariable)
-     pIn->pullMetaData('V');
+     pIn->pullMetaData('V', vName);
 
    if(isRequiredTime && !isRequiredVariable)
      pIn->pullMetaData('T');
@@ -591,6 +591,10 @@ QA::init(void)
 
    if( isCheckData )
    {
+     if( pIn->dataVarIndex.size() == 0 )
+     {
+     }
+
      if( !checkDataBody() )
      {
        isCheckData = false;

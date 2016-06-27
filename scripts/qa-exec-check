@@ -24,6 +24,8 @@ analyseExec()
     nm=${nm%.nc}
     if [ -e qa_note_${nm}.txt ] ; then
       mv qa_note_${nm}.txt qa_lock_${nm}.txt
+    else
+      echo "see log-file for lock-reason" >  qa_lock_${nm}.txt
     fi
   fi
 
