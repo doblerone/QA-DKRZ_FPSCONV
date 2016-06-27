@@ -167,8 +167,8 @@ finally(IObjContainer &ioc)
     {
       if( &ioc.qA[i] )
       {
-        retVal = ioc.qA[i].notes->getExitValue(retVal);
-        retVal = ioc.qA[i].getExitCode(retVal);
+        retVal = ioc.qA[i].notes->getExitState(retVal);
+        retVal = ioc.qA[i].getExitState(retVal);
         retVal = ioc.qA[i].finally(retVal);
       }
     }

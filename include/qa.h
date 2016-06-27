@@ -92,7 +92,7 @@ class QA : public IObj
   std::string
          getAttValue(size_t v_ix, size_t a_ix);
 
-  int    getExitCode(int e=-1);
+  int    getExitState(int e=-1);
 
   //! Get path componenents.
   /*! mode: "total": filename with total path, "file": filename,
@@ -162,7 +162,7 @@ class QA : public IObj
 
   std::string qaNcfileFlags;
 
-  int exitCode;
+  int exitState;
   bool is_exit;
 
   Annotation* notes;
@@ -250,10 +250,9 @@ class QA : public IObj
   std::string getSubjectsIntroDim(VariableMetaData &vMD,
                    struct DimensionMetaData &nc_entry,
                    struct DimensionMetaData &tbl_entry, bool isColon=true);
-  std::string getVarnameFromFilename(std::string str);
   bool        not_equal(double x1, double x2, double epsilon);
   void        pushBackVarMeDa(Variable*);
-  void        setExit(int);
+  void        setExitState(int);
   void        setCheckMode(std::string);
   void        setProcessing(void);
 };

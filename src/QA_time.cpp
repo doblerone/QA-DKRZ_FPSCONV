@@ -890,7 +890,7 @@ QA_Time::initTimeTable(void)
          if( notes->operate(capt, text) )
          {
            notes->setCheckStatus("TIME", fail);
-           pQA->setExit( notes->getExitValue() ) ;
+           pQA->setExitState( notes->getExitState() ) ;
          }
        }
      }
@@ -961,7 +961,7 @@ QA_Time::parseTimeTable(size_t rec)
           if( notes->operate(capt, text) )
           {
             notes->setCheckStatus("TIME", fail);
-            pQA->setExit( notes->getExitValue() ) ;
+            pQA->setExitState( notes->getExitState() ) ;
           }
         }
      }
@@ -1002,7 +1002,7 @@ QA_Time::parseTimeTable(size_t rec)
          if( notes->operate(capt, text) )
          {
             notes->setCheckStatus("TIME", fail);
-            pQA->setExit( notes->getExitValue() ) ;
+            pQA->setExitState( notes->getExitState() ) ;
          }
        }
      }
@@ -1038,7 +1038,7 @@ QA_Time::parseTimeTable(size_t rec)
          if( notes->operate(capt, ostr.str()) )
          {
             notes->setCheckStatus("TIME", fail);
-            pQA->setExit( notes->getExitValue() ) ;
+            pQA->setExitState( notes->getExitState() ) ;
          }
        }
 
@@ -1129,7 +1129,7 @@ bool
 QA_Time::sync(void)
 {
   // Synchronise the in-file and the qa-netCDF file.
-  // Failure: call setExit(error_code).
+  // Failure: call setExitState(error_code).
 
   // return value: true for isNoProgress
 
@@ -1209,7 +1209,7 @@ QA_Time::sync(void)
      {
        notes->setCheckStatus("TIME", fail);
 
-       pQA->setExit( notes->getExitValue() ) ;
+       pQA->setExitState( notes->getExitState() ) ;
      }
   }
 
@@ -1506,7 +1506,7 @@ QA_Time::testTimeStep(void)
       {
         notes->setCheckStatus("TIME", fail);
 
-        pQA->setExit( notes->getExitValue() ) ;
+        pQA->setExitState( notes->getExitState() ) ;
       }
     }
 
@@ -1566,7 +1566,7 @@ QA_Time::testTimeStep(void)
         {
           notes->setCheckStatus("TIME", fail);
 
-          pQA->setExit( notes->getExitValue() ) ;
+          pQA->setExitState( notes->getExitState() ) ;
         }
       }
     }
@@ -1655,7 +1655,7 @@ QA_Time::testTimeStep(void)
       if( notes->operate(capt, text) )
       {
         notes->setCheckStatus("TIME", fail);
-        pQA->setExit( notes->getExitValue() ) ;
+        pQA->setExitState( notes->getExitState() ) ;
       }
     }
 

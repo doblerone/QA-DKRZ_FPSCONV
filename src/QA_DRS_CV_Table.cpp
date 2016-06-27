@@ -80,7 +80,7 @@ DRS_CV_Table::read(void)
         if( notes->operate(capt) )
         {
           pQA->notes->setCheckStatus("QA_path", pQA->n_fail );
-          pQA->setExit( notes->getExitValue() ) ;
+          pQA->setExitState( notes->getExitState() ) ;
         }
      }
 

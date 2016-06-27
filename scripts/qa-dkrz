@@ -1891,7 +1891,7 @@ getNextVariable()
   # a fixed variable?
   if [ $status -eq 4 ] ; then
     # already processed?
-    if [ ${qa_fl[0]} ] ; then
+    if [ "${qa_fl}" ] ; then
 #      if [ ${PROGRESS_BAR} ] ; then
         # get number of data files for progress estimation
         # note: all files no matter whether processed or locked
@@ -1944,7 +1944,7 @@ getNextVariable()
   # nextFile is the first sub-temporal file, i.e. candidate for
   # a parent check.
   IS_FIRST_SUB_TEMP=f
-  test ! ${qa_fl} && IS_FIRST_SUB_TEMP=t
+  test ! "${qa_fl}" && IS_FIRST_SUB_TEMP=t
 
   if [ ${DEREFERENCE_SYM_LINKS:-f} = f -a \
         -h ${PROJECT_DATA}/${subPath}/$nextFile ] ; then
@@ -2551,11 +2551,23 @@ init()
   test ! ${PROJECT_AS} && PROJECT_AS=${PROJECT}
 
   # package update requested and required?
-  if [ !${NO_GIT} ] \
-          && ! ${QA_SRC}/install ${INSTALL_ARGS//,/ } ${PROJECT_AS} ; then
-    # could not make the executable for the given project
-    std_out flush "could not make: install ${PROJECT_AS}"
-    exit 1
+  if [ !${NO_GIT} ] ; then
+    # checksum of current qa-dkrz
+    local md5_0
+    md5_0=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
+
+    if ${QA_SRC}/install ${INSTALL_ARGS//,/ } ${PROJECT_AS} ; then
+        local md5_1
+        md5_1=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
+
+        test ${md5_0} != ${md5_1} && \
+            exec ${QA_SRC}/scripts/qa-dkrz ${initial_params[*]}
+    else
+       # could not make the executable for the given project
+       std_out flush "could not make: install ${PROJECT_AS}"
+       exit 1
+    fi
+
   fi
 
   # expand comma-sep-list to arrays
@@ -4731,6 +4743,8 @@ wait_fnct()
 ##{
 ######## main ############
 umask 002
+
+initial_params=( $* )
 
 # store the tty, if any
 if tty -s ; then TTY=$(tty) ; fi

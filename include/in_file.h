@@ -110,7 +110,7 @@ public:
   /*! Open a file and fill struct Variable.*/
   bool   openNc( bool isNew=true );
 
-  void   pullMetaData(char mode='\0');
+  void   pullMetaData(char mode='\0', std::string="");
 
   //! Set current record.
   /*! Purpose: Adjust the current record of a for-loop in a method.*/
@@ -157,7 +157,8 @@ private:
               std::string aName, std::vector<double> &back);
   void   getVariableAtt(Variable &);
   // mode: 0: variables && global, 1: variables, 2: global
-  void   getVariableMD(std::vector<Variable>& variable, char mode='\0');
+  void   getVariableMD(std::vector<Variable>& variable,
+                       char mode='\0', std::string vName="");
   void   getVariableMD(Variable &);
   void   makeVariable (std::string name, Variable&, int id=-1);
   void   setGeoCellShape(Variable &var);

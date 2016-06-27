@@ -352,7 +352,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
          if( notes->operate(capt) )
          {
            notes->setCheckStatus("DRS", pQA->n_fail );
-           pQA->setExit( notes->getExitValue() ) ;
+           pQA->setExitState( notes->getExitState() ) ;
          }
       }
 
@@ -416,7 +416,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
        if( notes->operate(capt) )
        {
          notes->setCheckStatus("DRS",  pQA->n_fail );
-         pQA->setExit( notes->getExitValue() ) ;
+         pQA->setExitState( notes->getExitState() ) ;
        }
      }
    }
@@ -436,7 +436,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
        if( notes->operate(capt) )
        {
          notes->setCheckStatus("DRS", pQA->n_fail );
-         pQA->setExit( notes->getExitValue() ) ;
+         pQA->setExitState( notes->getExitState() ) ;
        }
      }
    }
@@ -458,7 +458,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
        if( notes->operate(capt) )
        {
          notes->setCheckStatus("DRS", pQA->n_fail );
-         pQA->setExit( notes->getExitValue() ) ;
+         pQA->setExitState( notes->getExitState() ) ;
        }
      }
    }
@@ -535,7 +535,7 @@ DRS_CV::checkProductName(std::string& drs_product,
     capt += hdhC::tf_val(prod_choice);
 
     (void) notes->operate(capt) ;
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return;
@@ -3182,8 +3182,8 @@ QA_Exp::checkMetaData(InFile &in)
 
   // inquire whether the meta-data checks passed
   int ev;
-  if( (ev = notes->getExitValue()) > 1 )
-    pQA->setExit( ev );
+  if( (ev = notes->getExitState()) > 1 )
+    pQA->setExitState( ev );
 
   return;
 }
@@ -4001,7 +4001,7 @@ QA_Exp::getFrequency(void)
        if( notes->operate(capt) )
        {
          notes->setCheckStatus("CV",pQA->n_fail);
-         pQA->setExit( notes->getExitValue() ) ;
+         pQA->setExitState( notes->getExitState() ) ;
         }
      }
   }
@@ -4055,7 +4055,7 @@ QA_Exp::getSubTable(void)
        if( notes->operate(capt) )
        {
          notes->setCheckStatus("CV",pQA->n_fail);
-         pQA->setExit( notes->getExitValue() ) ;
+         pQA->setExitState( notes->getExitState() ) ;
         }
      }
   }
@@ -4076,17 +4076,11 @@ QA_Exp::getTableEntryID(std::string vName)
 }
 
 std::string
-QA_Exp::getVarnameFromFilename(void)
-{
-  if( fVarname.size() )
-    return fVarname;
-
-  return getVarnameFromFilename(pQA->pIn->file.getFilename()) ;
-}
-
-std::string
 QA_Exp::getVarnameFromFilename(std::string fName)
 {
+  if( ! fName.size() )
+     fName = getVarnameFromFilename(pQA->pIn->file.getFilename()) ;
+
   size_t pos;
   if( (pos = fName.find("_")) < std::string::npos )
     fName = fName.substr(0,pos) ;
@@ -4198,7 +4192,7 @@ QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
          if( notes->operate(capt) )
          {
            notes->setCheckStatus("Consistency", pQA->n_fail );
-           pQA->setExit( notes->getExitValue() ) ;
+           pQA->setExitState( notes->getExitState() ) ;
          }
        }
     }
@@ -4223,7 +4217,7 @@ QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
          if( notes->operate(capt) )
          {
            notes->setCheckStatus("Consistency", pQA->n_fail );
-           pQA->setExit( notes->getExitValue() ) ;
+           pQA->setExitState( notes->getExitState() ) ;
          }
        }
     }
@@ -4251,7 +4245,7 @@ QA_Exp::inqTables(void)
         if( notes->operate(capt) )
         {
           notes->setCheckStatus("QA_path", pQA->n_fail );
-          pQA->setExit( notes->getExitValue() ) ;
+          pQA->setExitState( notes->getExitState() ) ;
         }
      }
   }
@@ -4964,7 +4958,7 @@ QA_Exp::varReqTableCheck(InFile &in, VariableMetaData &vMD,
          {
            notes->setCheckStatus("CV", pQA->n_fail );
 
-           pQA->setExit( notes->getExitValue() ) ;
+           pQA->setExitState( notes->getExitState() ) ;
          }
       }
    }
@@ -5097,7 +5091,7 @@ VariableMetaData::finally(int xCode)
   // annotation obj forked by the parent VMD
   notes->printFlags();
 
-  int rV = notes->getExitValue();
+  int rV = notes->getExitState();
   xCode = ( xCode > rV ) ? xCode : rV ;
 
   return xCode ;

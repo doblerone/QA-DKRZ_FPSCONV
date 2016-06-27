@@ -511,7 +511,7 @@ DRS_CV::checkMIPT_tableName(Split& x_filename)
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("DRS", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
 
     // try the filename's MIP table name
@@ -552,7 +552,7 @@ DRS_CV::checkProductName(std::string& drs_product,
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("DRS", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return;
@@ -725,7 +725,7 @@ DRS_CV::checkVariableName(std::string& f_vName)
       capt += "in the filename should not contain a hyphen" ;
 
       (void) notes->operate(capt) ;
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
   }
 
@@ -1589,7 +1589,7 @@ CMOR::checkEnsembleMemItem(std::string& rqName, std::string& attVal)
     {
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
   }
 
@@ -1691,7 +1691,7 @@ CMOR::checkMIP_table(InFile& in, VariableMetaData& vMD,
 
          (void) notes->operate(capt) ;
          notes->setCheckStatus("CV", pQA->n_fail);
-         pQA->setExit( notes->getExitValue() ) ;
+         pQA->setExitState( notes->getExitState() ) ;
       }
    }
 
@@ -1768,7 +1768,7 @@ CMOR::checkMIP_table(InFile& in, VariableMetaData& vMD,
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
   }
 
@@ -1819,7 +1819,7 @@ CMOR::checkMIPT_dim(std::vector<std::string>& vs_dimSheet,
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
 
     return;
@@ -1925,7 +1925,7 @@ CMOR::checkMIPT_dim_axis(
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return;
@@ -1950,7 +1950,7 @@ CMOR::checkMIPT_dim_boundsQuest(
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return;
@@ -2017,7 +2017,7 @@ CMOR::checkMIPT_dim_coordsAtt(
 
           (void) notes->operate(capt) ;
           notes->setCheckStatus("CV", pQA->n_fail);
-          pQA->setExit( notes->getExitValue() ) ;
+          pQA->setExitState( notes->getExitState() ) ;
         }
       }
 
@@ -2071,7 +2071,7 @@ CMOR::checkMIPT_dim_longName(
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return;
@@ -2093,7 +2093,7 @@ CMOR::checkMIPT_dim_outname(
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return true;
@@ -2128,7 +2128,7 @@ CMOR::checkMIPT_dim_positive(
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return;
@@ -2190,7 +2190,7 @@ CMOR::checkMIPT_dim_stdName(
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return;
@@ -2216,7 +2216,7 @@ CMOR::checkMIPT_dim_type(
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return;
@@ -2248,7 +2248,7 @@ CMOR::checkMIPT_dim_units(
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
   }
 
@@ -2281,7 +2281,7 @@ CMOR::checkMIPT_dim_units(
 
         (void) notes->operate(capt) ;
         notes->setCheckStatus("CV", pQA->n_fail);
-        pQA->setExit( notes->getExitValue() ) ;
+        pQA->setExitState( notes->getExitState() ) ;
       }
     }
 
@@ -2329,7 +2329,7 @@ CMOR::checkMIPT_dim_units(
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
 
     return;
@@ -2351,7 +2351,7 @@ CMOR::checkMIPT_dim_units(
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return ;
@@ -2390,7 +2390,7 @@ CMOR::checkMIPT_dim_validMin(
 
         (void) notes->operate(capt) ;
         notes->setCheckStatus("CV", pQA->n_fail);
-        pQA->setExit( notes->getExitValue() ) ;
+        pQA->setExitState( notes->getExitState() ) ;
       }
     }
   }
@@ -2431,7 +2431,7 @@ CMOR::checkMIPT_dim_validMax(
 
         (void) notes->operate(capt) ;
         notes->setCheckStatus("CV", pQA->n_fail);
-        pQA->setExit( notes->getExitValue() ) ;
+        pQA->setExitState( notes->getExitState() ) ;
       }
     }
   }
@@ -2569,7 +2569,7 @@ CMOR::checkMIPT_var_cellMeasures(
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
   }
 
@@ -2639,7 +2639,7 @@ CMOR::checkMIPT_var_cellMethods(
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
   }
 
@@ -2709,7 +2709,7 @@ CMOR::checkMIPT_var_longName(
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return ;
@@ -2770,7 +2770,7 @@ CMOR::checkMIPT_var_type(
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
   }
   else if( (isTblTypeReal && ! isNcTypeReal)
@@ -2799,7 +2799,7 @@ CMOR::checkMIPT_var_type(
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
   }
 
@@ -3375,7 +3375,7 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
 
            (void) notes->operate(capt) ;
            notes->setCheckStatus("CV", pQA->n_fail);
-           pQA->setExit( notes->getExitValue() ) ;
+           pQA->setExitState( notes->getExitState() ) ;
          }
 
          is=false;
@@ -3406,7 +3406,7 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
 
     return;
@@ -3442,7 +3442,7 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return;
@@ -3483,7 +3483,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
 
            (void) notes->operate(capt) ;
            notes->setCheckStatus("CV", pQA->n_fail);
-           pQA->setExit( notes->getExitValue() ) ;
+           pQA->setExitState( notes->getExitState() ) ;
          }
 
          is=false;
@@ -3514,7 +3514,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
 
     return;
@@ -3569,7 +3569,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return;
@@ -4189,7 +4189,7 @@ QA_Exp::checkDataVarNum(void)
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
 
     return;
@@ -4210,7 +4210,7 @@ QA_Exp::checkDataVarNum(void)
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
-    pQA->setExit( notes->getExitValue() ) ;
+    pQA->setExitState( notes->getExitState() ) ;
   }
 
   return;
@@ -4237,8 +4237,8 @@ QA_Exp::checkMetaData(InFile& in)
 
   // inquire passing the meta-data check
   int ev;
-  if( (ev = notes->getExitValue()) > 1 )
-    pQA->setExit( ev );
+  if( (ev = notes->getExitState()) > 1 )
+    pQA->setExitState( ev );
 
   return;
 }
@@ -4471,7 +4471,7 @@ QA_Exp::getMIP_tableName(std::string tName)
       capt += hdhC::tf_att(hdhC::empty, CMOR::n_table_id, x_tableID.getStr()) ;
 
       (void) notes->operate(capt) ;
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
 
     QA::tableSheet.clear();
@@ -4501,7 +4501,7 @@ QA_Exp::getMIP_tableName(std::string tName)
       capt += ": missing date of the MIP table, expected e.g. (5 Jan 2016)";
 
       (void) notes->operate(capt) ;
-      pQA->setExit( notes->getExitValue() ) ;
+      pQA->setExitState( notes->getExitState() ) ;
     }
   }
 
@@ -4518,17 +4518,11 @@ QA_Exp::getTableEntryID(std::string vName)
 }
 
 std::string
-QA_Exp::getVarnameFromFilename(void)
-{
-  if( fVarname.size() )
-    return fVarname;
-
-  return getVarnameFromFilename(pQA->pIn->file.getFilename()) ;
-}
-
-std::string
 QA_Exp::getVarnameFromFilename(std::string fName)
 {
+  if( ! fName.size() )
+     fName = getVarnameFromFilename(pQA->pIn->file.getFilename()) ;
+
   size_t pos;
   if( (pos = fName.find("_")) < std::string::npos )
     fName = fName.substr(0,pos) ;
@@ -4625,7 +4619,7 @@ QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
 
          if( notes->operate(capt) )
          notes->setCheckStatus("Consistency", pQA->n_fail );
-         pQA->setExit( notes->getExitValue() ) ;
+         pQA->setExitState( notes->getExitState() ) ;
        }
     }
   }
@@ -4649,7 +4643,7 @@ QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
 
          if( notes->operate(capt) )
          notes->setCheckStatus("Consistency", pQA->n_fail );
-         pQA->setExit( notes->getExitValue() ) ;
+         pQA->setExitState( notes->getExitState() ) ;
        }
     }
   }
@@ -4671,7 +4665,7 @@ QA_Exp::inqTables(void)
 
         (void) notes->operate(capt) ;
         notes->setCheckStatus("QA_path", pQA->n_fail);
-        pQA->setExit( notes->getExitValue() ) ;
+        pQA->setExitState( notes->getExitState() ) ;
      }
 
      return false;
@@ -4895,7 +4889,7 @@ VariableMetaData::finally(int xCode)
   // annotation obj forked by the parent VMD
   notes->printFlags();
 
-  int rV = notes->getExitValue();
+  int rV = notes->getExitState();
   xCode = ( xCode > rV ) ? xCode : rV ;
 
   return xCode ;

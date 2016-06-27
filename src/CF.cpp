@@ -1609,7 +1609,7 @@ int
 CF::finally(int eCode)
 {
 //  notes->print();
-  int ec= notes->getExitValue();
+  int ec= notes->getExitState();
   eCode = (eCode > ec ) ? eCode : ec ;
   return  eCode;
 }

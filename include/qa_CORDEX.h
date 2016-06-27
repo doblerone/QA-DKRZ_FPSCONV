@@ -42,7 +42,7 @@ struct DRS_CV
   void   checkProductName(std::string& drs_product,
                    std::string prod_choice,
                    std::map<std::string, std::string>& gM);
- void    findFN_faults(Split&, Split&,
+  void   findFN_faults(Split&, Split&,
                    std::map<std::string, std::string>&,
                    std::string& text);
   void   findPath_faults(Split&, Split&,
@@ -264,6 +264,9 @@ class QA_Exp
   std::string
          getFrequency(void);
 
+  std::string
+         getVarnameFromFilename(std::string str="");
+
 //  std::string
 //         getStandardTable(void){ return varReqTable.file ; }
 
@@ -387,8 +390,6 @@ class QA_Exp
   std::string getSubjectsIntroDim(VariableMetaData &vMD,
                    struct DimensionMetaData &nc_entry,
                    struct DimensionMetaData &tbl_entry, bool isColon=true);
-  std::string getVarnameFromFilename(void);
-  std::string getVarnameFromFilename(std::string str);
   void        pushBackVarMeDa(Variable*);
   void        setCheckMode(std::string);
 };

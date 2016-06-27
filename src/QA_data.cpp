@@ -1339,7 +1339,7 @@ QA_Data::finally(int eCode)
   // annotation obj forked by the parent VMD
   notes->printFlags();
 
-  int rV = notes->getExitValue();
+  int rV = notes->getExitState();
   eCode = ( eCode > rV ) ? eCode : rV ;
 
   return eCode ;

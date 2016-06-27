@@ -647,7 +647,7 @@ Consistency::lockFile(std::string &fName )
          std::string capt("consistency-check table is locked for 1/2 hour") ;
 
          (void) notes->operate(capt) ;
-         pQA->setExit( notes->getExitValue() ) ;
+         pQA->setExitState( notes->getExitState() ) ;
       }
     }
   }
@@ -660,7 +660,7 @@ Consistency::lockFile(std::string &fName )
         std::string capt("could not lock the consistency-check table") ;
 
         if( notes->operate(capt) )
-          pQA->setExit( notes->getExitValue() ) ;
+          pQA->setExitState( notes->getExitState() ) ;
      }
 
      return true;
@@ -735,7 +735,7 @@ Consistency::write(Variable &dataVar, std::string& entryID)
       if( notes->operate(capt) )
       {
         notes->setCheckStatus("QA_PT_table", pQA->n_fail );
-        pQA->setExit( notes->getExitValue() ) ;
+        pQA->setExitState( notes->getExitState() ) ;
       }
     }
   }

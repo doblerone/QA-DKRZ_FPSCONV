@@ -460,6 +460,9 @@ public:
   std::string
          getTableEntryID(std::string vN="");
 
+  std::string
+         getVarnameFromFilename(std::string str="");
+
   //! Check the path to the tables;
   bool   inqTables(void);
 
@@ -530,8 +533,6 @@ public:
   static std::string getCaptionIntroVar(
                    std::string table,
                    struct VariableMetaData& f_entry, std::string att="");
-  std::string getVarnameFromFilename(void);
-  std::string getVarnameFromFilename(std::string str);
   bool        not_equal(double x1, double x2, double epsilon);
   void        pushBackVarMeDa(Variable*);
 };

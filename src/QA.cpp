@@ -276,8 +276,8 @@ QA::checkConsistency(InFile &in, std::vector<std::string> &opt,
 
   // inquire whether the meta-data checks passed
   int ev;
-  if( (ev = notes->getExitValue()) > 1 )
-    setExit( ev );
+  if( (ev = notes->getExitState()) > 1 )
+    setExitState( ev );
 
   return ;
 }
@@ -390,11 +390,11 @@ QA::entry(void)
 int
 QA::finally(int xCode)
 {
-  setExit(xCode);
+  setExitState(xCode);
 
   // write pending results to qa-file.nc. Modes are considered there
   for( size_t i=0 ; i < qaExp.varMeDa.size() ; ++i )
-    setExit( qaExp.varMeDa[i].finally() );
+    setExitState( qaExp.varMeDa[i].finally() );
 
   if( xCode == 63 ||
      ( nc == 0 && xCode ) || (currQARec == 0 && pIn->isTime ) )
@@ -436,13 +436,13 @@ QA::finally(int xCode)
     nc=0;
   }
 
-  setExit(xCode);
+  setExitState(xCode);
 
   // distinguish from a sytem crash (segmentation error)
   std::cout << "STATUS-BEG" << xCode << "STATUS-END";
   std::cout << std::flush;
 
-  return exitCode ;
+  return getExitState() ;
 }
 
 int
@@ -450,14 +450,14 @@ QA::finally_data(int xCode)
 {
   // post processing, but not for conditions which indicate
   // incomplete checking.
-  if( exitCode < 3 )
+  if( getExitState() < 3 )
   {  // 3 or 4 interrupted any checking
     if( enablePostProc )
     {
       if( postProc() )
       {
-        if( exitCode == 63 )
-            exitCode=1;  // this is considered a change
+        if( getExitState() == 63 )
+            setExitState(1);  // this is considered a change
 
         notes->setCheckStatus(n_data, n_fail);
       }
@@ -485,17 +485,17 @@ QA::finally_data(int xCode)
     }
   }
 
-  return exitCode ;
+  return getExitState() ;
 }
 
 int
-QA::getExitCode(int e_in)
+QA::getExitState(int e_in)
 {
   // note that is_exit==true was forced
-  if( exitCode < e_in )
+  if( exitState < e_in )
     return e_in;
 
-  return exitCode;
+  return exitState;
 }
 
 void
@@ -532,6 +532,8 @@ QA::init(void)
 
    // apply parsed command-line args
    applyOptions();
+
+   std::string vName(qaExp.getVarnameFromFilename());
 
    if(isRequiredVariable)
      pIn->pullMetaData('V');
@@ -582,7 +584,7 @@ QA::init(void)
         if( notes->operate(capt) )
         {
           notes->setCheckStatus(n_data,  n_fail );
-          setExit( notes->getExitValue() ) ;
+          setExitState( notes->getExitState() ) ;
         }
       }
    }
@@ -593,7 +595,7 @@ QA::init(void)
      {
        isCheckData = false;
        notes->setCheckStatus(n_data, n_fail);
-       setExit(2);
+       setExitState(2);
 //       return true;
      }
    }
@@ -610,7 +612,7 @@ QA::init(void)
            // time is defined, but there is no data
            qaTime.isTime = false;
            notes->setCheckStatus(n_time, n_fail);
-           setExit(2);
+           setExitState(2);
          }
       }
    }
@@ -761,7 +763,7 @@ QA::initDefaults(void)
 
   bufferSize=1500;
 
-  exitCode=0;
+  exitState=0;
 
   // file sequence: f[first], s[equence], l[ast]
   fileSequenceState='x' ;  // 'x':= undefined
@@ -846,7 +848,7 @@ bool
 QA::isExit(void)
 {
   // note that is_exit==true was forced
-  if( exitCode > 1 || is_exit )
+  if( exitState > 1 || is_exit )
     return true;
 
   return false;
@@ -965,7 +967,7 @@ QA::openQA_Nc(InFile &in)
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("QA_open", n_fail);
-      setExit( notes->getExitValue() ) ;
+      setExitState( notes->getExitState() ) ;
       return;
     }
   }
@@ -1259,10 +1261,10 @@ QA::setCheckMode(std::string m)
 }
 
 void
-QA::setExit( int e )
+QA::setExitState( int e )
 {
-  if( e > exitCode )
-    exitCode=e;
+  if( e > exitState )
+    exitState=e;
 
   return ;
 }

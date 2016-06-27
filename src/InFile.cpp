@@ -455,7 +455,7 @@ InFile::getVarIndex(std::string s)
 }
 
 void
-InFile::getVariableMD(std::vector<Variable>& variable, char mode)
+InFile::getVariableMD(std::vector<Variable>& variable, char mode, std::string vName)
 {
   // get and analyse all variables and create Variable objects
   // mode: 0: variables && global (includes time)
@@ -489,7 +489,6 @@ InFile::getVariableMD(std::vector<Variable>& variable, char mode)
       }
   }
 
-  std::string vFilename(file.getBasename());
   for(size_t j=0 ; j < actName.size(); ++j)
   {
      variable.push_back( *new Variable );
@@ -498,7 +497,7 @@ InFile::getVariableMD(std::vector<Variable>& variable, char mode)
      vIx[ actName[j] ] = j ;
      variableNames.push_back(variable.back().name);
 
-     if( vFilename == variable.back().name )
+     if( vName == variable.back().name )
        dataVarIndex.push_back(variable.back().id);
 
      getVariableMD(variable.back());
@@ -860,10 +859,10 @@ InFile::openNc(bool isNew)
 }
 
 void
-InFile::pullMetaData(char c)
+InFile::pullMetaData(char c, std::string vName)
 {
   // mode: 2: MD(global)
-  getVariableMD(variable, c);
+  getVariableMD(variable, c, vName);
 
   return;
 }

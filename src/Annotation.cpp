@@ -363,7 +363,7 @@ Annotation::getCheckStatus(bool withRank)
 }
 
 int
-Annotation::getExitValue(int e_in)
+Annotation::getExitState(int e_in)
 {
   int retVal=0;
 
@@ -614,13 +614,13 @@ Annotation::operate(std::string headline,
          mail_out_body += mail_body ;
       }
 
-      if( mail_subject.size() && getExitValue() > mail_level )
+      if( mail_subject.size() && getExitState() > mail_level )
       {
          mail_out_subject = "SUBJECT-BEG" ;
          mail_out_subject += mail_subject ;
          mail_out_subject += "SUBJECT-END" ;
 
-         mail_level = getExitValue() ;
+         mail_level = getExitState() ;
       }
    }
 
