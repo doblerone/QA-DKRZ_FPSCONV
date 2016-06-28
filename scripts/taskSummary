@@ -262,84 +262,83 @@ summaryHR()
   if [ ! -f $aIn ] ; then
     echo -e " \n\n==== Annotation: none =========================\n" \
               >> $outA
-    return
+  else
+
+    # clear old results
+    \rm -f $summary/$exp/L*
+    local str str0
+    local capt impact path
+    local i ix j iP iV iX iF N
+    local tag prev_tag tag_ix tags word
+    declare -a word
+    declare -a tags
+    declare -a tags_ix
+
+    iP=-1
+    iV=-1
+    iF=-1
+    iX=-1
+
+    exec 0< ${aIn}
+
+    while read line ; do
+      test "${line:0:1}" = '-' -a "${line:0:7}" = '- date:' && break
+    done
+
+    # generate a file for each tag
+    while read line ; do
+      if [ "${line:0:7}" = '- date:' ] ; then
+        # the end of a block
+        blk2Files
+      fi
+
+      # indices
+      i=${#blk[*]}
+      if [ "${line:0:11}" = experiment: ] ; then
+        test ${iX} -eq -1 && iX=$i  # only the first occurrence
+      elif [ "${line:0:9}" = variable: ] ; then
+        iV=$i
+      elif [ "${line:0:5}" = file: ] ; then
+        iF=$i
+      elif [ "${line:0:10}" = data_path: ] ; then
+        iP=$i
+      elif [ "${line:0:4}" = tag: ] ; then
+        # find all tags within the current block; note that the index is appended
+        word=( ${line} )
+        tag=${word[1]//\'}
+        tags[${#tags[*]}]="${tag}|$i"
+      fi
+
+      blk[${#blk[*]}]="$line"
+    done
+
+    # the last one is still missing
+    blk2Files
+
+    # there is still one remaining
+    test "${str:0:1}" && echo -e "${str}" >> $outT
+
+    local f fc
+    fc=( $( ls $summary/$exp/L* 2> /dev/null ) )
+
+    for f in ${fc[*]} ; do
+      echo -e " \n\n==== Annotation: ${f##*/} =========================\n" \
+             >> $outA
+      cat $f >> $outA
+    done
   fi
-
-  # clear old results
-  \rm -f $summary/$exp/L*
-  local str str0
-  local capt impact path
-  local i ix j iP iV iX iF N
-  local tag prev_tag tag_ix tags word
-  declare -a word
-  declare -a tags
-  declare -a tags_ix
-
-  iP=-1
-  iV=-1
-  iF=-1
-  iX=-1
-
-  exec 0< ${aIn}
-
-  while read line ; do
-    test "${line:0:1}" = '-' -a "${line:0:7}" = '- date:' && break
-  done
-
-  # generate a file for each tag
-  while read line ; do
-    if [ "${line:0:7}" = '- date:' ] ; then
-      # the end of a block
-      blk2Files
-    fi
-
-    # indices
-    i=${#blk[*]}
-    if [ "${line:0:11}" = experiment: ] ; then
-      test ${iX} -eq -1 && iX=$i  # only the first occurrence
-    elif [ "${line:0:9}" = variable: ] ; then
-      iV=$i
-    elif [ "${line:0:5}" = file: ] ; then
-      iF=$i
-    elif [ "${line:0:10}" = data_path: ] ; then
-      iP=$i
-    elif [ "${line:0:4}" = tag: ] ; then
-      # find all tags within the current block; note that the index is appended
-      word=( ${line} )
-      tag=${word[1]//\'}
-      tags[${#tags[*]}]="${tag}|$i"
-    fi
-
-    blk[${#blk[*]}]="$line"
-  done
-
-  # the last one is still missing
-  blk2Files
-
-  # there is still one remaining
-  test "${str:0:1}" && echo -e "${str}" >> $outT
-
-  local f fc
-  fc=( $( ls $summary/$exp/L* 2> /dev/null ) )
-
-  for f in ${fc[*]} ; do
-    echo -e " \n\n==== Annotation: ${f##*/} =========================\n" \
-           >> $outA
-    cat $f >> $outA
-  done
 
   test ${EMAIL:-f} = f && return
 
   local caption="QA-DKRZ: ${exp}"
 
   if which mutt &> /dev/null ; then
-    mutt -s "${caption}" -a ${outA} ${EMAIL[*]} << EOF
-$( echo "${caption}" )
-EOF
+    mutt -s "${caption}" -a ${outA} -- ${EMAIL[*]}
 
   elif which mailx &> /dev/null ; then
 
-    mailx -s "${caption}" ${EMAIL[*]} << EOF
+    local em="${EMAIL[*]}"
+    mailx -s "${caption}" ${em// /,} << EOF
 $( cat ${outA} )
 EOF
 

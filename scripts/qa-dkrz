@@ -4063,7 +4063,7 @@ taskSum()
       cvr="-s ${TABLE_PATH}/${TABLE_VAR_REQ}"
   fi
 
-  if [ ${EMAIL_SUMMARY} ] ; then
+  if [ ${isTERM:-f} = f -a ${EMAIL_SUMMARY} ] ; then
     ers="${EMAIL_SUMMARY[*]}"
     ers=" -e ${ers// /,}"
   fi
@@ -4081,6 +4081,8 @@ taskSum()
     pidBuf[i]=''
   done
 
+  local qa_res
+
   while [ ${exp_ix} -lt ${#LOG_FNAMES[*]} ] ; do
     for(( i=0 ; i < pidBufMax ; ++i )) ; do
       if [ "${pidBuf[i]}" ] ; then
@@ -4096,8 +4098,20 @@ taskSum()
     done
 
     if [ ${isStart} = t ] ; then
+      if [ "${LOG_FNAMES[exp_ix]}" != "${LOG_FNAMES[exp_ix]#*/}" ] ; then
+         qa_res=${LOG_FNAMES[exp_ix]%/*}
+         LOG_FNAMES[exp_ix]=${LOG_FNAMES[exp_ix]##*/}
+
+         if [ ! -r $qa_res/${LOG_FNAMES[exp_ix]} ] ; then
+           echo "$qa_res/${LOG_FNAMES[exp_ix]}: no such file or directory"
+           continue
+         fi
+      else
+         qa_res=${QA_RESULTS}/check_logs
+      fi
+
       /bin/bash ${QA_SRC}/scripts/taskSummary ${DEBUG_X} \
-        -p ${QA_RESULTS}/check_logs --src=$QA_SRC \
+        -p ${qa_res} --src=$QA_SRC \
         ${cvr} ${ers} ${prj} ${qrs} ${tcl} ${LOG_FNAMES[exp_ix]} &
 
       pidBuf[i]=$!
