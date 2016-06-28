@@ -1184,7 +1184,7 @@ finally()
   # rm pid-saving file
   \rm -f ${SESSION_LOGDIR}/pid.$rootPID
 
-  if [ ${isShow:-f} = f ] ; then
+  if [ ${isShow:-f} = f -a ${isTERM:-f} = f ] ; then
     if [ ${isAnythingDone:-f} = t -a ${NO_SUMMARY:-f} = f ] ; then
       taskSum
     fi
@@ -4063,7 +4063,7 @@ taskSum()
       cvr="-s ${TABLE_PATH}/${TABLE_VAR_REQ}"
   fi
 
-  if [ ${isTERM:-f} = f -a ${EMAIL_SUMMARY} ] ; then
+  if [ ${EMAIL_SUMMARY} ] ; then
     ers="${EMAIL_SUMMARY[*]}"
     ers=" -e ${ers// /,}"
   fi
