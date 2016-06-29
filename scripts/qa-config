@@ -1761,8 +1761,12 @@ setKWL()
   test "${value:0:7}" = disable && value=f
 
   # take deprecated SHOW_EXP_NAME into account
-  test "${key:0:8}" = SHOW_EXP && key=SHOW_EXP
-  test "${key}" = HIDDEN_DIRECTORY_DESCENT && key=HIDDEN_DIRECTORIES
+  test "${key}"     = HIDDEN_DIRECTORY_DESCENT && key=HIDDEN_DIRECTORIES
+  test "${key}"     = EXP_FNAME_PATTERN        && key=LOG_FNAME_PATTERN
+  test "${key}"     = EXP_NAME                 && key=LOG_FNAME
+  test "${key}"     = EXP_PATH_BASE            && key=LOG_PATH_BASE
+  test "${key}"     = EXP_PATH_INDEX           && key=LOG_PATH_INDEX
+  test "${key:0:8}" = SHOW_EXP                 && key=SHOW_EXP
 
 #  eval ${key}="${value// /\\ /}"
 
