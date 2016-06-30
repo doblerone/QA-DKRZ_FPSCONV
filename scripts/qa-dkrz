@@ -1403,15 +1403,17 @@ getExperimentNameFromPath()
 
   # compose the name
   CURR_LOG_FNAME=
-  for c in ${expPathIndex[*]} ; do
-    if [ $c -lt $N ] ; then
-      # subtract the reversed positional index from array size
-      CURR_LOG_FNAME=${CURR_LOG_FNAME}${pcs[c]}_
-    else
-      CURR_LOG_FNAME=unknownExp
-      break
-    fi
-  done
+  if [ ${#expPathIndex[*]} -gt 0 ] ; then
+    for c in ${expPathIndex[*]} ; do
+      if [ $c -lt $N ] ; then
+        # subtract the reversed positional index from array size
+        CURR_LOG_FNAME=${CURR_LOG_FNAME}${pcs[c]}_
+      fi
+    done
+  else
+    CURR_LOG_FNAME=unknownExp
+  fi
+
   CURR_LOG_FNAME=${CURR_LOG_FNAME%_}
 
   return
@@ -2195,46 +2197,45 @@ getPaths()
 
 getProjectTableName()
 {
-  # extract the name of the project table from subPath
-  # see function initExperimentName()
-
-  PROJECT_TABLE=$PRJCT_BASENAME
-
-  # no automatic construction
-  test ! ${PT_PATH_INDEX} && return
-
   # decompose the path
   local pcs
-  pcs=$PROJECT_DATA/$1
+  pcs=${PROJECT_DATA}/$1
   pcs=( ${pcs//\// } )
 
-  # if the last item on the right side is a kind of version, then skip
-  local c ptPathIndex
-  ptPathIndex=( ${PT_PATH_INDEX[*]} )
+  # check for path component 'output'
+  test ! ${LOG_PATH_BASE} && LOG_PATH_BASE=${pcs[0]}
 
-  local sz=$((${#pcs[*]}-1))
+  local countEPB=0
+  local c ptPathIndex M N
+  N=${#pcs[*]}
 
-  if expr match ${pcs[sz]} 'v[[:digit:]]' &> /dev/null
-  then
-    # adjust indexes, because there is a trailing version_path_item
-    for(( c=0 ; c < ${#ptPathIndex[*]} ; ++c )) ; do
-      ptPathIndex[${c}]=$(( ${ptPathIndex[c]} +1 ))
-    done
-  fi
+  # for multiple occurrences
+  local base_ix=0
+  for(( c=0 ; c < N ; ++c )) ; do
+    test "${pcs[c]}" = ${LOG_PATH_BASE} && base_ix=$c
+  done
+
+  local ix
+  for(( ix=0 ; ix < ${#PT_PATH_INDEX[*]} ; ++ix )) ; do
+    ptPathIndex[ix]=$(( base_ix + ${PT_PATH_INDEX[ix]} ))
+  done
+
+  test ${#ptPathIndex[*]} -eq 0 && ptPathIndex=( ${PT_PATH_INDEX[*]} )
 
   # compose the name
-  local N=${#pcs[*]}
+  PROJECT_TABLE=$PRJCT_BASENAME
+  if [ ${#ptPathIndex[*]} -gt 0 ] ; then
+    for c in ${ptPathIndex[*]} ; do
+      if [ $c -lt $N ] ; then
+        # subtract the reversed positional index from array size
+        PROJECT_TABLE=${PROJECT_TABLE}${pcs[c]}_
+      fi
+    done
+  else
+    PROJECT_TABLE=unknownExp
+  fi
 
-  for c in ${ptPathIndex[*]} ; do
-    if [ $c -lt $N ] ; then
-      # subtract the reversed positional index from array size
-      PROJECT_TABLE=${PROJECT_TABLE}${pcs[$(( N - c ))]}_
-    else
-      PROJECT_TABLE=unknownExp
-      break
-    fi
-  done
-  PROJECT_TABLE=${PROJECT_TABLE%_}.csv
+  PROJECT_TABLE=${PROJECT_TABLE%_}
 
   return
 }
@@ -3591,7 +3592,11 @@ operatePipes()
     fi
 
 #trace \
-    getProjectTableName ${subPath}
+    if [ ${#LOG_PATH_INDEX[*]} -gt 0 ] ; then
+      getProjectTableName ${subPath}
+    else
+      getProjectTableName ${fs[0]}
+    fi
 
     nF_EXP[${j}]=$CURR_LOG_FNAME
     nF_TP[${j}]=$PROJECT_TABLE
