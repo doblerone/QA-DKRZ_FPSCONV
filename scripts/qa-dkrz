@@ -2693,17 +2693,22 @@ init()
         LOG_FNAMES=( ${ONLY_SUMMARY//,/ } )
        fi
 
-       local i
+       local i j
        for(( i=0 ; i < ${#LOG_FNAMES[*]} ; ++i )) ; do
          if [ -d ${LOG_FNAMES[i]} ] ; then
             # is a directory and the contained log-files are appended
-            local log_fn log_fns
+            local log_fns
             log_fns=( $(ls ${LOG_FNAMES[i]}/*.log 2>/dev/null) )
 
-            for log_fn in ${log_fns[*]} ; do
-               LOG_FNAMES[${#LOG_FNAMES[*]}]=${log_fn}
+            for(( j=0 ; j < ${#log_fns[*]} ; ++j )) ; do
+               if [ $j -eq 0 ] ; then
+                  # overwrite item with the directory path
+                  LOG_FNAMES[i]=${log_fns[j]}
+               else
+                  # append
+                  LOG_FNAMES[${#LOG_FNAMES[*]}]=${log_fns[j]}
+               fi
             done
-            continue
          fi
 
          if [ ${LOG_FNAMES[i]} != ${LOG_FNAMES[i]%.log} ] ; then
@@ -4113,7 +4118,7 @@ taskSum()
          qa_res=${LOG_FNAMES[exp_ix]%/*}
          LOG_FNAMES[exp_ix]=${LOG_FNAMES[exp_ix]##*/}
 
-         if [ ! -r $qa_res/${LOG_FNAMES[exp_ix]} ] ; then
+         if [ ! -r $qa_res/${LOG_FNAMES[exp_ix]}.log ] ; then
            echo "$qa_res/${LOG_FNAMES[exp_ix]}: no such file or directory"
            continue
          fi
