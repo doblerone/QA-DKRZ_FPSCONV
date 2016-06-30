@@ -2695,6 +2695,17 @@ init()
 
        local i
        for(( i=0 ; i < ${#LOG_FNAMES[*]} ; ++i )) ; do
+         if [ -d ${LOG_FNAMES[i]} ] ; then
+            # is a directory and the contained log-files are appended
+            local log_fn log_fns
+            log_fns=( $(ls ${LOG_FNAMES[i]}/*.log 2>/dev/null) )
+
+            for log_fn in ${log_fns[*]} ; do
+               LOG_FNAMES[${#LOG_FNAMES[*]}]=${log_fn}
+            done
+            continue
+         fi
+
          if [ ${LOG_FNAMES[i]} != ${LOG_FNAMES[i]%.log} ] ; then
            LOG_FNAMES[${i}]=${LOG_FNAMES[i]%.log}
          fi
