@@ -18,21 +18,21 @@ In more detail, there are (for experiment-name see :ref:`configuration`):
 **check_logs**
   All results are gathered in this directory.
 
-  **Log-files** (experiment-name.log, YAML format)
+  **Log-files** (files: experiment-name.log, YAML format)
     There is an entry for every checked file; possibly with annotations.
     The option setting is prepended.
 
-  **Annotations** (experiment-name.note, YAML format)
+  **Annotations** (files: experiment-name.note, YAML format)
     Only those entries from the log-files with annotations. The entries for
     all files of given variable-frequency are merged
     to experiment and variable scope if possible.
 
-  **Period** (experiment-name.period, YAML format)
+  **Period** (files: experiment-name.period, YAML format)
     The time range for each variable. If shorter than found for others, then
     a flag is present.
 
   **Summary**
-    Directories (experiment-name, contained files are human readable)
+    Directories: experiment-name, contained files are human readable)
 
     **experiment-name**
       **annotations.txt**

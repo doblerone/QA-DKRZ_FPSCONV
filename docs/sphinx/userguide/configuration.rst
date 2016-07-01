@@ -39,19 +39,19 @@ Some options act on other options:
 
 - Options on the command-line have to be prefixed by '-E\_'.
 
-- Highest precedence for options on the command-line.
+- Highest precedence is for options on the command-line.
 
 - If path has no leading '/', then the search is relative to the path specified
   by option PROJECT_DATA.
 
 - Special for options ``-S arg`` or an appended plain string on the command-line:
-  cancellation of previous SELECTions in any configuration file.
+  cancellation of previous SELECTions by any configuration file.
 
 - If SELECTions are specified on the command-line (options -S) with an absolute
   path, i.e. beginning with '/', then PROJECT_DATA specified in any
-  config-file is cancelled..
+  config-file is cancelled.
 
-- All selections refer to atomic variables, i.e. all
+- All SELECTions refer to atomic variables, i.e. all
   sub-temporal files, even if a file name is appended to a path.
 
 - LOCKing gets the higher precedence over SELECTion.
@@ -104,19 +104,16 @@ Experiment Names
 QA-DKRZ checks files individually, the results are gathered in containers
 unique for a specific scope. Albeit most projects have defined a term
 'experiment', this is not suitable to provide a realm common to a sub-set
-of data files. Note that having everything identical, but the model for instance
-could cause annotations, i.e. differences for some variables,
-in the QA results.
+of data files. Note that having everything identical, but the model for instance,
+could cause annotations, i.e. differences for some variables, in the QA results.
 
 For CMIP5 and CORDEX, an unambiguous scope is defined by the properties of
-the so-called Data Reference System, i.e. the components of the path to
-the variables. The option ``EXP_PATH_INDEX`` together with option
-``EXP_PATH_BASE``
-defines a unique experiment-name, where the former contains a comma-separated list
+the so-called Data Reference System (DRS), i.e. the components of the path to
+the variables. The options ``LOG_PATH_INDEX`` and ``LOG_PATH_BASE``
+define a unique experiment-name, where the former contains a comma-separated list
 of indices of the path components and the latter the starting component with
-index=0, e.g. ``EXP_PATH_BASE=output`` and ``EXP_PATH_INDEX=1,2,3,4,6``.
+index=0, e.g. ``LOG_PATH_BASE=output`` and ``LOG_PATH_INDEX=1,2,3,4,6``.
 An example is commented in :ref:`results`.
 
 .. note:: If ``EXP_PATH_INDEX`` is not set, then consistency checks are disabled.
-
 

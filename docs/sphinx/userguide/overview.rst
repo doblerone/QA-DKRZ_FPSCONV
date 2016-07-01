@@ -40,8 +40,8 @@ After installation, QA-DKRZ runs are started on the command-line.
           the starting script. At first, the acronym QC (Quality Control/Check)
           was used, but was changed to the more commonly used term
           QA (Quality Assurance). The former script names qcManager as well as
-          qc_DKRZ, and the underscore replaced
-          by a hyphen work, too. Also, option names containing QC or qc are still
+          qc_DKRZ, and the underscore replaced by a hyphen work, too.
+          Also, option names containing QC or qc are still
           valid for backward compatibility.
 
 
