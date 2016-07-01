@@ -3856,7 +3856,7 @@ runExample()
 
   cd $dir
 
-  \rm -rf results config.txt data tables qa-test.task
+  \rm -rf results config.txt data tables qa-test.taska .qa-dkrz
 
   echo "make examples in $dir " > $TTY
   echo "make qa_test.task " > $TTY
@@ -3884,9 +3884,10 @@ runExample()
   fi
 
   echo "run"  > $TTY
-  echo "$QA_SRC/scripts/qa-dkrz -m --work=$dir -f qa-test.task" > $TTY
+  echo "$QA_SRC/scripts/qa-dkrz -m --work=$dir/.qa-dkrz -f qa-test.task" > $TTY
+  echo -e "\nNote: config.txt and tables are copied to $dir/.qa-dkrz\n" > $TTY
 
-  exec $QA_SRC/scripts/qa-dkrz -m --work=$dir -f qa-test.task
+  exec $QA_SRC/scripts/qa-dkrz -m --work=$dir/.qa-dkrz -f qa-test.task
 
   return
 }

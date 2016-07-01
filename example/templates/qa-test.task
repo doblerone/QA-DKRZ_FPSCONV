@@ -4,7 +4,7 @@
 # PROJECT_DATA=your-path/QC/example/data/CMIP5
   PROJECT_DATA=data/CORDEX/output
 
-  EXP_PATH_BASE=output
+  LOG_PATH_BASE=cordex
 
 # Path to QC's results and log dir. Required. This will be expanded
 # automatically by the last path component of option DATA_ROOT.
