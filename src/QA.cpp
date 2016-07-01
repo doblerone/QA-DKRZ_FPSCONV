@@ -1214,7 +1214,6 @@ QA::setCheckMode(std::string m)
     else if( cvs[j] == "cv" )
     {
       isCheckCV=true ;
-//      isCheckCNSTY=true ;
       isCheckTime=true ;
 
       isRequiredTime=true;
@@ -1242,7 +1241,7 @@ QA::setCheckMode(std::string m)
     else if( cvs[j] == "meta" )
     {
       isCheckCF=true ;
-//      isCheckCNSTY=true ;
+      isCheckCNSTY=true ;
       isCheckCV=true ;
       isCheckDRS=true ;
       isCheckTime=true ;
