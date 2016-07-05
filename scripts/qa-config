@@ -2267,11 +2267,11 @@ do
           descript
           exit 1
 
-        elif [ "${UOPTARG%=*}" = "AUTO_UP" ] ; then
-          installArgs="${installArgs}--auto-up=${optarg#*=},"
+        elif [ "${UOPTARG:0:7}" = "AUTO_UP" ] ; then
+          installArgs="${installArgs}--auto-up=${OPTARG#*=},"
 
-        elif [ "${UOPTARG%=*}" = "AUTO_TABLE_UP" ] ; then
-          installArgs="${installArgs}--auto-table-up=${optarg#*=},"
+        elif [ "${UOPTARG:0:13}" = "AUTO_TABLE_UP" ] ; then
+          installArgs="${installArgs}--auto-table-up=${OPTARG#*=},"
 
         elif [ "${UOPTARG:0:5}" = DEBUG ] ; then
           set -x

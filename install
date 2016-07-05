@@ -8,7 +8,7 @@ zlib=zlib-1.2.8
 udunits=udunits-2.2.20
 
 defaultProject=CORDEX
-
+supportedProjects=( CMIP5 CORDEX )
 
 descript()
 {
@@ -335,7 +335,7 @@ update()
 
   . $QA_SRC/scripts/updateConfigFile.txt QA_REVISION${packRev:+=}$packRev
 
-  if . $QA_SRC/scripts/updateConfigFile.txt \
+  if [ ${GET_TABLES} ] || . $QA_SRC/scripts/updateConfigFile.txt \
           ${AUTO_TABLE_UPDATE:-AUTO_TABLE_UPDATE} \
               || [ ${isForceUp:-f} = t ] ; then
 
@@ -344,10 +344,18 @@ update()
     fi
 
     if [ "${project}" != CF ] ; then
-      ${QA_SRC}/scripts/get_project_tables \
-          --qa_path=${QA_SRC} ${DEBUG} \
-          --config_file=$CONFIG_FILE ${isForceUp:+--force-update} \
-          ${QA_HOME}/tables/projects/${project}
+      if [ ${GET_TABLES} ] ; then
+        prjs=( ${supportedProjects[*]} )
+      else
+        prjs=( ${project} )
+      fi
+
+      for prj in ${prjs[*]} ; do
+        ${QA_SRC}/scripts/get_project_tables \
+            --qa_path=${QA_SRC} ${DEBUG} \
+            --config_file=$CONFIG_FILE ${isForceUp:+--force-update} \
+            ${QA_HOME}/tables/projects/${prj}
+      done
     fi
 
 
@@ -433,9 +441,11 @@ do
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=install' ] ; then
           DEBUG='--debug'
           set -x
-        elif [ "${UOPTARG}" = FORCE-UPDATE -o "${UOPTARG}" = FORCE_UPDATE ] ; then
+        elif [ "${UOPTARG}" = FORCE_UPDATE ] ; then
           isForceUp=t
           isUpdateQA=t
+        elif [ "${UOPTARG%%=*}" = GET_TABLES ] ; then
+          GET_TABLES=t
         elif [ "${UOPTARG%%=*}" = HELP ] ; then
           descript
           exit
@@ -515,6 +525,8 @@ elif [ ${isBuild:-f} = t -o ${isLink:-f} = t ] ; then
 else
   pcks=
 fi
+
+test "${project}" = NONE && exit
 
 exec $QA_SRC/scripts/install.sh ${debug} --pack=${package} \
 ${isContinueLog:+--continue_log} ${pcks} ${defPrj} \

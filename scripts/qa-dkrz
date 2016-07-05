@@ -2544,11 +2544,7 @@ init()
     exit
   fi
 
-  if [ ! ${PROJECT} ] ; then
-    std_out flush "PROJECT option is missing"
-    exit 1
-  fi
-
+  test ! ${PROJECT} && PROJECT=NONE
   test ! ${PROJECT_AS} && PROJECT_AS=${PROJECT}
 
   # package update requested and required?
@@ -2569,6 +2565,11 @@ init()
        exit 1
     fi
 
+  fi
+
+  if [ ${PROJECT} = NONE ] ; then
+    std_out flush "PROJECT option is missing"
+    exit 1
   fi
 
   # expand comma-sep-list to arrays
