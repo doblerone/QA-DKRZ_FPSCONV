@@ -345,10 +345,35 @@ Annotation::getCheckStatus(bool withRank)
   std::map<std::string, std::string>::iterator it;
   std::string out;
 
+  std::string drsF;
+  std::string drsP;
+
   for( it=checkID.begin() ; it != checkID.end() ; ++it )
   {
-    const std::string& f=it->first;
+    if( it->first == "DRS(F)" )
+        drsF = it->second;
+    if( it->first == "DRS(P)" )
+        drsP = it->second;
+  }
+
+  bool isDRS = drsF == drsP;
+  bool isDRS_First=true;
+
+  for( it=checkID.begin() ; it != checkID.end() ; ++it )
+  {
+    std::string f(it->first);
     const std::string& s=it->second;
+
+    if( isDRS && it->first.size() > 2 && it->first.substr(0,3) == "DRS" )
+    {
+      if( isDRS_First )
+      {
+        f="DRS";
+        isDRS_First=false;
+      }
+      else
+        continue;
+    }
 
     if( out.size() )
         out += '|';

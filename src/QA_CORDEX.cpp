@@ -179,7 +179,7 @@ DRS_CV::checkFilename(std::string& fName, struct DRS_CV_Table& drs_cv_table)
       std::string capt("filename requires StartTime-EndTime");
 
       (void) notes->operate(capt) ;
-      notes->setCheckStatus("DRS", pQA->n_fail);
+      notes->setCheckStatus(drsF, pQA->n_fail);
     }
   }
 
@@ -241,10 +241,10 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
         capt += hdhC::tf_assign("item", x_e[x]);
         capt += " not found in CV";
 
-        if( notes->inq( key, "DRS") )
+        if( notes->inq( key, drsF) )
         {
           (void) notes->operate(capt) ;
-          notes->setCheckStatus("DRS", pQA->n_fail);
+          notes->setCheckStatus(drsF, pQA->n_fail);
         }
       }
 
@@ -312,10 +312,10 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
 
     for(size_t i=0 ; i < text.size() ; ++i )
     {
-      if( notes->inq( keys[i], "DRS") )
+      if( notes->inq( keys[i], drsF) )
       {
         (void) notes->operate(capt+text[i]) ;
-        notes->setCheckStatus("DRS", pQA->n_fail);
+        notes->setCheckStatus(drsF, pQA->n_fail);
       }
     }
   }
@@ -351,7 +351,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 
          if( notes->operate(capt) )
          {
-           notes->setCheckStatus("DRS", pQA->n_fail );
+           notes->setCheckStatus(drsP, pQA->n_fail );
            pQA->setExitState( notes->getExitState() ) ;
          }
       }
@@ -415,7 +415,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 
        if( notes->operate(capt) )
        {
-         notes->setCheckStatus("DRS",  pQA->n_fail );
+         notes->setCheckStatus(drsP,  pQA->n_fail );
          pQA->setExitState( notes->getExitState() ) ;
        }
      }
@@ -435,7 +435,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 
        if( notes->operate(capt) )
        {
-         notes->setCheckStatus("DRS", pQA->n_fail );
+         notes->setCheckStatus(drsP, pQA->n_fail );
          pQA->setExitState( notes->getExitState() ) ;
        }
      }
@@ -457,7 +457,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 
        if( notes->operate(capt) )
        {
-         notes->setCheckStatus("DRS", pQA->n_fail );
+         notes->setCheckStatus(drsP, pQA->n_fail );
          pQA->setExitState( notes->getExitState() ) ;
        }
      }
@@ -501,7 +501,7 @@ DRS_CV::checkNetCDF(void)
       text += s;
 
       (void) notes->operate( capt, text ) ;
-      notes->setCheckStatus("DRS", pQA->n_fail);
+      notes->setCheckStatus(drsF, pQA->n_fail);
     }
   }
 
@@ -527,7 +527,7 @@ DRS_CV::checkProductName(std::string& drs_product,
 
   std::string key("1_3");
 
-  if( notes->inq( key, "DRS") )
+  if( notes->inq( key, drsP) )
   {
     std::string capt("DRS fault for path component <product>, found") ;
     capt += hdhC::tf_val(drs_product) ;
@@ -589,10 +589,10 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
         capt += hdhC::tf_assign("item", x_e[x]) ;
         capt += " not found in CV";
 
-        if( notes->inq( key, "DRS") )
+        if( notes->inq( key, drsP) )
         {
           (void) notes->operate(capt) ;
-          notes->setCheckStatus("DRS", pQA->n_fail);
+          notes->setCheckStatus(drsP, pQA->n_fail);
         }
       }
 
@@ -698,7 +698,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
       if( notes->inq( keys[i], pQA->fileStr) )
       {
         (void) notes->operate(capt+text[i]) ;
-        notes->setCheckStatus("DRS", pQA->n_fail);
+        notes->setCheckStatus(drsP, pQA->n_fail);
       }
     }
   }
@@ -873,10 +873,18 @@ DRS_CV::run(void)
   DRS_CV_Table& drs_cv_table = pQA->drs_cv_table ;
 
   // check for the required dir structure
-  checkPath(pQA->pIn->file.path, drs_cv_table) ;
+  if( pQA->isCheckDRS_P )
+  {
+     drsP = "DRS(P)" ;
+     checkPath(pQA->pIn->file.path, drs_cv_table) ;
+  }
 
   // compare filename to netCDF global attributes
-  checkFilename(pQA->pIn->file.basename, drs_cv_table);
+  if( pQA->isCheckDRS_F )
+  {
+     drsF = "DRS(F)" ;
+     checkFilename(pQA->pIn->file.basename, drs_cv_table);
+  }
 
   // is it NetCDF-4, is it compressed?
   checkNetCDF();
@@ -929,7 +937,7 @@ DRS_CV::testPeriod(Split& x_f)
        capt += hdhC::tf_val(sd[0] + "-" + sd[1]);
 
        (void) notes->operate(capt) ;
-       notes->setCheckStatus("DRS", pQA->n_fail );
+       notes->setCheckStatus(drsF, pQA->n_fail );
      }
 
      return false;
@@ -969,7 +977,7 @@ DRS_CV::testPeriod(Split& x_f)
         capt += "is not centred around <time> value." ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckStatus("DRS", pQA->n_fail );
+        notes->setCheckStatus(drsF, pQA->n_fail );
       }
     }
   }
@@ -985,7 +993,7 @@ DRS_CV::testPeriod(Split& x_f)
         capt += "is missing";
 
         (void) notes->operate(capt) ;
-        notes->setCheckStatus("DRS", pQA->n_fail);
+        notes->setCheckStatus(drsF, pQA->n_fail);
       }
     }
   }
@@ -1018,7 +1026,7 @@ DRS_CV::testPeriod(Split& x_f)
           {
             (void) notes->operate(capt + text[i]) ;
 
-            notes->setCheckStatus("DRS", pQA->n_fail );
+            notes->setCheckStatus(drsF, pQA->n_fail );
           }
         }
       }
@@ -1127,7 +1135,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
 
 
         (void) notes->operate(capt) ;
-        notes->setCheckStatus("DRS", pQA->n_fail );
+        notes->setCheckStatus(drsF, pQA->n_fail );
       }
     }
   }
@@ -1390,7 +1398,7 @@ DRS_CV::testPeriodCut_CMOR_isGOD(std::vector<std::string> &sd, Date**)
     {
       (void) notes->operate(capt) ;
 
-      notes->setCheckStatus("DRS", pQA->n_fail );
+      notes->setCheckStatus(drsF, pQA->n_fail );
     }
   }
 
@@ -1448,7 +1456,7 @@ DRS_CV::testPeriodDatesFormat(std::vector<std::string> &sd)
 
         (void) notes->operate(capt) ;
 
-        notes->setCheckStatus("DRS", pQA->n_fail );
+        notes->setCheckStatus(drsF, pQA->n_fail );
      }
   }
 
@@ -1485,7 +1493,7 @@ DRS_CV::testPeriodFormat(Split& x_f, std::vector<std::string> &sd)
       capt += ", found underscore";
 
       (void) notes->operate(capt) ;
-      notes->setCheckStatus("DRS", pQA->n_fail );
+      notes->setCheckStatus(drsF, pQA->n_fail );
     }
 
     --x_fSz;
@@ -1561,7 +1569,7 @@ DRS_CV::testPeriodFormat(Split& x_f, std::vector<std::string> &sd)
             capt += hdhC::tf_val(x_last[ix[0]]);
 
             (void) notes->operate(capt) ;
-            notes->setCheckStatus("DRS", pQA->n_fail );
+            notes->setCheckStatus(drsF, pQA->n_fail );
           }
         }
       }
@@ -1610,7 +1618,7 @@ DRS_CV::testPeriodFormat(Split& x_f, std::vector<std::string> &sd)
         capt += hdhC::tf_val(sep);
 
         (void) notes->operate(capt) ;
-        notes->setCheckStatus("DRS", pQA->n_fail );
+        notes->setCheckStatus(drsF, pQA->n_fail );
       }
     }
   }
@@ -4094,7 +4102,7 @@ QA_Exp::init(std::vector<std::string>& optStr)
    // apply parsed command-line args
    applyOptions(optStr);
 
-   if( pQA->isCheckDRS || pQA->isCheckCV || pQA->isCheckTime )
+   if( pQA->isCheckDRS || pQA->isCheckDRS_F || pQA->isCheckCV || pQA->isCheckTime )
    {
      fVarname = getVarnameFromFilename();
      getFrequency();
@@ -4124,7 +4132,7 @@ QA_Exp::init(std::vector<std::string>& optStr)
          capt += " in the filename does not match any variable in the file" ;
 
          (void) notes->operate(capt) ;
-         notes->setCheckStatus("CV", pQA->n_fail );
+         notes->setCheckStatus("DRS(F)", pQA->n_fail );
        }
      }
    }
@@ -4905,7 +4913,7 @@ QA_Exp::run(void)
 
    if( pQA->drs_cv_table.table_DRS_CV.is )
    {
-     if(pQA->isCheckDRS)
+     if(pQA->isCheckDRS || pQA->isCheckDRS_F || pQA->isCheckDRS_P)
      {
        DRS_CV drsFN(pQA);
        drsFN.run();

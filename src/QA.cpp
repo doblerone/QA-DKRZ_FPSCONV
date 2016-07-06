@@ -560,7 +560,7 @@ QA::init(void)
    qaExp.init(optStr);
 
    // DRS specifications
-   if(isCheckDRS)
+   if(isCheckDRS || isCheckDRS_F || isCheckDRS_P )
    {
      drs_cv_table.setParent(this);
      drs_cv_table.setPath(tablePath);
@@ -663,9 +663,22 @@ QA::initCheckStatus(void)
      cF->setCheckStatus(n_disabled);
 
    if(isCheckDRS)
-     notes->setCheckStatus("DRS", "PASS");
+   {
+     notes->setCheckStatus("DRS(F)", "PASS");
+     notes->setCheckStatus("DRS(P)", "PASS");
+   }
    else
-     notes->setCheckStatus("DRS", n_disabled);
+   {
+     if(isCheckDRS_F)
+       notes->setCheckStatus("DRS(F)", "PASS");
+     else
+       notes->setCheckStatus("DRS(F)", n_disabled);
+
+     if(isCheckDRS_P)
+       notes->setCheckStatus("DRS(P)", "PASS");
+     else
+       notes->setCheckStatus("DRS(P)", n_disabled);
+   }
 
    if(isCheckCV)
      notes->setCheckStatus("CV", "PASS");
@@ -1188,6 +1201,8 @@ QA::setCheckMode(std::string m)
   isCheckCV=false;
   isCheckData=false;
   isCheckDRS=false;
+  isCheckDRS_F=false;
+  isCheckDRS_P=false;
   isCheckTime=false;
   isCheckTimeValues=false;
 
@@ -1233,6 +1248,24 @@ QA::setCheckMode(std::string m)
     else if( cvs[j] == "drs" )
     {
       isCheckDRS=true ;
+      isCheckDRS_F=true ;
+      isCheckDRS_P=true ;
+      isCheckTime=true ;
+
+      isRequiredTime=true;
+      isRequiredGlobal=true;
+    }
+    else if( cvs[j] == "drs_f" )
+    {
+      isCheckDRS_F=true ;
+      isCheckTime=true ;
+
+      isRequiredTime=true;
+      isRequiredGlobal=true;
+    }
+    else if( cvs[j] == "drs_p" )
+    {
+      isCheckDRS_P=true ;
       isCheckTime=true ;
 
       isRequiredTime=true;
@@ -1244,6 +1277,8 @@ QA::setCheckMode(std::string m)
       isCheckCNSTY=true ;
       isCheckCV=true ;
       isCheckDRS=true ;
+      isCheckDRS_F=true ;
+      isCheckDRS_P=true ;
       isCheckTime=true ;
 
       isRequiredGlobal=true;

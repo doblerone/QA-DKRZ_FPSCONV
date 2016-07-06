@@ -380,6 +380,8 @@ struct DRS_CV
   bool enabledCompletenessCheck;
 
   std::string ensembleMember;
+  std::string drsF;
+  std::string drsP;
 
   Annotation* notes;
   QA*         pQA;

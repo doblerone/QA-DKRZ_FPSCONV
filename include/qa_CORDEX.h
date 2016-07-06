@@ -72,6 +72,9 @@ struct DRS_CV
 
   bool enabledCompletenessCheck;
 
+  std::string drsF;
+  std::string drsP;
+
   Annotation* notes;
   QA*         pQA;
 };
