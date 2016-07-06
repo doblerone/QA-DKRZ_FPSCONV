@@ -53,7 +53,8 @@ int main(int argc,char *argv[])
 
   cf.notes->printFlags();
 
-  return cf.notes->getExitState() ;
+//  return cf.notes->getExitState() ;
+  return 0 ;
 }
 
 void
