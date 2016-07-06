@@ -1210,6 +1210,8 @@ QA::setCheckMode(std::string m)
   isRequiredVariable=false;
   isRequiredGlobal=false;
 
+  bool isEnableMode=false;
+
   Split cvs(hdhC::Lower()(m), ",|", true);
   for( size_t j=0 ; j < cvs.size() ; ++j )
   {
@@ -1221,10 +1223,13 @@ QA::setCheckMode(std::string m)
       isRequiredVariable=true;
       isRequiredGlobal=true;
 
+      isEnableMode=true;
     }
     if( cvs[j] == "cnsty" )
     {
       isCheckCNSTY=true ;
+
+      isEnableMode=true;
     }
     else if( cvs[j] == "cv" )
     {
@@ -1234,6 +1239,8 @@ QA::setCheckMode(std::string m)
       isRequiredTime=true;
       isRequiredGlobal=true;
       isRequiredVariable=true;
+
+      isEnableMode=true;
     }
     else if( cvs[j] == "data" )
     {
@@ -1244,6 +1251,8 @@ QA::setCheckMode(std::string m)
       isRequiredTime=true;
       isRequiredVariable=true;
       isRequiredGlobal=true;
+
+      isEnableMode=true;
     }
     else if( cvs[j] == "drs" )
     {
@@ -1254,6 +1263,8 @@ QA::setCheckMode(std::string m)
 
       isRequiredTime=true;
       isRequiredGlobal=true;
+
+      isEnableMode=true;
     }
     else if( cvs[j] == "drs_f" )
     {
@@ -1262,6 +1273,8 @@ QA::setCheckMode(std::string m)
 
       isRequiredTime=true;
       isRequiredGlobal=true;
+
+      isEnableMode=true;
     }
     else if( cvs[j] == "drs_p" )
     {
@@ -1270,6 +1283,8 @@ QA::setCheckMode(std::string m)
 
       isRequiredTime=true;
       isRequiredGlobal=true;
+
+      isEnableMode=true;
     }
     else if( cvs[j] == "meta" )
     {
@@ -1284,6 +1299,8 @@ QA::setCheckMode(std::string m)
       isRequiredGlobal=true;
       isRequiredTime=true;
       isRequiredVariable=true;
+
+      isEnableMode=true;
     }
     else if( cvs[j] == "time" )
     {
@@ -1292,6 +1309,65 @@ QA::setCheckMode(std::string m)
 
       isRequiredTime=true;
       isRequiredGlobal=true;
+
+      isEnableMode=true;
+    }
+  }
+
+  // disable mode
+  if( isEnableMode )
+      return;
+
+  isCheckCF=true;
+  isCheckCNSTY=true;
+  isCheckCV=true;
+  isCheckData=true;
+  isCheckDRS=true;
+  isCheckDRS_F=true;
+  isCheckDRS_P=true;
+  isCheckTime=true;
+  isCheckTimeValues=true;
+
+  isRequiredTime=true;
+  isRequiredVariable=true;
+  isRequiredGlobal=true;
+
+  for( size_t j=0 ; j < cvs.size() ; ++j )
+  {
+    if( cvs[j] == "-cf" )
+      isCheckCF=false ;
+    else if( cvs[j] == "-cnsty" )
+      isCheckCNSTY=false ;
+    else if( cvs[j] == "-cv" )
+      isCheckCV=false ;
+    else if( cvs[j] == "-data" )
+    {
+      isCheckData=false ;
+      isRequiredVariable=false;
+    }
+    else if( cvs[j] == "-drs" )
+    {
+      isCheckDRS=false ;
+      isCheckDRS_F=false ;
+      isCheckDRS_P=false ;
+    }
+    else if( cvs[j] == "-drs_f" )
+      isCheckDRS_F=false ;
+    else if( cvs[j] == "-drs_p" )
+      isCheckDRS_P=false ;
+    else if( cvs[j] == "-meta" )
+    {
+      isCheckCF=false ;
+      isCheckCNSTY=false ;
+      isCheckCV=false ;
+      isCheckDRS=false ;
+      isCheckDRS_F=false ;
+      isCheckDRS_P=false ;
+    }
+    else if( cvs[j] == "-time" )
+    {
+      isCheckTime=false ;
+      isCheckTimeValues=false ;
     }
   }
 
