@@ -44,9 +44,9 @@ int main(int argc,char *argv[])
   // runs also the cf checker
   in.init();
 
-  in.pullMetaData('G');
-  in.pullMetaData('T');
   in.pullMetaData('V');
+  in.pullMetaData('T');
+  in.pullMetaData('G');
 
   cf.setFilename(in.file);
   (void) cf.run();
