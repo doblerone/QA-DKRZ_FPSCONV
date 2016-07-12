@@ -1399,8 +1399,6 @@ getExperimentNameFromPath()
     expPathIndex[ix]=$(( base_ix + ${LOG_PATH_INDEX[ix]} ))
   done
 
-  test ${#expPathIndex[*]} -eq 0 && expPathIndex=( ${LOG_PATH_INDEX[*]} )
-
   # compose the name
   CURR_LOG_FNAME=
   if [ ${#expPathIndex[*]} -gt 0 ] ; then
@@ -3857,7 +3855,7 @@ runExample()
 
   cd $dir
 
-  \rm -rf results config.txt data tables qa-test.taska .qa-dkrz
+  \rm -rf results config.txt data tables qa-test.task .qa-dkrz
 
   echo "make examples in $dir " > $TTY
   echo "make qa_test.task " > $TTY

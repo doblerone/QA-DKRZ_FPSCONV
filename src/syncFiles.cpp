@@ -44,8 +44,12 @@ Options:\n
    -S               As -s, additionally with begin and end time.\n
                     Note that the range is given anyway in case of error.\n
    -T               Determine and append the total time range to the output.\n
-   -t [t0-]t2       As for -d, but referring to the time values.\
+   -t [t0-]t2       As for -d, but referring to the time values.\n
                     Time attributes of files must be identical.\n
+   --help \n
+   --note           not implemented, yet\n
+   --only-marked    Only issue failing properties\n
+   --NL             String indicating newline between failing issues [newline] \n
 \n
 return:  output: \n
   0      Name of next file(s).\n
@@ -71,6 +75,7 @@ class Member
   void   enableModTimeNote(void){isModTimeNote=true;}
   void   enablePrintDateRange(void){isPrintDateRange=true;}
   void   enablePrintOnlyMarked(void){isPrintOnlyMarked=true;}
+  void   enableNewLine(std::string &nl){newline=nl;}
   void   getModificationTime(void);
   std::string
          getFile(void){ return path + filename ; }
@@ -87,6 +92,7 @@ class Member
   std::string  filename;
   std::string  path;
   std::string  state;
+  std::string  newline;
 
   bool         isPrintOnlyMarked ;
   bool         isPrintDateRange;
@@ -110,6 +116,7 @@ class Ensemble
    void   enablePrintEnsemble(void) {isPrintEnsemble=true;}
    void   enablePrintOnlyMarked(void){isPrintOnlyMarked=true;}
    void   enablePrintDateRange(void){isPrintDateRange=true;}
+   void   enableNewLine(std::string &nl){newline=nl;}
    std::string
           getDateSpan(void);
    std::string
@@ -137,6 +144,7 @@ class Ensemble
    size_t sz ;         // end of effective ensemble, which is modifiable.
    size_t last;        // the last index of the ensemble (target)
 
+   std::string           newline;
    std::string           path;
    std::vector<Member*>  member ;
 //   Annotation           *notes;
@@ -152,7 +160,7 @@ class SyncFiles
    void enablePrintDateRange(void)      {ensemble->enablePrintDateRange();}
    void enablePrintEnsemble(void)       {ensemble->enablePrintEnsemble();}
    void enablePrintTotalTimeRange(void) {isPeriod=true;}
-
+   void enableNewLine(std::string nl)   {ensemble->enableNewLine(nl);}
    void description(void);
    void print(void);
    int  printTimelessFile(std::string &);
@@ -212,19 +220,13 @@ int main(int argc, char *argv[])
   std::string oStr("Ad:Ehl:mMP:p:St:T");
   oStr += "<--only-marked>";
   oStr += "<--help>";
+  oStr += "<--NL>:";
   oStr += "<--note>:";
 
   while( (copt = opt.getopt(argc, argv, oStr.c_str() )) != -1 )
   {
     if( opt.longOption > 0 )
       str0=opt.longOption;
-
-    if( str0 == "--only-marked" )
-    {
-      syncFiles.isPrintOnlyMarked=true;
-      str0.clear();
-      continue;
-    }
 
     if( str0 == "--help" )
     {
@@ -233,9 +235,22 @@ int main(int argc, char *argv[])
       return 3;
     }
 
+    if( str0 == "--NL" )
+    {
+      syncFiles.enableNewLine(opt.optarg);
+      continue;
+    }
+
     if( str0 == "--note" )
     {
       noteOpts=opt.optarg;
+      str0.clear();
+      continue;
+    }
+
+    if( str0 == "--only-marked" )
+    {
+      syncFiles.isPrintOnlyMarked=true;
       str0.clear();
       continue;
     }
@@ -595,6 +610,8 @@ Ensemble::getOutput(void)
       member[i]->enablePrintOnlyMarked();
     if( isPrintDateRange )
       member[i]->enablePrintDateRange();
+    if( newline.size() )
+      member[i]->enableNewLine(newline);
 
     if( isWithTarget && i == (member.size()-1) )
       printSepLine=true;
@@ -1097,7 +1114,7 @@ Member::getOutput(bool printSepLine)
 
   if( state.size() )
   {
-     str += " ___err: " ;
+     str += ": " ;
      str += state ;
   }
 
@@ -1109,7 +1126,10 @@ Member::getOutput(bool printSepLine)
   }
 */
 
-  str += "\\n" ;
+//  if( newline.size() )
+//    str += newline;
+//  else
+    str += "\n" ;
 
   return str ;
 }

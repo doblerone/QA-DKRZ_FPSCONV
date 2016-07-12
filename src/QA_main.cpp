@@ -37,8 +37,6 @@
   #include "QA_CORDEX.cpp"
 #elif defined CMIP5
   #include "QA_CMIP5.cpp"
-#elif defined CLIPC
-  #include "QA_CLIPC.cpp"
 #endif
 
 #include "TimeControl.cpp"
