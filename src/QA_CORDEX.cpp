@@ -3663,7 +3663,12 @@ QA_Exp::checkVariableTypeX(size_t v, size_t i, size_t j, std::string& tName)
 
   if( tAttValue != s && !var.isVoid)
   {
-    std::string key("3_2");
+      std::string key;
+      if( tName == "DATA_VAR" )
+          key="3_2a";
+      else
+          key="3_2b";
+
     if( notes->inq( key, var.name) )
     {
       std::string capt;
