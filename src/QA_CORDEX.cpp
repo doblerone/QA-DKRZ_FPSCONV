@@ -2628,18 +2628,20 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
       capt += " does not match, found " ;
       if( is_lon && is_lat )
       {
-        capt += var_lon;
-        capt += hdhC::tf_assign("resol("+var_lon+")", f_resol_lon) ;
-        capt += " and ";
-        capt += hdhC::tf_assign("resol("+var_lat+")", f_resol_lat) ;
+        capt += hdhC::tf_val(f_resol_lon) ;
       }
       else if( is_lon )
       {
-        capt += hdhC::tf_assign("resol("+var_lon+")", f_resol_lon) ;
-        capt += f_resol_lon ;
+        capt += hdhC::tf_val(f_resol_lon) ;
+        capt += " for " ;
+        capt += var_lon ;
       }
       else
-        capt += hdhC::tf_assign("resol("+var_lat+")", f_resol_lat) ;
+      {
+        capt += hdhC::tf_val(f_resol_lat) ;
+        capt += " for " ;
+        capt += var_lat ;
+      }
 
       capt += ", required is "  + t_resol;
 
@@ -2886,18 +2888,14 @@ QA_Exp::domainCheckPole(std::string item,
   // compare lat/lon of N. Pole  specified in CORDEX Table 1 with
   // corresponding values in the NetCF file.
 
-  bool isItem = item == "NP lon" ;
+  std::string f_num;
 
-  if( isItem && t_num == "N/A" )
-    return;  // any lon value would do for the North pole in rotated coord.
+  bool isItem = item == "NP lon" ;
 
   // remove trailing zeros and a decimal point
   t_num = hdhC::double2String( hdhC::string2Double(t_num), -5) ;
 
-  std::string f_num;
-
-  // find variable name for 'rotated_pole' with
-  // attribute grid_north_pole_latitude / ..._longitude and
+  // find grid-mapping variable with
   // grid_mapping_name==rotated_latitude_longitude
   size_t ix;
   int jx = -1;
@@ -2942,11 +2940,17 @@ QA_Exp::domainCheckPole(std::string item,
         {
           // found the attribute
           f_num = hdhC::double2String( hdhC::string2Double(s), -5) ;
+
+          if( isItem && t_num == "N/A" )
+            t_num = f_num;  // any lon value would do for the North pole in rotated coord.
+
           if( f_num == t_num )
+          {
             if( !f_name.size() )
               f_name=var.name;
 
             return;
+          }
         }
       }
     }
@@ -2975,24 +2979,19 @@ QA_Exp::domainCheckPole(std::string item,
     std::string key = "7_8";
     if( notes->inq(key, pQA->fileStr) )
     {
-      std::string capt("rotated N.Pole of CORDEX domain Table 1 does not match, found");
-      capt += hdhC::tf_assign(item, f_num);
+      size_t item_start=0;
+
+      if( item.substr(0,3) == "NP " )
+          item_start = 3;
+
+      std::string capt("rotated N.Pole of CORDEX domain Table 1 does not match, found ");
+      capt += hdhC::tf_assign(item.substr(item_start), f_num);
       capt += ", required" ;
       capt += hdhC::tf_val(t_num);
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
     }
-  }
-
-  std::string key = "5_5";
-  if( notes->inq(key, pQA->fileStr) )
-  {
-    std::string capt("auxiliary " + hdhC::tf_var("rotated_pole") );
-    capt += "is missing" ;
-
-    (void) notes->operate(capt) ;
-    notes->setCheckStatus("CV", pQA->n_fail);
   }
 
   return ;
