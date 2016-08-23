@@ -825,7 +825,7 @@ clear()
             && ls ${QA_RESULTS}/data/${subPath}/${fBase[ix]}.clear &> /dev/null ; then
          isClear=t
        fi
-    elif [ ${f%=*} = level -o ${f} != ${f/=/} -a ${f%=*} = tag ] ; then
+    elif [ ${f%=*} = level -o ${f%=*} = tag ] ; then
        if [ ${f%=*} = level ] ; then
          # clear specified level
          f="^${f#*=}-"
