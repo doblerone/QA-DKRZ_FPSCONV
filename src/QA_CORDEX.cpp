@@ -715,27 +715,35 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
   std::string n_ast="*";
   int x_eSz = x_e.size();
   int drsSz = drs.size() ;
+  bool isMiss = drsSz < x_eSz;
+
+  if( isMiss )
+    text = " suspicion of a missing item in the filename, found" ;
 
   for( int j=0 ; j < x_eSz ; ++j)
   {
     t = gM[ x_e[j] ];
 
-    if( drsSz == x_eSz )
+    if( !(drs[j] == t || t == n_ast) )
     {
-      text = " check failed, suspicion of a missing item in the filename, found" ;
-      text += hdhC::tf_val(drs.getStr()) ;
+      if( isMiss )
+      {
+        if( j == 0 )
+            break;
 
-      return;
-    }
-
-    else if( !(drs[j] == t || t == n_ast) )
-    {
-      text = " check failed, expected " ;
-      text += hdhC::tf_assign(x_e[j],t) ;
-      text += " found" ;
-      text += hdhC::tf_val(drs[j]) ;
-
-      return;
+        text += " last valid item is" ;
+        text += hdhC::tf_val(drs[j-1]) ;
+        break;
+      }
+      else
+      {
+        text = " global " ;
+        text += hdhC::tf_att(hdhC::empty, x_e[j],t) ;
+        text += " vs." ;
+        text += hdhC::tf_val(drs[j]) ;
+        text += " in the filename";
+        break;
+      }
     }
   }
 
