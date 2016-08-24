@@ -2892,6 +2892,9 @@ QA_Exp::domainCheckPole(std::string item,
 
   bool isItem = item == "NP lon" ;
 
+  if( isItem && t_num == "N/A" )
+    return;  // any lon value would do for the North pole in rotated coord.
+
   // remove trailing zeros and a decimal point
   t_num = hdhC::double2String( hdhC::string2Double(t_num), -5) ;
 
@@ -5025,7 +5028,7 @@ QA_Exp::varReqTableCheck(InFile &in, VariableMetaData &vMD,
      std::string capt(hdhC::tf_var(vMD.var->name));
      capt += " for " ;
      capt += hdhC::tf_assign("frequency", getFrequency()) ;
-     capt += "Not found in the CORDEX_variables_requirement table";
+     capt += " Not found in the CORDEX_variables_requirement table";
 
      (void) notes->operate(capt) ;
      notes->setCheckStatus("CV", pQA->n_fail );
