@@ -674,8 +674,8 @@ Outlier::test(QA_Data *pQAD)
         ostr << "suspicion of outlier (" << extStr[i] << ")";
 
         if(pQA->qaExp.varMeDa.size() > 1 )
-          ostr << name << ", ";
-        ostr << "rec# ";
+          ostr << name ;
+        ostr << ", rec# ";
 
         ostr << outlRec ;
         ostr << ", value=" ;

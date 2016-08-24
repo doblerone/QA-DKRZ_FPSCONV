@@ -5028,7 +5028,7 @@ QA_Exp::varReqTableCheck(InFile &in, VariableMetaData &vMD,
      std::string capt(hdhC::tf_var(vMD.var->name));
      capt += " for " ;
      capt += hdhC::tf_assign("frequency", getFrequency()) ;
-     capt += " Not found in the CORDEX_variables_requirement table";
+     capt += " not specified in the CORDEX_variables_requirement table";
 
      (void) notes->operate(capt) ;
      notes->setCheckStatus("CV", pQA->n_fail );

@@ -6689,7 +6689,7 @@ CF::chap56(void)
         {
           std::string capt("found a detached grid-mapping ") ;
           capt += hdhC::tf_var(var.name, hdhC::no_blank);
-          capt += ", but an " + hdhC::tf_att(n_grid_mapping) + "is missing" ;
+          capt += ", but a variable with " + hdhC::tf_att(n_grid_mapping) + "is missing" ;
 
           (void) notes->operate(capt) ;
           notes->setCheckStatus( n_CF, fail );
