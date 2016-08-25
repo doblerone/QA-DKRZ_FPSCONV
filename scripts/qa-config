@@ -201,16 +201,6 @@ checkTools()
     fi
   fi
 
-  if [ ${HLEVD} ] ; then
-    if tryExist com cdo ; then
-      test $CHECK_TOOLS = t && std_out "cdo\t\t available"
-    else
-      std_out "cdo\t\t not found; disable HLEV."
-      std_out "\t\tHLEVD is disabled."
-      std_out "\t\tTo make it run, please, install CDO in PATH."
-    fi
-  fi
-
   # a few simple commands: exclude bc ssh
   # below: awk expt
   local cmd
@@ -895,7 +885,9 @@ initSession()
   # Explicit RESUME_SESSION=f disables.
 
   # base path to sessions
-  test ! -d ${QA_RESULTS}/session_logs && mkdir -p ${QA_RESULTS}/session_logs
+  if [ ! "${LOG_FNAMES}" ] ; then
+    test ! -d ${QA_RESULTS}/session_logs && mkdir -p ${QA_RESULTS}/session_logs
+  fi
 
   setKWL RESUME_SESSION=t  # by default
 
@@ -984,22 +976,24 @@ initSession()
   fi
 
   # session date wasn't set externally.
-  if [ ${RESUME_SESSION} = f -a ${testCase:-f} = f ] ; then
-    for(( k=0 ; k < ${#qaCs[*]} ; ++k )) ; do
-      # write a new entry for each conf/task file
-      echo -e -n "${currDate}\t" \
-             >> ${QA_RESULTS}/session_logs/sess_md5.txt
-      echo -e -n "${curr_md5[k]}\t" \
-             >> ${QA_RESULTS}/session_logs/sess_md5.txt
-      echo       "${qaCs[k]}" \
-             >> ${QA_RESULTS}/session_logs/sess_md5.txt
-    done
+  if [ ! "${LOG_FNAMES}" ] ; then
+    if [ ${RESUME_SESSION} = f -a ${testCase:-f} = f ] ; then
+      for(( k=0 ; k < ${#qaCs[*]} ; ++k )) ; do
+        # write a new entry for each conf/task file
+        echo -e -n "${currDate}\t" \
+               >> ${QA_RESULTS}/session_logs/sess_md5.txt
+        echo -e -n "${curr_md5[k]}\t" \
+               >> ${QA_RESULTS}/session_logs/sess_md5.txt
+        echo       "${qaCs[k]}" \
+               >> ${QA_RESULTS}/session_logs/sess_md5.txt
+      done
 
-    setKWL SESSION=${currDate}
+      setKWL SESSION=${currDate}
+    fi
   fi
 
   setKWL SESSION_LOGDIR=${QA_RESULTS}/session_logs/${SESSION}
-  mkdir -p ${SESSION_LOGDIR}
+  test ! "${LOG_FNAMES}" && mkdir -p ${SESSION_LOGDIR}
 
   return
 }
@@ -1228,13 +1222,15 @@ naming()
 
   # sub-dir for experiment logs
   setKWL LOG_FNAME_DIR=${QA_RESULTS}/check_logs
-  mkdir -p $LOG_FNAME_DIR
+  test ! "${LOG_FNAMES}"&& mkdir -p $LOG_FNAME_DIR
 
-  if ! mkdir -p ${QA_RESULTS}/data ; then
-    sendSubject='QA: initialisation error'
-    std_out "Could not mkdir ${QA_RESULTS}/data. Exit."
-    std_out flush
-    exit 1
+  if [ ! "${LOG_FNAMES}" ] ; then
+    if ! mkdir -p ${QA_RESULTS}/data ; then
+      sendSubject='QA: initialisation error'
+      std_out "Could not mkdir ${QA_RESULTS}/data. Exit."
+      std_out flush
+      exit 1
+     fi
   fi
 
   # determine the final table paths
@@ -1242,7 +1238,9 @@ naming()
   # project table
   if [ ! ${TABLE_PATH} ] ; then
     TABLE_PATH=${QA_RESULTS}/tables
-    test ! -d ${TABLE_PATH} && mkdir -p ${TABLE_PATH}
+    if [ ! "${LOG_FNAMES}" ] ; then
+      test ! -d ${TABLE_PATH} && mkdir -p ${TABLE_PATH}
+    fi
     setKWL TABLE_PATH=${TABLE_PATH}
   else
     # provided by configuration file
@@ -1250,7 +1248,7 @@ naming()
     TABLE_PATH=${TABLE_PATH%/}
   fi
 
-  if [ ! -d "${TABLE_PATH}" ] ; then
+  if [ ! -d "${TABLE_PATH}" -a ! "${LOG_FNAMES}" ] ; then
     std_out "Expecting a directory ${TABLE_PATH}. Please, check the configuration file."
     std_out flush
     exit 1
@@ -1760,13 +1758,14 @@ setKWL()
   # disable --> f
   test "${value:0:7}" = disable && value=f
 
-  # take deprecated SHOW_EXP_NAME into account
+  # backward compatibility
   test "${key}"     = HIDDEN_DIRECTORY_DESCENT && key=HIDDEN_DIRECTORIES
   test "${key}"     = EXP_FNAME_PATTERN        && key=LOG_FNAME_PATTERN
   test "${key}"     = EXP_NAME                 && key=LOG_FNAME
   test "${key}"     = EXP_PATH_BASE            && key=LOG_PATH_BASE
   test "${key}"     = EXP_PATH_INDEX           && key=LOG_PATH_INDEX
   test "${key:0:8}" = SHOW_EXP                 && key=SHOW_EXP
+  test "${key:0:7}" = SUMMARY                  && key=ONLY_SUMMARY
 
 #  eval ${key}="${value// /\\ /}"
 
@@ -1853,6 +1852,11 @@ setKWL()
   keyWordList[${#keyWordList[*]}]=$key
 
   test ${DEBUG_CONF} && voidX
+
+  if [ ${ONLY_SUMMARY:-f} != f -a "${ONLY_SUMMARY}" != all ] ; then
+    setKWL LOG_FNAMES=${ONLY_SUMMARY}
+  fi
+
   return 0
 }
 

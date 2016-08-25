@@ -400,11 +400,6 @@ callQaExecutor()
           FREQ_DIST \
           FREQUENCY \
           FREQUENCY_POSITION \
-          HLEVD \
-          HLEVD_DELETE_FILE \
-          HLEVD_DETREND \
-          HLEVD_KEEP_THRESHOLD_FILE \
-          HLEVD_THRESHOLD \
           IMPORTED_PATH \
           IGNORE_REFERENCE_DATE \
           IGNORE_REF_DATE_ACROSS_EXP \
@@ -2565,17 +2560,26 @@ init()
 
   fi
 
-  if [ ${PROJECT} = NONE ] ; then
-    std_out flush "PROJECT option is missing"
-    exit 1
-  fi
-
   # expand comma-sep-list to arrays
   EMAIL_SUMMARY=( ${EMAIL_SUMMARY//,/ } )
   EMAIL_TO=( ${EMAIL_TO//,/ } )
   QA_BIN=( ${QA_BIN//,/ } )
   QA_EXEC_HOSTS=( ${QA_EXEC_HOSTS//,/ } )
   NUM_EXEC_THREADS=( ${NUM_EXEC_THREADS//,/ } )
+
+  if [ ${ONLY_SUMMARY:-f} != f -a ${isShow:-f} = f ] ; then
+    # only summary of provided logfile names with absolute path
+    if [ ${LOG_FNAMES} ] ; then
+      LOG_FNAMES=( ${LOG_FNAMES//,/ } )
+      taskSum
+      exit
+    fi
+  fi
+
+  if [ ${PROJECT} = NONE ] ; then
+    std_out flush "PROJECT option is missing"
+    exit 1
+  fi
 
   # set defaults
   test ${ZOMBIE_LIMIT:-f} = f && ZOMBIE_LIMIT=3600
@@ -2676,45 +2680,14 @@ init()
   # initialisation of the indexes of DRS tokens for the experiment name
   initExperimentName
 
-  if [ ${SUMMARY_ONLY} ] ; then
-    ONLY_SUMMARY="${SUMMARY_ONLY}"
-  elif [ ${SUMMARY} ] ; then
-    ONLY_SUMMARY="${SUMMARY}"
-  fi
   if [ ${ONLY_SUMMARY:-f} != f -a ${isShow:-f} = f ] ; then
      if [ ${ONLY_SUMMARY} = t ] ; then
        getPaths
        getAllExps
      else
-       if [ ${ONLY_SUMMARY} = all ] ; then
-        LOG_FNAMES=( $(ls -d ${QA_RESULTS}/check_logs/*.log) )
-        LOG_FNAMES=( ${LOG_FNAMES[*]##*/} )
-       else
-        LOG_FNAMES=( ${ONLY_SUMMARY//,/ } )
-       fi
-
-       local i j
-       for(( i=0 ; i < ${#LOG_FNAMES[*]} ; ++i )) ; do
-         if [ -d ${LOG_FNAMES[i]} ] ; then
-            # is a directory and the contained log-files are appended
-            local log_fns
-            log_fns=( $(ls ${LOG_FNAMES[i]}/*.log 2>/dev/null) )
-
-            for(( j=0 ; j < ${#log_fns[*]} ; ++j )) ; do
-               if [ $j -eq 0 ] ; then
-                  # overwrite item with the directory path
-                  LOG_FNAMES[i]=${log_fns[j]}
-               else
-                  # append
-                  LOG_FNAMES[${#LOG_FNAMES[*]}]=${log_fns[j]}
-               fi
-            done
-         fi
-
-         if [ ${LOG_FNAMES[i]} != ${LOG_FNAMES[i]%.log} ] ; then
-           LOG_FNAMES[${i}]=${LOG_FNAMES[i]%.log}
-         fi
-       done
+       #  ONLY_SUMMARY = all; look above for provided logfiles
+       LOG_FNAMES=( $(ls -d ${QA_RESULTS}/check_logs/*.log) )
+       LOG_FNAMES=( ${LOG_FNAMES[*]##*/} )
      fi
 
      taskSum
@@ -4073,6 +4046,49 @@ taskSum()
 {
   test ${NO_SUMMARY:-f} = t && return
 
+  local i j
+  for(( i=0 ; i < ${#LOG_FNAMES[*]} ; ++i )) ; do
+    if [ -d ${LOG_FNAMES[i]} ] ; then
+       # is a directory and the contained log-files are appended
+       local log_fns
+       log_fns=( $(ls ${LOG_FNAMES[i]}/*.log 2>/dev/null) )
+
+       for(( j=0 ; j < ${#log_fns[*]} ; ++j )) ; do
+          if [ $j -eq 0 ] ; then
+             # overwrite item with the directory path
+             LOG_FNAMES[i]=${log_fns[j]}
+          else
+             # append
+             LOG_FNAMES[${#LOG_FNAMES[*]}]=${log_fns[j]}
+          fi
+       done
+    fi
+
+    if [ ${LOG_FNAMES[i]} != ${LOG_FNAMES[i]%.log} ] ; then
+      LOG_FNAMES[${i}]=${LOG_FNAMES[i]%.log}
+    fi
+
+  done
+
+  # look for e.g.: f0,path/f1,f2,... . apply first path to all relative files
+  local lfn lfn_path exp_ix
+
+  if [ ${ONLY_SUMMARY:-f} != f -a ${ONLY_SUMMARY:-f} != all ] ; then
+    for(( exp_ix=0 ; exp_ix < ${#LOG_FNAMES[*]} ; ++exp_ix )) ; do
+      if [ "${LOG_FNAMES[exp_ix]}" != "${LOG_FNAMES[exp_ix]#*/}" ] ; then
+         lnf_path=${LOG_FNAMES[exp_ix]%/*}
+         break
+      fi
+    done
+
+    for(( exp_ix=0 ; exp_ix < ${#LOG_FNAMES[*]} ; ++exp_ix )) ; do
+      if [ "${LOG_FNAMES[exp_ix]}" = "${LOG_FNAMES[exp_ix]#*/}" ] ; then
+         LOG_FNAMES[exp_ix]=$lnf_path/${LOG_FNAMES[exp_ix]}
+         break
+      fi
+    done
+  fi
+
   local cvr prj qrs tcl ers
   test ${PROJECT}    && prj="-P ${PROJECT}"
   test ${QA_RESULTS} && qrs="-r ${QA_RESULTS}"
@@ -4091,7 +4107,7 @@ taskSum()
 
 
   # multiple threads, but a maximum of 2
-  local exp_ix=0
+  exp_ix=0
   local pidBufMax=2
   local pidBuf
   local isStart=f

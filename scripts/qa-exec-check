@@ -304,11 +304,6 @@ fi
    fi
  fi
 
- # the Hans-Luthardt Extreme Value Detection
- if [ "${HLEVD:-f}" = t  ] ; then
-   getHLEVD $ncFile ${name%%_*}
- fi
-
 #trace \
   run
 
@@ -520,68 +515,6 @@ getChecksum()
   return
 }
 
-##//! Hans-Luthard-Extreme-Value-Determination
-
-##/*!
-## Not used. Very time consuming.
-##*/
-
-getHLEVD()
-{
-  # calculate (max-min)/std
-  # optional: mask result for each gridpoint with
-  #           (max-min)/std > num x std
-  local inF var outF
-
-  inF=$1
-  var=$2
-  outF=${1##*/}
-  outF=${outF%.nc}_hlevd
-
-  local x_in
-
-  if [ ${HLEV_DETREND:-f} = t ] ; then
-    cdo detrend $inF $outF.det.nc &> /dev/null
-    x_in=$outF.det.nc
-  else
-    x_in=$inF
-  fi
-
-  cdo timmin $x_in $outF.min.nc &> /dev/null
-  cdo timmax $x_in $outF.max.nc &> /dev/null
-  cdo timstd $x_in $outF.std.nc &> /dev/null
-  cdo sub $outF.max.nc $outF.min.nc $outF.dif.nc &> /dev/null
-  cdo div $outF.dif.nc $outF.std.nc $outF.res.nc &> /dev/null
-  cdo gtc,${HLEVD_THRESHOLD:-1} $outF.res.nc \
-         $outF.TH-${HLEVD_THRESHOLD:-1}.nc &> /dev/null
-
-  mv $outF.res.nc $outF.nc
-
- \rm -f $outF.det.nc $outF.min.nc $outF.max.nc $outF.std.nc $outF.dif.nc
-
-  # test whether the mask file check is negative, i.e. no outlier
-  local sum
-  sum=$( cdo output -fldsum -selvar,$var \
-     $outF.TH-${HLEVD_THRESHOLD:-1}.nc 2> /dev/null )
-
-  local is
-  is=f
-
-  if [ ${sum} -gt 0  ] ; then
-    sTxt[0]="3qaExecution: $outF.nc: outlier above ${HLEVD_THRESHOLD:-1} x sigma"
-    log
-    is=t
-  fi
-
-  # keep files?
-  test ${HLEVD_DELETE_FILE:-t} = t && \rm -f $outF.res.nc
-
-  if ! [ ${is} = t -a ${HLEVD_KEEP_THRESHOLD_FILE:-f} = t ] ; then
-    \rm -f $outF.TH-${HLEVD_THRESHOLD:-1}.nc
-  fi
-
-  return
-}
 
 ##//! Initialisation of this run.
 
