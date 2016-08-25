@@ -4827,7 +4827,7 @@ QA_Exp::reqAttCheckVariable(Variable &var)
          }
 
          // check for auxiliary: plev_bnds
-         if( ! pQA->pIn->getVarIndex("plev_bnds") )
+         if( pQA->pIn->getVarIndex("plev_bnds") == -1 )
          {
            std::string key("5_2");
 

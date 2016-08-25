@@ -477,8 +477,8 @@ Outlier::test(QA_Data *pQAD)
 
   // read min / max from the qa-nc file
   std::vector<std::string> extStr;
-  extStr.push_back( "minimum" );
-  extStr.push_back( "maximum" );
+  extStr.push_back( "bottom" );
+  extStr.push_back( "top" );
   int errNum[2];
   errNum[0]=400;
   errNum[1]=800;

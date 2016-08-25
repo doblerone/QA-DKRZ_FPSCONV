@@ -766,8 +766,10 @@ CF::checkGroupRelation(void)
             capt += "C";
 
           capt += "oordinate " ;
-          capt += hdhC::tf_var(var.name) ;
-          capt += "seems to be unrelated to any other " + n_variable ;
+          capt += hdhC::tf_var(var.name, hdhC::colon) ;
+          capt += "Is it missing in any ";
+          capt += hdhC::tf_att("", n_coordinates, hdhC::no_blank) ;
+          capt += "?";
 
           (void) notes->operate(capt) ;
           notes->setCheckStatus( n_CF, fail );
