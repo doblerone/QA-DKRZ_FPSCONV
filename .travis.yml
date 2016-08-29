@@ -1,9 +1,8 @@
 language: python
-branches:
-  only:
-    - master
-    - develop
-    - birdhouse
+#branches:
+#  only:
+#    - master
+#    - develop
 sudo: false
 python:
   # We don't actually use the Travis Python, but this keeps it organized.
@@ -20,9 +19,11 @@ install:
   - conda info -a
 
   # Replace dep1 dep2 ... with your dependencies
-  - conda config --add channels birdhouse
-  - conda config --add channels ioos
-  - conda install -q libnetcdf hdf5 zlib udunits2 libuuid
+  #- conda config --add channels birdhouse
+  #- conda config --add channels conda-forge
+  #- conda install -q "libnetcdf <4.4.0" "hdf5 >=1.8.15" "isl <0.16" zlib "udunits2 >=2.2.20" libuuid expat curl gcc
+  - conda install -c birdhouse -c conda-forge qa-dkrz  # get qa-dkrz deps
+  - conda remove qa-dkrz   # but skip qa-dkrz itself
 
   # Get build script
   - export PREFIX="$HOME/miniconda"
