@@ -20,7 +20,7 @@ The recommendated way to install QA-DKRZ is to use the conda package manager.
 
 .. code-block:: bash
 
-   $ conda install -c birdhouse -c ioos qa-dkrz
+   $ conda install -c birdhouse -c conda-forge qa-dkrz
 
 If a machine is not suited for Linux-64Bits or you would like to work
 with the sources, then see :ref:`installation`
