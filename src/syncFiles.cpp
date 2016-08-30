@@ -414,7 +414,12 @@ Ensemble::constraintSeries(void)
   // Synchronisation according dates in a target file.
 
   // If target not available, then all files
-  if( ! isWithTarget )
+  if( isWithTarget )
+  {
+    if( startIndex == sz )
+        return 1;  // up-to-date
+  }
+  else
     return 0;
 
   int retVal=0;
