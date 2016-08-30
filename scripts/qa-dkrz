@@ -1936,11 +1936,6 @@ getNextVariable()
   # expand \n
   nextFile=( ${nextFile[*]//\\n/ } )
 
-  # nextFile is the first sub-temporal file, i.e. candidate for
-  # a parent check.
-  IS_FIRST_SUB_TEMP=f
-  test ! "${qa_fl}" && IS_FIRST_SUB_TEMP=t
-
   if [ ${DEREFERENCE_SYM_LINKS:-f} = f -a \
         -h ${PROJECT_DATA}/${subPath}/$nextFile ] ; then
     # make links for QA results, where links are in the DRS tree
@@ -3547,6 +3542,7 @@ operatePipes()
       nF_PID[${nFmax}]=0
       j=$nFmax
       nFmax=$((nFmax+1))
+      nFcurr=$((nFcurr + 1 ))
     else
       # op:
       j=$nFcurr
@@ -3584,7 +3580,7 @@ operatePipes()
     countActivePipes=$(( countActivePipes + 1 ))
   fi
 
-  # purpose of this loop: whenn all allowed execution threads
+  # purpose of this loop: when all allowed execution threads
   # are busy, then wait until any of them is free again
   local op_nap=1
   local host_nap
