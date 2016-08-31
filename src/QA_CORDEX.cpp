@@ -4016,10 +4016,10 @@ QA_Exp::getFrequency(void)
 
   if( frequency == "fx" && pQA->pIn->nc.isDimUnlimited() )
   {
-     std::string key("9_4");
+     std::string key("9_3");
      if( notes->inq( key, pQA->fileStr) )
      {
-       std::string capt(hdhC::tf_assign("frequency","fx") + " is time-dependent" );
+       std::string capt("Fixed variable with unexpected time dependency" );
 
        if( notes->operate(capt) )
        {
