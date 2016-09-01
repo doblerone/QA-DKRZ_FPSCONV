@@ -460,9 +460,11 @@ Outlier::test(QA_Data *pQAD)
   }
 
   // read min / max from the qa-nc file
+
   std::vector<std::string> extStr;
-  extStr.push_back( "bottom" );
-  extStr.push_back( "top" );
+  extStr.push_back( "minima" );
+  extStr.push_back( "maxima" );
+
   int errNum[2];
   errNum[0]=400;
   errNum[1]=800;
@@ -624,7 +626,7 @@ Outlier::test(QA_Data *pQAD)
 
       std::string key("R");
       key += hdhC::itoa(errNum[i]);
-      if( notes->inq( key, name, "ACCUM") )
+      if( notes->inq( key, name) )
       {
         pQAD->sharedRecordFlag.currFlag += errNum[i];
 
@@ -655,11 +657,13 @@ Outlier::test(QA_Data *pQAD)
 
         std::ostringstream ostr(std::ios::app);
         ostr.setf(std::ios::scientific, std::ios::floatfield);
-        ostr << "suspicion of outlier (" << extStr[i] << ")";
+        ostr << "suspicion of outlier for " << extStr[i] ;
 
         if(pQA->qaExp.varMeDa.size() > 1 )
-          ostr << name ;
-        ostr << ", rec# ";
+        {
+          ostr << " of " << name ;
+        }
+        ostr << ", found strongest at rec# ";
 
         ostr << outlRec ;
         ostr << ", value=" ;
