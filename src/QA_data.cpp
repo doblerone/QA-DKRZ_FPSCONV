@@ -5,7 +5,7 @@ DataOutputBuffer::DataOutputBuffer()
   bufferCount=0;
 
   // pointers
-  min=max=ave=std_dev=0;
+  min=max=ave=0;
   fill_count=0;
   checksum=0;
 
@@ -26,16 +26,13 @@ DataOutputBuffer::clear()
   if(ave)
     delete [] ave;
 
-  if(std_dev)
-    delete [] std_dev;
-
   if(fill_count)
     delete [] fill_count;
 
   if(checksum)
     delete [] checksum;
 
-  min=max=ave=std_dev=0;
+  min=max=ave=0;
   fill_count=0;
   checksum=0;
 
@@ -66,12 +63,6 @@ DataOutputBuffer::flush(void)
    {
      t = name + "_ave";
      pQA->nc->putData(nextFlushBeg, bufferCount, t, ave );
-   }
-
-   if( std_dev )
-   {
-     t = name + "_std_dev";
-     pQA->nc->putData(nextFlushBeg, bufferCount, t, std_dev );
    }
 
    if( fill_count )
@@ -112,7 +103,6 @@ DataOutputBuffer::initBuffer(QA* p, size_t nxt, size_t mx)
   min=        new double [maxBufferSize] ;
   max=        new double [maxBufferSize] ;
   ave=        new double [maxBufferSize] ;
-  std_dev=    new double [maxBufferSize] ;
   fill_count= new int    [maxBufferSize] ;
   checksum=   new int    [maxBufferSize] ;
 
@@ -136,11 +126,6 @@ DataOutputBuffer::store(hdhC::FieldData &fA)
      ave[bufferCount]       =fA.areaWeightedAve;
      fill_count[bufferCount]=fA.fillingValueNum;
 
-     if( fA.isStndDevValid )
-       std_dev[bufferCount]=fA.stndDev;
-     else
-       std_dev[bufferCount]=1.E+20;
-
      checksum[bufferCount] = fA.checksum;
    }
    else
@@ -150,7 +135,6 @@ DataOutputBuffer::store(hdhC::FieldData &fA)
 
      ave[bufferCount]       =1.E+20;
      fill_count[bufferCount]=-1;
-     std_dev[bufferCount]   =1.E+20;
      checksum[bufferCount]  =0;
    }
 
@@ -1178,7 +1162,9 @@ QA_Data::QA_Data()
    enableFillValueTest = true ;
    enableOutlierTest = true;
    enableReplicationTest = true;
-   enableStdDevTest = true;
+
+   constValueRecordState=false;
+   fillValueRecordState=false;
 
    isEntirelyConst=true;
    isEntirelyFillValue=true;
@@ -1210,47 +1196,112 @@ QA_Data::applyOptions(bool isPost)
 void
 QA_Data::checkFinally(Variable *var)
 {
-  if( isEntirelyConst && ! var->isScalar )
-  {
-     std::string key("6_1");
-     if( notes->inq( key, name, ANNOT_NO_MT) )
+   if( isEntirelyConst && ! var->isScalar )
+   {
+      std::string key("6_1");
+      if( notes->inq( key, name, ANNOT_NO_MT) )
+      {
+        std::string capt("entire file of const value=");
+        capt += hdhC::double2String( currMin );
+
+        std::string text("variable=") ;
+        text += name;
+
+        if( notes->operate(capt, text) )
+          notes->setCheckStatus(pQA->n_data, pQA->n_fail);
+
+        // erase redundant map entries
+        notes->eraseAnnotation("R200");
+        notes->eraseAnnotation("R3200");
+
+        return;
+     }
+   }
+   else if( constValueRecord.size() )
+   {
+     if( constValueRecordStartTime.size() == (constValueRecordEndTime.size() + 1) )
      {
-       std::string capt("entire file of const value=");
-       capt += hdhC::double2String( currMin );
+       constValueRecordEndTime.push_back(pQA->qaTime.currTimeValue) ;
+       constValueRecordEndRec.push_back(pIn->currRec) ;
+     }
 
-       std::string text("variable=") ;
-       text += name;
+     std::string key=("R200");
+     if( notes->inq( key, name) )
+     {
+       std::string capt("data range");
+       if( constValueRecordStartTime.size() > 1 )
+         capt += "s";
+       capt += " totally with constant value, found";
+       capt += hdhC::tf_val(constValueRecord[0]);
+       if( constValueRecordStartTime.size() > 1 )
+         capt += " first";
 
-       if( notes->operate(capt, text) )
-         notes->setCheckStatus(pQA->n_data, pQA->n_fail);
+       capt += " for time indices ";
+       std::string r( hdhC::double2String(constValueRecordStartRec[0]) );
+                   r += " - " ;
+                   r += hdhC::double2String(constValueRecordEndRec[0]);
+       capt += hdhC::tf_val(r);
 
-       // erase redundant map entries
-       notes->eraseAnnotation("R200");
-       notes->eraseAnnotation("R3200");
+       capt += ", time values ";
+       r =  hdhC::double2String(constValueRecordStartTime[0]) ;
+       r += " - " ;
+       r += hdhC::double2String(constValueRecordEndTime[0]);
 
-       return;
-    }
-  }
+       capt += hdhC::tf_val(r);
+
+       (void) notes->operate(capt) ;
+       notes->setCheckStatus(pQA->n_data, pQA->n_fail);
+     }
+   }
 
   if( isEntirelyFillValue )
   {
      std::string key("6_2");
      if( notes->inq( key, name, ANNOT_NO_MT) )
      {
-       std::string capt("data set entirely of _FillValue");
+        std::string capt("data set entirely of _FillValue");
 
-       std::string text("variable=") ;
-       text += name;
+        if( notes->operate(capt) )
+          notes->setCheckStatus(pQA->n_data, pQA->n_fail);
 
-       if( notes->operate(capt, text) )
-         notes->setCheckStatus(pQA->n_data, pQA->n_fail);
+        // erase redundant map entries
+        notes->eraseAnnotation("R100");
 
-       // erase redundant map entries
-       notes->eraseAnnotation("R100");
+        return;
+     }
+   }
+   else if( fillValueRecordStartTime.size() )
+   {
+     if( fillValueRecordStartTime.size() == (fillValueRecordEndTime.size() + 1) )
+     {
+       fillValueRecordEndTime.push_back(pQA->qaTime.currTimeValue) ;
+       fillValueRecordEndRec.push_back(pIn->currRec) ;
+     }
 
-       return;
-    }
-  }
+     std::string key=("R100");
+     if( notes->inq( key, name) )
+     {
+       std::string capt("data range totally with _FillValue, found ");
+       if( fillValueRecordStartTime.size() > 1 )
+         capt += "first ";
+
+       capt += "for time indices ";
+       std::string r( hdhC::double2String(fillValueRecordStartRec[0]) );
+                   r += " - " ;
+                   r += hdhC::double2String(fillValueRecordEndRec[0]);
+       capt += hdhC::tf_val(r);
+
+       capt += ", time values ";
+       r =  hdhC::double2String(fillValueRecordStartTime[0]) ;
+       r += " - " ;
+       r += hdhC::double2String(fillValueRecordEndTime[0]);
+
+       capt += hdhC::tf_val(r);
+
+       (void) notes->operate(capt) ;
+       notes->setCheckStatus(pQA->n_data, pQA->n_fail);
+     }
+   }
 
    if( replicated && allRecordsAreIdentical && ! pIn->isRecSingle )
    {
@@ -1285,8 +1336,8 @@ QA_Data::disableTests(std::string name)
    key="R100";
    if( ! notes->inq( key, name, "INQ_ONLY") )
    {
-     enableFillValueTest=false;
      isEntirelyFillValue=false;
+     enableFillValueTest=false;
    }
 
    key="R200";
@@ -1302,10 +1353,6 @@ QA_Data::disableTests(std::string name)
    key="R800";
    if( ! (is || notes->inq( key, name, "INQ_ONLY")) )
      enableOutlierTest=false;
-
-   key="R1600";
-//   if( ! notes->inq( key, name, "INQ_ONLY") )
-//     enableStdDevTest=false;
 
    key="R3200";
    if( ! notes->inq( key, name, "INQ_ONLY") )
@@ -1393,7 +1440,6 @@ QA_Data::flush(void)
        statMin.add( dataOutputBuffer.min[i] );
        statMax.add( dataOutputBuffer.max[i] );
        statAve.add( dataOutputBuffer.ave[i] );
-       statStdDev.add( dataOutputBuffer.std_dev[i] );
      }
 
      dataOutputBuffer.flush();
@@ -1484,16 +1530,6 @@ QA_Data::initResumeSession(std::string& nomen)
   statStr += pQA->nc->getAttString("statistics", s0) ;
   statAve.setSampleProperties( statStr );
 
-  s0 = nomen + "_std_dev";
-  pQA->nc->getAttValues( dv, "valid_range", s0);
-  statStr  ="sampleMin=" ;
-  statStr += hdhC::double2String( dv[0] );
-  statStr +=", sampleMax=" ;
-  statStr += hdhC::double2String( dv[1] );
-  statStr += ", ";
-  statStr += pQA->nc->getAttString("statistics", s0) ;
-  statStdDev.setSampleProperties( statStr );
-
   return;
 }
 
@@ -1576,15 +1612,6 @@ QA_Data::openQA_NcContrib(NcAPI *nc, Variable *var)
     nc->setAtt( str0, "comment",
       "Note: weighted by areas of spherical triangles");
 */
-
-  vs.clear();
-  str0 = name + "_std_dev" ;
-  vs.push_back(dimStr);
-  nc->defineVar( str0, NC_DOUBLE, vs);
-  vs[0] = "standard_deviation";
-  nc->setAtt( str0, "long_name", vs[0]);
-  nc->setAtt( str0, "units", var->units);
-  nc->setAtt( str0, "_FillValue", static_cast<double>(1.E+20));
 
   vs.clear();
   vs.push_back(dimStr);
@@ -1690,16 +1717,6 @@ QA_Data::setStatisticsAttribute(NcAPI *nc)
   nc->setAtt( t, "valid_range", d_val, sz);
   vs.clear();
   vs.push_back( statAve.getSampleProperties() );
-  // strip leading part indicating valid_range
-  pos = vs[0].find("sampleSize");
-  nc->setAtt( t, "statistics", vs[0].substr(pos));
-
-  t = name + "_std_dev";
-  d_val[0] = statStdDev.getSampleMin();
-  d_val[1] = statStdDev.getSampleMax();
-  nc->setAtt( t, "valid_range", d_val, sz);
-  vs.clear();
-  vs.push_back( statStdDev.getSampleProperties() );
   // strip leading part indicating valid_range
   pos = vs[0].find("sampleSize");
   nc->setAtt( t, "statistics", vs[0].substr(pos));
@@ -1819,9 +1836,6 @@ QA_Data::test(int i, hdhC::FieldData &fA)
          statMin.add( currMin );
       }
     }
-
-    if( enableStdDevTest )
-      (void) testStndDev(fA) ;
   }
 
   return ;
@@ -1836,30 +1850,37 @@ QA_Data::testConst(hdhC::FieldData &fA)
   if( ! enableConstValueTest )
     return true;
 
-  if( currMin != currMax || isSingleValueField  )
+  if( currMin != currMax )
   {
     isEntirelyConst=false;
+
+    if( constValueRecordState )
+    {
+      constValueRecordEndTime.push_back(pQA->qaTime.prevTimeValue) ;
+      constValueRecordEndRec.push_back(pIn->currRec-1) ;
+      constValueRecordState=false;
+    }
+
     return false;
   }
 
-  std::string key=("R200");
   std::string val=hdhC::double2String(currMin);
 
   // add a constraint to the inquiry, if specified
   notes->setConstraintValue(val);
 
-  if( notes->inq( key, name, ANNOT_ACCUM) )
+  std::string key=("R200");
+  if( notes->inq( key, name) )
   {
     sharedRecordFlag.currFlag += 200;
 
-    std::string capt("entire record of constant values, found");
-    capt += hdhC::tf_val(val);
-    capt += " in record" ;
-    capt += hdhC::tf_val(hdhC::itoa(pQA->pIn->currRec));
-
-    (void) notes->operate(capt) ;
-    notes->setCheckStatus(pQA->n_data, pQA->n_fail);
+    // start of a new record range
+    constValueRecordState = true;
+    constValueRecord.push_back(val);
+    constValueRecordStartTime.push_back(pQA->qaTime.currTimeValue) ;
+    constValueRecordStartRec.push_back(pIn->currRec) ;
   }
+
   return true;
 }
 
@@ -1885,57 +1906,38 @@ QA_Data::testInfNaN(hdhC::FieldData &fA)
 }
 
 bool
-QA_Data::testStndDev(hdhC::FieldData &fA)
-{
-  if( ! fA.isValid )
-    return false;
-
-  if( fA.isStndDevValid )
-    return false;
-
-  if( isSingleValueField )
-    return false;
-
-  std::string key=("R1600");
-
-  if( notes->inq( key, name, ANNOT_ACCUM) )
-    sharedRecordFlag.currFlag += 1600 ;
-
-  return true ;
-}
-
-bool
 QA_Data::testValidity(hdhC::FieldData &fA)
 {
-  if( fA.size < 2 )
-  {
-    isSingleValueField = true ;
-    isEntirelyFillValue=false;
-  }
-  else
-    isSingleValueField=false;
-
   if( fA.isValid )
   {
     isEntirelyFillValue=false;
+
+    if( fillValueRecordState )
+    {
+      fillValueRecordEndTime.push_back(pQA->qaTime.prevTimeValue) ;
+      fillValueRecordEndRec.push_back(pIn->currRec-1) ;
+      fillValueRecordState=false;
+    }
+
+    if( fA.size < 2 )
+      isEntirelyConst=false;
+
     return true;
   }
 
+  if( ! enableFillValueTest )
+    return false;
+
   // the flag is always stored in the file and it is used
   // to prevent false replicated record detection
-  if( ! enableFillValueTest )
-    return true;
+  sharedRecordFlag.currFlag += 100 ;
 
-  std::string key=("R100");
-  if( notes->inq( key, name, ANNOT_ACCUM) )
+  if( ! fillValueRecordState )
   {
-    sharedRecordFlag.currFlag += 100 ;
-
-    std::string capt("entire record with filling value, found for rec#");
-    capt += hdhC::tf_val(hdhC::itoa(pIn->currRec));
-
-    (void) notes->operate(capt) ;
-    notes->setCheckStatus(pQA->n_data, pQA->n_fail);
+    // start of a new record range
+    fillValueRecordState = true;
+    fillValueRecordStartTime.push_back(pQA->qaTime.currTimeValue) ;
+    fillValueRecordStartRec.push_back(pIn->currRec) ;
   }
 
   return false ;

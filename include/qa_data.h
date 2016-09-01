@@ -191,7 +191,6 @@ class QA_Data
   void   test( int, hdhC::FieldData &);
   bool   testConst(hdhC::FieldData &);
   bool   testInfNaN(hdhC::FieldData &);
-  bool   testStndDev(hdhC::FieldData &);
   bool   testValidity(hdhC::FieldData &);
 
   std::string name;
@@ -207,21 +206,31 @@ class QA_Data
   Statistics<double> statAve;
   Statistics<double> statMin;
   Statistics<double> statMax;
-  Statistics<double> statStdDev;
 
   bool   allRecordsAreIdentical;
 
   bool   enableConstValueTest;
   bool   enableFillValueTest;
   bool   enableOutlierTest;
-  bool   enableStdDevTest;
   bool   enableReplicationTest;
   bool   enableReplicationOnlyGroups;
 
   bool   isEntirelyConst;
   bool   isEntirelyFillValue;
   bool   isForkedAnnotation;
-  bool   isSingleValueField;
+
+  bool                  constValueRecordState;
+  std::vector<std::string>   constValueRecord;
+  std::vector<double>   constValueRecordStartTime;
+  std::vector<double>   constValueRecordEndTime;
+  std::vector<size_t>   constValueRecordStartRec;
+  std::vector<size_t>   constValueRecordEndRec;
+
+  bool                  fillValueRecordState;
+  std::vector<double>   fillValueRecordStartTime;
+  std::vector<double>   fillValueRecordEndTime;
+  std::vector<size_t>   fillValueRecordStartRec;
+  std::vector<size_t>   fillValueRecordEndRec;
 
   std::string   ANNOT_ACCUM;
   std::string   ANNOT_NO_MT;

@@ -1093,7 +1093,6 @@ QA::postProc_outlierTest(void)
        vars.push_back( vMD.var->name + "_min" );
        vars.push_back( vMD.var->name + "_max" );
        vars.push_back( vMD.var->name + "_ave" );
-       vars.push_back( vMD.var->name + "_std_dev" );
 
        bool is=false;
        bool is2=true;
@@ -1124,8 +1123,6 @@ QA::postProc_outlierTest(void)
            vMD.qaData.statMax.setSampleProperties( statStr );
          else if( j == 2 )
            vMD.qaData.statAve.setSampleProperties( statStr );
-         else if( j == 3 )
-           vMD.qaData.statStdDev.setSampleProperties( statStr );
 
          is=false;
        }
@@ -1147,7 +1144,6 @@ QA::postProc_outlierTest(void)
            double vals_min[sz_max];
            double vals_max[sz_max];
            double vals_ave[sz_max];
-           double vals_std_dev[sz_max];
 
            // read data from file, chunk by chunk
            while (nRecs > 0)
@@ -1166,9 +1162,6 @@ QA::postProc_outlierTest(void)
              nc_get_vara_double(
                 nc->getNcid(), nc->getVarID(vars[2]),
                    start, count, vals_ave );
-             nc_get_vara_double(
-                nc->getNcid(), nc->getVarID(vars[3]),
-                   start, count, vals_std_dev );
 
              start[0] += static_cast<size_t>(sz) ;
 
@@ -1176,7 +1169,6 @@ QA::postProc_outlierTest(void)
              vMD.qaData.statMin.add( vals_min, sz );
              vMD.qaData.statMax.add( vals_max, sz );
              vMD.qaData.statAve.add( vals_ave, sz );
-             vMD.qaData.statStdDev.add( vals_std_dev, sz );
            }
 
            // write statistics attributes
