@@ -492,10 +492,16 @@ Outlier::test(QA_Data *pQAD)
   {
     outRec.clear();
     outVal.clear();
-
     bool isOut = false;
-    for( size_t j=0 ; j < recNum ; ++j )
-       extr[j] = pQA->nc->getData(ma_d, names[i] , j );
+
+    pQA->nc->getData(ma_d, names[i]);
+    if( ! ma_d.validRangeBegin.size() )
+        return retCode;
+
+    size_t recNum=0;
+    for( size_t j=0 ; j < ma_d.validRangeBegin.size() ; ++j )
+        for(size_t k=ma_d.validRangeBegin[j] ; k < ma_d.validRangeEnd[j] ; ++k )
+          extr[recNum++] = ma_d[k] ;
 
     // prevent spurious minima slightly above absolute minimum of zero.
     double extrMin = extr[0];
