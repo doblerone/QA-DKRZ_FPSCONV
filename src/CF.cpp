@@ -392,7 +392,7 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux)
 //  if( var.isUnlimited() )
 //     return;
 
-  if( var.isNoData )
+  if( var.isNoData() )
   {
     if( notes->inq(bKey + "0d", var.name) )
     {
@@ -948,7 +948,7 @@ CF::entry(void)
   {
     Variable& var = pIn->variable[i] ;
 
-    if( var.isNoData && !var.isVoid && var.isDataVar() )
+    if( var.isNoData() && !var.isVoid && var.isDataVar() )
     {
       if( pIn->nc.isIndexType(var.name)
             && notes->inq(bKey + "12e", var.name) )
@@ -2612,9 +2612,6 @@ CF::run(void)
    for( size_t i=0 ; i < pIn->varSz ; ++i )
    {
       Variable& var = pIn->variable[i] ;
-
-      // no data?
-      var.isNoData=pIn->nc.isEmptyData(var.name);
 
       getVarStateEvidences(var);
 
@@ -6697,7 +6694,7 @@ CF::chap56(void)
           notes->setCheckStatus( n_CF, fail );
         }
 
-        if( var.isNoData )
+        if( var.isNoData() )
         {
           var.countData=0;
           var.addAuxCount(10);

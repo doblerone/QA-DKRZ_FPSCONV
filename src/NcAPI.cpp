@@ -1286,7 +1286,12 @@ NcAPI::defineVar(std::string vName, nc_type type,
 
   for( size_t i=0 ; i < currDimName.size() ; ++i )
   {
-    if( currDimName[i] == layout.unlimitedDimName )
+    bool is=false;
+    for( size_t j=0 ; j < pseudoUnlimitedDim.size() ; ++j )
+        if( pseudoUnlimitedDim[j] == currDimName[i] )
+            is=true;
+
+    if( is || currDimName[i] == layout.unlimitedDimName )
     {
       layout.varIsRecordType.back()=true;
       hasEffVarUnlimitedDim.back()=true;
@@ -3353,13 +3358,22 @@ NcAPI::getLayout(void)
   }
 
   // any unlimited dimension?
+  for( size_t j=0 ; j < pseudoUnlimitedDim.size() ; ++j )
+  {
+    if( (layout.unlimitedDimID = getDimID(pseudoUnlimitedDim[j])) > -1 )
+    {
+      layout.unlimitedDimName = pseudoUnlimitedDim[j];
+      break;
+    }
+  }
+
   if( layout.unlimitedDimID > -1 )
   {
     layout.unlimitedDimName=
        layout.dimName[layout.unlimitedDimID] ;
   }
   else
-     effUnlimitedDimSize=0 ;
+    effUnlimitedDimSize=0 ;
 
   // Variables
   int dimids[NC_MAX_VAR_DIMS];

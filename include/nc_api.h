@@ -456,7 +456,7 @@ void
          int &shuffle, int &deflate, int &level)
          { getDeflate( u, u.getVarID(vName), shuffle, deflate, level); }
 
-//! Get names of dimension.
+//! Get id of dimension.
     int
       getDimID(std::string);
 
@@ -876,6 +876,9 @@ void
       setPath(std::string &p){ncPath=p;}
 
     void
+      setPseudoUnlimitedDim(std::string vName){pseudoUnlimitedDim.push_back(vName);}
+
+    void
       setRecLeg(std::string vName);
 
 private:
@@ -912,8 +915,9 @@ private:
     std::string ncFileDirection;  // "in" || "out"
     std::string fileAccessMode;
 
-    size_t      effUnlimitedDimSize;
+    size_t effUnlimitedDimSize;
     std::vector<bool> hasEffVarUnlimitedDim;
+    std::vector<std::string> pseudoUnlimitedDim;
 
     int numOfRecords;
     size_t max_read_sz;

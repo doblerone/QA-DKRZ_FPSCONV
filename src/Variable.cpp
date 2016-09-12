@@ -22,7 +22,7 @@ VariableMeta::VariableMeta()
   isLabel=false;
   isMapVar=false;
   isMissingValue=false;
-  isNoData=false;
+  isNoData_=false;
   isScalar=false;
   isUnitsDefined=false;
   isVoid=false;
@@ -34,6 +34,7 @@ VariableMeta::VariableMeta()
 
   weight_DV=0;
 
+  isNoData_=-1;
   isUnlimited_=-1;
 
   range[0]=MAXDOUBLE;
@@ -191,13 +192,8 @@ Variable::getData(int rec)
   // prevent unlimited variables to get data beyond
   // available records; also if the data section is totally empty
 
-  if( isNoData )
+  if( isNoData() )
     return true;
-  else if( isUnlimited() && ! pNc->getNumOfRecords(name) )
-  {
-    isNoData=true;
-    return true;
-  }
 
   bool is=false;
 
@@ -305,10 +301,25 @@ Variable::isCoordinate(void)
 }
 
 bool
+Variable::isNoData(void)
+{
+   if( isNoData_ > -1 )
+      return isNoData_ ;
+
+   isNoData_=0;
+
+   // questioning isUnlimited() could give a wrong answer for a limited time
+   if( pNc->isEmptyData(name) )
+     isNoData_ = 1;
+
+   return isNoData_  ;
+}
+
+bool
 Variable::isUnlimited(void)
 {
    if( isUnlimited_ > -1 )
-      return (isUnlimited_ == 1) ? true : false ;
+      return isUnlimited_ ;
 
    isUnlimited_=0;
 
@@ -321,7 +332,7 @@ Variable::isUnlimited(void)
            isUnlimited_ = 1;
    }
 
-   return (isUnlimited_ == 1) ? true : false ;
+   return isUnlimited_  ;
 }
 
 bool

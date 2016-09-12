@@ -290,7 +290,7 @@ QA::closeEntry(void)
      // data: structure defined in hdhC.h
      for( size_t i=0 ; i < qaExp.varMeDa.size() ; ++i )
      {
-       if( qaExp.varMeDa[i].var->isNoData )
+       if( qaExp.varMeDa[i].var->isNoData() )
           continue;
 
        // skip time test for proceeding time steps when var is fixed
@@ -349,7 +349,7 @@ QA::entry(void)
      {
        Variable &var = pIn->variable[pIn->dataVarIndex[i]];
 
-       if( var.isNoData )
+       if( var.isNoData() )
           continue;
 
        if( pIn->currRec && var.isFixed )
@@ -1084,7 +1084,7 @@ QA::postProc_outlierTest(void)
        std::vector<double> dv;
        MtrxArr<double> mv;
 
-       if( vMD.var->isNoData )
+       if( vMD.var->isNoData() )
          continue;
 
        vars.clear();
@@ -1444,7 +1444,7 @@ QA::storeData(VariableMetaData& vMD, hdhC::FieldData& fA)
 {
   //FieldData structure defined in geoData.h
 
-    if( vMD.var->isNoData )
+    if( vMD.var->isNoData() )
       return;
 
     if( isNotFirstRecord && vMD.var->isFixed  )

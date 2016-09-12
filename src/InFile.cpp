@@ -812,6 +812,8 @@ InFile::openNc(bool isNew)
 
   if( isNew )
   {
+    nc.setPseudoUnlimitedDim("time");
+
     try
     {
       if( path.size() > 0 )

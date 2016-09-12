@@ -81,6 +81,7 @@ class VariableMeta
   int  countData;
   int  countAux;
   int  weight_DV;
+  int  isNoData_;
   int  isUnlimited_;  // access by isUnlimited() method
 
   bool isArithmeticMean; // externally set
@@ -98,7 +99,6 @@ class VariableMeta
   bool isLabel;
   bool isMapVar;
   bool isMissingValue;
-  bool isNoData;
   bool isScalar;
   bool isVoid;  // variables which may/must have no data
 
@@ -157,6 +157,7 @@ class Variable : public VariableMeta
   bool isAuxiliary(void) { return (countAux > countData ) ? true : false ;}
   bool isCoordinate(void);
   bool isDataVar(void){ return (countData >= countAux ) ? true : false ; }
+  bool isNoData(void) ;
   bool isUnlimited(void) ;
   bool isValidAtt(std::string s, bool tryLowerCase=true);
   bool isValidAtt(std::string s, std::string sub_str);
