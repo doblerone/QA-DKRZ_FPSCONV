@@ -2656,8 +2656,6 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
     }
-
-    return;
   }
 
   // check edges of the domain for grid-cell centres
@@ -2666,10 +2664,9 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
   double edge_file[4];
   double edge_row[4];
 
-
+  // false: not misaligned
   bool is_edge[] = {false, false, false, false};
-  ;
-  if( ! is_lon )
+
   {
      int j = pQA->pIn->getVarIndex(var_lon) ;
      Variable &var = pQA->pIn->variable[j];
@@ -2699,7 +2696,6 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
                      ? false : true;
   }
 
-  if( ! is_lat )
   {
      int j = pQA->pIn->getVarIndex(var_lat) ;
      Variable &var = pQA->pIn->variable[j];

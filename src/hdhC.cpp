@@ -273,6 +273,7 @@ compare(double x, std::string op, double y, int decimals)
 
   return compare(x, op, y, epsilon);
 }
+
 bool
 compare(double x, std::string op, double y, double epsilon)
 {
@@ -285,27 +286,30 @@ compare(double x, std::string op, double y, double epsilon)
 
   op += ' ';
 
-  double xy= fabs(x - y);
+  if( op[1] == '=' )
+  {
+      char swp = op[0];
+      op[0]=op[1];
+      op[1]=swp;
+  }
+
+  bool is;
 
   if( op[0] == '=' )
-    return xy < epsilon ? true : false;
-
-  else if( op[0] == '>' )
   {
-    if(xy < epsilon )
-      return op[1] == '=' ? true : false ;
-
-    return x > y ? true : false ;
-  }
-  else if( op[0] == '<' )
-  {
-    if( xy < epsilon )
-      return op[1] == '=' ? true : false ;
-
-    return x < y ? true : false ;
+    double xy= fabs(x - y);
+    
+    is = xy < epsilon ? true : false;
+    if(is)
+        return is;
   }
 
-  return false;
+  is = x > y ? true : false ;
+
+  if( op[1] == '<' )
+    is = !is ;
+
+  return is;
 }
 
 double convertTime(std::string targetUnit, std::string time,
