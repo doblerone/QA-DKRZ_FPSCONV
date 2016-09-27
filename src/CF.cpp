@@ -1302,7 +1302,7 @@ CF::finalAtt_coordinates_A(void)
             Variable& var = pIn->variable[i];
 
             std::string capt(hdhC::tf_att(var.name, n_coordinates));
-            capt += "contains a non-existing " + hdhC::tf_var(ca_vvs[i][j]) ;
+            capt += "references non-existing " + hdhC::tf_var(ca_vvs[i][j]) ;
 
             (void) notes->operate(capt) ;
             notes->setCheckStatus( n_CF, fail );
