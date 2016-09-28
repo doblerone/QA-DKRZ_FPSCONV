@@ -1640,22 +1640,27 @@ Date::utcToLocal( void )
 
 Date::Julian::Julian()
 {
+  init();
   jdn=0;
   time=0.;
 }
 
 Date::Julian::Julian(long double d)
 {
+  init();
   set( d );
 }
 
 Date::Julian::Julian(long int d, double h)
 {
+  init();
+
   set( d, h );
 }
 
 Date::Julian::Julian(const Date::Julian &j)
 {
+  init();
   jdn=j.jdn ;
   time=j.time;
 }
@@ -1663,6 +1668,8 @@ Date::Julian::Julian(const Date::Julian &j)
 Date::Julian
 Date::Julian::operator=( const Julian &j )
 {
+  init();
+
   jdn=j.jdn ;
   time=j.time;
 
@@ -1752,6 +1759,7 @@ Date::Julian&
 Date::Julian::operator -= ( long double d)
 {
   subtract(d);
+
   return *this;
 }
 
@@ -1787,6 +1795,25 @@ Date::Julian::adjust(void)
   }
 
   return;
+}
+
+void
+Date::Julian::init(void)
+{
+    jdn_limit = 291469500291.;
+    return;
+}
+
+bool
+Date::Julian::isValid(long double d)
+{
+  long double dif = jdn + d;
+
+  // d > 0           || d < 0
+  if(dif > jdn_limit || (jdn + d) < 0.)
+     return false;
+
+  return true;
 }
 
 void

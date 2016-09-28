@@ -57,7 +57,8 @@ return:  output: \n
   2      Last filename if the date is older than.\n
          the end-date in the QA-result file.\n
   3      Unspecific error.\n
-  4      No unlimited variable found; output filename.\n
+  4      No time info found; output filename.\n
+  5      Invalid data.\n
 >10      Ambiguity test failed (values accumulate):\n
   +1        misaligned dates in filenames \n
   +2        modification time check failed \n
@@ -82,7 +83,7 @@ class Member
   std::string
          getOutput(bool printSeparationLine=false);
   void   print(bool printSeparationLine=false);
-  void   putState(std::string);
+  void   putState(std::string, bool printDateRange=true);
   void   setBegin(Date);
   void   setEnd(Date);
   void   setFile(std::string&); // decomposes
@@ -636,7 +637,7 @@ Ensemble::getTimes(std::string &str)
   size_t recSize, len;
   size_t index=0;
   double val ;
-  bool isTimeless=false;
+  int retVal=0;
 
   std::string begStr;
   std::string endStr;
@@ -666,7 +667,7 @@ Ensemble::getTimes(std::string &str)
        if( sz == 1 )
        	 return 0; // a single file
        else
-         isTimeless=true;
+         retVal=4;
 
        isInvalid = true;
        member[i]->state += "missing time dimension";
@@ -791,7 +792,16 @@ Ensemble::getTimes(std::string &str)
         continue;
      }
 
-     member[i]->setBegin( member[i]->refDate.getDate(val) );
+     if(member[i]->refDate.isValid(val))
+       member[i]->setBegin( member[i]->refDate.getDate(val) );
+     else
+     {
+       isInvalid=true;
+       retVal=5;
+       member[i]->putState("invalid data, found " + hdhC::double2String(val), false);
+       nc_close(ncid);
+       continue;
+     }
 
      index=recSize-1;
      if( (status = nc_get_var1_double(ncid, varid, &index, &val) ) )
@@ -799,7 +809,7 @@ Ensemble::getTimes(std::string &str)
         if( sz > 1 )
         {
           isInvalid = true;
-          member[i]->state = "could not read last time value";
+          member[i]->putState("could not read last time value");
           nc_close(ncid);
         }
      }
@@ -807,12 +817,19 @@ Ensemble::getTimes(std::string &str)
      if( noFill != 1 && (statusF || val == fV) )
      {
         isInvalid = true;
-        member[i]->state = "last time value equals _FillValue";
+        member[i]->putState("last time value equals _FillValue");
         nc_close(ncid);
         continue;
      }
 
-     member[i]->setEnd( member[i]->refDate.getDate(val) );
+     if(member[i]->refDate.isValid(val))
+       member[i]->setEnd( member[i]->refDate.getDate(val) );
+     else
+     {
+       isInvalid=true;
+       retVal=5;
+       member[i]->putState("invalid data, found " + hdhC::double2String(val), false);
+     }
 
      nc_close(ncid);
   }
@@ -824,8 +841,8 @@ Ensemble::getTimes(std::string &str)
      enablePrintOnlyMarked();
      str = getOutput();
 
-    if( isTimeless ) // num of files is > 1
-      return 5;
+    if( retVal )
+      return retVal;
     else
       return 3 ;  // unspecific error
   }
@@ -1096,9 +1113,6 @@ Member::getOutput(bool printSepLine)
   if( isPrintOnlyMarked && state.size() == 0 )
     return str;
 
-  if( state.size() )
-    isPrintDateRange =true ;
-
   // construct the output string
   if( printSepLine )
     str = "------------------------------------------------\\n";
@@ -1121,6 +1135,7 @@ Member::getOutput(bool printSepLine)
   {
      str += ": " ;
      str += state ;
+     str += "\\n" ;
   }
 
 /*
@@ -1134,7 +1149,7 @@ Member::getOutput(bool printSepLine)
 //  if( newline.size() )
 //    str += newline;
 //  else
-    str += "\n" ;
+//    str += "\\n" ;
 
   return str ;
 }
@@ -1148,12 +1163,15 @@ Member::print(bool printSeparationLine)
 }
 
 void
-Member::putState(std::string s)
+Member::putState(std::string s, bool is)
 {
   if(state.size())
     state += ",";
 
   state += s;
+
+  if( is )
+      isPrintDateRange = is;
   return;
 }
 

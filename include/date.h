@@ -74,6 +74,8 @@ class Date
 
     void    add( long double );
     void    adjust(void);
+    void    init(void);
+    bool    isValid(long double);
     void    subtract(long double);
 
     //! Get a Julian Date object
@@ -95,6 +97,9 @@ class Date
     //! Julian day number.
     /*! Represents 0h of the current real day*/
     long double jdn;
+
+    // for the detection of wrong input: the end of the current julian cycle
+    long double jdn_limit;
 
     //! Representation of the real day from 0h -24h in units of 'day'.
     long double time;
@@ -217,6 +222,9 @@ public:
   std::string
          getCalendar(void){ return currCalendar;}
 
+  static std::string
+         getCurrentDate(void){return Date::getTodayStr();}
+
   //! Convert val to ISO-8601.
   /*! If val is relative to a reference date, then this is returned
       in ISO-8601 format. If reference was not set before, then
@@ -331,6 +339,8 @@ public:
 
   //! Inquire whether a reference date was set.
   bool   isSet( void ){ return isDateSet ;}
+
+  bool   isValid(long double d){ return jul.isValid(d);}
 
   static bool
          isValidDate(std::string);

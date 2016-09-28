@@ -1858,7 +1858,7 @@ getNextVariable()
     return 0
   fi
 
-  if [ $status -eq 3 ] ; then
+  if [ $status -eq 3 -o $status -eq 5 ] ; then
 #    if [ ${PROGRESS_BAR} ] ; then
       local num=${#nV_fls[*]}
 #    fi
@@ -1866,8 +1866,14 @@ getNextVariable()
     isAnythingDone=t
 
     y_impact=L2
-    y_caption='syncFiles.cpp with unspecific failure'
-    y_tag=M5
+    if [ $status -eq 3 ] ; then
+      y_caption='syncFiles.cpp with unspecific failure'
+      y_tag=M5
+    else
+      y_caption='file(s) with invalid time data'
+      y_tag=M9
+    fi
+
     y_meta_data=OMIT
     y_time_values=FAIL
     y_status=${status}
@@ -2805,7 +2811,21 @@ initLog()
   if [ "${y_text[0]}" ] ; then
     sTxt[$((ix++))]="7text:"
     for(( i=0 ; i < ${#y_text[*]} ; ++i )) do
-      sTxt[$((ix++))]='7 - '"${y_text[i]}"
+      local p0 p1
+      p0=0
+      for(( p1=0 ; p1 < ${#y_text[i]} ; ++p1 )) ; do
+        if [ "${y_text[i]:p1:1}" == '\' ] ; then
+          if [ "${y_text[i]:p1:2}" == '\n' ] ; then
+            sTxt[$((ix++))]='7 - '"${y_text[i]:p0:$((p1-p0))}"
+            p0=$((p1 + 2))
+          fi
+        fi
+      done
+
+      # the last (or single) item
+      if [ $p0 < ${#y_text[i]} ] ; then
+        sTxt[$((ix++))]='7 - '"${y_text[i]:p0}"
+      fi
     done
     unset y_text
   fi
