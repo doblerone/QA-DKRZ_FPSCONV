@@ -2603,15 +2603,19 @@ CF::postAnnotations(void)
 }
 
 bool
-CF::run(void)
+CF::run()
 {
    init();
 
    getDims() ;
 
+
    for( size_t i=0 ; i < pIn->varSz ; ++i )
    {
       Variable& var = pIn->variable[i] ;
+
+      if( var.name == dataVarName )
+         var.addDataCount(10);
 
       getVarStateEvidences(var);
 
@@ -7574,6 +7578,23 @@ CF::chap73(void)
     if( (jx=var.getAttIndex(n_cell_methods)) == -1 )
       continue;
 
+    // only data variables may have this attribute
+    if( !var.isDataVar() )
+    {
+      if( notes->inq(bKey + "73f", var.name) )
+      {
+        std::string capt("Only data variables may have ");
+        capt += hdhC::tf_att(hdhC::empty, n_cell_methods, hdhC::no_colon);
+        capt += ", found for" ;
+        capt += hdhC::tf_val(var.name);
+
+        (void) notes->operate(capt) ;
+        notes->setCheckStatus( n_CF, fail );
+      }
+
+      continue;
+    }
+
     std::string cm ;
     for( size_t i=0 ; i < var.attValue[jx].size() ; ++i )
     {
@@ -8210,7 +8231,7 @@ CF::chap73_inqBounds(Variable& var,
       {
         std::string capt("reco: Variable") ;
         capt += hdhC::tf_val(var_n.name) ;
-        capt += "named by " + hdhC::tf_att(var.name, n_cell_methods);
+        capt += " referenced by " + hdhC::tf_att(var.name, n_cell_methods);
         capt += "should have attached ";
 
         if( isClim )

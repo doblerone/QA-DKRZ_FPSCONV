@@ -107,8 +107,6 @@ class CF : public IObj
   void   chap6(void);    // labels
 
   void   chap7(void);    // cells
-  void   chap73_inqBounds(Variable&,  std::vector<std::string>& name,
-            std::vector<std::string>& method, bool );
   void   chap71(void);  // pertains to both boundaries and climatologies
   void   chap71_reco(Variable&);   // cell boundaries
   void   chap72(void);  // cell measure
@@ -116,6 +114,8 @@ class CF : public IObj
   bool   chap73_cellMethods_Comment(std::string&, Variable&) ;
   bool   chap73_cellMethods_Method(std::string&, Variable&) ;
   bool   chap73_cellMethods_Name(std::string&, Variable&) ;
+  void   chap73_inqBounds(Variable&,  std::vector<std::string>& name,
+                          std::vector<std::string>& method, bool );
   void   chap73b_reco(Variable&, std::vector<std::string> &dim );
   bool   chap733(std::string& method, Variable&, std::string mode) ;
   bool   chap734a(std::string&) ;
@@ -203,6 +203,7 @@ template <typename T>
   bool   scanStdNameTable(ReadLine&, Variable&, std::string);
   bool   setCheck(std::string&);
   void   setCheckStatus(std::string);
+  void   setDataVarName(std::string s){ dataVarName = s;}
   void   setFollowRecommendations(bool b){followRecommendations=b;}
 //  void   setTable(std::string p){ std_name_table=p; }
 
@@ -234,7 +235,7 @@ template <typename T>
 
   ut_system*   unitSystem;
 
-
+  std::string dataVarName;  // only when provided by setDataVarName()
   std::string timeName;  // the name of the unlimited/time variable
   int         time_ix;
   int         compress_ix;

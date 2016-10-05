@@ -3786,6 +3786,228 @@ NcAPI::getNumOfRows(std::string vName)
   return layout.varDimSize[varid][0];
 }
 
+template <typename ToT>
+ToT
+NcAPI::getRecord(MtrxArr<ToT> &ma, std::string vName, size_t rec)
+{
+  int varid = getVarID(vName)  ;
+
+  size_t rank = layout.varDimName[varid].size();
+
+  if( layout.rec_index[varid] < UINT_MAX )
+    layout.rec_start[varid][ layout.rec_index[varid] ] = rec;
+
+  std::vector<size_t> dim ;
+  size_t* curr_count = new size_t [rank] ;
+  size_t currRecSz=1;
+
+  // scalar defined as a 0-dimensional variable
+  if( rank == 0 )
+    dim.push_back(1);
+  else
+  {
+    for( size_t i=0 ; i < rank ; ++i)
+    {
+      dim.push_back(layout.rec_count[varid][i]);
+      curr_count[i] = layout.rec_count[varid][i] ;
+      currRecSz *= dim.back();
+    }
+  }
+
+  disableDefMode();
+
+  if( currRecSz != ma.size() )
+    ma.resize(dim);
+
+
+  switch ( layout.varType[varid] )
+  {
+/*
+    case NC_BYTE:
+    {
+      rec_val_schar[varid].resize( dim ) ;
+      p=rec_val_schar[varid].begin() ;
+
+      if( dim.size() == 0 )
+      {
+         delete [] curr_count ;
+         return p ;
+      }
+
+      status = nc_get_vara_schar(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  rec_val_schar[varid].arr );
+
+      if( !status )
+        rec_val_schar[varid].testValueException();
+    }
+    break;
+    case NC_CHAR:
+    {
+      rec_val_text[varid].resize( dim ) ;
+      p=rec_val_text[varid].begin() ;
+
+      status = nc_get_vara_text(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  rec_val_text[varid].arr );
+
+      if( !status )
+        rec_val_text[varid].testValueException();
+    }
+    break;
+    case NC_SHORT:
+    {
+      rec_val_short[varid].resize( dim ) ;
+      p=rec_val_short[varid].begin() ;
+
+      status = nc_get_vara_short(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  rec_val_short[varid].arr );
+
+      if( !status )
+        rec_val_short[varid].testValueException();
+    }
+    break;
+    case NC_INT:
+    {
+      rec_val_int[varid].resize( dim ) ;
+      p=rec_val_int[varid].begin() ;
+
+      status = nc_get_vara_int(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  rec_val_int[varid].arr );
+
+      if( !status )
+        rec_val_int[varid].testValueException();
+    }
+    break;
+*/
+    case NC_FLOAT:
+    {
+      float* p_arr = reinterpret_cast<float*>(ma.arr);
+      status = nc_get_vara_float(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  p_arr );
+
+      if( !status )
+        ma.testValueException();
+    }
+    break;
+    case NC_DOUBLE:
+    {
+      double* p_arr = reinterpret_cast<double*>(ma.arr);
+      status = nc_get_vara_double(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  p_arr );
+
+      if( !status )
+        ma.testValueException();
+    }
+    break;
+/*
+    case NC_UBYTE:
+    {
+      rec_val_uchar[varid].resize( dim ) ;
+      p=rec_val_uchar[varid].begin() ;
+
+      status = nc_get_vara_uchar(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  rec_val_uchar[varid].arr );
+
+      if( !status )
+        rec_val_uchar[varid].testValueException();
+    }
+    break;
+    case NC_USHORT:
+    {
+      rec_val_ushort[varid].resize( dim ) ;
+      p=rec_val_ushort[varid].begin() ;
+
+      status = nc_get_vara_ushort(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  rec_val_ushort[varid].arr );
+
+      if( !status )
+        rec_val_ushort[varid].testValueException();
+    }
+    break;
+    case NC_UINT:
+    {
+      rec_val_uint[varid].resize( dim ) ;
+      p=rec_val_uint[varid].begin() ;
+
+      status = nc_get_vara_uint(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  rec_val_uint[varid].arr );
+
+      if( !status )
+        rec_val_uint[varid].testValueException();
+    }
+    break;
+    case NC_UINT64:
+    {
+      rec_val_ulonglong[varid].resize( dim ) ;
+      p=rec_val_ulonglong[varid].begin() ;
+
+      status = nc_get_vara_ulonglong(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  rec_val_ulonglong[varid].arr );
+
+      if( !status )
+        rec_val_ulonglong[varid].testValueException();
+    }
+    break;
+    case NC_INT64:
+    {
+      rec_val_longlong[varid].resize( dim ) ;
+      p=rec_val_longlong[varid].begin() ;
+
+      status = nc_get_vara_longlong(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  rec_val_longlong[varid].arr );
+
+      if( !status )
+        rec_val_longlong[varid].testValueException();
+    }
+    break;
+    case NC_STRING:
+    {
+      if( rec_val_string[varid].size() > 0 )
+        nc_free_string( layout.recSize[varid],
+             rec_val_string[varid].begin() );
+
+      rec_val_string[varid].resize( layout.recSize[varid] ) ;
+      p=rec_val_string[varid].begin() ;
+
+      status = nc_get_vara_string(ncid, varid,
+                layout.rec_start[varid], curr_count,
+                  rec_val_string[varid].arr );
+
+//      if( !status )
+//      rec_val_string.testValueException();
+    }
+*/
+  }
+
+  if(status)
+  {
+    std::string key("NC_7_1");
+    std::string capt("Could  not get data.") ;
+
+    std::string vName(getVarnameFromVarID(varid));
+
+    std::string text("Variable <");
+    text += vName;
+    text += ">: ";
+
+    exceptionHandling(key, capt, text, vName);
+  }
+
+  delete [] curr_count ;
+
+  return ma[0];
+}
+
 size_t
 NcAPI::getRecordSize(std::string vName)
 {

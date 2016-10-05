@@ -746,7 +746,6 @@ public:
 
   void assign( const T *p, std::vector<size_t> *d=0);
   void clearM(void);
-  void exceptionError(std::string str);
   void getDim(std::vector<size_t> &d_in);
   T** const  getM(void);
   size_t getSize(void);
@@ -854,25 +853,6 @@ MArep<T>::clearM(void)
     }
 
     return;
-}
-
-template<typename T>
-void
-MArep<T>::exceptionError(std::string str)
-{
-    // Occurrence of an error stops the run immediately.
-    xcptn.ofsError=0;
-    xcptn.strError = "error_MtrxArr_MArep.txt" ;
-
-    // open file for appending data
-    if( ! xcptn.ofsError )
-      xcptn.ofsError
-       = new std::ofstream(xcptn.strError.c_str(), std::ios::app);
-
-    *xcptn.ofsError << str << std::endl;
-
-//    exit(1);
-    return ;
 }
 
 template<typename T>
@@ -1138,8 +1118,6 @@ public:
   void    enableValueExceptionUpdate(bool b=true)
              { valExcp->update = b; }
 
-  void    exceptionError(std::string str);
-
   void    frame( const MtrxArr<T> &g, size_t beg, size_t sz=0);
 
   //! Get value at given index(es).
@@ -1171,6 +1149,9 @@ public:
 
   //! Get number of rows.
   size_t  getRowSize(void) { return rep->dim.size() > 0 ? rep->dim[0] : 0 ;}
+
+  std::vector<std::string>
+          getStatus(bool clear=true);
 
   //! Get value matrix indices at given array index.
   std::vector<size_t>
@@ -1241,6 +1222,8 @@ public:
 
   T*  arr ;  // points to &rep->(*pva)[0]
   T zero ;  // nomen est omen
+
+  std::vector<std::string> status;
 
   // combine to index ranges of valid values
   std::vector<size_t> validRangeBegin ;
@@ -1469,9 +1452,7 @@ MtrxArr<T>::operator+(MtrxArr<T> &g)
 {
   if( size() != g.size() )
   {
-    std::ostringstream ostr(std::ios::app);
-    ostr << "\nMtrxArr<T>::operator+(): MtrxArr objects of different size.";
-    exceptionError( ostr.str() ); // exits
+    status.push_back("MtrxArr objects of different size.");
 
     return *this;
   }
@@ -1517,9 +1498,7 @@ MtrxArr<T>::operator-( MtrxArr<T> &g)
 
   if( size() != g.size() )
   {
-    std::ostringstream ostr(std::ios::app);
-    ostr << "\nMtrxArr<T>::operator-(): MtrxArr objects of different size.";
-    exceptionError( ostr.str() ); // exits
+    status.push_back("MtrxArr objects of different size.");
 
     return *this;
   }
@@ -1563,9 +1542,7 @@ MtrxArr<T>::operator*( MtrxArr<T> &g)
 {
   if( size() != g.size() )
   {
-    std::ostringstream ostr(std::ios::app);
-    ostr << "\nMtrxArr<T>::operator*(): MtrxArr objects of different size.";
-    exceptionError( ostr.str() ); // exits
+    status.push_back("MtrxArr objects of different size.");
 
     return *this;
   }
@@ -1600,9 +1577,7 @@ MtrxArr<T>::operator/(const T v)
 
   if( v == zero )
   {
-    std::ostringstream ostr(std::ios::app);
-    ostr << "\nMtrxArr<T>::operator/=(): division by zero.";
-    exceptionError( ostr.str() ); // exits
+    status.push_back("division by zero.");
 
     testValueException();
   }
@@ -1618,9 +1593,7 @@ MtrxArr<T>::operator/( MtrxArr<T> &g)
 {
   if( size() != g.size() )
   {
-    std::ostringstream ostr(std::ios::app);
-    ostr << "\nMtrxArr<T>::operator/(): MtrxArr objects of different size.";
-    exceptionError( ostr.str() ); // exits
+    status.push_back("MtrxArr objects of different size.");
 
     return *this;
   }
@@ -1644,20 +1617,92 @@ MtrxArr<T>::operator+=( MtrxArr<T> &g)
 {
   if( size() != g.size() )
   {
-    std::ostringstream ostr(std::ios::app);
-    ostr << "\nMtrxArr<T>::operator+=(): MtrxArr objects of different size.";
-    exceptionError( ostr.str() ); // exits
+    status.push_back("MtrxArr objects of different size");
 
     return *this;
   }
 
   rep=rep->makeRoot();
   arr=rep->arr;
+  size_t sz = size();
 
-  for( size_t i=0 ; i < rep->arr_sz ; ++i)
-     arr[i] += g.arr[i] ;
+  bool isSync=true;
 
-  if( ! g.isValid )
+  if( validRangeBegin.size() == g.validRangeBegin.size() )
+  {
+     for(size_t i=0 ; i < validRangeBegin.size() ; ++i )
+     {
+         if( i != g.validRangeBegin[i] )
+         {
+             isSync = false;
+             break;
+         }
+     }
+  }
+  else
+    isSync = false;
+
+  if(isSync)
+  {
+     for(size_t i=0 ; i < validRangeBegin.size() ; ++i )
+        for(size_t j=validRangeBegin[i] ; j < validRangeEnd[i] ; ++j )
+           arr[j] += g.rep->arr[j] ;
+
+     return *this;
+  }
+
+  // different invalid values; solve my masks
+  status.push_back("different patterns of exception values");
+
+  T g_mask[sz];
+
+  for( size_t i=0 ; i < sz ; ++i)
+     g_mask[i] = zero ;
+
+  for(size_t i=0 ; i < g.validRangeBegin.size() ; ++i )
+     for(size_t j=g.validRangeBegin[i] ; j < g.validRangeEnd[i] ; ++j )
+        g_mask[j] = 1 ;
+
+  isSync = true;
+  if( valExcp->exceptionValue.size() < g.valExcp->exceptionValue.size() )
+  {
+     for(size_t i=0 ; i < g.valExcp->exceptionValue.size() ; ++i )
+     {
+       size_t j;
+       for(j=0 ; j < valExcp->exceptionValue.size() ; ++j )
+         if( valExcp->exceptionValue[j] == g.valExcp->exceptionValue[i] )
+             break;
+
+       if( j == valExcp->exceptionValue.size() )
+       {
+          valExcp->exceptionValue.push_back( g.valExcp->exceptionValue[i] );
+          valExcp->exceptionMode.push_back( g.valExcp->exceptionMode[i] );
+          valExcp->enableValueExceptionTest("user");
+          isSync=false;
+       }
+     }
+  }
+
+  if( !isSync)
+     status.push_back("objects with different exception values");
+  else
+     isSync=true;
+
+  for(size_t i=0 ; i < validRangeBegin.size() ; ++i )
+  {
+     for(size_t j=validRangeBegin[i] ; j < validRangeEnd[i] ; ++j )
+     {
+        if( g_mask[i] > g.zero )
+          arr[i] += g.arr[i] ;
+        else
+        {
+          arr[i] = g.arr[i] ;
+          isSync=false;
+        }
+     }
+  }
+
+  if( ! isSync )
     testValueException();
 
   return *this;
@@ -1675,10 +1720,11 @@ MtrxArr<T>::operator+=(const T v)
   rep=rep->makeRoot();
   arr=rep->arr;
 
-  for( size_t i=0 ; i < rep->arr_sz ; ++i)
-     arr[i] += v ;
+  for(size_t i=0 ; i < validRangeBegin.size() ; ++i )
+    for(size_t j=validRangeBegin[i] ; j < validRangeEnd[i] ; ++j )
+        arr[j] += v ;
 
-  // Note: testValueException(): nothing has changed
+  // Note: nothing has changed as to testValueException()
 
   return *this;
 }
@@ -1690,9 +1736,7 @@ MtrxArr<T>::operator-=( MtrxArr<T> &g)
 {
   if( size() != g.size() )
   {
-    std::ostringstream ostr(std::ios::app);
-    ostr << "\nMtrxArr<T>::operator-=(): MtrxArr objects of different size.";
-    exceptionError( ostr.str() ); // exits
+    status.push_back("MtrxArr objects of different size.");
 
     return *this;
   }
@@ -1713,18 +1757,17 @@ template<typename T>
 MtrxArr<T>&
 MtrxArr<T>::operator-=(const T v)
 {
-  // Note: no check for exception values
-
   if( v == zero )
     return *this;
 
   rep=rep->makeRoot();
   arr=rep->arr;
 
-  for( size_t i=0 ; i < rep->arr_sz ; ++i)
-     arr[i] -= v ;
+  for(size_t i=0 ; i < validRangeBegin.size() ; ++i )
+    for(size_t j=validRangeBegin[i] ; j < validRangeEnd[i] ; ++j )
+        arr[j] -= v ;
 
-  // Note: testValueException(): nothing has changed
+  // Note: nothing has changed as to testValueException()
 
   return *this;
 }
@@ -1736,9 +1779,7 @@ MtrxArr<T>::operator*=( MtrxArr<T> &g)
 {
   if( size() != g.size() )
   {
-    std::ostringstream ostr(std::ios::app);
-    ostr << "\nMtrxArr<T>::operator*=(): MtrxArr objects of different size.";
-    exceptionError( ostr.str() ); // exits
+    status.push_back("MtrxArr objects of different size.");
 
     return *this;
   }
@@ -1782,9 +1823,7 @@ MtrxArr<T>::operator/=( MtrxArr<T> &g)
 {
   if( size() != g.size() )
   {
-    std::ostringstream ostr(std::ios::app);
-    ostr << "\nMtrxArr<T>::operator/=(): MtrxArr objects of different size.";
-    exceptionError( ostr.str() ); // exits
+    status.push_back("MtrxArr objects of different size.");
 
     return *this;
   }
@@ -1810,21 +1849,19 @@ MtrxArr<T>::operator/=(const T v)
   if( v == static_cast<T>( 1 ) )
     return *this;
 
+  if( v == zero )
+  {
+    status.push_back("division by zero.");
+
+    return *this;  // do nothing
+  }
+
   rep=rep->makeRoot();
   arr=rep->arr;
 
-  for( size_t i=0 ; i < rep->arr_sz ; ++i)
-     arr[i] /= v ;
-
-  if( v == zero )
-  {
-    std::ostringstream ostr(std::ios::app);
-    ostr << "\nMtrxArr<T>::operator/=(): division by zero.";
-    exceptionError( ostr.str() ); // exits
-
-    testValueException();
-  }
-  // else: nothing has changed
+  for(size_t i=0 ; i < validRangeBegin.size() ; ++i )
+    for(size_t j=validRangeBegin[i] ; j < validRangeEnd[i] ; ++j )
+        arr[j] /= v ;
 
   return *this;
 }
@@ -1928,25 +1965,6 @@ MtrxArr<T>::clear(void)
 
   if( static_cast<bool>(valExcp) )
     delete valExcp ;
-}
-
-template<typename T>
-void
-MtrxArr<T>::exceptionError(std::string str)
-{
-  // Occurrence of an error stops the run immediately.
-  xcptn.ofsError=0;
-  xcptn.strError = "error_MtrxArr.txt" ;
-
-  // open file for appending data
-  if( ! xcptn.ofsError )
-    xcptn.ofsError
-       = new std::ofstream(xcptn.strError.c_str(), std::ios::app);
-
-  *xcptn.ofsError << str << std::endl;
-
-//  exit(1);
-  return ;
 }
 
 template<typename T>
@@ -2106,6 +2124,18 @@ MtrxArr<T>::getExceptionValue(std::vector<T> &g, size_t i)
   g[i] = valExcp->exceptionValue[i];
 
   return ;
+}
+
+template<typename T>
+std::vector<std::string>
+MtrxArr<T>::getStatus(bool clear)
+{
+    if( ! clear)
+        return status;
+
+    std::vector<std::string> s(status);
+    status.clear();
+    return s;
 }
 
 template<typename T>

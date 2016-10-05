@@ -549,6 +549,7 @@ QA::init(void)
    // check for CF Convention.
    if(isCheckCF)
    {
+     cF->setDataVarName(vName);
      cF->setFilename(pIn->file);
      (void) cF->run();
    }

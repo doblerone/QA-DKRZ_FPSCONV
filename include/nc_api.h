@@ -414,7 +414,8 @@ void
 
 //! Get the i-th record of variable vName.
 /*! If vName is an invalid variable name, then 0 is returned.
-    Get all the data for limited (non-record) variables.
+    Get all the:1
+    data for limited (non-record) variables.
     This member just returns a void* pointer to the data.*/
     void*
       getData(std::string vName, size_t rec=0, size_t leg=0 )
@@ -534,7 +535,11 @@ void
       getRecLegIndex(int varid, size_t rec)
         { return rec - layout.rec_leg_begin[varid] ; }
 
-//! Get number of values per record of variable 'vName'.
+  template <typename ToT>
+    ToT
+      getRecord(MtrxArr<ToT> &x, std::string vName, size_t rec=0 );
+
+      //! Get number of values per record of variable 'vName'.
 /*! If vName is not a valid variable, 0 is returned.
     Do not confuse with number of records.*/
     size_t
