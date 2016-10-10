@@ -49,7 +49,7 @@ Options:\n
    --help \n
    --note           not implemented, yet\n
    --only-marked    Only issue failing properties\n
-   --NL             String indicating newline between failing issues [newline] \n
+   --line-feed=str  Newline indicator \n
 \n
 return:  output: \n
   0      Name of next file(s).\n
@@ -221,39 +221,38 @@ int main(int argc, char *argv[])
   std::string oStr("Ad:Ehl:mMP:p:St:T");
   oStr += "<--only-marked>";
   oStr += "<--help>";
-  oStr += "<--NL>:";
+  oStr += "<--line-feed>:";
   oStr += "<--note>:";
 
   while( (copt = opt.getopt(argc, argv, oStr.c_str() )) != -1 )
   {
     if( opt.longOption > 0 )
+    {
       str0=opt.longOption;
 
-    if( str0 == "--help" )
-    {
-      syncFiles.description();
-      str0.clear();
-      return 3;
-    }
+      if( str0 == "--help" )
+      {
+        syncFiles.description();
+        return 3;
+      }
 
-    if( str0 == "--NL" )
-    {
-      syncFiles.enableNewLine(opt.optarg);
-      continue;
-    }
+      if( str0 == "--line-feed" )
+      {
+        syncFiles.enableNewLine(opt.optarg);
+        continue;
+      }
 
-    if( str0 == "--note" )
-    {
-      noteOpts=opt.optarg;
-      str0.clear();
-      continue;
-    }
+      if( str0 == "--note" )
+      {
+        noteOpts=opt.optarg;
+        continue;
+      }
 
-    if( str0 == "--only-marked" )
-    {
-      syncFiles.isPrintOnlyMarked=true;
-      str0.clear();
-      continue;
+      if( str0 == "--only-marked" )
+      {
+        syncFiles.isPrintOnlyMarked=true;
+        continue;
+      }
     }
 
     switch ( copt )
@@ -359,6 +358,7 @@ Ensemble::Ensemble()
   isWithTarget     = false;
 
   startIndex  = 0;
+  newline="\\n";
 }
 
 void
@@ -1084,6 +1084,7 @@ Member::Member()
   isPrintDateRange=false;
   isModTimeNote=false;
   isPrintOnlyMarked=false ;
+  newline="\\n";
 }
 
 void
@@ -1115,7 +1116,10 @@ Member::getOutput(bool printSepLine)
 
   // construct the output string
   if( printSepLine )
-    str = "------------------------------------------------\\n";
+  {
+    str = "------------------------------------------------";
+    str += newline;
+  }
 
   str += filename ;
 
@@ -1135,7 +1139,6 @@ Member::getOutput(bool printSepLine)
   {
      str += ": " ;
      str += state ;
-     str += "\\n" ;
   }
 
 /*
@@ -1146,10 +1149,7 @@ Member::getOutput(bool printSepLine)
   }
 */
 
-//  if( newline.size() )
-//    str += newline;
-//  else
-//    str += "\\n" ;
+  str += newline;
 
   return str ;
 }

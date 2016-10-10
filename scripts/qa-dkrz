@@ -1800,8 +1800,6 @@ getNextVariable()
   local tl
   test ${TIME_LIMIT} && syncOpts="${syncOpts} -l ${TIME_LIMIT}"
 
-  unset nextFile
-
   if [ ${isMixingRefused} = t -a ${IGNORE_TEMP_FILES:-f} = t ] ; then
     local tf tff tfs
     declare -a tfs
@@ -1836,13 +1834,28 @@ getNextVariable()
 
 #  nextFile="$(echo ${nV_fls[*]} | ${QA_BIN#*:}/syncFiles.x \
 #     $syncOpts -P ${nextPath} )"
-  nextFile="$( ${QA_BIN#*:}/syncFiles.x \
+  local nxtFl
+
+  nxtFl="$( ${QA_BIN#*:}/syncFiles.x \
      $syncOpts -P ${nextPath} ${nV_fls[*]} )"
 
   status=$?
 
-  test ${SHOW_SYNC:-f} = t && \
-       std_out flush "${nextFile[*]/%/\\n}"
+  # expand \newline, but preserve üpotential blanks
+  i=0
+  nextFile=()
+  p1=0
+  for(( p1=0 ; p1 < ${#nxtFl} ; ++p1 )) ; do
+    if [ "${nxtFl:p1:1}" == '_' -a "${nxtFl:p1:7}" == '__EOL__' ] ; then
+      nextFile[i++]="${nxtFl:p0:$((p1-p0))}"
+      p0=$((p1 + 7))
+      p1=$((p1+6)) # because of ++p1
+    fi
+  done
+
+  if [ ${SHOW_SYNC:-f} = t ] ; then
+     std_out flush "${nextFile[*]/%/\\n}"
+  fi
 
   local nFsSz=${#nextFile[*]}
 
@@ -1878,9 +1891,8 @@ getNextVariable()
     y_time_values=FAIL
     y_status=${status}
 
-    local k
-    for(( k=0 ; k < ${#nextFile[*]} ; ++k )) ; do
-      y_text[${k}]="${nextFile[k]}"
+    for(( i=0 ; i < ${#nextFile[*]} ; ++i )) ; do
+      y_text[i]=${nextFile[i]}
     done
 
     initLog $1
@@ -1920,17 +1932,8 @@ getNextVariable()
     y_time_values=FAIL
     y_status=${status}
 
-    local yCount=0
-    local l;
-    for(( k=0 ; k < ${#nextFile[*]} ; ++k )) ; do
-      for(( l=0 ; l < ${#nextFile[k]} ; ++l )) ; do
-        if [ "${nextFile[k]:l:2}" = "\n" ] ; then
-           yCount=$(( yCount +1 ))
-           break
-        else
-          y_text[yCount]="${y_text[yCount]}${nextFile[k]:l:1}"
-        fi
-      done
+    for(( i=0 ; i < ${#nextFile[*]} ; ++i )) ; do
+      y_text[i]=${nextFile[i]}
     done
 
     initLog $1
@@ -1938,9 +1941,6 @@ getNextVariable()
     nextFile= # ignore, try next
     return 0
   fi
-
-  # expand \n
-  nextFile=( ${nextFile[*]//\\n/ } )
 
   if [ ${DEREFERENCE_SYM_LINKS:-f} = f -a \
         -h ${PROJECT_DATA}/${subPath}/$nextFile ] ; then
@@ -2707,7 +2707,7 @@ init()
     tput dl 1 > $TTY
   fi
 
-  syncOptsInit='--only-marked'
+  syncOptsInit='--only-marked --line-feed=__EOL__'
 
   # progress bar
 #  if [ ${PROGRESS_BAR:-f} = t ] ; then
@@ -2811,21 +2811,7 @@ initLog()
   if [ "${y_text[0]}" ] ; then
     sTxt[$((ix++))]="7text:"
     for(( i=0 ; i < ${#y_text[*]} ; ++i )) do
-      local p0 p1
-      p0=0
-      for(( p1=0 ; p1 < ${#y_text[i]} ; ++p1 )) ; do
-        if [ "${y_text[i]:p1:1}" == '\' ] ; then
-          if [ "${y_text[i]:p1:2}" == '\n' ] ; then
-            sTxt[$((ix++))]='7 - '"${y_text[i]:p0:$((p1-p0))}"
-            p0=$((p1 + 2))
-          fi
-        fi
-      done
-
-      # the last (or single) item
-      if [ $p0 < ${#y_text[i]} ] ; then
-        sTxt[$((ix++))]='7 - '"${y_text[i]:p0}"
-      fi
+      sTxt[$((ix++))]='7 - '"${y_text[i]}"
     done
     unset y_text
   fi
