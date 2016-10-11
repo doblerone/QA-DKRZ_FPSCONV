@@ -1842,10 +1842,9 @@ getNextVariable()
   status=$?
 
   # expand \newline, but preserve üpotential blanks
-  i=0
   nextFile=()
-  p1=0
-  for(( p1=0 ; p1 < ${#nxtFl} ; ++p1 )) ; do
+  local p0 p1 i
+  for(( p0=0 , p1=0 , i=0 ; p1 < ${#nxtFl} ; ++p1 )) ; do
     if [ "${nxtFl:p1:1}" == '_' -a "${nxtFl:p1:7}" == '__EOL__' ] ; then
       nextFile[i++]="${nxtFl:p0:$((p1-p0))}"
       p0=$((p1 + 7))
