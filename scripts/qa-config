@@ -473,9 +473,7 @@ findEmbeddedConf()
   fi
 
   if [ ! "${item}" ] ; then
-     if [ ${PROJECT_AS} ] ; then
-       item=${PROJECT_AS}_qa.conf
-     elif [ ${PROJECT} ] ; then
+     if [ ${PROJECT} ] ; then
        item=${PROJECT}_qa.conf
      else
        return
@@ -524,7 +522,7 @@ findEmbeddedConf()
 
 findProject()
 {
-  # 1. Scan files for explicit PROJECT and PROJECT_AS specifications.
+  # 1. Scan files for explicit PROJECT specifications.
   # 2. Try to identify known default projects names in the filename.
 
   local currConf=$1
@@ -536,53 +534,27 @@ findProject()
   name=
   arg=
 
-  for prj in PROJECT PROJECT_AS ; do
-    val=( $(grep "^[[:space:]]*[^#][[:space:]]*${prj:1}=" ${currConf} ) )
-    if [ "${val}" ] ; then
-      name[${#name[*]}]=${val%=*}
-      arg[${#arg[*]}]=${val#*=}
+  val=( $(grep "^[[:space:]]*[^#][[:space:]]*${PROJECT:1}=" ${currConf} ) )
+  if [ "${val}" ] ; then
+    name[${#name[*]}]=${val%=*}
+    arg[${#arg[*]}]=${val#*=}
+  fi
+
+  # find known project names
+  if [ ${#knownProjects[*]} -eq 0 ] ; then
+    knownProjects=( $( ls ${QA_HOME}/tables/projects) )
+  fi
+
+  # filename with a leading project name?
+  local item
+  for prj in ${knownProjects[*]} ; do
+    item=${currConf##*/}
+    if [ ${prj} = ${item:0:${#prj}} ] ; then
+      break
+    else
+      prj=
     fi
   done
-
-  # only if not set previously
-  if [ !${PROJECT_AS} ] ; then
-    local i
-    for i in 0 1 ; do
-      if [ "${name[i]}" = PROJECT_AS ] ; then
-        setKWL PROJECT_AS=${arg[i]}
-        return
-      fi
-    done
-
-    for i in 0 1 ; do
-      if [ "${name[i]}" = PROJECT ] ; then
-        setKWL PROJECT_AS=${arg[i]}
-        return
-      fi
-    done
-  fi
-
-  if [ "${PROJECT_AS}" ] ; then
-    return # PROJECT may be unset
-  else
-    # find known project names
-    if [ ${#knownProjects[*]} -eq 0 ] ; then
-      knownProjects=( $( ls ${QA_HOME}/tables/projects) )
-    fi
-
-    # filename with a leading project name?
-    local item
-    for prj in ${knownProjects[*]} ; do
-      item=${currConf##*/}
-      if [ ${prj} = ${item:0:${#prj}} ] ; then
-        break
-      else
-        prj=
-      fi
-    done
-
-    test ${prj} && setKWL PROJECT_AS=$prj
-  fi
 
   return
 }
@@ -1728,7 +1700,7 @@ FS data directory: ${PROJECT_DATA[*]}
 
 setKWL()
 {
-  test ${DEBUG_CONF} && voidX
+#  test ${DEBUG_CONF} && voidX
 
   local key item value i val vals isAdd
   item="$*"
@@ -1851,7 +1823,7 @@ setKWL()
   # add key to the list
   keyWordList[${#keyWordList[*]}]=$key
 
-  test ${DEBUG_CONF} && voidX
+#  test ${DEBUG_CONF} && voidX
 
   if [ ${ONLY_SUMMARY:-f} != f -a "${ONLY_SUMMARY}" != all ] ; then
     setKWL LOG_FNAMES=${ONLY_SUMMARY}
@@ -2155,8 +2127,6 @@ do
           set -x
         elif [ ${UOPTARG:0:9} = '_PROJECT=' ] ; then
           setKWL ${UOPTARG:1}
-        elif [ ${UOPTARG:0:11} = '_PROJECT_AS=' ] ; then
-          setKWL ${UOPTARG:1}
         fi
         ;;
     f)  qaConf[${#qaConf[*]}]=${OPTARG}
@@ -2168,7 +2138,6 @@ do
     x)  set -x
         ;;
     -)  test "$OPTARG" = "help" && isHelp=t && continue
-        test "${UOPTARG%=*}" = "PROJECT_AS" && setKWL PROJECT_AS=${OPTARG#*=} && continue
         ;;
    \?)  ;;
   esac
@@ -2205,12 +2174,6 @@ fi
 for(( i=${#filePrecedence[*]}-1 ; i > -1 ; --i )) ; do
   parseConfigurationFile ${filePrecedence[i]}
 done
-
-if [ ${PROJECT} ] ; then
-  test ! ${PROJECT_AS} && setKWL PROJECT_AS=${PROJECT}
-elif [ ${PROJECT_AS} ] ; then
-  setKWL PROJECT=${PROJECT_AS}
-fi
 
 # command-line overwrites configuration file assignments
 comLine=( $* ) # for e-mail and initSession
@@ -2299,8 +2262,6 @@ do
           setKWL FORMER_PID=$OPTARG
 
         elif [ "$OPTARG" = "help" ] ; then
-          : # done before
-        elif [ "${UOPTARG%=*}" = "PROJECT_AS" ] ; then
           : # done before
 
         elif [ "${OPTARG:0:2}" = pb ] ; then

@@ -421,7 +421,7 @@ callQaExecutor()
           PRINT_GREP_MARK \
           PROC_POOL \
           PROJECT \
-          PROJECT_AS \
+          PROJECT_NAME \
           PROJECT_DATA \
           PROJECT_TABLE \
           QA \
@@ -2538,7 +2538,6 @@ init()
   fi
 
   test ! ${PROJECT} && PROJECT=NONE
-  test ! ${PROJECT_AS} && PROJECT_AS=${PROJECT}
 
   # package update requested and required?
   if [ !${NO_GIT} ] ; then
@@ -2546,7 +2545,7 @@ init()
     local md5_0
     md5_0=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
-    if ${QA_SRC}/install ${INSTALL_ARGS//,/ } ${PROJECT_AS} ; then
+    if ${QA_SRC}/install ${INSTALL_ARGS//,/ } ${PROJECT} ; then
         local md5_1
         md5_1=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
@@ -2554,7 +2553,7 @@ init()
             exec ${QA_SRC}/scripts/qa-dkrz ${initial_params[*]}
     else
        # could not make the executable for the given project
-       std_out flush "could not make: install ${PROJECT_AS}"
+       std_out flush "could not make: install ${PROJECT}"
        exit 1
     fi
 
@@ -2895,7 +2894,7 @@ initTables()
   #    projects are updated and are applied.
   # 5) 4) also for option USE_STRICT.
 
-  local currPrj=$PROJECT_AS
+  local currPrj=$PROJECT
   local tn name
   for tn in ${tableVars[*]} ; do
     eval name=\$${tn}
