@@ -331,9 +331,9 @@ QA::defaultPrjTableName(void)
 bool
 QA::entry(void)
 {
-//   if( !(isCheckData || isCheckTimeValues) )
-//     return true;
-
+   if(!isCheckData)
+     pIn->dataVarIndex.clear();
+   
    // no data section provided in the NetCDF file; enable
    // a single loop
    if( pIn->currRec == pIn->ncRecEnd )
@@ -592,10 +592,6 @@ QA::init(void)
 
    if( isCheckData )
    {
-     if( pIn->dataVarIndex.size() == 0 )
-     {
-     }
-
      if( !checkDataBody() )
      {
        isCheckData = false;
@@ -1336,7 +1332,6 @@ QA::setCheckMode(std::string m)
     else if( cvs[j] == "-data" )
     {
       isCheckData=false ;
-      isRequiredVariable=false;
     }
     else if( cvs[j] == "-drs" )
     {
