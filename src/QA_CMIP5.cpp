@@ -4260,32 +4260,51 @@ QA_Exp::checkNetCDF(InFile& in)
   // NC_FORMAT_NETCDF4 (3)
   // NC_FORMAT_NETCDF4_CLASSIC  (4)
 
-  int fm = in.nc.inqNetcdfFormat();
+  NcAPI& nc = pQA->pIn->nc;
+
+  int fm = nc.inqNetcdfFormat();
 
   if( fm == 1 || fm == 4 )
     return;
 
   std::string s("");
 
-  if( fm == 2 )
+  bool is=false;
+
+  if( fm == 1 )
   {
-    s = "3, 64BIT formatted";
+    is=true;
+    s = "3, NC_FORMAT_CLASSIC";
+  }
+  else if( fm == 2 )
+  {
+    is=true;
+    s = "3, NC_FORMAT_64BIT";
   }
   else if( fm == 3 )
   {
+    is=true;
     s = "4, ";
+  }
+  else if( fm == 4 )
+    s = "4, classic";
 
-    if( in.nc.inqDeflate() )
-      s += "deflated (compressed)";
+  if( fm > 2 )
+  {
+    if( nc.inqDeflate())
+    {
+      s+= " deflated (compressed)";
+      is=true;
+    }
   }
 
-  if( s.size() )
+  if(is)
   {
     std::string key("12");
     if( notes->inq( key, pQA->fileStr ) )
     {
       std::string capt("format does not conform to netCDF classic, found") ;
-      capt += hdhC::tf_val(s);
+      capt += s;
 
       (void) notes->operate( capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);

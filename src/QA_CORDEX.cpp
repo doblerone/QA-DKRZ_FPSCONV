@@ -478,26 +478,44 @@ DRS_CV::checkNetCDF(void)
 
   int fm = nc.inqNetcdfFormat();
   std::string s;
+  bool is=false;
 
-  if( fm < 3 )
-    s = "3";
+  if( fm == 1 )
+  {
+    is=true;
+    s = "3, NC_FORMAT_CLASSIC";
+  }
+  else if( fm == 2 )
+  {
+    is=true;
+    s = "3, NC_FORMAT_64BIT";
+  }
   else if( fm == 3 )
   {
-    s = "4, not classic, ";
+    is=true;
+    s = "4, ";
+  }
+  else if( fm == 4 )
+    s = "4, classic";
 
-    if( ! nc.inqDeflate() )
-      s += "not ";
+  if( fm > 2 )
+  {
+    if( nc.inqDeflate())
+    {
+      s += " not";
+      is=true;
+    }
 
-    s+= "deflated (compressed)";
+    s+= " deflated (compressed)";
   }
 
-  if( s.size() )
+  if(is)
   {
     std::string key("9_4");
     if( notes->inq( key ) )
     {
-      std::string capt("NetCDF4 classic deflated (compressed) required") ;
-      std::string text("this is NetCDF");
+      std::string capt("CORDEX requires NetCDF4 classic deflated (compressed)") ;
+      std::string text(", found NetCDF");
       text += s;
 
       (void) notes->operate( capt, text ) ;
