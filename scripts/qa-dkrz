@@ -551,7 +551,6 @@ check()
   nFcurr=0
   nFmax=0
   currPID=0
-  countActivePipes=0
   waitCounter=0
 
   local line subPath
@@ -1981,6 +1980,7 @@ getNextSubPath()
       fBase=''
       subPath=''
       explFName=''
+      END_OF_PATHS=t
       return
     fi
 
@@ -3502,14 +3502,12 @@ operatePipes()
   # files as well as the last variable.
 
   local subPath
-  local hasFinished=f
   local retVal=1
 
   if [ $# -gt 0 ] ; then
      subPath=$1
   else
     # drain pipes
-    hasFinished=t
     nFcurr=0
     retVal=0
   fi
@@ -3580,8 +3578,6 @@ operatePipes()
     else
       nF_SEQ[${j}]=f
     fi
-
-    countActivePipes=$(( countActivePipes + 1 ))
   fi
 
   # purpose of this loop: when all allowed execution threads
@@ -3592,19 +3588,15 @@ operatePipes()
   while : ; do
     # the index holds the value across the function
     test ${nFcurr} -eq ${nFmax} && nFcurr=0
+    test ${END_OF_PATHS} && nFcurr=0
 
     for((  ; nFcurr < nFmax ; ++nFcurr )) ; do
       # skip pipe with a running job
       if [ ${nF_PID[nFcurr]} -gt 0 ]  ; then
         if ps -p ${nF_PID[nFcurr]} -o pid= &> /dev/null  ; then
-          # there is still an active job for this fBase
+          # the current pipe is busy
           continue
         fi
-      elif [ $hasFinished = t ] ; then
-        # fade out
-        test $countActivePipes -gt 0  && continue
-
-        break 2  # that's it
       fi
 
       metaV=${nFstore[nFcurr]}[*]
@@ -3629,7 +3621,6 @@ operatePipes()
 #      fi
 
       if [ ${#p_nF[*]} -eq 0 -o ${sts} -eq 0 ] ; then
-        countActivePipes=$(( countActivePipes - 1 ))
         nF_EXP[${nFcurr}]=
         nF_TP[${nFcurr}]=
         nF_name[${nFcurr}]=
@@ -3638,8 +3629,9 @@ operatePipes()
         nF_SEQ[${nFcurr}]=
         unset nFstore[${nFcurr}]
 
-        if [ $hasFinished = t ] ; then
-          continue;
+        if [ ${END_OF_PATHS} ] ; then
+          isDrainedPipe[${nFcurr}]=t
+          continue;  # going for pipes still running
         else
           return $retVal # get next variable
         fi
@@ -3761,19 +3753,27 @@ operatePipes()
       fi
     done
 
+    # pipes have never been filled
+    test ${nFmax} -eq 0 && break
+
     # all pipes are busy
-    if [ ${countActivePipes} -eq ${nFmax} -o $hasFinished = t ] ; then
-      test ${nFmax} -eq 0 && return $retVal  # pipes have never been filled
-
-#trace \
-      sleep $op_nap
-      test $op_nap -lt $maxSleep && op_nap=$(( op_nap +1 ))
+    if [ ${END_OF_PATHS} ] ; then
+      local k
+      for(( k=0 ; k < nFmax ; ++k )) ; do
+        if [ ! ${isDrainedPipe[k]} ] ; then
+          sleep $op_nap
+          test $op_nap -lt $maxSleep && op_nap=$(( op_nap +1 ))
+          continue 2
+        fi
+      done
+      break
+    else
+      # container still not initially filled
+      if [ $nFmax -lt ${maxNumExecThreads} ] ; then
+        break
+      fi
     fi
 
-    # container still not initially filled
-    if [ $hasFinished = f -a $nFmax -lt ${maxNumExecThreads} ] ; then
-      return $retVal
-    fi
   done
 
   return $retVal

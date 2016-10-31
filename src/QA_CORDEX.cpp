@@ -515,10 +515,10 @@ DRS_CV::checkNetCDF(void)
     if( notes->inq( key ) )
     {
       std::string capt("CORDEX requires NetCDF4 classic deflated (compressed)") ;
-      std::string text(", found NetCDF");
-      text += s;
+      capt += ", found NetCDF";
+      capt += s;
 
-      (void) notes->operate( capt, text ) ;
+      (void) notes->operate(capt) ;
       notes->setCheckStatus(drsF, pQA->n_fail);
     }
   }

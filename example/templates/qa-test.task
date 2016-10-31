@@ -6,7 +6,7 @@
 
 # automatic generation of unique experiment names composed of DRS path
 # items, which start from a base component (case-sensitive).
-  LOG_PATH_BASE=cordex
+  LOG_PATH_BASE=CORDEX
 
 # Path to QC's results and log dir. Required. This will be expanded
 # automatically by the last path component of option DATA_ROOT.
