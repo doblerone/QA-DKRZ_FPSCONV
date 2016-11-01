@@ -1025,13 +1025,13 @@ InFile::setGeoCellShape(Variable &var)
     if( latB_dim_sz.size() == lonB_dim_sz.size() )
     {
       MtrxArr<double> mv_vrt;
-      nc.getData(mv_vrt, variable[ilatB].name );
+      nc.getRecord(mv_vrt, variable[ilatB].name );
 
       var.pGM->setVertices("lat", (void*) &mv_vrt, "double",
              latB_dim_sz[2], 2, latB_dim_sz[0], 0,
                latB_dim_sz[1], 1);
 
-      nc.getData(mv_vrt, variable[ilonB].name );
+      nc.getRecord(mv_vrt, variable[ilonB].name );
 
       var.pGM->setVertices("lon", (void*) &mv_vrt, "double",
              lonB_dim_sz[2], 2, lonB_dim_sz[0], 0,
@@ -1237,7 +1237,7 @@ InFile::setVerticesFromGridBounds(Variable &var,
   MtrxArr<double> mv_bnds;
 
   // vertices for the latitudes
-  nc.getData(mv_bnds, lat_bnds_name);
+  nc.getRecord(mv_bnds, lat_bnds_name);
 
   // Construct four vertices for each lat/lon cell
   MtrxArr<double> mv_vrt_lat(lat_dim_sz, lon_dim_sz, 4);
@@ -1265,7 +1265,7 @@ InFile::setVerticesFromGridBounds(Variable &var,
                4, 2, lat_dim_sz, 0, lon_dim_sz, 1);
 
   // vertices for the longitudes
-  nc.getData(mv_bnds, lon_bnds_name);
+  nc.getRecord(mv_bnds, lon_bnds_name);
   for( size_t j=0 ; j < lon_dim_sz ; ++j)
   {
     x0=mv_bnds.get(j,0);
@@ -1301,7 +1301,7 @@ InFile::setVerticesFromGridCellCentres(Variable &var,
   double x0,x1,x2,x3;
 
   MtrxArr<double> mv ;
-  nc.getData(mv, lat_name);
+  nc.getRecord(mv, lat_name);
 
   double lat_b[lat_dim_sz][2] ;
   double dif=0.;
@@ -1347,7 +1347,7 @@ InFile::setVerticesFromGridCellCentres(Variable &var,
   var.pGM->setVertices("lat", (void*) &mv_vrt, "double",
                4, 2, lat_dim_sz, 0, lon_dim_sz, 1);
 
-  nc.getData(mv, lon_name);
+  nc.getRecord(mv, lon_name);
   double lon_b[lon_dim_sz][2] ;
   for( j=0 ; j < lon_dim_sz-1 ; ++j)
   {

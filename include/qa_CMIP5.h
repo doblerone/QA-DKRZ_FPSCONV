@@ -345,6 +345,8 @@ struct DRS_CV
   void   checkFilenameEncoding(Split&, struct DRS_CV_Table&);
   void   checkFilenameGeographic(Split&);
   void   checkMIPT_tableName(Split&);
+  void   checkNetCDF(NcAPI* p=0);
+
   void   checkPath(std::string&, struct DRS_CV_Table&);
   void   findFN_faults(Split&, Split&,
                    std::map<std::string, std::string>&,
@@ -437,9 +439,6 @@ public:
 
   //! Checks meta-data
   void   checkMetaData(InFile& ) ;
-
-  //! Is it NetCDF-4, is it compressed?
-  void   checkNetCDF(InFile& );
 
   void   checkVariableType(void);
 

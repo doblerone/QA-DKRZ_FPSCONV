@@ -462,7 +462,7 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
 
   MtrxArr<T> mv;
 
-  pIn->nc.getData(mv, var.name );
+  pIn->nc.getRecord(mv, var.name );
 
   if( mv.validRangeBegin.size() )
   {
@@ -9348,7 +9348,7 @@ CF::chap82(Variable& var)
 
     //get compressed indices
     MtrxArr<int> ma;
-    pIn->nc.getData(ma, var.name );
+    pIn->nc.getRecord(ma, var.name );
     int ma_min=d_max+1;
     int ma_max=-1;
     for( size_t i=0 ; i < ma.size() ; ++i )
@@ -10284,7 +10284,7 @@ CF::chap9_sample_dimension(std::vector<size_t>& dv_ix)
       // get lenths of sequences and add together; missing of data was
       // checked previously
       MtrxArr<int> ma;
-      (void) pIn->nc.getData(ma, var.name, 0);
+      (void) pIn->nc.getRecord(ma, var.name, 0);
 
       vi_sum.back()=0;
       vi_dSz.back() = pIn->nc.getDimSize(var.attValue[j][0]) ;
@@ -10353,7 +10353,7 @@ CF::chap9_sample_dimension(std::vector<size_t>& dv_ix)
       MtrxArr<int> ma;
 
       // get lenths of sequences and add together
-      (void) pIn->nc.getData(ma, var.name) ;
+      (void) pIn->nc.getRecord(ma, var.name) ;
 
       int sum = 0;
       int dSz( pIn->nc.getDimSize(dVarDimName) ) ;

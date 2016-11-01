@@ -467,14 +467,17 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 }
 
 void
-DRS_CV::checkNetCDF(void)
+DRS_CV::checkNetCDF(NcAPI* p_nc)
 {
   // NC_FORMAT_CLASSIC (1)
   // NC_FORMAT_64BIT   (2)
   // NC_FORMAT_NETCDF4 (3)
   // NC_FORMAT_NETCDF4_CLASSIC  (4)
 
-  NcAPI& nc = pQA->pIn->nc;
+  if(!p_nc)
+      p_nc=&(pQA->pIn->nc);
+
+  NcAPI& nc = *p_nc;
 
   int fm = nc.inqNetcdfFormat();
   std::string s;
@@ -500,7 +503,7 @@ DRS_CV::checkNetCDF(void)
 
   if( fm > 2 )
   {
-    if( nc.inqDeflate())
+    if( ! nc.inqDeflate())
     {
       s += " not";
       is=true;
@@ -2267,7 +2270,7 @@ QA_Exp::checkPressureCoord(InFile &in)
 
    Variable &var = in.variable[ix];
 
-   in.nc.getData(tmp_mv, var.name);
+   in.nc.getRecord(tmp_mv, var.name);
    if( tmp_mv.size() )
    {
      std::string pData( hdhC::double2String(tmp_mv[0]) );
@@ -2588,8 +2591,8 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
   // get data
   MtrxArr<double> mv_lon;
   MtrxArr<double> mv_lat;
-  pQA->pIn->nc.getData(mv_lon, var_lon);
-  pQA->pIn->nc.getData(mv_lat, var_lat);
+  pQA->pIn->nc.getRecord(mv_lon, var_lon);
+  pQA->pIn->nc.getRecord(mv_lat, var_lat);
 
   if( mv_lon.size() < 2 || mv_lat.size() < 2 )
   {
@@ -3155,7 +3158,7 @@ QA_Exp::checkHeightValue(InFile &in)
    if( is )
    {
      is=false;
-     in.nc.getData(tmp_mv, var.name);
+     in.nc.getRecord(tmp_mv, var.name);
      if( tmp_mv.size() )
      {
        if( tmp_mv[0] < 0. || tmp_mv[0] > 10. )
@@ -3966,7 +3969,7 @@ QA_Exp::getDimMetaData(InFile &in,
     else
     {
       MtrxArr<double> mv;
-      in.nc.getData(mv, dName);
+      in.nc.getRecord(mv, dName);
 
       bool reset=true;
       for( size_t i=0 ; i < mv.size() ; ++i )
@@ -4538,7 +4541,7 @@ QA_Exp::reqAttCheckCloudValues(
 
   if( auxName == "plev" )
   {
-    pQA->pIn->nc.getData(fValues, "plev" );
+    pQA->pIn->nc.getRecord(fValues, "plev" );
     int iV = static_cast<int>( fValues[0] );
     iReqValues.push_back( iV );
 
@@ -4548,7 +4551,7 @@ QA_Exp::reqAttCheckCloudValues(
 
   if( auxName == "plev_bnds" )
   {
-    pQA->pIn->nc.getData(fValues, "plev_bnds" );
+    pQA->pIn->nc.getRecord(fValues, "plev_bnds" );
     int iV0, iV1;
 
     if( fValues.size() == 2 )

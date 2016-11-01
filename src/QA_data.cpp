@@ -167,7 +167,7 @@ SharedRecordFlag::adjustFlag(int num, size_t rec, int erase)
     return;
 
   MtrxArr<int> ma_i;
-  pQA->nc->getData(ma_i, name , rec );
+  pQA->nc->getRecord(ma_i, name, rec );
 
   std::vector<int> decomp;
 
@@ -494,7 +494,7 @@ Outlier::test(QA_Data *pQAD)
     outVal.clear();
     bool isOut = false;
 
-    pQA->nc->getData(ma_d, names[i]);
+    pQA->nc->getRecord(ma_d, names[i]);
     if( ! ma_d.validRangeBegin.size() )
         return retCode;
 
@@ -646,7 +646,7 @@ Outlier::test(QA_Data *pQAD)
         outlRec = outRec[0] ;
         outlValue = outVal[0] ;
 
-        double cT = pQA->nc->getData(ma_time, "time", outRec[0]) ;
+        double cT = pQA->nc->getRecord(ma_time, "time", outRec[0]) ;
         currDateStrMax = pQA->qaTime.refDate.getDate(cT).str();
 
         for( size_t k=1 ; k < outRec.size() ; ++k )
@@ -654,7 +654,7 @@ Outlier::test(QA_Data *pQAD)
           if ( outVal[k] < outlValue )
             continue;
 
-          cT = pQA->nc->getData(ma_time, "time", outRec[k]) ;
+          cT = pQA->nc->getRecord(ma_time, "time", outRec[k]) ;
           currDateStrMax = pQA->qaTime.refDate.getDate(cT).str();
 
           outlValue = outVal[k] ;
@@ -685,7 +685,7 @@ Outlier::test(QA_Data *pQAD)
           // adjust coded flags
           pQAD->sharedRecordFlag.adjustFlag(errNum[i], outRec[k] ) ;
 
-          currTime = pQA->nc->getData(ma_time, "time", outRec[k]) ;
+          currTime = pQA->nc->getRecord(ma_time, "time", outRec[k]) ;
 
           ostr << "\nrec#=" << outRec[k];
           ostr << ", date=" << pQA->qaTime.refDate.getDate(currTime).str();
@@ -730,7 +730,7 @@ ReplicatedRecord::getRange(size_t i, size_t bufferCount, size_t recNum,
   if( arr_1st_bool[i] )
   {
     range.push_back( hdhC::double2String(ix_1st) );
-    cT_1st = pQA->nc->getData(ma_time, "time", ix_1st) ;
+    cT_1st = pQA->nc->getRecord(ma_time, "time", ix_1st) ;
   }
   else
   {
@@ -740,7 +740,7 @@ ReplicatedRecord::getRange(size_t i, size_t bufferCount, size_t recNum,
 
   if( arr_rep_bool[i] )
   {
-    cT_rep = pQA->nc->getData(ma_time, "time", ix_rep) ;
+    cT_rep = pQA->nc->getRecord(ma_time, "time", ix_rep) ;
     range.push_back( hdhC::double2String(ix_rep) );
   }
   else
@@ -904,8 +904,8 @@ ReplicatedRecord::test(int nRecs, size_t bufferCount, size_t nextFlushBeg,
   while( readRange.second < recNum )
   {
     // time and checksum array are synchronised
-    (void) pQA->nc->getData(ma_t, "time", readRange.second) ;
-    (void) pQA->nc->getData(ma_chks, name_chks, readRange.second) ;
+    (void) pQA->nc->getRecord(ma_t, "time", readRange.second) ;
+    (void) pQA->nc->getRecord(ma_chks, name_chks, readRange.second) ;
 
     readRange = pQA->nc->getDataIndexRange(name_chks) ;
     size_t sz = ma_chks.size();
@@ -1556,6 +1556,7 @@ QA_Data::openQA_NcContrib(NcAPI *nc, Variable *var)
   // Define variable explicitly, because of no dimensions
   // and an additional att.
   nc->defineVar(vName, pIn->nc.getVarType(vName), vs);
+
   nc->setAtt(vName, "about",
                     "original attributes of the checked variable");
 
@@ -1586,11 +1587,16 @@ QA_Data::openQA_NcContrib(NcAPI *nc, Variable *var)
   // either the real time-name of "fixed"
   std::string dimStr( pQA->qaTime.name ) ;
 
+  int shuffle_switch=1;
+  int deflate_switch=1;
+  int deflate_level=9;
+
   // different, but derived, varnames
   vs.clear();
   std::string str0( name + "_min" );
   vs.push_back(dimStr);
   nc->defineVar( str0, NC_DOUBLE, vs);
+  nc->setDeflate(str0, shuffle_switch, deflate_switch, deflate_level);
   vs[0] = "global_minimum";
   nc->setAtt( str0, "long_name", vs[0]);
   nc->setAtt( str0, "units", var->units);
@@ -1600,6 +1606,7 @@ QA_Data::openQA_NcContrib(NcAPI *nc, Variable *var)
   str0 = name + "_max" ;
   vs.push_back(dimStr);
   nc->defineVar( str0, NC_DOUBLE, vs);
+  nc->setDeflate(str0, shuffle_switch, deflate_switch, deflate_level);
   vs[0] = "global_maximum";
   nc->setAtt( str0, "long_name", vs[0]);
   nc->setAtt( str0, "units", var->units);
@@ -1609,6 +1616,7 @@ QA_Data::openQA_NcContrib(NcAPI *nc, Variable *var)
   str0 = name + "_ave" ;
   vs.push_back(dimStr);
   nc->defineVar( str0, NC_DOUBLE, vs);
+  nc->setDeflate(str0, shuffle_switch, deflate_switch, deflate_level);
   vs[0] = "global_average";
   nc->setAtt( str0, "long_name", vs[0]);
   nc->setAtt( str0, "units", var->units);
@@ -1627,6 +1635,7 @@ QA_Data::openQA_NcContrib(NcAPI *nc, Variable *var)
   vs.push_back(dimStr);
   str0 = name + "_fill_count" ;
   nc->defineVar( str0, NC_INT, vs);
+  nc->setDeflate(str0, shuffle_switch, deflate_switch, deflate_level);
   vs[0] = "number of cells with _FillValue";
   nc->setAtt( str0, "long_name", vs[0]);
   nc->setAtt( str0, "units", "1");
@@ -1636,6 +1645,7 @@ QA_Data::openQA_NcContrib(NcAPI *nc, Variable *var)
   vs.push_back(dimStr);
   str0 = name + "_checksum" ;
   nc->defineVar( str0, NC_INT, vs);
+  nc->setDeflate(str0, shuffle_switch, deflate_switch, deflate_level);
   vs[0] = "Fletcher32 checksum of data";
   nc->setAtt( str0, "long_name", vs[0]);
   if( numOfClearedBitsInChecksum )
@@ -1653,6 +1663,7 @@ QA_Data::openQA_NcContrib(NcAPI *nc, Variable *var)
   str0 = name + "_flag" ;
   vs.push_back(dimStr);
   nc->defineVar( str0, NC_INT, vs);
+  nc->setDeflate(str0, shuffle_switch, deflate_switch, deflate_level);
   vs[0]="accumulated record-tag number";
   nc->setAtt( str0, "long_name", vs[0]);
   nc->setAtt( str0, "units", "1");

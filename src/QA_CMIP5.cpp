@@ -523,6 +523,71 @@ DRS_CV::checkMIPT_tableName(Split& x_filename)
 }
 
 void
+DRS_CV::checkNetCDF(NcAPI* p_nc)
+{
+  // NC_FORMAT_CLASSIC (1)
+  // NC_FORMAT_64BIT   (2)
+  // NC_FORMAT_NETCDF4 (3)
+  // NC_FORMAT_NETCDF4_CLASSIC  (4)
+
+  if(!p_nc)
+      p_nc=&(pQA->pIn->nc);
+
+  NcAPI& nc = *p_nc;
+
+  int fm = nc.inqNetcdfFormat();
+
+  if( fm == 1 || fm == 4 )
+    return;
+
+  std::string s("");
+
+  bool is=false;
+
+  if( fm == 1 )
+  {
+    is=true;
+    s = "3, NC_FORMAT_CLASSIC";
+  }
+  else if( fm == 2 )
+  {
+    is=true;
+    s = "3, NC_FORMAT_64BIT";
+  }
+  else if( fm == 3 )
+  {
+    is=true;
+    s = "4, ";
+  }
+  else if( fm == 4 )
+    s = "4, classic";
+
+  if( fm > 2 )
+  {
+    if( ! nc.inqDeflate())
+    {
+      s+= " deflated (compressed)";
+      is=true;
+    }
+  }
+
+  if(is)
+  {
+    std::string key("12");
+    if( notes->inq( key, pQA->fileStr ) )
+    {
+      std::string capt("format does not conform to netCDF classic, found") ;
+      capt += s;
+
+      (void) notes->operate( capt) ;
+      notes->setCheckStatus("CV", pQA->n_fail);
+    }
+  }
+
+  return;
+}
+
+void
 DRS_CV::checkProductName(std::string& drs_product,
   std::string prod_choice,
   std::map<std::string, std::string>& gM)
@@ -962,6 +1027,9 @@ DRS_CV::run(void)
      drsF = "DRS(F)" ;
      checkFilename(pQA->pIn->file.basename, drs_cv_table);
   }
+
+  // is it NetCDF-3 classic?
+  checkNetCDF();
 
   return;
 }
@@ -2373,7 +2441,7 @@ CMOR::checkMIPT_dim_validMin(
     struct DimensionMetaData& t_DMD)
 {
   MtrxArr<double> ma;
-  pQA->pIn->nc.getData(ma, f_DMD.var->name);
+  pQA->pIn->nc.getRecord(ma, f_DMD.var->name);
 
   if( ma.size() )
   {
@@ -2414,7 +2482,7 @@ CMOR::checkMIPT_dim_validMax(
     struct DimensionMetaData& t_DMD)
 {
   MtrxArr<double> ma;
-  pQA->pIn->nc.getData(ma, f_DMD.var->name);
+  pQA->pIn->nc.getRecord(ma, f_DMD.var->name);
 
   if( ma.size() )
   {
@@ -3474,7 +3542,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
   }
 
   MtrxArr<double> ma;
-  pQA->pIn->nc.getData(ma, effName);
+  pQA->pIn->nc.getRecord(ma, effName);
 
   bool is=true;
   if( t_DMD.attMap[CMOR::n_CMOR_dimension] == "plevs")
@@ -3746,7 +3814,7 @@ CMOR::getDimMetaData(InFile& in,
     else
     {
       MtrxArr<double> mv;
-      in.nc.getData(mv, dName);
+      in.nc.getRecord(mv, dName);
 
       bool reset=true;
       for( size_t i=0 ; i < mv.size() ; ++i )
@@ -4228,9 +4296,6 @@ QA_Exp::checkDataVarNum(void)
 void
 QA_Exp::checkMetaData(InFile& in)
 {
-  // is it NetCDF-3 classic?
-  checkNetCDF(in);
-
   // check basic properties between this file and
   // requests in the table. When a MIP-subTable is empty, use the one
   // from the previous instance.
@@ -4248,68 +4313,6 @@ QA_Exp::checkMetaData(InFile& in)
   int ev;
   if( (ev = notes->getExitState()) > 1 )
     pQA->setExitState( ev );
-
-  return;
-}
-
-void
-QA_Exp::checkNetCDF(InFile& in)
-{
-  // NC_FORMAT_CLASSIC (1)
-  // NC_FORMAT_64BIT   (2)
-  // NC_FORMAT_NETCDF4 (3)
-  // NC_FORMAT_NETCDF4_CLASSIC  (4)
-
-  NcAPI& nc = pQA->pIn->nc;
-
-  int fm = nc.inqNetcdfFormat();
-
-  if( fm == 1 || fm == 4 )
-    return;
-
-  std::string s("");
-
-  bool is=false;
-
-  if( fm == 1 )
-  {
-    is=true;
-    s = "3, NC_FORMAT_CLASSIC";
-  }
-  else if( fm == 2 )
-  {
-    is=true;
-    s = "3, NC_FORMAT_64BIT";
-  }
-  else if( fm == 3 )
-  {
-    is=true;
-    s = "4, ";
-  }
-  else if( fm == 4 )
-    s = "4, classic";
-
-  if( fm > 2 )
-  {
-    if( nc.inqDeflate())
-    {
-      s+= " deflated (compressed)";
-      is=true;
-    }
-  }
-
-  if(is)
-  {
-    std::string key("12");
-    if( notes->inq( key, pQA->fileStr ) )
-    {
-      std::string capt("format does not conform to netCDF classic, found") ;
-      capt += s;
-
-      (void) notes->operate( capt) ;
-      notes->setCheckStatus("CV", pQA->n_fail);
-    }
-  }
 
   return;
 }

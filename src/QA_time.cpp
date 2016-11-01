@@ -274,14 +274,11 @@ QA_Time::getDRSformattedDateRange(std::vector<Date> &period,
 void
 QA_Time::getTimeBoundsValues(double* pair, size_t rec, double offset)
 {
-  (void) pIn->nc.getData(ma_tb, timeBounds_ix, rec );
-  std::pair<int,int> range( pIn->nc.getDataIndexRange(timeBounds_ix) );
-
-  size_t i = rec - range.first ;
+  (void) pIn->nc.getRecord(ma_tb, timeBounds_ix, rec );
 
   double** m2D =ma_tb.getM();
-  pair[0]=m2D[i][0] + offset;
-  pair[1]=m2D[i][1] + offset;
+  pair[0]=m2D[0][0] + offset;
+  pair[1]=m2D[0][1] + offset;
 
   return ;
 }
@@ -416,14 +413,14 @@ QA_Time::initAbsoluteTime(std::string &units)
      }
   }
 
-  if( pIn->nc.getData(ma_t, name, 0) == MAXDOUBLE)
+  if( pIn->nc.getRecord(ma_t, name, 0) == MAXDOUBLE)
      return true;
 
   currTimeValue += refTimeOffset;
   firstTimeValue = currTimeValue;
 
   size_t recSz = pIn->nc.getNumOfRows(name) ;
-  lastTimeValue = pIn->nc.getData(ma_t, name, recSz-1) + refTimeOffset ;
+  lastTimeValue = pIn->nc.getRecord(ma_t, name, recSz-1) + refTimeOffset ;
 
   if( prevTimeValue == MAXDOUBLE )
   {
@@ -435,7 +432,7 @@ QA_Time::initAbsoluteTime(std::string &units)
      if( recSz > 1 )
      {
        if( pIn->currRec < recSz )
-         prevTimeValue = pIn->nc.getData(ma_t, name, 1) + refTimeOffset ;
+         prevTimeValue = pIn->nc.getRecord(ma_t, name, 1) + refTimeOffset ;
 
        // an arbitrary setting that would pass the first test;
        // the corresponding results is set to FillValue
@@ -607,8 +604,8 @@ QA_Time::initRelativeTime(std::string &units)
      }
 
      // note: ma_t.size() == 1 after calling for the last record, when
-     // internal getData-buffersize is smaller than number of records.
-     lastTimeValue = pIn->nc.getData(ma_t, name, recSz-1) + refTimeOffset ;
+     // internal getRecord-buffersize is smaller than number of records.
+     lastTimeValue = pIn->nc.getRecord(ma_t, name, recSz-1) + refTimeOffset ;
 
      prevTimeValue = currTimeValue - refTimeStep ;
 
@@ -692,19 +689,20 @@ QA_Time::initTimeBounds(double offset)
     return false;
   }
 
-  (void) pIn->nc.getData(ma_tb, boundsName, 0 );
+  (void) pIn->nc.getRecord(ma_tb, boundsName, 0 );
   double** m2D =ma_tb.getM();
   firstTimeBoundsValue[0]=m2D[0][0] + offset;
   firstTimeBoundsValue[1]=m2D[0][1] + offset;
 
-  size_t rec = pIn->nc.getNumOfRows(boundsName)-1;
-  (void) pIn->nc.getData(ma_tb, boundsName, rec );
+  size_t rec = pIn->nc.getNumOfRows(boundsName);
+  if(rec)
+      --rec;
 
-  size_t i = pIn->nc.getRecLegIndex(timeBounds_ix, rec) ;
+  (void) pIn->nc.getRecord(ma_tb, boundsName, rec );
 
   m2D =ma_tb.getM();
-  lastTimeBoundsValue[0]=m2D[i][0] + offset;
-  lastTimeBoundsValue[1]=m2D[i][1] + offset;
+  lastTimeBoundsValue[0]=m2D[0][0] + offset;
+  lastTimeBoundsValue[1]=m2D[0][1] + offset;
 
   ANNOT_ACCUM="ACCUM";
 
@@ -1066,8 +1064,9 @@ void
 QA_Time::openQA_NcContrib(NcAPI *nc)
 {
    // dimensions
-   nc->defineDim("time");
-   nc->copyVarDef(pIn->nc, "time");
+   nc->defineDim(name);
+   nc->copyVarDef(pIn->nc, name);
+   nc->setDeflate(name, 1, 1, 9);
 
    std::vector<std::string> vs;
 
@@ -1075,26 +1074,28 @@ QA_Time::openQA_NcContrib(NcAPI *nc)
    std::string tU;
 
    // get time attribute units and extract keyword
-   pIn->nc.getAttValues(vs, "units", "time") ;
+   pIn->nc.getAttValues(vs, "units", name) ;
    std::string tInc( vs[0].substr(0, vs[0].find(" since")) );
 
    vs.clear();
-   vs.push_back( "time");
+   vs.push_back(name);
 
-   currTimeValue = pIn->nc.getData(ma_t, name, 0) + refTimeOffset ;
-   nc->setAtt( "time", "first_time", currTimeValue);
-   nc->setAtt( "time", "first_date", refDate.getDate(currTimeValue).str() );
+   currTimeValue = pIn->nc.getRecord(ma_t, name, 0) + refTimeOffset ;
+   nc->setAtt( name, "first_time", currTimeValue);
+   nc->setAtt( name, "first_date", refDate.getDate(currTimeValue).str() );
+   nc->setAtt( name, "isTimeBoundsTest", static_cast<double>(0.));
 
-   nc->defineVar( "time_step", NC_DOUBLE, vs);
-   nc->setAtt( "time_step", "long_name", "time_step") ;
-   nc->setAtt( "time_step", "units", tInc);
-
-   nc->setAtt( "time", "isTimeBoundsTest", static_cast<double>(0.));
+   std::string str0("time_step");
+   nc->defineVar( str0, NC_DOUBLE, vs);
+   nc->setDeflate(str0, 1, 1, 9);
+   nc->setAtt( str0, "long_name", name) ;
+   nc->setAtt( str0, "units", tInc);
 
    vs.clear();
-   std::string str0( name + "_flag") ;
+   str0 = name + "_flag" ;
    vs.push_back(name);
    nc->defineVar( str0, NC_INT, vs);
+   nc->setDeflate(str0, 1, 1, 9);
    vs[0]="accumulated record-tag number";
    nc->setAtt( str0, "long_name", vs[0]);
    nc->setAtt( str0, "units", "1");
@@ -1144,52 +1145,41 @@ QA_Time::sync(void)
   // get last time value from the previous file
   std::vector<double> dv;
   pQA->nc->getAttValues( dv, "last_time", pIn->timeName);
-  double qa_t=dv[0];
+  double t_qa=dv[0];
 
   double epsilon = refTimeStep/10.;
 
   // preliminary tests
   // a) a previous QA had checked a complete previous sub-temporal infile
   //    and time continues in the current infile.
-  if( firstTimeValue > (qa_t+epsilon) )
+  if( firstTimeValue > (t_qa+epsilon) )
     return false;
 
-  if( hdhC::compare(qa_t, "=", lastTimeValue,  epsilon) )
+  if( hdhC::compare(t_qa, "=", lastTimeValue,  epsilon) )
     return true; // up-to-date
-
-  // Note: QA always continues a previous session
-  std::pair<int,int> range(0,0);
 
   // epsilon around a time value must not be too sharp, because
   // of the spread of months
-  double qa_t_eps = qa_t - epsilon;
+  double t_qa_eps = t_qa - epsilon;
 
-  while( range.second < inRecNum )
+  // scanning time
+  for( int i=0 ; i < inRecNum ; ++i )
   {
-    (void) pIn->nc.getData(ma_t, name, range.second) ;
-    range = pIn->nc.getDataIndexRange(name) ;
+    double t_in = pIn->nc.getData(ma_t, name, i) + refTimeOffset ;
 
-    size_t sz = ma_t.size() ;
+    if( t_in < t_qa_eps )
+      continue;
 
-    // scanning time
-    for( size_t i=0 ; i < sz ; ++i )
+    if( (t_qa + epsilon) < t_in )
+      return false ;  // the usual case
+
+    if( hdhC::compare(t_qa, "=", t_in, epsilon) )
     {
-      double val = ma_t[i] + refTimeOffset ;
+      // a previous QA had checked an infile that was extended
+      // in the meantime.
+      pIn->setCurrRec(t_in+1);
 
-      if( val < qa_t_eps )
-        continue;
-
-      if( (qa_t + epsilon) < val )
-        return false ;  // the usual case
-
-      if( hdhC::compare(qa_t, "=", val, epsilon) )
-      {
-        // a previous QA had checked an infile that was extended
-        // in the meantime.
-        pIn->setCurrRec(range.first+1);
-
-        return false ;
-      }
+      return false ;
     }
   }
 
@@ -1201,9 +1191,9 @@ QA_Time::sync(void)
      std::string capt("renewal of a file?") ;
 
      std::ostringstream ostr(std::ios::app);
-     ostr << "\nlast time of previous QA=" << qa_t;
+     ostr << "\nlast time of previous QA=" << t_qa;
      ostr << "\nfirst time in file="
-          << (pIn->nc.getData(ma_t, name, 0) + refTimeOffset) ;
+          << (pIn->nc.getRecord(ma_t, name, 0) + refTimeOffset) ;
 
      if( notes->operate(capt, ostr.str()) )
      {
@@ -1412,7 +1402,7 @@ QA_Time::testTimeBounds(NcAPI &nc)
 void
 QA_Time::testDate(NcAPI &nc)
 {
-  currTimeValue = pIn->nc.getData(ma_t, time_ix, pIn->currRec) + refTimeOffset ;
+  currTimeValue = pIn->nc.getRecord(ma_t, time_ix, pIn->currRec) + refTimeOffset ;
 
   // is current time reasonable?
   (void) testTimeStep() ;

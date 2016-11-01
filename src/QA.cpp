@@ -333,7 +333,7 @@ QA::entry(void)
 {
    if(!isCheckData)
      pIn->dataVarIndex.clear();
-   
+
    // no data section provided in the NetCDF file; enable
    // a single loop
    if( pIn->currRec == pIn->ncRecEnd )
@@ -1126,7 +1126,7 @@ QA::postProc_outlierTest(void)
 
        if( is )
        {
-         val = nc->getData(mv, vars[0], 0);
+         val = nc->getRecord(mv, vars[0]);
          if( val < MAXDOUBLE )
          {
            // build the statistics from scratch

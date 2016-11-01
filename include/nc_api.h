@@ -432,7 +432,7 @@ void
 /*! Note that data is sliced according to an internally specified maximum
     range.*/
     template <typename ToT>
-    ToT
+     ToT
       getData(MtrxArr<ToT> &x, int varid, size_t rec=0);
 
     void
@@ -537,7 +537,12 @@ void
 
   template <typename ToT>
     ToT
-      getRecord(MtrxArr<ToT> &x, std::string vName, size_t rec=0 );
+      getRecord(MtrxArr<ToT> &x, std::string vName, size_t rec=0 )
+      { return getRecord(x, getVarID(vName), rec); }
+
+  template <typename ToT>
+    ToT
+      getRecord(MtrxArr<ToT> &x, int varid, size_t rec=0 );
 
       //! Get number of values per record of variable 'vName'.
 /*! If vName is not a valid variable, 0 is returned.
@@ -863,6 +868,25 @@ void
       setGlobalAtt(std::string aName, std::string str)
          {setAttString(NC_GLOBAL, aName, str);}
 
+//! Compress for netcdf4
+    void
+      setDeflate(std::string vName, int shuffle, int deflate, int deflate_level)
+         { setDeflate(getVarID(vName), shuffle, deflate, deflate_level); }
+
+    void
+      setDeflate(int varid, int shuffle, int deflate, int deflate_level);
+
+//! Endian for netcdf4
+    void
+      setEndian(int varid, int endian);
+
+    void
+      setFileAccessMode(std::string fam);
+
+//! Fletcher32 for netcdf4
+    void
+      setFletcher32(int varid, int fletcher32);
+
 //! Set netCDF filename.
     void
       setFilename(std::string f, std::string mode="ReadOnly");
@@ -1181,21 +1205,6 @@ private:
 //! Chunking for netcdf4
     void
       setChunking(int varid, size_t storage, size_t *chunkSize, size_t sz);
-
-//! Compress for netcdf4
-    void
-      setDeflate(int varid, int shuffle, int deflate, int deflate_level);
-
-//! Endian for netcdf4
-    void
-      setEndian(int varid, int endian);
-
-    void
-      setFileAccessMode(std::string fam);
-
-//! Fletcher32 for netcdf4
-    void
-      setFletcher32(int varid, int fletcher32);
 
     void
       updateAtts(int varid, std::string aName, size_t aIndex,

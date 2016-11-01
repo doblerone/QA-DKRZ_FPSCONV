@@ -3788,10 +3788,8 @@ NcAPI::getNumOfRows(std::string vName)
 
 template <typename ToT>
 ToT
-NcAPI::getRecord(MtrxArr<ToT> &ma, std::string vName, size_t rec)
+NcAPI::getRecord(MtrxArr<ToT> &ma, int varid, size_t rec)
 {
-  int varid = getVarID(vName)  ;
-
   size_t rank = layout.varDimName[varid].size();
 
   if( layout.rec_index[varid] < UINT_MAX )

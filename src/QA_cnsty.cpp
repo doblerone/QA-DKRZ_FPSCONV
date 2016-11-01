@@ -584,7 +584,7 @@ Consistency::getValues(Variable &var, std::string &s)
       else
       {
           MtrxArr<double> mv;
-          pIn->nc.getData(mv, var.name );
+          pIn->nc.getRecord(mv, var.name );
 
           if( mv.size() > 0 )
             ck = hdhC::fletcher32_cmip5(mv.arr, mv.size()) ;

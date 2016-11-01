@@ -37,7 +37,7 @@ struct DRS_CV
   void   checkDrivingExperiment(void);
 
   //! Is it NetCDF-4, is it compressed?
-  void   checkNetCDF(void);
+  void   checkNetCDF(NcAPI* p=0);
   void   checkPath(std::string&, struct DRS_CV_Table&);
   void   checkProductName(std::string& drs_product,
                    std::string prod_choice,
