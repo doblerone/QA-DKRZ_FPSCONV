@@ -418,7 +418,7 @@ void
     data for limited (non-record) variables.
     This member just returns a void* pointer to the data.*/
     void*
-      getData(std::string vName, size_t rec=0, size_t leg=0 )
+      getData(std::string vName, size_t rec=0, int leg=1 )
          { return getData(getVarID(vName), rec, leg); }
 
 //! Access to data by a MtrxArr object.
@@ -426,14 +426,14 @@ void
     Return value: index of x corresponding to rec; -1 for invalid rec */
   template <typename ToT>
     ToT
-      getData(MtrxArr<ToT> &x, std::string vName, size_t rec=0 );
+      getData(MtrxArr<ToT> &x, std::string vName, size_t rec=0, int leg=1 );
 
 //! Access of a record by a MtrxArr object.
 /*! Note that data is sliced according to an internally specified maximum
     range.*/
     template <typename ToT>
      ToT
-      getData(MtrxArr<ToT> &x, int varid, size_t rec=0);
+      getData(MtrxArr<ToT> &x, int varid, size_t rec=0, int leg=1);
 
     void
       getData(std::vector<std::string> &,std::string, size_t rec=0);
@@ -534,15 +534,6 @@ void
     size_t
       getRecLegIndex(int varid, size_t rec)
         { return rec - layout.rec_leg_begin[varid] ; }
-
-  template <typename ToT>
-    ToT
-      getRecord(MtrxArr<ToT> &x, std::string vName, size_t rec=0 )
-      { return getRecord(x, getVarID(vName), rec); }
-
-  template <typename ToT>
-    ToT
-      getRecord(MtrxArr<ToT> &x, int varid, size_t rec=0 );
 
       //! Get number of values per record of variable 'vName'.
 /*! If vName is not a valid variable, 0 is returned.
@@ -907,9 +898,6 @@ void
     void
       setPseudoUnlimitedDim(std::string vName){pseudoUnlimitedDim.push_back(vName);}
 
-    void
-      setRecLeg(std::string vName);
-
 private:
     int ncid;
     int status ;
@@ -1090,7 +1078,7 @@ private:
       getConstCharSize(T v, size_t trySz=250);
 
     void*
-      getData(int varid, size_t rec, size_t leg=0);
+      getData(int varid, size_t rec, size_t leg=1);
 
 // Get number of values per record of variable 'vName'.
     size_t

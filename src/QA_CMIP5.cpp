@@ -2441,7 +2441,7 @@ CMOR::checkMIPT_dim_validMin(
     struct DimensionMetaData& t_DMD)
 {
   MtrxArr<double> ma;
-  pQA->pIn->nc.getRecord(ma, f_DMD.var->name);
+  pQA->pIn->nc.getData(ma, f_DMD.var->name, 0, -1);
 
   if( ma.size() )
   {
@@ -2482,7 +2482,7 @@ CMOR::checkMIPT_dim_validMax(
     struct DimensionMetaData& t_DMD)
 {
   MtrxArr<double> ma;
-  pQA->pIn->nc.getRecord(ma, f_DMD.var->name);
+  pQA->pIn->nc.getData(ma, f_DMD.var->name, 0, -1);
 
   if( ma.size() )
   {
@@ -3542,7 +3542,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
   }
 
   MtrxArr<double> ma;
-  pQA->pIn->nc.getRecord(ma, effName);
+  pQA->pIn->nc.getData(ma, effName, 0, -1);
 
   bool is=true;
   if( t_DMD.attMap[CMOR::n_CMOR_dimension] == "plevs")
@@ -3814,7 +3814,7 @@ CMOR::getDimMetaData(InFile& in,
     else
     {
       MtrxArr<double> mv;
-      in.nc.getRecord(mv, dName);
+      in.nc.getData(mv, dName, 0, -1);
 
       bool reset=true;
       for( size_t i=0 ; i < mv.size() ; ++i )

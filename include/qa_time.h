@@ -164,6 +164,7 @@ class QA_Time
 
   MtrxArr<double> ma_tb;
   MtrxArr<double> ma_t;
+  double** m2D;
 
   // Time Table: hold the state over a record
   size_t tt_block_rec ;

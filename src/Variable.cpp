@@ -183,7 +183,7 @@ Variable::getData(MtrxArr<T>& ma, int rec, int leg )
   if( leg < 0 )
     return;
 
-  return pNc->getRecord(ma, name, rec, leg) ;
+  return pNc->getData(ma, name, rec, leg) ;
 }
 
 bool
@@ -201,63 +201,63 @@ Variable::getData(int rec)
   {
     case NC_CHAR:   // signed char
     {
-      is=pNc->getRecord(*mvCHAR, name, rec);
+      is=pNc->getData(*mvCHAR, name, rec);
     }
     break;
     case NC_BYTE:   // signed char
     {
-      is=pNc->getRecord(*mvBYTE, name, rec);
+      is=pNc->getData(*mvBYTE, name, rec);
     }
     break;
     case NC_SHORT:  // short
     {
-      is=pNc->getRecord(*mvSHORT, name, rec);
+      is=pNc->getData(*mvSHORT, name, rec);
     }
     break;
     case NC_INT:    // int
     {
-      is=pNc->getRecord(*mvINT, name, rec);
+      is=pNc->getData(*mvINT, name, rec);
     }
     break;
     case NC_FLOAT:  // float
     {
-      is=pNc->getRecord(*mvFLOAT, name, rec);
+      is=pNc->getData(*mvFLOAT, name, rec);
     }
     break;
     case NC_DOUBLE: // double
     {
-      is=pNc->getRecord(*mvDOUBLE, name, rec);
+      is=pNc->getData(*mvDOUBLE, name, rec);
     }
     break;
 #ifdef NC4
     case NC_UBYTE:  // unsigned char
     {
-      is=pNc->getRecord(*mvUBYTE, name, rec);
+      is=pNc->getData(*mvUBYTE, name, rec);
     }
     break;
     case NC_USHORT: // unsigned short
     {
-      is=pNc->getRecord(*mvUSHORT, name, rec);
+      is=pNc->getData(*mvUSHORT, name, rec);
     }
     break;
     case NC_INT64:  // long long
     {
-      is=pNc->getRecord(*mvINT64, name, rec);
+      is=pNc->getData(*mvINT64, name, rec);
     }
     break;
     case NC_UINT:   // unsigned int
     {
-      is=pNc->getRecord(*mvUINT, name, rec);
+      is=pNc->getData(*mvUINT, name, rec);
     }
     break;
     case NC_UINT64: // unsigned long long
     {
-      is=pNc->getRecord(*mvUINT64, name, rec);
+      is=pNc->getData(*mvUINT64, name, rec);
     }
     break;
 //    case NC_STRING:
 //      print_error(0,
-//          "NcAPI::getRecord: no rules to convert a string to MtrxArr");
+//          "NcAPI::getData: no rules to convert a string to MtrxArr");
 //    break;
 #endif
   }

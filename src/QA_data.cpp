@@ -167,7 +167,7 @@ SharedRecordFlag::adjustFlag(int num, size_t rec, int erase)
     return;
 
   MtrxArr<int> ma_i;
-  pQA->nc->getRecord(ma_i, name, rec );
+  pQA->nc->getData(ma_i, name, rec );
 
   std::vector<int> decomp;
 
@@ -494,7 +494,7 @@ Outlier::test(QA_Data *pQAD)
     outVal.clear();
     bool isOut = false;
 
-    pQA->nc->getRecord(ma_d, names[i]);
+    pQA->nc->getData(ma_d, names[i], 0, -1);
     if( ! ma_d.validRangeBegin.size() )
         return retCode;
 
@@ -628,7 +628,6 @@ Outlier::test(QA_Data *pQAD)
 
       double currTime;
       std::string cTime;
-      MtrxArr<double> ma_time ;
 
       std::string key("R");
       key += hdhC::itoa(errNum[i]);
@@ -646,7 +645,7 @@ Outlier::test(QA_Data *pQAD)
         outlRec = outRec[0] ;
         outlValue = outVal[0] ;
 
-        double cT = pQA->nc->getRecord(ma_time, "time", outRec[0]) ;
+        double cT = pQA->qaTime.ma_t[outRec[0]] ;
         currDateStrMax = pQA->qaTime.refDate.getDate(cT).str();
 
         for( size_t k=1 ; k < outRec.size() ; ++k )
@@ -654,7 +653,7 @@ Outlier::test(QA_Data *pQAD)
           if ( outVal[k] < outlValue )
             continue;
 
-          cT = pQA->nc->getRecord(ma_time, "time", outRec[k]) ;
+          cT = pQA->qaTime.ma_t[outRec[k]] ;
           currDateStrMax = pQA->qaTime.refDate.getDate(cT).str();
 
           outlValue = outVal[k] ;
@@ -685,7 +684,7 @@ Outlier::test(QA_Data *pQAD)
           // adjust coded flags
           pQAD->sharedRecordFlag.adjustFlag(errNum[i], outRec[k] ) ;
 
-          currTime = pQA->nc->getRecord(ma_time, "time", outRec[k]) ;
+          currTime = pQA->qaTime.ma_t[outRec[k]] ;
 
           ostr << "\nrec#=" << outRec[k];
           ostr << ", date=" << pQA->qaTime.refDate.getDate(currTime).str();
@@ -722,7 +721,6 @@ ReplicatedRecord::getRange(size_t i, size_t bufferCount, size_t recNum,
   std::vector<std::string> &range)
 {
   double cT_1st, cT_rep ;
-  MtrxArr<double>& ma_time= pQA->qaTime.ma_t;
 
   size_t ix_1st = arr_1st_ix[i];
   size_t ix_rep = arr_rep_ix[i];
@@ -730,7 +728,7 @@ ReplicatedRecord::getRange(size_t i, size_t bufferCount, size_t recNum,
   if( arr_1st_bool[i] )
   {
     range.push_back( hdhC::double2String(ix_1st) );
-    cT_1st = pQA->nc->getRecord(ma_time, "time", ix_1st) ;
+    cT_1st = pQA->qaTime.ma_t[ix_1st] ;
   }
   else
   {
@@ -740,7 +738,7 @@ ReplicatedRecord::getRange(size_t i, size_t bufferCount, size_t recNum,
 
   if( arr_rep_bool[i] )
   {
-    cT_rep = pQA->nc->getRecord(ma_time, "time", ix_rep) ;
+    cT_rep = pQA->qaTime.ma_t[ix_rep] ;
     range.push_back( hdhC::double2String(ix_rep) );
   }
   else
@@ -904,8 +902,8 @@ ReplicatedRecord::test(int nRecs, size_t bufferCount, size_t nextFlushBeg,
   while( readRange.second < recNum )
   {
     // time and checksum array are synchronised
-    (void) pQA->nc->getRecord(ma_t, "time", readRange.second) ;
-    (void) pQA->nc->getRecord(ma_chks, name_chks, readRange.second) ;
+    (void) pQA->qaTime.ma_t[readRange.second] ;
+    (void) pQA->nc->getData(ma_chks, name_chks, readRange.second, -1) ;
 
     readRange = pQA->nc->getDataIndexRange(name_chks) ;
     size_t sz = ma_chks.size();

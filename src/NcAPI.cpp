@@ -2778,24 +2778,25 @@ NcAPI::getData(int varid, size_t rec, size_t leg)
 
 template <typename ToT>
 ToT
-NcAPI::getData(MtrxArr<ToT> &x, std::string vName, size_t rec)
+NcAPI::getData(MtrxArr<ToT> &x, std::string vName, size_t rec, int leg)
 {
    // rec==0 is ok for the unlimited case
    if( rec && getNumOfRecords(vName) < rec )
      return 0;
 
-   return getData(x, getVarID(vName), rec);
+   return getData(x, getVarID(vName), rec, leg);
 }
 
 template <typename ToT>
 ToT
-NcAPI::getData(MtrxArr<ToT> &to, int varid, size_t rec)
+NcAPI::getData(MtrxArr<ToT> &to, int varid, size_t rec, int leg)
 {
   // Get netCDF data and store in a MtrxArr object.
   // The first value is returned.
   if( varid < 0 )
     return 0;
 
+/*
   // note that the leg length is atomatically set to a single step
   // for higher-dimensonal arrays.
   if( ! layout.rec_leg_sz[varid] )
@@ -2807,28 +2808,44 @@ NcAPI::getData(MtrxArr<ToT> &to, int varid, size_t rec)
   if( ! (rec > layout.rec_leg_begin[varid]
              && rec < layout.rec_leg_end[varid]) )
   {
+*/
     layout.rec_leg_begin[varid] = rec;
-    layout.rec_leg_end[varid] = rec + currLeg ;
 
-    if( layout.rec_leg_end[varid] > layout.varDimSize[varid][0] )
+    size_t lleg;
+
+    if( isVarUnlimited(varid) )
     {
-      // take into growth due to writing
-      std::vector<size_t> vs_vdSz( getVarDimSize(layout.varidMap[varid]) );
+        if( leg == -1 )
+          lleg = getNumOfRecords();
+        else
+          lleg = static_cast<size_t>(leg);
 
-      if( !vs_vdSz.size() )
-        vs_vdSz.push_back(1);  // scalar variable
+        layout.rec_leg_end[varid] = rec + lleg ;
 
-      layout.rec_leg_end[varid] = vs_vdSz[0];
-      currLeg = vs_vdSz[0] - rec ;
+        if( layout.rec_leg_end[varid] > layout.varDimSize[varid][0] )
+        {
+          // take into growth due to writing
+          std::vector<size_t> vs_vdSz( getVarDimSize(layout.varidMap[varid]) );
+
+          if( !vs_vdSz.size() )
+             vs_vdSz.push_back(1);  // scalar variable
+
+          layout.rec_leg_end[varid] = vs_vdSz[0];
+          lleg = vs_vdSz[0] - rec ;
+        }
     }
+    else
+      lleg=0;
 
-    (void) getData(varid, rec, currLeg);
+    (void) getData(varid, rec, lleg);
+/*
   }
   else if( (void*)to.arr == layout.rec_prev_taker[varid] )
   {
     // the taking object is the same as before
     return to[ rec - layout.rec_leg_begin[varid] ] ;
   }
+*/
 
   // the taking obj had been used in a different context
   size_t to_ix = rec - layout.rec_leg_begin[varid] ;
@@ -3505,8 +3522,6 @@ NcAPI::getLayout(void)
      layout.rec_leg_end.push_back( 0 );
      layout.rec_prev_taker.push_back( 0 );  // pointer of the last data taker
 
-//     setRecLeg(vName);
-
      // compression
      int shuffle=0;
      int deflate=0;
@@ -3784,226 +3799,6 @@ NcAPI::getNumOfRows(std::string vName)
     return 0; // due to scalar variables this will never be a valid number
 
   return layout.varDimSize[varid][0];
-}
-
-template <typename ToT>
-ToT
-NcAPI::getRecord(MtrxArr<ToT> &ma, int varid, size_t rec)
-{
-  size_t rank = layout.varDimName[varid].size();
-
-  if( layout.rec_index[varid] < UINT_MAX )
-    layout.rec_start[varid][ layout.rec_index[varid] ] = rec;
-
-  std::vector<size_t> dim ;
-  size_t* curr_count = new size_t [rank] ;
-  size_t currRecSz=1;
-
-  // scalar defined as a 0-dimensional variable
-  if( rank == 0 )
-    dim.push_back(1);
-  else
-  {
-    for( size_t i=0 ; i < rank ; ++i)
-    {
-      dim.push_back(layout.rec_count[varid][i]);
-      curr_count[i] = layout.rec_count[varid][i] ;
-      currRecSz *= dim.back();
-    }
-  }
-
-  disableDefMode();
-
-  if( currRecSz != ma.size() )
-    ma.resize(dim);
-
-
-  switch ( layout.varType[varid] )
-  {
-/*
-    case NC_BYTE:
-    {
-      rec_val_schar[varid].resize( dim ) ;
-      p=rec_val_schar[varid].begin() ;
-
-      if( dim.size() == 0 )
-      {
-         delete [] curr_count ;
-         return p ;
-      }
-
-      status = nc_get_vara_schar(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_schar[varid].arr );
-
-      if( !status )
-        rec_val_schar[varid].testValueException();
-    }
-    break;
-    case NC_CHAR:
-    {
-      rec_val_text[varid].resize( dim ) ;
-      p=rec_val_text[varid].begin() ;
-
-      status = nc_get_vara_text(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_text[varid].arr );
-
-      if( !status )
-        rec_val_text[varid].testValueException();
-    }
-    break;
-    case NC_SHORT:
-    {
-      rec_val_short[varid].resize( dim ) ;
-      p=rec_val_short[varid].begin() ;
-
-      status = nc_get_vara_short(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_short[varid].arr );
-
-      if( !status )
-        rec_val_short[varid].testValueException();
-    }
-    break;
-    case NC_INT:
-    {
-      rec_val_int[varid].resize( dim ) ;
-      p=rec_val_int[varid].begin() ;
-
-      status = nc_get_vara_int(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_int[varid].arr );
-
-      if( !status )
-        rec_val_int[varid].testValueException();
-    }
-    break;
-*/
-    case NC_FLOAT:
-    {
-      float* p_arr = reinterpret_cast<float*>(ma.arr);
-      status = nc_get_vara_float(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  p_arr );
-
-      if( !status )
-        ma.testValueException();
-    }
-    break;
-    case NC_DOUBLE:
-    {
-      double* p_arr = reinterpret_cast<double*>(ma.arr);
-      status = nc_get_vara_double(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  p_arr );
-
-      if( !status )
-        ma.testValueException();
-    }
-    break;
-/*
-    case NC_UBYTE:
-    {
-      rec_val_uchar[varid].resize( dim ) ;
-      p=rec_val_uchar[varid].begin() ;
-
-      status = nc_get_vara_uchar(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_uchar[varid].arr );
-
-      if( !status )
-        rec_val_uchar[varid].testValueException();
-    }
-    break;
-    case NC_USHORT:
-    {
-      rec_val_ushort[varid].resize( dim ) ;
-      p=rec_val_ushort[varid].begin() ;
-
-      status = nc_get_vara_ushort(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_ushort[varid].arr );
-
-      if( !status )
-        rec_val_ushort[varid].testValueException();
-    }
-    break;
-    case NC_UINT:
-    {
-      rec_val_uint[varid].resize( dim ) ;
-      p=rec_val_uint[varid].begin() ;
-
-      status = nc_get_vara_uint(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_uint[varid].arr );
-
-      if( !status )
-        rec_val_uint[varid].testValueException();
-    }
-    break;
-    case NC_UINT64:
-    {
-      rec_val_ulonglong[varid].resize( dim ) ;
-      p=rec_val_ulonglong[varid].begin() ;
-
-      status = nc_get_vara_ulonglong(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_ulonglong[varid].arr );
-
-      if( !status )
-        rec_val_ulonglong[varid].testValueException();
-    }
-    break;
-    case NC_INT64:
-    {
-      rec_val_longlong[varid].resize( dim ) ;
-      p=rec_val_longlong[varid].begin() ;
-
-      status = nc_get_vara_longlong(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_longlong[varid].arr );
-
-      if( !status )
-        rec_val_longlong[varid].testValueException();
-    }
-    break;
-    case NC_STRING:
-    {
-      if( rec_val_string[varid].size() > 0 )
-        nc_free_string( layout.recSize[varid],
-             rec_val_string[varid].begin() );
-
-      rec_val_string[varid].resize( layout.recSize[varid] ) ;
-      p=rec_val_string[varid].begin() ;
-
-      status = nc_get_vara_string(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_string[varid].arr );
-
-//      if( !status )
-//      rec_val_string.testValueException();
-    }
-*/
-  }
-
-  if(status)
-  {
-    std::string key("NC_7_1");
-    std::string capt("Could  not get data.") ;
-
-    std::string vName(getVarnameFromVarID(varid));
-
-    std::string text("Variable <");
-    text += vName;
-    text += ">: ";
-
-    exceptionHandling(key, capt, text, vName);
-  }
-
-  delete [] curr_count ;
-
-  return ma[0];
 }
 
 size_t
@@ -5376,23 +5171,6 @@ NcAPI::setFletcher32(int varid, int f)
 
     exceptionHandling(key, capt, text, getVarnameFromVarID(varid));
   }
-
-  return;
-}
-
-void
-NcAPI::setRecLeg(std::string vName)
-{
-  int id = getVarID(vName);
-  layout.rec_leg_sz[id] = 1;
-
-  size_t recSz=getRecordSize(id);
-  size_t num=getNumOfRecords(vName, true);
-
-  if( (num*recSz) > max_read_sz )
-    layout.rec_leg_sz[id] = max_read_sz / recSz ;
-  else if( num > 0 )
-    layout.rec_leg_sz[id] = num;
 
   return;
 }

@@ -2270,7 +2270,7 @@ QA_Exp::checkPressureCoord(InFile &in)
 
    Variable &var = in.variable[ix];
 
-   in.nc.getRecord(tmp_mv, var.name);
+   in.nc.getData(tmp_mv, var.name, 0, -1);
    if( tmp_mv.size() )
    {
      std::string pData( hdhC::double2String(tmp_mv[0]) );
@@ -2591,8 +2591,8 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
   // get data
   MtrxArr<double> mv_lon;
   MtrxArr<double> mv_lat;
-  pQA->pIn->nc.getRecord(mv_lon, var_lon);
-  pQA->pIn->nc.getRecord(mv_lat, var_lat);
+  pQA->pIn->nc.getData(mv_lon, var_lon);
+  pQA->pIn->nc.getData(mv_lat, var_lat);
 
   if( mv_lon.size() < 2 || mv_lat.size() < 2 )
   {
@@ -3158,7 +3158,7 @@ QA_Exp::checkHeightValue(InFile &in)
    if( is )
    {
      is=false;
-     in.nc.getRecord(tmp_mv, var.name);
+     in.nc.getData(tmp_mv, var.name, 0, -1);
      if( tmp_mv.size() )
      {
        if( tmp_mv[0] < 0. || tmp_mv[0] > 10. )
@@ -3969,7 +3969,7 @@ QA_Exp::getDimMetaData(InFile &in,
     else
     {
       MtrxArr<double> mv;
-      in.nc.getRecord(mv, dName);
+      in.nc.getData(mv, dName, 0, -1);
 
       bool reset=true;
       for( size_t i=0 ; i < mv.size() ; ++i )
@@ -4541,7 +4541,7 @@ QA_Exp::reqAttCheckCloudValues(
 
   if( auxName == "plev" )
   {
-    pQA->pIn->nc.getRecord(fValues, "plev" );
+    pQA->pIn->nc.getData(fValues, "plev", 0, -1 );
     int iV = static_cast<int>( fValues[0] );
     iReqValues.push_back( iV );
 
@@ -4551,7 +4551,7 @@ QA_Exp::reqAttCheckCloudValues(
 
   if( auxName == "plev_bnds" )
   {
-    pQA->pIn->nc.getRecord(fValues, "plev_bnds" );
+    pQA->pIn->nc.getData(fValues, "plev_bnds", 0, -1 );
     int iV0, iV1;
 
     if( fValues.size() == 2 )
