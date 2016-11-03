@@ -12,8 +12,6 @@ Consistency::Consistency(QA *p0, InFile *p1,
    excludedAttributes.push_back("comment");
    excludedAttributes.push_back("history");
    excludedAttributes.push_back("associated_files");
-
-   status=false;
 }
 
 void
@@ -59,6 +57,8 @@ Consistency::applyOptions(std::vector<std::string> &optStr,
 bool
 Consistency::check(void)
 {
+  bool status = false;
+
   for( size_t i=0 ; i < pIn->dataVarIndex.size() ; ++i )
   {
      Variable& var = pIn->variable[pIn->dataVarIndex[i]];
@@ -97,29 +97,29 @@ Consistency::check(Variable &dataVar, std::string entryID)
 
   while( getline(ifs, str0) )
   {
-    if( str0.substr(0,sz_PV) != entryID )
-      continue;
-
-    // found a valid entry
-    notFound=false;
-    t_md = hdhC::stripSides(str0) ;
-
-    // read aux-lines
-    while( getline(ifs, str0) )
+    if( str0.substr(0,sz_PV) == entryID )
     {
-      str0 = hdhC::stripSides(str0) ;
-      if( str0.substr(0,4) != "aux=" )
-        goto BREAK ;  // found the end of the entry
+      // found a valid entry
+      notFound=false;
+      t_md = hdhC::stripSides(str0) ;
 
-      t_md += '\n';
-      t_md += str0 ;
+      // read aux-lines
+      while( getline(ifs, str0) )
+      {
+        str0 = hdhC::stripSides(str0) ;
+        if( str0.substr(0,4) != "aux=" )
+          break ;  // found the end of the entry
+
+        t_md += '\n';
+        t_md += str0 ;
+      }
+
+      break;
     }
   }
 
   if(notFound)
     return true;  // entry not found
-
-BREAK:
 
   // close the project table
   ifs.close();
@@ -135,26 +135,27 @@ BREAK:
   // Use index-vector for book-keeping.
   // Meaning: x=split, t=file, t=table, a=attribute, eq=(att-name,att-value)
 
-  Split splt_xt(t_md, '\n');
-  Split splt_xf(f_md, '\n');
-  size_t xt_sz=splt_xt.size();
-  size_t xf_sz=splt_xf.size();
+  Split x;
+  x.setSeparator('\n');
 
-  std::vector<std::string> xf;
-  for( size_t i=0 ; i < xf_sz ; ++i )
-    xf.push_back( hdhC::stripSides(splt_xf[i]) );
+  std::vector<std::string> vs_t;
+  std::vector<std::string> vs_f;
 
-  std::vector<std::string> xt;
-  for( size_t i=0 ; i < xt_sz ; ++i )
-    xt.push_back( hdhC::stripSides(splt_xt[i]) );
+  x = f_md;
+  for( size_t i=0 ; i < x.size() ; ++i )
+    vs_f.push_back( hdhC::stripSides(x[i]) );
+
+  x = t_md;
+  for( size_t i=0 ; i < x.size() ; ++i )
+    vs_t.push_back( hdhC::stripSides(x[i]) );
 
   // simple test for identity
-  if( xt_sz == xf_sz )
+  if( vs_t.size() == vs_f.size() )
   {
     bool is=true;
-    for( size_t i=0 ; i < xt_sz ; ++i )
+    for( size_t i=0 ; i < x.size() ; ++i )
     {
-       if( xt[i] != xf[i] )
+       if( vs_t[i] != vs_f[i] )
        {
          is=false ;
          break;
@@ -165,310 +166,98 @@ BREAK:
        return false;
   }
 
-  // store indexes
-  std::vector<int> xf_ix;
-  for( size_t i=0 ; i < xf_sz ; ++i )
-    xf_ix.push_back( i );
+  std::vector<std::vector<std::string> > vvs_f_aName;
+  std::vector<std::vector<std::string> > vvs_f_aVal;
+  std::vector<std::vector<std::string> > vvs_t_aName;
+  std::vector<std::vector<std::string> > vvs_t_aVal;
 
-  std::vector<int> xt_ix;
-  for( size_t i=0 ; i < xt_sz ; ++i )
-    xt_ix.push_back( i );
+  x.setSeparator(',');
+  Split y;
+  y.setSeparator('=');
 
-  // At first, test whether total auxiliary entries are identical.
-  for( size_t i=0 ; i < xt_sz ; ++i )
+  for( size_t i=0 ; i < vs_f.size() ; ++i )
   {
-    for( size_t j=0 ; j < xf_sz ; ++j )
+    vvs_f_aName.push_back( std::vector<std::string>() );
+    vvs_f_aVal.push_back( std::vector<std::string>() );
+
+    x = vs_f[i];
+    for( size_t j=0 ; j < x.size() ; ++j )
     {
-       // only test strings for indexes still to be checked
-       if( xt_ix[i] > -1 && xf_ix[i] > -1 && xf[j] == xt[i] )
+      y = x[j];
+
+      if( y.size() )
+      {
+        if( y.size() == 1 )
+        {
+          if(i==1)
+            vvs_f_aName.back().push_back("frequency");
+          else
+            vvs_f_aName.back().push_back("");
+
+          // mostly aux=aName, but for the first entry item: only vName
+          vvs_f_aVal.back().push_back(y[0]);
+        }
+        else
+        {
+          vvs_f_aName.back().push_back(y[0]);
+          vvs_f_aVal.back().push_back(y[1]);
+        }
+      }
+    }
+  }
+
+  for( size_t i=0 ; i < vs_t.size() ; ++i )
+  {
+    vvs_t_aName.push_back( std::vector<std::string>() );
+    vvs_t_aVal.push_back( std::vector<std::string>() );
+
+    x = vs_t[i];
+    for( size_t j=0 ; j < x.size() ; ++j )
+    {
+      y = x[j];
+
+      if( y.size() )
+      {
+        if( y.size() == 1 )
+        {
+          if(i==1)
+            vvs_f_aName.back().push_back("frequency");
+          else
+            vvs_f_aName.back().push_back("");
+          // mostly aux=aName, but for the first entry item: only vName
+
+          vvs_t_aVal.back().push_back(y[0]);
+        }
+        else
+        {
+          vvs_t_aName.back().push_back(y[0]);
+          vvs_t_aVal.back().push_back(y[1]);
+        }
+      }
+    }
+  }
+
+
+  // test for auxiliaries missing in the file.
+  testAux("missing",
+          vvs_f_aName, vvs_f_aVal, vvs_t_aName, vvs_t_aVal);
+
+  // test for new auxiliaries introduced by the file
+  testAux("new",
+          vvs_f_aName, vvs_f_aVal, vvs_t_aName, vvs_t_aVal);
+
+  // test atts of auxiliaries
+  for( size_t i=1; i < vvs_f_aName.size() ; ++i )
+  {
+    for( size_t j=1; i < vvs_t_aName.size() ; ++j )
+    {
+       if( vvs_f_aVal[i][0] == vvs_t_aVal[j][0] )
        {
-         xt_ix[i] = -1;
-         xf_ix[j] = -1;
+         testAttributes(vvs_f_aVal[0][0],
+                        vvs_f_aName[i], vvs_f_aVal[i],
+                        vvs_t_aName[j], vvs_t_aVal[j]);
          break;
        }
-    }
-  }
-
-  Split xf_a;  // meta-data from file
-  xf_a.setSeparator(',');
-  Split xt_a;  // from the table
-  xt_a.setSeparator(',');
-
-  Split xf_eq;
-  xf_eq.setSeparator('=');
-  Split xt_eq;
-  xt_eq.setSeparator('=');
-
-  bool isMissAux;
-  for( size_t ixt=0 ; ixt < xt_ix.size() ; ++ixt )
-  {
-    int jt=xt_ix[ixt];
-
-    if( jt < 0 )
-      continue;  // passed already a check
-
-    isMissAux=true;
-
-    //split at comma
-    xt_a = xt[jt] ;
-
-    for( size_t ixf=0 ; ixf < xf_ix.size() ; ++ixf )
-    {
-      int jf=xf_ix[ixf];
-
-      if( jf < 0 )
-        continue;  // passed already a check
-
-      //split at comma
-      xf_a = xf[jf] ;
-
-      // compare the names of the auxiliaries
-      if( xf_a[0] != xt_a[0] )
-        continue;
-
-      isMissAux=false;
-
-      // scan the attributes
-      for( size_t ita=1 ; ita < xt_a.size() ; ++ita )
-      {
-        // split at '='
-        xt_eq = xt_a[ita] ;
-
-        bool isAttMissing=true;
-
-        for( size_t ifa=1 ; ifa < xf_a.size() ; ++ifa )
-        {
-          // split at '='
-          xf_eq = xf_a[ifa] ;
-
-          if( xt_eq[0] == xf_eq[0] ) // found identical attribute names
-          {
-            isAttMissing=false;
-            if( xt_eq[1] == xf_eq[1] )  // found identical values
-              break;  // try the next attribute
-
-            // this is a very special one for time: one with separator T and/or Z
-            // the other one without
-            std::string auxName;
-            if( xt_a[0].substr(0,4) == "aux=" )
-              auxName = xt_a[0].substr(4) ;
-            else
-              auxName = xt_a[0] ;
-
-            if( auxName == "time" )
-            {
-               Split x_tt(xt_eq[1]," TZ",true) ;
-               Split x_ff(xf_eq[1]," TZ",true) ;
-
-               if( x_tt.size() == x_ff.size() )
-               {
-                 bool is=true;
-                 for(size_t c=0 ; c < x_tt.size()  ; ++c )
-                   if( x_tt[c] != x_ff[c] )
-                     is=false;
-
-                 if(is)
-                   break;
-               }
-            }
-
-            // different values --> annotation
-            status=true;
-
-            std::string key("8_8");
-            if( notes->inq( key, dataVar.name ) )
-            {
-              std::string capt;
-              if( xt_a[0].substr(0,4) == "aux=" )
-              {
-                capt = "auxiliary ";
-                capt += hdhC::tf_var(auxName, hdhC::colon) ;
-              }
-              else
-                capt += hdhC::tf_var(xt_a[0], hdhC::colon) ;
-
-              if( xt_eq[0] == "values" )
-                capt += "data has changed";
-              else
-              {
-                capt += xt_eq[0] ;
-                capt += " has changed from";
-                capt += hdhC::tf_val(xt_eq[1]) ;
-                capt += " to";
-                capt += hdhC::tf_val(xf_eq[1]) ;
-              }
-              capt += " across experiment or sub-temporal files";
-
-              (void) notes->operate(capt) ;
-              notes->setCheckStatus("Consistency","FAIL" );
-            }
-
-            break;  // try next
-          }
-        }
-
-        if( isAttMissing )
-        {
-          status=true;
-
-          std::string key("8_7");
-          if( notes->inq( key, dataVar.name ) )
-          {
-            std::string capt;
-            if( xt_a[0].substr(0,4) == "aux=" )
-            {
-              capt = "auxiliary ";
-              capt += hdhC::tf_var(xt_a[0].substr(4), hdhC::colon) ;
-            }
-            else
-              capt += hdhC::tf_var(xt_a[0], hdhC::colon) ;
-
-            if( xt_eq[0] == "values" )
-              capt += "no data";
-            else
-            {
-              capt += hdhC::tf_att(xt_eq[0]);
-              capt += "is missing " ;
-            }
-
-            if( pQA->currQARec )
-              capt += "across sub-temporal files";
-            else
-              capt += "across experiments";
-
-            (void) notes->operate(capt) ;
-            notes->setCheckStatus("Consistency","FAIL" );
-          }
-        }
-      }
-    }
-
-    if( isMissAux )
-    {
-      status=true;
-
-      std::string key("8_4");
-      if( notes->inq( key, dataVar.name ) )
-      {
-        std::string capt;
-        if( xt_a[0].substr(0,4) == "aux=" )
-        {
-          capt = "auxiliary ";
-          capt += hdhC::tf_var(xt_a[0].substr(4), hdhC::colon) ;
-        }
-        else
-          capt += hdhC::tf_var(xt_a[0], hdhC::colon) ;
-
-        capt += "missing across experiments or sub-temporal files";
-
-        (void) notes->operate(capt) ;
-        notes->setCheckStatus("Consistency","FAIL" );
-      }
-    }
-  }
-
-
-  // test for missing attributes in the table (reversed for-loops)
-  bool isAddAux=true;
-  for( size_t ixf=0 ; ixf < xf_ix.size() ; ++ixf )
-  {
-    int jf=xf_ix[ixf];
-
-    if( jf < 0 )
-      continue;  // passed already a check
-
-    isAddAux=true;
-
-    //split at comma
-    xf_a = xf[jf] ;
-
-    for( size_t ixt=0 ; ixt < xt_ix.size() ; ++ixt )
-    {
-      int jt=xt_ix[ixt];
-
-      if( jt < 0 )
-        continue;  // passed already a check
-
-      //split at comma
-      xt_a = xt[jt] ;
-
-      // compare the names of the auxiliaries
-      if( xf_a[0] != xt_a[0] )
-        continue;
-
-      // found identical auxiliaries
-      isAddAux=false;
-
-      // scan the attributes
-      for( size_t ifa=1 ; ifa < xf_a.size() ; ++ifa )
-      {
-        // split at '='
-        xf_eq = xf_a[ifa] ;
-        bool isAddAtt=true;
-
-        for( size_t ita=1 ; ita < xt_a.size() ; ++ita )
-        {
-          // split at '='
-          xt_eq = xt_a[ita] ;
-
-          if( xt_eq[0] == xf_eq[0] ) // found identical attribute names
-          {
-            isAddAtt=false;
-            break;
-          }
-        }
-
-        if( isAddAtt )
-        {
-          status=true;
-
-          // additional attribute of auxiliary in the file
-          std::string key("8_6");
-          if( notes->inq( key, dataVar.name ) )
-          {
-            std::string capt;
-            if( xt_a[0].substr(0,4) == "aux=" )
-            {
-              capt = "auxiliary ";
-              capt += hdhC::tf_var(xf_a[0].substr(4), hdhC::colon) ;
-            }
-            else
-              capt += hdhC::tf_var(xf_a[0], hdhC::colon) ;
-
-            if( xt_eq[0] == "values" )
-            {
-              capt += "additional data across experiments or sub-temporal files";
-            }
-            else
-            {
-              capt += hdhC::tf_att(xf_eq[0]);
-              capt += "is new across experiments or sub-temporal files";
-            }
-
-            (void) notes->operate(capt) ;
-            notes->setCheckStatus("Consistency","FAIL" );
-          }
-        }
-      }
-    }
-
-    if( isAddAux )
-    {
-      status=true;
-
-      std::string key("8_5");
-      if( notes->inq( key, dataVar.name) )
-      {
-        std::string capt("additional auxiliary ");
-        if( xf_a[0].size() > 4 )
-          capt += hdhC::tf_var(xf_a[0].substr(4)) ;
-        else
-          capt += hdhC::tf_var(xf_a[0]) ;
-        capt += "across experiments or sub-temporal files";
-
-        (void) notes->operate(capt) ;
-        notes->setCheckStatus("Consistency","FAIL" );
-      }
     }
   }
 
@@ -527,7 +316,7 @@ Consistency::getMetaData(Variable &dataVar,
   // Put all meta-data to string.
 
   // beginning of extraction of meta data
-  md = "\n" + entryID;
+  md = entryID;
 
   // dimensions
   md += "dims=";
@@ -584,7 +373,7 @@ Consistency::getValues(Variable &var, std::string &s)
       else
       {
           MtrxArr<double> mv;
-          pIn->nc.getRecord(mv, var.name );
+          pIn->nc.getData(mv, var.name );
 
           if( mv.size() > 0 )
             ck = hdhC::fletcher32_cmip5(mv.arr, mv.size()) ;
@@ -677,6 +466,156 @@ Consistency::setExcludedAttributes(std::vector<std::string> &v)
    return;
 }
 
+void
+Consistency::testAttributes( std::string& varName,
+    std::vector<std::string>& vs_f_aName,
+    std::vector<std::string>& vs_f_aVal,
+    std::vector<std::string>& vs_t_aName,
+    std::vector<std::string>& vs_t_aVal)
+{
+  // this method is called only, when then first item matches between
+  // both the file and the table
+  size_t start_ix = 1;
+
+  for( size_t i=start_ix ; i < vs_f_aName.size() ; ++i )
+  {
+    // hdhC::isAmong() is not appropriate ('across' the vectors),
+    // thus explicitly coded
+    bool notName=true;
+    bool notValue=false;
+    for( size_t j=start_ix ; j < vs_t_aName.size() ; ++j )
+    {
+      if( vs_f_aName[i] == vs_t_aName[j] )
+      {
+        notName = false;
+
+        if( vs_f_aVal[i] != vs_t_aVal[j] )
+          notValue=true;
+
+        break;
+      }
+    }
+
+    if(notName)
+    {
+      // aditional attribute in the current sub-temp file
+      std::string key("8_6");
+      if(  notes->inq( key, varName ) )
+      {
+        std::string capt(hdhC::tf_att(varName, vs_f_aName[i])) ;
+        capt += "is new across experiments or sub-temporal files";
+
+        (void) notes->operate(capt) ;
+        notes->setCheckStatus("Consistency","FAIL" );
+      }
+    }
+
+    if(notValue)
+    {
+        std::string key("8_8");
+        if( notes->inq(key, varName) )
+        {
+          std::string capt(hdhC::tf_att(varName, vs_f_aName[i])) ;
+          capt += "has changed across experiment or sub-temporal files, found";
+          capt += hdhC::tf_val(vs_f_aVal[i]) ;
+          capt += ", expected ";
+          capt += hdhC::tf_val(vs_t_aVal[i]) ;
+
+          (void) notes->operate(capt) ;
+          notes->setCheckStatus("Consistency","FAIL" );
+        }
+    }
+  }
+
+  // test for missing attributes compared to the previous ones
+  for( size_t i=start_ix ; i < vs_t_aName.size() ; ++i )
+  {
+    // hdhC::isAmong() is not appropriate ('across' the vectors),
+    // thus explicitly coded
+    bool notName=true;
+    for( size_t j=start_ix ; j < vs_f_aName.size() ; ++j )
+    {
+      if( vs_f_aName[j] == vs_t_aName[i] )
+      {
+        notName = false;
+        break;
+      }
+    }
+
+    if(notName)
+    {
+      // aditional attribute in the current sub-temp file
+      std::string key("8_7");
+      if(  notes->inq( key, varName ) )
+      {
+        std::string capt(hdhC::tf_att(varName, vs_f_aName[i])) ;
+        capt += "is missing across experiments or sub-temporal files";
+
+        (void) notes->operate(capt) ;
+        notes->setCheckStatus("Consistency","FAIL" );
+      }
+    }
+  }
+
+  return;
+}
+
+void
+Consistency::testAux(std::string mode,
+    std::vector<std::vector<std::string> >& vvs_1st_aName,
+    std::vector<std::vector<std::string> >& vvs_1st_aVal,
+    std::vector<std::vector<std::string> >& vvs_2nd_aName,
+    std::vector<std::vector<std::string> >& vvs_2nd_aVal)
+{
+  for( size_t i=0 ; i < vvs_1st_aVal.size() ; ++i )
+  {
+    std::string& varName = vvs_1st_aVal[0][0] ;
+
+    // is across hdhC::isAmong(), thus do it manually
+    bool is=true;
+    for( size_t j=0 ; j < vvs_2nd_aVal.size() ; ++j )
+    {
+      if( vvs_1st_aVal[i][0] == vvs_2nd_aVal[j][0] )
+      {
+        is = false;
+        break;
+      }
+    }
+
+    if(is)
+    {
+      if( mode == "missing" )  // missing in the current sub-temp file
+      {
+        std::string key("8_4");
+        if( notes->inq( key, varName ) )
+        {
+          std::string capt("auxiliary ");
+          capt += hdhC::tf_var(vvs_1st_aVal[i][0]) ;
+          capt += "is missing across experiments or sub-temporal files";
+
+          (void) notes->operate(capt) ;
+          notes->setCheckStatus("Consistency","FAIL" );
+        }
+      }
+      else if( mode == "new" )  // file introduces a new attribute
+      {
+        std::string key("8_5");
+        if( notes->inq( key, varName) )
+        {
+          std::string capt("new auxiliary ");
+          capt += hdhC::tf_var(vvs_1st_aVal[i][0]) ;
+          capt += "across experiments or sub-temporal files";
+
+          (void) notes->operate(capt) ;
+          notes->setCheckStatus("Consistency","FAIL" );
+        }
+      }
+    }
+  }
+
+  return;
+}
+
 bool
 Consistency::unlockFile(std::string &fName )
 {
@@ -744,7 +683,7 @@ Consistency::write(Variable &dataVar, std::string& entryID)
     // append
     oifs.seekp(0, std::ios::end);
 
-    oifs << md << std::flush;
+    oifs << "\n" + md << std::flush;
     oifs.close();
   }
 

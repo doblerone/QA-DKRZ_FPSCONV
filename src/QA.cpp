@@ -257,7 +257,7 @@ QA::checkDataBody(std::string vName)
   return true;
 }
 
-void
+bool
 QA::checkConsistency(InFile &in, std::vector<std::string> &opt,
                      std::string& tPath)
 {
@@ -267,19 +267,19 @@ QA::checkConsistency(InFile &in, std::vector<std::string> &opt,
   Consistency consistency(this, &in, opt, tPath);
 
   if( !consistency.isEnabled() )
-    return;
+    return true;  // for running qaExp.run()
 
   consistency.setAnnotation(notes);
   consistency.setExcludedAttributes( excludedAttribute );
 
-  consistency.check();
+  bool is_1st = consistency.check();
 
   // inquire whether the meta-data checks passed
   int ev;
   if( (ev = notes->getExitState()) > 1 )
     setExitState( ev );
 
-  return ;
+  return is_1st;
 }
 
 void
@@ -570,7 +570,16 @@ QA::init(void)
    }
 
    // experiment specific obj: set parent, pass over options
-   qaExp.run();
+   // check consistency between sub-sequent files or experiments
+   if(isCheckCNSTY)
+   {
+      // return true for a) no previous check available,
+      //                 b) deviation from a privous check are found
+      if( checkConsistency(*pIn, optStr, tablePath) )
+        qaExp.run();
+   }
+   else
+     qaExp.run();
 
    // check existence of any data at all
    if( pIn->ncRecBeg == 0 && pIn->ncRecEnd == 0 )
@@ -637,9 +646,6 @@ QA::init(void)
 
    }
 
-   // check consistency between sub-sequent files or experiments
-   if(isCheckCNSTY)
-      checkConsistency(*pIn, optStr, tablePath) ;
 
    if( isCheckData || isCheckTimeValues )
    {
@@ -1126,7 +1132,7 @@ QA::postProc_outlierTest(void)
 
        if( is )
        {
-         val = nc->getRecord(mv, vars[0]);
+         val = nc->getData(mv, vars[0]);
          if( val < MAXDOUBLE )
          {
            // build the statistics from scratch

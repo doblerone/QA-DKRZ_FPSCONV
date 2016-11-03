@@ -40,6 +40,18 @@ class Consistency
   void   setExcludedAttributes(std::vector<std::string> &);
   void   setTable(std::string &p, std::string &t);
 
+  void   testAux(std::string mode,
+            std::vector<std::vector<std::string> >& vvs_1st_aName,
+            std::vector<std::vector<std::string> >& vvs_1st_aVal,
+            std::vector<std::vector<std::string> >& vvs_2nd_aName,
+            std::vector<std::vector<std::string> >& vvs_2nd_aVal);
+
+  void   testAttributes( std::string& vName,
+            std::vector<std::string>& file_aName,
+            std::vector<std::string>& file_aVal,
+            std::vector<std::string>& table_aName,
+            std::vector<std::string>& table_aVal);
+
   bool   unlockFile(std::string &fName);
 
   //! Add meta data of each variable to the project table.
@@ -51,7 +63,6 @@ class Consistency
   hdhC::FileSplit consistencyTableFile;
 
   bool checkEnabled;
-  bool status;
 
   Annotation *notes;
   InFile     *pIn;
