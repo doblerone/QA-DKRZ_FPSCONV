@@ -1473,25 +1473,14 @@ parseOPTARG()
     return
   fi
 
-  test "${key:0:7}" = DEBUG_E && \
-    setKWL DEBUG_EXECUTOR=t && return
-
   if [ "${key:0:7}" = DEBUG_M ] ; then
     installArgs="${installArgs}--debug,"
     setKWL DEBUG_MANAGER=${value:-t}
     return
   fi
 
-  if [ "${key}" = NEXT ] ; then
-    test ${value} = t && value=1
-    setKWL NEXT=${value} && return
-  fi
-
   test "${key}" = SHOW_OPT && \
     displayComLineOptions 'dumb' && exit 1
-
-  test "${key}" = SHOW_NEXT && \
-    setKWL SHOW_NEXT=${value:-0} && return
 
   if [ "${key}" = NOTE ] ; then
     for(( i=0 ; i < ${#keyWordList[*]} ; ++i )) ; do
@@ -1731,13 +1720,27 @@ setKWL()
   test "${value:0:7}" = disable && value=f
 
   # backward compatibility
-  test "${key}"     = HIDDEN_DIRECTORY_DESCENT && key=HIDDEN_DIRECTORIES
-  test "${key}"     = EXP_FNAME_PATTERN        && key=LOG_FNAME_PATTERN
-  test "${key}"     = EXP_NAME                 && key=LOG_FNAME
-  test "${key}"     = EXP_PATH_BASE            && key=LOG_PATH_BASE
-  test "${key}"     = EXP_PATH_INDEX           && key=LOG_PATH_INDEX
-  test "${key:0:8}" = SHOW_EXP                 && key=SHOW_EXP
-  test "${key:0:7}" = SUMMARY                  && key=ONLY_SUMMARY
+  if [ "${key::07}"   = DEBUG_E                    ] ; then
+    key=DEBUG_EXECUTOR
+  elif [ "${key}"     = EXP_FNAME_PATTERN          ] ; then
+    key=LOG_FNAME_PATTERN
+  elif [ "${key}"     = EXP_NAME                   ] ; then
+    key=LOG_FNAME
+  elif [ "${key}"     = EXP_PATH_BASE              ] ; then
+    key=LOG_PATH_BASE
+  elif [ "${key}"     = EXP_PATH_INDEX             ] ; then
+    key=LOG_PATH_INDEX
+  elif [ "${key}"     = HIDDEN_DIRECTORY_DESCENT   ] ; then
+    key=HIDDEN_DIRECTORIES
+  elif [ "${key}"     = NEXT -a ${value} = t       ] ; then
+    value=1
+  elif [ "${key}"     = SHOW_EXP                   ] ; then
+    key=SHOW_EXP
+  elif [ "${key}"     = SHOW_NEXT -a ${value} = t  ] ; then
+    value=1
+  elif "${key:0:7}"   = SUMMARY                    ] ; then
+    key=ONLY_SUMMARY
+  fi
 
 #  eval ${key}="${value// /\\ /}"
 
