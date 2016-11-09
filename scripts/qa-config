@@ -439,8 +439,8 @@ displayComLineOptions()
                               b) u+w,go+r equiv. to u+w,g+r,o+r
                               c) u+x,o,g+w equiv. to u+x,g+w,o+r
                               d) by default: u+r,g+r,o+r
-                            Simple usage, e.g.:
-                              qa-dkrz -e_project_data=path -e_check_permission=a
+                            Simple usage for checking readability for all:
+                               qa-dkrz -e_project_data=path -e_check_permission
 "
 
   test $# -eq 0 && return
