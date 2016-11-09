@@ -2536,6 +2536,8 @@ init()
     local cp_curr cp_mode
     ext='.nc'
 
+    test ${CHECK_PERMISSION} = t && CHECK_PERMISSION=a
+
     CHECK_PERMISSION=( ${CHECK_PERMISSION//,/ } )
     for((i=0 ; i < ${#CHECK_PERMISSION[*]} ; ++i )) ; do
       if [ ${CHECK_PERMISSION[i]:0:4} = 'ext=' ] ; then
