@@ -431,6 +431,16 @@ displayComLineOptions()
       SHOW_NEXT[=num}       Show num next scheduled variables and paths.
       REFRESH_CF_STANDARD   wget original sources from PCMDI into QA-DKRZ/tables.
       REUSE_PATH_LIST       Use a path-list left previously for a resumed session.
+      CHECK_PERMISSION[=str]  Test whether directories and/or files are writable (w),
+                            readable(r), or executable(x) and are applied to user (u),
+                            to group (g), and/or to other (o) permissions; a=ugo.
+                            Note that ugo are combined by OR. Examples:
+                              a) a or ugo is equivalent to u+r,g+r0,o+r
+                              b) u+w,go+r equiv. to u+w,g+r,o+r
+                              c) u+x,o,g+w equiv. to u+x,g+w,o+r
+                              d) by default: u+r,g+r,o+r
+                            Simple usage, e.g.:
+                              qa-dkrz -e_project_data=path -e_check_permission=a
 "
 
   test $# -eq 0 && return
@@ -1732,11 +1742,11 @@ setKWL()
     key=LOG_PATH_INDEX
   elif [ "${key}"     = HIDDEN_DIRECTORY_DESCENT   ] ; then
     key=HIDDEN_DIRECTORIES
-  elif [ "${key}"     = NEXT -a ${value} = t       ] ; then
+  elif [ "${key}"     = NEXT -a "${value}" = t       ] ; then
     value=1
   elif [ "${key}"     = SHOW_EXP                   ] ; then
     key=SHOW_EXP
-  elif [ "${key}"     = SHOW_NEXT -a ${value} = t  ] ; then
+  elif [ "${key}"     = SHOW_NEXT -a "${value}" = t  ] ; then
     value=1
   elif [ "${key:0:7}" = SUMMARY                    ] ; then
     key=ONLY_SUMMARY
