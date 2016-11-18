@@ -739,7 +739,7 @@ store_LD_LIB_PATH()
   done
 
   # store/update LD_LIBRARY_PATH in .conf
-  . $QA_SRC/scripts/updateConfigFile LD_LIBRARY_PATH=${ldp}
+  . $QA_SRC/scripts/updateConfigFile.txt LD_LIBRARY_PATH=${ldp}
 
   return
 }

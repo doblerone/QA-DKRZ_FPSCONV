@@ -2,8 +2,8 @@
 
 package=QA-DKRZ
 
-hdf5=hdf5-1.8.14
-netcdf=netcdf-4.3.2
+hdf5=hdf5-1.8.17
+netcdf=netcdf-4.4.1
 zlib=zlib-1.2.8
 udunits=udunits-2.2.20
 
@@ -466,6 +466,14 @@ do
           isUpdateQA=t
         elif [ "${UOPTARG:0:4}" = WORK ] ; then
           QA_HOME=${UOPTARG##*=}
+        elif [ "${UOPTARG:0:4}" = HDF5 ] ; then
+          hdf5=${UOPTARG##*=}
+        elif [ "${UOPTARG:0:6}" = NETCDF ] ; then
+          netcdf=${UOPTARG##*=}
+        elif [ "${UOPTARG:0:4}" = ZLIB ] ; then
+          zlib=${UOPTARG##*=}
+        elif [ "${UOPTARG:0:7}" = UDUNITS ] ; then
+          udunits=${UOPTARG##*=}
         fi
 
         # collect options, which have not been processed above

@@ -156,18 +156,13 @@ descript()
 
 distclean()
 {
-  for f in bin include lib lib64 share ; do
-    \rm -rf ${qaLocal}/$f
-  done
-  \rm -f ${qaLocal}/source/INDSTALL_*.log
-
-  local name
+  local name=$1
 
   for t in zlib hdf5 netcdf udunits ; do
-    eval name=\${curr_${t}}
-
-    bash ${QA_SRC}/scripts/install_local_${t} --distclean  \
-       -q --prefix=${qaLocal} ${QUIET:+-q}
+    if [ "${name:${#t}}" = $t ] ; then
+        bash ${QA_SRC}/scripts/install_local_${t} --distclean  \
+            -q --prefix=${qaLocal} ${QUIET:+-q}
+    fi
   done
 
   return
@@ -299,13 +294,26 @@ editInstallConfigure_link()
 f_build()
 {
   local c dir is
+  local name=$1
 
   cd ${qaLocal}/source
 
-  # rebuild
+  local status
+  ls -d ${name} 2> /dev/null
+  status=$?
 
-  local name
-  eval name=\${curr_${1}}
+  if [ ${isKeepLib} ] ; then
+    if [ ${status} -eq 0 ] ; then
+      test -f ${QA_SRC}/local/source/$name/QA_Compilation && return
+    fi
+  fi
+
+  # rebuild
+  if [ ${status} -eq 0 ] ; then
+    test ${isDistClean:-f} = t  && distclean $name
+  fi
+
+  # eval name=\${curr_${1}}
 
   # instance already available?
   dir=$( ls -d ${qaLocal}/source/${name} 2> /dev/null )
@@ -313,8 +321,11 @@ f_build()
   if [ ! ${dir} ] ; then
     local text
     if [ ${name:0:1} = 'n' ] ; then
-      text="-l1 -N -np ftp://ftp.unidata.ucar.edu/pub/netcdf/old/${name}.tar.gz"
-      wget ${text} &> INSTALL_netcdf.log
+      text="-l1 -N -np ftp://ftp.unidata.ucar.edu/pub/netcdf/${name}.tar.gz"
+      if wget ${text} &> INSTALL_netcdf.log ; then
+        text="-l1 -N -np ftp://ftp.unidata.ucar.edu/pub/netcdf/old/${name}.tar.gz"
+        wget ${text} &> INSTALL_netcdf.log
+      fi
     elif [ ${name:0:1} = 'h' ] ; then
       text="-l1 -N -np www.hdfgroup.org/ftp/HDF5/releases/${name}/src/${name}.tar.gz"
       wget ${text} &> INSTALL_hdf.log
@@ -323,11 +334,8 @@ f_build()
       wget ${text} &> INSTALL_zlib.log
     elif [ ${name:0:1} = 'u' ] ; then
       text=""
-      wget -N ftp://ftp.unidata.ucar.edu/pub/udunits/udunits-2.2.*.tar.gz \
+      wget -N ftp://ftp.unidata.ucar.edu/pub/udunits/${name}.tar.gz \
           &> INSTALL_udunits.log
-
-      name=$( ls udunits-2.2.*.tar.gz )
-      name=${name%.tar.gz}
     fi
 
     if [ $? -eq 0 ] ; then
@@ -352,7 +360,7 @@ f_build()
   fi
 
   if [ ! -f ${QA_SRC}/local/source/$name/QA_Compilation ] ; then
-    bash ${QA_SRC}/scripts/install_local_${1}  \
+    bash ${QA_SRC}/scripts/install_local_${1%%-*}  \
       ${isDebug:+--debug} ${QUIET:+-q} \
       --prefix=${qaLocal} --curr_src=$name \
 
@@ -837,6 +845,8 @@ do
         elif [ "$UOPTARG" = HELP ] ; then
            descript
            exit 1
+        elif [ "$UOPTARG" = KEEP ] ; then
+           isKeepLib=t
         elif [ "${UOPTARG:0:5}" = 'LINK=' ] ; then
            link_h=${OPTARG#*=}
            link_n=${OPTARG#*=}
@@ -864,13 +874,13 @@ do
 
         #undocumented; default from install overrides internal default
         elif [ "${UOPTARG%=*}" = HDF5 ] ; then
-          curr_hdf5=${OPTARG#hdf5=}
+          curr_name[${#curr_name[*]}]=${OPTARG#hdf5=}
         elif [ "${UOPTARG%=*}" = NETCDF ] ; then
-          curr_netcdf=${OPTARG#netcdf=}
+          curr_name[${#curr_name[*]}]=${OPTARG#netcdf=}
         elif [ "${UOPTARG%=*}" = ZLIB ] ; then
-          curr_zlib=${OPTARG#zlib=}
+          curr_name[${#curr_name[*]}]=${OPTARG#zlib=}
         elif [ "${UOPTARG%=*}" = UDUNITS ] ; then
-          curr_udunits=${OPTARG#udunits=}
+          curr_name[${#curr_name[*]}]=${OPTARG#udunits=}
         fi
 
         ;;
@@ -898,10 +908,20 @@ if ! mkdir -p $qaLocal/source 2> /dev/null ; then
   exit 1
 fi
 
-test ${isDistClean:-f} = t  && distclean
-
 if [ ${isBuild:-f} = t ] ; then
   for lName in zlib hdf5 netcdf udunits ; do
+    if [ ${#curr_name[*]} -gt 0 ] ; then
+        curr_name_str="${curr_name[*]}"
+        if [ "${curr_name_str//${lName}/}" != "${curr_name_str}" ] ; then
+           for name in ${curr_name[*]} ; do
+             if [ ${name//${lName}/} != ${name} ] ; then
+               lName=$name
+               break
+             fi
+           done
+        fi
+    fi
+
     f_build $lName
   done
 elif [ ${isLink:-f} = t ] ; then
