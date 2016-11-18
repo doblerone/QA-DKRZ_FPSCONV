@@ -28,6 +28,7 @@ descript()
   echo "  --debug[=script]  Display execution commands. If the name of a script"
   echo "                    is assigned, then debug only this one."
   echo "  --help            Display usage and exit."
+  echo "  --keep            Do not replace installed libs of the same version"
   echo "  --link=path       Hard links of external NetCDF installations from the"
   echo "                    directories in 'your-path/${package}/local'."
   echo "                    Shared by all hdf, netcdf, udunits  and zlib."
