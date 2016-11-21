@@ -503,12 +503,6 @@ makeProject()
       fi
     fi
 
-    test ${#GCC_LIBS} -eq 0 && \
-        export GCC_LIBS="-ludunits2 -lnetcdf -lhdf5 -lz -luuid"
-
-    test ${#GCC_LIBS_ADD} -gt 0 && \
-        export GCC_LIBS="${GCC_LIBS} ${GCC_LIBS_ADD}"
-
     if ! make ${always} -q -C $BIN -f ${QA_SRC}/$MAKEFILE ${cfc} ; then
        # not upto-date
        if make ${always} ${mk_D} -C $BIN -f ${QA_SRC}/$MAKEFILE ${cfc} ; then
@@ -848,6 +842,13 @@ if [ ${isShowInst:-f} = t ] ; then
 fi
 
 # c/c++ stand-alone programs
+test ${#GCC_LIBS} -eq 0 && \
+  export GCC_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid"
+
+test ${#GCC_LIBS_ADD} -gt 0 && \
+  export GCC_LIBS="${GCC_LIBS} ${GCC_LIBS_ADD}"
+
+
 makeUtilities
 
 # check projects' qa executables
