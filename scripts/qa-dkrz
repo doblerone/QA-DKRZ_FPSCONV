@@ -1376,7 +1376,7 @@ getExperimentNameFromPath()
   pcs=( ${pcs//\// } )
 
   # check for path component 'output'
-  test ! ${LOG_PATH_BASE} && LOG_PATH_BASE=${pcs[0]}
+  test ! ${DRS_PATH_BASE} && DRS_PATH_BASE=${pcs[0]}
 
   local countEPB=0
   local c expPathIndex M N
@@ -1385,7 +1385,7 @@ getExperimentNameFromPath()
   # for multiple occurrences
   local base_ix=0
   for(( c=0 ; c < N ; ++c )) ; do
-    test "${pcs[c]}" = ${LOG_PATH_BASE} && base_ix=$c
+    test "${pcs[c]}" = ${DRS_PATH_BASE} && base_ix=$c
   done
 
   local ix
@@ -2196,7 +2196,7 @@ getProjectTableName()
   pcs=( ${pcs//\// } )
 
   # check for path component 'output'
-  test ! ${LOG_PATH_BASE} && LOG_PATH_BASE=${pcs[0]}
+  test ! ${DRS_PATH_BASE} && DRS_PATH_BASE=${pcs[0]}
 
   local countEPB=0
   local c ptPathIndex M N
@@ -2205,7 +2205,7 @@ getProjectTableName()
   # for multiple occurrences
   local base_ix=0
   for(( c=0 ; c < N ; ++c )) ; do
-    test "${pcs[c]}" = ${LOG_PATH_BASE} && base_ix=$c
+    test "${pcs[c]}" = ${DRS_PATH_BASE} && base_ix=$c
   done
 
   local ix

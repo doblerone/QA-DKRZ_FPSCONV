@@ -1737,7 +1737,9 @@ setKWL()
   elif [ "${key}"     = EXP_NAME                   ] ; then
     key=LOG_FNAME
   elif [ "${key}"     = EXP_PATH_BASE              ] ; then
-    key=LOG_PATH_BASE
+    key=DRS_PATH_BASE
+  elif [ "${key}"     = LOG_PATH_BASE              ] ; then
+    key=DRS_PATH_BASE
   elif [ "${key}"     = EXP_PATH_INDEX             ] ; then
     key=LOG_PATH_INDEX
   elif [ "${key}"     = HIDDEN_DIRECTORY_DESCENT   ] ; then
