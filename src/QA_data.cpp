@@ -1209,13 +1209,11 @@ QA_Data::checkFinally(Variable *var)
       std::string key("6_1");
       if( notes->inq( key, name, ANNOT_NO_MT) )
       {
-        std::string capt("entire file of const value=");
+        std::string capt(hdhC::tf_var(var->name, hdhC::colon));
+        capt += "Entire file of const value=";
         capt += hdhC::double2String( currMin );
 
-        std::string text("variable=") ;
-        text += name;
-
-        if( notes->operate(capt, text) )
+        if( notes->operate(capt) )
           notes->setCheckStatus(pQA->n_data, pQA->n_fail);
 
         // erase redundant map entries
