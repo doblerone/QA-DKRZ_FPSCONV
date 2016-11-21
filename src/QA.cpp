@@ -561,7 +561,7 @@ QA::init(void)
    qaExp.init(optStr);
 
    // DRS specifications
-   if(isCheckDRS || isCheckDRS_F || isCheckDRS_P )
+   if(isCheckDRS_F || isCheckDRS_P)
    {
      drs_cv_table.setParent(this);
      drs_cv_table.setPath(tablePath);
@@ -665,23 +665,14 @@ QA::initCheckStatus(void)
    else
      cF->setCheckStatus(n_disabled);
 
-   if(isCheckDRS)
-   {
-     notes->setCheckStatus("DRS(F)", "PASS");
-     notes->setCheckStatus("DRS(P)", "PASS");
-   }
-   else
-   {
-     if(isCheckDRS_F)
-       notes->setCheckStatus("DRS(F)", "PASS");
-     else
-       notes->setCheckStatus("DRS(F)", n_disabled);
+   notes->setCheckStatus("DRS(F)", n_disabled);
+   notes->setCheckStatus("DRS(P)", n_disabled);
 
-     if(isCheckDRS_P)
-       notes->setCheckStatus("DRS(P)", "PASS");
-     else
-       notes->setCheckStatus("DRS(P)", n_disabled);
-   }
+   if(isCheckDRS_F)
+     notes->setCheckStatus("DRS(F)", "PASS");
+
+   if(isCheckDRS_P)
+     notes->setCheckStatus("DRS(P)", "PASS");
 
    if(isCheckCV)
      notes->setCheckStatus("CV", "PASS");
@@ -773,7 +764,8 @@ QA::initDefaults(void)
   isCheckCNSTY=true;
   isCheckCV=true;
   isCheckData=true;
-  isCheckDRS=true;
+  isCheckDRS_P=true;
+  isCheckDRS_F=true;
   isCheckTime=true;
   isCheckTimeValues=true;
 
@@ -1195,7 +1187,6 @@ QA::setCheckMode(std::string m)
   isCheckCNSTY=false;
   isCheckCV=false;
   isCheckData=false;
-  isCheckDRS=false;
   isCheckDRS_F=false;
   isCheckDRS_P=false;
   isCheckTime=false;
@@ -1251,7 +1242,6 @@ QA::setCheckMode(std::string m)
     }
     else if( cvs[j] == "drs" )
     {
-      isCheckDRS=true ;
       isCheckDRS_F=true ;
       isCheckDRS_P=true ;
       isCheckTime=true ;
@@ -1286,7 +1276,6 @@ QA::setCheckMode(std::string m)
       isCheckCF=true ;
       isCheckCNSTY=true ;
       isCheckCV=true ;
-      isCheckDRS=true ;
       isCheckDRS_F=true ;
       isCheckDRS_P=true ;
       isCheckTime=true ;
@@ -1317,7 +1306,6 @@ QA::setCheckMode(std::string m)
   isCheckCNSTY=true;
   isCheckCV=true;
   isCheckData=true;
-  isCheckDRS=true;
   isCheckDRS_F=true;
   isCheckDRS_P=true;
   isCheckTime=true;
@@ -1341,7 +1329,6 @@ QA::setCheckMode(std::string m)
     }
     else if( cvs[j] == "-drs" )
     {
-      isCheckDRS=false ;
       isCheckDRS_F=false ;
       isCheckDRS_P=false ;
     }
@@ -1354,7 +1341,6 @@ QA::setCheckMode(std::string m)
       isCheckCF=false ;
       isCheckCNSTY=false ;
       isCheckCV=false ;
-      isCheckDRS=false ;
       isCheckDRS_F=false ;
       isCheckDRS_P=false ;
     }

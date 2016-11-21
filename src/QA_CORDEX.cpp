@@ -368,7 +368,6 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 
    bool isModel=false;
    bool isInst=false;
-   bool isModelInst=false;
 
    bool isRCM = (des == 'R') ? true : false ;
 
@@ -377,22 +376,25 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
      x_line = line ;
 
      if( aValue == x_line[0] )
-       isModel=true;
-
-     if( isRCM )
      {
-       if( x_line.size() > 1 && instValue == x_line[1] )
-       {
-         isInst=true;
-         if( isModel )
-         {
-            isModelInst=true;
-            break;
-         }
-       }
-     }
-     else if( isModel )
+        isModel=true;
+
+        if( isRCM )
+        {
+          pQA->qaExp.RCMModelName = aValue;
+
+          if( x_line.size() > 1 && instValue == x_line[1] )
+          {
+            pQA->qaExp.institute_id = instValue;
+            isInst=true;
+          }
+        }
+        else
+          pQA->qaExp.GCMModelName = aValue;
+
+
         break;
+     }
    }
 
    ifs.close();
@@ -441,7 +443,7 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
      }
    }
 
-   if( isRCM && isModel && isInst && !isModelInst )
+   if( isRCM && isModel && !isInst )
    {
      std::string key("1_3d");
 
@@ -4134,7 +4136,7 @@ QA_Exp::init(std::vector<std::string>& optStr)
    // apply parsed command-line args
    applyOptions(optStr);
 
-   if( pQA->isCheckDRS || pQA->isCheckDRS_F || pQA->isCheckCV || pQA->isCheckTime )
+   if( pQA->isCheckDRS_F || pQA->isCheckCV || pQA->isCheckTime )
    {
      fVarname = getVarnameFromFilename();
      getFrequency();
@@ -4637,6 +4639,13 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
     std::string& rqName  = drs.attName[ix][k] ;
     std::string& rqValue = drs.attValue[ix][k] ;
 
+    if(rqName == "institute_id")
+        drs.attValue[ix][k] = institute_id ;
+    else if(rqName == "model_id")
+        drs.attValue[ix][k] = RCMModelName ;
+    else if(rqName == "driving_model_id")
+        drs.attValue[ix][k] = GCMModelName ;
+
     // missing required global attribute
     if( ! glob.isValidAtt(rqName) )
     {
@@ -4945,7 +4954,7 @@ QA_Exp::run(void)
 
    if( pQA->drs_cv_table.table_DRS_CV.is )
    {
-     if(pQA->isCheckDRS || pQA->isCheckDRS_F || pQA->isCheckDRS_P)
+     if(pQA->isCheckDRS_F || pQA->isCheckDRS_P)
      {
        DRS_CV drsFN(pQA);
        drsFN.run();

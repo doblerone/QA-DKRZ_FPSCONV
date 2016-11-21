@@ -197,7 +197,6 @@ class QA : public IObj
   bool isCheckCV;
   bool isCheckCNSTY;
   bool isCheckData;
-  bool isCheckDRS;
   bool isCheckDRS_F;
   bool isCheckDRS_P;
   bool isCheckTime;

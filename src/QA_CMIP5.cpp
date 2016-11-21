@@ -4567,7 +4567,7 @@ QA_Exp::init(std::vector<std::string>& optStr)
    // apply parsed command-line args
    applyOptions(optStr);
 
-   if( pQA->isCheckDRS || pQA->isCheckDRS_F || pQA->isCheckCV || pQA->isCheckTime )
+   if( pQA->isCheckDRS_F || pQA->isCheckCV || pQA->isCheckTime )
    {
      fVarname = getVarnameFromFilename(pQA->pIn->file.filename);
      getFrequency();
@@ -4816,7 +4816,7 @@ QA_Exp::run(void)
 
     if( pQA->drs_cv_table.table_DRS_CV.is )
     {
-      if(pQA->isCheckDRS || pQA->isCheckDRS_F || pQA->isCheckDRS_P)
+      if(pQA->isCheckDRS_F || pQA->isCheckDRS_P)
       {
         DRS_CV drsFN(pQA);
         drsFN.run();

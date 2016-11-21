@@ -360,6 +360,9 @@ class QA_Exp
   std::vector<std::string> reqAttOption;
 
   std::string cfStndNames;
+  std::string GCMModelName;
+  std::string RCMModelName;
+  std::string institute_id;
 
   std::string frequency;
   std::string parentExpID;
