@@ -339,8 +339,8 @@ update()
 
   . $QA_SRC/scripts/updateConfigFile.txt QA_REVISION${packRev:+=}$packRev
 
-  if . $QA_SRC/scripts/updateConfigFile.txt LAST_TABLE_UPDATE=$today \
-              || [ ${isForceUp:-f} = t ] ; then
+#  if . $QA_SRC/scripts/updateConfigFile.txt LAST_TABLE_UPDATE=$today \
+#              || [ ${isForceUp:-f} = t ] ; then
     if [ "$QA_HOME" != "$QA_SRC" ] ; then
       rsync -auz --exclude '*~' $QA_SRC/tables $QA_HOME &> /dev/null
     fi
@@ -358,7 +358,7 @@ update()
         --qa_path=${QA_SRC} ${DEBUG} \
         --config_file=$CONFIG_FILE \
         ${QA_HOME}/tables/projects/CF
-  fi
+#  fi
 
   return
 }
