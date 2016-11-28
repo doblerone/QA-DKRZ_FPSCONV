@@ -283,7 +283,10 @@ tr_option()
 
 update()
 {
-  if . $QA_SRC/scripts/updateConfigFile.txt ${AUTO_UPDATE:-AUTO_UPDATE} \
+  # search for updates only once a day
+  local today=$( date '+%Y%m%d' )
+
+  if . $QA_SRC/scripts/updateConfigFile.txt QA_UPDATE=${today} \
         || [ ${isUpdateQA:-f} = t ]; then
     if [ $CONDA_ENV ] ; then
       # look for a new conda-built package
@@ -336,29 +339,20 @@ update()
 
   . $QA_SRC/scripts/updateConfigFile.txt QA_REVISION${packRev:+=}$packRev
 
-  if [ ${GET_TABLES} ] || . $QA_SRC/scripts/updateConfigFile.txt \
-          ${AUTO_TABLE_UPDATE:-AUTO_TABLE_UPDATE} \
+  if . $QA_SRC/scripts/updateConfigFile.txt LAST_TABLE_UPDATE=$today \
               || [ ${isForceUp:-f} = t ] ; then
-
     if [ "$QA_HOME" != "$QA_SRC" ] ; then
-      rsync -auz $QA_SRC/tables $QA_HOME &> /dev/null
+      rsync -auz --exclude '*~' $QA_SRC/tables $QA_HOME &> /dev/null
     fi
 
-    if [ "${project}" != CF ] ; then
-      if [ ${GET_TABLES} ] ; then
-        prjs=( ${supportedProjects[*]} )
-      else
-        prjs=( ${project} )
-      fi
-
-      for prj in ${prjs[*]} ; do
+    for prj in ${project[*]} ; do
+      if [ "${prj}" != CF ] ; then
         ${QA_SRC}/scripts/get_project_tables \
-            --qa_path=${QA_SRC} ${DEBUG} \
+            -P $prj --qa_path=${QA_SRC} ${DEBUG} \
             --config_file=$CONFIG_FILE ${isForceUp:+--force-update} \
             ${QA_HOME}/tables/projects/${prj}
-      done
-    fi
-
+      fi
+    done
 
     ${QA_SRC}/scripts/get_cfconventions \
         --qa_path=${QA_SRC} ${DEBUG} \
@@ -431,12 +425,6 @@ do
           else
             AUTO_UPDATE=AUTO_UPDATE=enabled
           fi
-        elif [ "${UOPTARG:0:13}" = AUTO_TABLE_UP ] ; then
-          if [ "${OPTVAL}" ] ; then
-            AUTO_TABLE_UPDATE=AUTO_TABLE_UPDATE=${OPTVAL}
-          else
-            AUTO_TABLE_UPDATE=AUTO_TABLE_UPDATE=enabled
-          fi
         elif [ "${UOPTARG:0:5}" = BUILD ] ; then
           isBuild=t
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=install' ] ; then
@@ -505,20 +493,21 @@ for pck in $* ; do
     isForceUp=t
   else
     coll[${#coll[*]}]=$pck  # collect project names
-    project=$pck
+    project[${#project[*]}]=$pck
   fi
 done
 
 getSrcPath $zeroArg  # sets also CONDA_ENV
 getCurrPaths
 
-if . $QA_SRC/scripts/updateConfigFile.txt DEFAULT_PROJECT ; then
-  defPrj=--default_project=${DEFAULT_PROJECT#*=}
+if . $QA_SRC/scripts/updateConfigFile.txt \
+           DEFAULT_PROJECT${DEF_PRJ:+=}${DEF_PRJ} ; then
+  defPrj=--default_project=${DEF_PRJ}
 else
   defPrj=--default_project=$defaultProject
 fi
 
-test ! "$project" && project=${defPrj#*=}
+test ! "$project" && project=(${defPrj#*=})
 
 update
 
@@ -535,7 +524,7 @@ else
   pcks=
 fi
 
-test "${project}" = NONE && exit
+test "${project[0]}" = NONE && exit
 
 exec $QA_SRC/scripts/install.sh ${debug} --pack=${package} \
 ${isContinueLog:+--continue_log} ${pcks} ${defPrj} \

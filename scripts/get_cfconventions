@@ -177,7 +177,7 @@ test $# -eq 1  && cd $1 &> /dev/null
 # search for updates only once a day
 today=$( date '+%Y%m%d' )
 
-if ! . $QA_SRC/scripts/updateConfigFile.txt CF_LAST_UPDATE_CHECK=$today  ; then
+if ! . $QA_SRC/scripts/updateConfigFile.txt CF_LAST_UPDATE=$today  ; then
   exit
 fi
 

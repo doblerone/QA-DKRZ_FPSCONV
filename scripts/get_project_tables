@@ -1,5 +1,41 @@
 #! /bin/bash
 
+cmip6()
+{
+   local currPWD=$(pwd)
+   if [ ! -d $QA_SRC/scripts/xlsx2csv ] ; then
+      cd $QA_SRC/scripts
+      git clone http://github.com/dilshod/xlsx2csv &> cmip6_tables.log
+      ln xlsx2csv/xlsx2csv.py
+   fi
+
+   test ! -d ~/.qa-dkrz/tables/projects/CMIP6  \
+      && mkdir -p ~/.qa-dkrz/tables/projects/CMIP6
+
+   cd ~/.qa-dkrz/tables/projects/CMIP6
+   wget -l1 -N -np  \
+      http://proj.badc.rl.ac.uk/svn/exarch/CMIP6dreq/tags/latest/dreqPy/docs/CMIP6_MIP_tables.xlsx \
+      &>> cmip6_tables.log
+
+   # location of extracted csv table sheets: ~/.qa-dkrz/tables/projects/CMIP6
+   $QA_SRC/scripts/xlsx2csv.py -a -d '|' -l '\n' CMIP6_MIP_tables.xlsx CMIP6_MIP_tables
+
+   # the CMIP6 json files
+   if [ -d CMIP6_CVs ] ; then
+     cd CMIP6_CVs
+
+     if [ "$(getGitBranch)" != master ] ; then
+       git checkout master &> /dev/null
+     fi
+
+     git fetch && git reset --hard origin/master &> /dev/null
+   else
+     git clone https://github.com/WCRP-CMIP/CMIP6_CVs
+   fi
+
+   return
+}
+
 cordex()
 {
    if [ -d IS-ENES-Data.github.io ] ; then
@@ -54,13 +90,13 @@ test ! "$prj" && prj=${1##*/}
 today=$( date '+%Y%m%d' )
 
 if [ ${isForceUp:-f} = f ] ; then
-  if ! . $QA_SRC/scripts/updateConfigFile.txt ${prj}_LAST_TABLE_UPDATE=$today  ; then
+  if ! . $QA_SRC/scripts/updateConfigFile.txt ${prj}_LAST_UPDATE=$today  ; then
     exit
   fi
 fi
 
 if [ "$prj" = CORDEX ] ; then
   cordex
+elif [ "$prj" = CMIP6 ] ; then
+  cmip6
 fi
-
-

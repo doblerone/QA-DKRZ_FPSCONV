@@ -2966,6 +2966,10 @@ initTables()
   #    projects are updated and are applied.
   # 5) 4) also for option USE_STRICT.
 
+  # default tables
+  rsync -auz --exclude '*~' --exclude '.*' \
+     ${QA_HOME}/tables/projects/${PROJECT}/* ${TABLE_PATH}
+
   local currPrj=$PROJECT
   local tn name
   for tn in ${tableVars[*]} ; do
@@ -2996,7 +3000,9 @@ initTables()
 
 initT()
 {
+   # update or copy only user defined table modifications
    local table=${1%=*}
+
    test "${1}" != "${1/=/}" && local value=${1#*=}
 
    if [ ${value} ] ; then
@@ -3008,26 +3014,27 @@ initT()
    local pDir  # index 0 -> 3 provides precedence
    local prj=$currPrj
 
-   pDir[0]=tables/projects/${prj}
-   pDir[1]=tables/projects
-   pDir[2]=tables/${prj}
-   pDir[3]=tables
+   #pDir[0]=tables/projects/${prj}
+   #pDir[1]=tables/projects
+   # ipath to user defined modifications
+   pDir[0]=tables/${prj}
+   pDir[1]=tables
 
    local ix p
 
    # implicitly and highest: local file and file with absolute path
 
    if [ ${USE_STRICT:-f} = t ] ; then
-      # if USE_STRICT is enabled, then projects[/prj] is required
-      p=${QA_HOME}/${pDir[0]}/
-
+      # if USE_STRICT is enabled, then only tables in projects are allowed;
+      # already copied by rsync
+      value=${value%/*}
    elif [ ! -f ${value} ] ; then
       # a local instance precedes always
       if [ -f ${QA_HOME}/${value} ] ; then
         # explicitly in a sub-dir path
         p=${QA_HOME}/
       else
-        for(( ix=0 ; ix < 4 ; ++ix )) ; do
+        for(( ix=0 ; ix < 2 ; ++ix )) ; do
 
           # scan through the precedence chain
           test -f ${QA_HOME}/${pDir[ix]}/${value} && p=${QA_HOME}/${pDir[ix]}/
@@ -3042,10 +3049,10 @@ initT()
        tryCom \
        cp ${p}${value} ${TABLE_PATH}
      fi
-
-     eval ${table}=${value}
-     export ${table}  # note: no value
    fi
+
+   eval ${table}=${value}
+   export ${table}
 
    return
 }
@@ -3058,8 +3065,7 @@ initTcat()
    test ! ${value} && return  # not provided
 
    if [ ${USE_STRICT:-f} = t ] ; then
-      # if USE_STRICT is enabled, then projects[/prj] is required
-      initT ${1##*,}  # only the file in table/project/PROJECT, i.e. the last one
+      # if USE_STRICT is enabled, then only default tables are required
       return
    fi
 

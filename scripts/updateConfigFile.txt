@@ -53,7 +53,6 @@
   if [ ${uCF_blkBeg:-0} -eq 0 ] ; then
     echo -e "\n${QA_SRC}:"        >> $CONFIG_FILE
     echo AUTO_UPDATE=enabled       >> $CONFIG_FILE
-    echo AUTO_TABLE_UPDATE=enabled >> $CONFIG_FILE
   fi
 
   # check items
