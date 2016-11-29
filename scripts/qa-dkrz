@@ -2970,6 +2970,11 @@ initTables()
   rsync -auz --exclude '*~' --exclude '.*' \
      ${QA_HOME}/tables/projects/${PROJECT}/* ${TABLE_PATH}
 
+  if [ "$PROJECT" != CF ] ; then
+    rsync -auz --exclude '*~' --exclude '.*' \
+       ${QA_HOME}/tables/projects/CF/* ${TABLE_PATH}
+  fi
+
   local currPrj=$PROJECT
   local tn name
   for tn in ${tableVars[*]} ; do
@@ -2991,9 +2996,6 @@ initTables()
   fi
 
 # get CF tables
-  initT CF_AREA_TYPES=${CF_AREA_TYPES}
-  initT CF_STANDARD_NAMES=${CF_STANDARD_NAMES}
-  initT CF_STD_REGION_NAMES=${CF_STD_REGION_NAMES}
 
   return
 }
