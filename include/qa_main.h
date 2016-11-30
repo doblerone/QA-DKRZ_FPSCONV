@@ -49,6 +49,8 @@
   #include "qa_CORDEX.h"
 #elif defined CMIP5
   #include "qa_CMIP5.h"
+#elif defined CMIP6
+  #include "qa_CMIP6.h"
 #endif
 
 #include "time_control.h"

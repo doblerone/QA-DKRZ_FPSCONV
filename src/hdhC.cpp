@@ -15,7 +15,6 @@ FileSplit::operator=(const FileSplit& fs)
 void
 FileSplit::clear()
 {
-   is=false;
    filename.clear();
    basename.clear();
    extension.clear();
@@ -26,7 +25,6 @@ FileSplit::clear()
 void
 FileSplit::copy(const FileSplit &fs)
 {
-  is = fs.is;
   filename = fs.filename;
   basename = fs.basename;
   extension = fs.extension;
@@ -59,9 +57,9 @@ FileSplit::getFilename(void)
 }
 
 bool
-FileSplit::isExisting(std::string f)
+FileSplit::exist(std::string f)
 {
-  std::string testFile("/bin/bash -c \'test -d ") ;
+  std::string testFile("/bin/bash -c \'test -e ") ;
 
   if( f.size() )
     testFile += f ;
@@ -92,7 +90,6 @@ FileSplit::setExtension(std::string f)
 void
 FileSplit::setFile(hdhC::FileSplit& f)
 {
-  is=f.is;
   filename =f.filename;
   basename =f.basename;
   extension=f.extension;
@@ -110,7 +107,6 @@ FileSplit::setFile(std::string f)
    if( f.size() == 0 )
      return;
 
-   is=true;
    size_t pos ;
 
    // remove multiple /
@@ -163,8 +159,6 @@ FileSplit::setFile(std::string f)
 void
 FileSplit::setFilename(std::string f)
 {
-  std::string filename=f;
-
   size_t pos;
 
   if( (pos=f.rfind('/')) < std::string::npos )
@@ -177,6 +171,8 @@ FileSplit::setFilename(std::string f)
   }
   else
     basename = f;
+
+  filename=f;
 
   return;
 }
@@ -298,7 +294,7 @@ compare(double x, std::string op, double y, double epsilon)
   if( op[0] == '=' )
   {
     double xy= fabs(x - y);
-    
+
     is = xy < epsilon ? true : false;
     if(is)
         return is;

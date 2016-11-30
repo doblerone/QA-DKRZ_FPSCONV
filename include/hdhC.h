@@ -112,7 +112,7 @@ class FileSplit
 {
    public:
 
-   FileSplit() {is=false;}
+   FileSplit(){;}
    FileSplit(const FileSplit& fs) {copy(fs);}
 
    FileSplit& operator=(const FileSplit&);
@@ -131,7 +131,7 @@ class FileSplit
    std::string
         getPath(void){ return path ; }
 
-   bool isExisting(std::string f=empty);
+   bool exist(std::string f=empty);
    void setExtension(std::string);
    void setFile(std::string f );
    void setFile(struct FileSplit& );
@@ -139,7 +139,7 @@ class FileSplit
    void setFilename(std::string);
    void setPath(std::string f){ path=f; }
 
-   bool is;
+   bool is(){ return getFile().size(); }
    std::string filename;
    std::string basename;
    std::string extension;

@@ -312,7 +312,7 @@ TimeControl::getFilename(void)
   // Determine the first or the next full-path filename.
   // Increments recursiveley, if the built filename does not exist.
 
-  bool isAfterFirst = (file.is > 0) ? true : false;
+  bool isAfterFirst = file.is() ;
 
   if( isAfterFirst )
   {
@@ -378,7 +378,7 @@ TimeControl::getFilename(void)
 
   sDateStr = beginDate.str();
 
-  if( ! file.isExisting() )
+  if( ! file.exist() )
   {
     if( isAfterFirst )  // no recursion, but stop
       return "";

@@ -4,6 +4,8 @@
 #include "hdhC.h"
 #include "date.h"
 #include "annotation.h"
+#include "json/json-forwards.h"
+#include "json/json.h"
 #include "qa_data.h"
 #include "qa_drs_cv_table.h"
 #include "qa_time.h"
@@ -13,8 +15,8 @@
   #include "qa_CORDEX.h"
 #elif defined CMIP5
   #include "qa_CMIP5.h"
-#elif defined CLIPC
-  #include "qa_CLIPC.h"
+#elif defined CMIP6
+  #include "qa_CMIP6.h"
 #endif
 
 

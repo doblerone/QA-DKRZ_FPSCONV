@@ -1939,7 +1939,7 @@ CF::getSN_TableEntry(void)
 
    for( int i=0 ; i < sz ; ++i )
    {
-     for( int j=i+1 ; j < sz ; ++j )
+     for( int j=i+1 ; j < sz-1 ; ++j )
      {
         std::string &var_i = pIn->variable[ zx[i] ].snTableEntry.std_name;
         std::string &var_j = pIn->variable[ zx[j] ].snTableEntry.std_name;
@@ -2723,7 +2723,7 @@ CF::scanStdNameTable(std::vector<int> &zx)
   if( zx.size() == 0 )  // no standard name
      return false;
 
-  if( !std_name_table.is )  // name of the table
+  if( !std_name_table.is() )  // name of the table
      return false;
 
   ReadLine ifs( std_name_table.getFile() ) ;
@@ -2914,6 +2914,8 @@ CF::setCheck(std::string &s)
      cFVal=15;
    else if( s.find("1.6") < std::string::npos )
      cFVal=16;
+   else if( s.find("1.7") < std::string::npos )
+	   cFVal=17;
    else if( s.find("1.0") < std::string::npos
          || s.find("1.1") < std::string::npos
            || s.find("1.2") < std::string::npos
@@ -2923,19 +2925,6 @@ CF::setCheck(std::string &s)
      {
         std::string capt(s);
         capt += " is not implemented, using CF-1.4 for the check";
-
-        (void) notes->operate(capt) ;
-        notes->setCheckStatus( n_CF, fail );
-     }
-   }
-   else if( s.find("1.7") < std::string::npos )
-   {
-     cFVal=16;  // fall back
-
-     if( notes->inq(bKey + "261e") )
-     {
-        std::string capt("CF-1.7 is not implemented,");
-        capt += " falling back to CF-1.6" ;
 
         (void) notes->operate(capt) ;
         notes->setCheckStatus( n_CF, fail );
@@ -4428,6 +4417,8 @@ CF::chap261(void)
       cFVersion="CF-1.4" ;
     else if( cFVal == 16 )
       cFVersion="CF-1.6" ;
+	else if( cFVal == 17 )
+		cFVersion="CF-1.7draft" ;
   }
   else
   {
@@ -7001,7 +6992,7 @@ CF::chap6(void)
     }
 
     // only read once
-    if( ! vs_region_table.size() && region_table.is )
+    if( ! vs_region_table.size() && region_table.is() )
     {
       ReadLine ifs( region_table.getFile() ) ;
 
@@ -8411,7 +8402,7 @@ CF::chap733(std::string &method, Variable& var, std::string mode)
   // only read once
   std::vector<std::string> vs_areaType;
 
-  if( ! vs_areaType.size() && region_table.is )
+  if( ! vs_areaType.size() && region_table.is() )
   {
     ReadLine ifs( area_table.getFile() ) ;
 
@@ -8624,7 +8615,7 @@ CF::chap734a(std::string& name)
    // rule: name must not be the name of a dimension or a scalar variable
    // collection of correct names; these have been sorted out before.
 
-  if( std_name_table.is )  // cf-standard-name-table.xml
+  if( std_name_table.is() )  // cf-standard-name-table.xml
      return false;
 
   ReadLine ifs( std_name_table.getFile() ) ;
@@ -9824,11 +9815,12 @@ CF::chap9_featureType(
      }
   }
 
-  if( cFVal == 16 && vs_featureType.size() > 1 )
+  if( cFVal > 15 && vs_featureType.size() > 1 )
   {
     if( notes->inq(bKey + "9a", n_global) )
     {
-      std::string capt("CF-1.6 expects only a single value for global ");
+	  std::string capt(cFVersion);
+      capt += " expects only a single value for global ";
       capt += hdhC::tf_att(n_featureType) + ", found" ;
       for( size_t i=0 ; i < vs_featureType.size() ; ++i)
       {

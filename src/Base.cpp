@@ -220,7 +220,7 @@ Base::exceptionError(std::string str)
     xcptn.strError += "_error" ;
 
      // base-name if available, i.e. after initialisation of the InFile obj
-    if( file.is )
+    if( file.is() )
     {
       xcptn.strError += "_";
       xcptn.strError += file.basename ;
@@ -254,7 +254,7 @@ Base::exceptionWarning(std::string str)
     xcptn.strWarning = getObjName() ;
     xcptn.strWarning += "_warning" ;
 
-    if( file.is )
+    if( file.is() )
     {
       xcptn.strWarning += "_";
       xcptn.strWarning += file.basename ;

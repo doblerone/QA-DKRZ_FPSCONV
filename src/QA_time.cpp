@@ -731,7 +731,7 @@ QA_Time::initTimeTable(void)
    }
 
    // default for no table found: "id_1st,,any(regular)"
-   if( !timeTable.is )
+   if( !timeTable.is() )
    {
      timeTableMode = REGULAR ;
      return ;

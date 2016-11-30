@@ -206,7 +206,7 @@ FD_interface::exceptionError(std::string str)
     xcptn.strError = "fd_error" ;
 
      // base name if available, i.e. after the initialisation of the InFile obj
-    if( file.is )
+    if( file.is() )
     {
       xcptn.strError += "_";
       xcptn.strError += file.basename ;
@@ -237,7 +237,7 @@ FD_interface::exceptionWarning(std::string str)
 
     xcptn.strWarning = "fd_warning" ;
 
-    if( file.is )
+    if( file.is() )
     {
       xcptn.strWarning += "_";
       xcptn.strWarning += file.basename ;
@@ -377,7 +377,7 @@ FD_interface::init(void)
   // varnames in a request (or by default) and using stdout
   // will result in a mess, because several obj write to stdout.
 
-  if( file.is )
+  if( file.is() )
     file.setFile( file.getFile() + "." + pIn->variable[0].name) ;
 //  pGM = pIn->variable[0].pGM;
 
@@ -708,7 +708,7 @@ FD_interface::print(std::string fromDate,
 
    std::string str;
 
-   if( file.is )
+   if( file.is() )
      str=file.filename;
    else
      str="frequencyDist." + vName;

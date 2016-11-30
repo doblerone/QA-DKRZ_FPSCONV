@@ -322,7 +322,7 @@ QA::defaultPrjTableName(void)
   // tables names usage: both project and standard tables
   // reside in the same path.
   // Naming of the project table:
-  if( ! consistencyFile.is )
+  if( ! consistencyFile.is() )
     consistencyFile.setFilename("pt_NONE.csv");
 
   return;
@@ -969,7 +969,7 @@ QA::openQA_Nc(InFile &in)
   // Copies time variable from input-nc file.
 
   // name of the result file was set before
-  if ( !qaFile.is )
+  if ( !qaFile.is() )
   {
     std::string key("00");
 

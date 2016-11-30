@@ -37,6 +37,9 @@
   #include "QA_CORDEX.cpp"
 #elif defined CMIP5
   #include "QA_CMIP5.cpp"
+#elif defined CMIP6
+  #include "jsoncpp.cpp"
+  #include "QA_CMIP6.cpp"
 #endif
 
 #include "TimeControl.cpp"

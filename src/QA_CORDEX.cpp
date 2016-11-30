@@ -511,7 +511,7 @@ DRS_CV::checkNetCDF(NcAPI* p_nc)
       is=true;
     }
 
-    s+= " deflated (compressed)";
+    s+= " deflated";
   }
 
   if(is)
@@ -554,7 +554,7 @@ DRS_CV::checkProductName(std::string& drs_product,
   {
     std::string capt("DRS fault for path component <product>, found") ;
     capt += hdhC::tf_val(drs_product) ;
-    capt += ", expected one of";
+    capt += ", expected ";
     capt += hdhC::tf_val(prod_choice);
 
     (void) notes->operate(capt) ;
@@ -858,6 +858,7 @@ DRS_CV::getPathBegIndex(
     std::map<std::string, std::string>& gM )
 {
   int ix=-1;
+  std::string sU;
   bool isActivity; // applied case-insensivity
 
   for( size_t i=0 ; i < drs.size() ; ++i)
@@ -869,12 +870,12 @@ DRS_CV::getPathBegIndex(
       if( x_e[j] == "activity" )
       {
         isActivity=true;
-        s = hdhC::Upper()(s);
+        sU = hdhC::Upper()(s);
       }
       else
         isActivity=false;
 
-      if( s == gM[ x_e[j] ]  )
+      if( s == gM[ x_e[j] ] || sU == gM[ x_e[j] ] )
       {
         ix = static_cast<int>(i);
 
@@ -3207,7 +3208,7 @@ QA_Exp::checkMetaData(InFile &in)
   // from the previous instance.
   std::vector<struct DimensionMetaData> dimNcMeDa;
 
-  if(varReqTable.is )
+  if(varReqTable.is() )
   {
     for( size_t i=0 ; i < varMeDa.size() ; ++i )
     {
@@ -4274,7 +4275,7 @@ QA_Exp::inqTables(void)
   bool ret=false;
   std::vector<std::string*> pPath;
 
-  if( ! varReqTable.isExisting(varReqTable.path) )
+  if( ! varReqTable.exist(varReqTable.path) )
     ret=true;
 
   for( size_t i=0 ; i <  pPath.size() ; ++i)
@@ -4952,7 +4953,7 @@ QA_Exp::run(void)
 {
    bool isNoTable = inqTables() ;
 
-   if( pQA->drs_cv_table.table_DRS_CV.is )
+   if( pQA->drs_cv_table.table_DRS_CV.is() )
    {
      if(pQA->isCheckDRS_F || pQA->isCheckDRS_P)
      {
