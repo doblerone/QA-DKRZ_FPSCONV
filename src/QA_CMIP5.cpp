@@ -1752,7 +1752,7 @@ CMOR::checkMIP_table(InFile& in, VariableMetaData& vMD,
    // variable was not found in table sheet Omon, because
    // it is defined in Oyr
 
-   if( !pExp->varReqTable.is )  // no standard table
+   if( !pExp->varReqTable.is() )  // no standard table
       return false;
 
    ReadLine ifs(pExp->varReqTable.getFile());
@@ -4685,7 +4685,7 @@ QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
 bool
 QA_Exp::inqTables(void)
 {
-  if( ! varReqTable.isExisting(varReqTable.path) )
+  if( ! varReqTable.exist(varReqTable.path) )
   {
      std::string key("7_12");
 
@@ -4814,7 +4814,7 @@ QA_Exp::run(void)
   {
     QA::tableSheet = getMIP_tableName() ;
 
-    if( pQA->drs_cv_table.table_DRS_CV.is )
+    if( pQA->drs_cv_table.table_DRS_CV.is() )
     {
       if(pQA->isCheckDRS_F || pQA->isCheckDRS_P)
       {
