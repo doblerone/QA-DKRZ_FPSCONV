@@ -843,7 +843,7 @@ fi
 
 # c/c++ stand-alone programs
 test ${#GCC_LIBS} -eq 0 && \
-  export GCC_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid"
+  export GCC_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg -lssl -lcrypto"
 
 test ${#GCC_LIBS_ADD} -gt 0 && \
   export GCC_LIBS="${GCC_LIBS} ${GCC_LIBS_ADD}"
