@@ -843,7 +843,7 @@ fi
 
 # c/c++ stand-alone programs
 test ${#QA_LIBS} -eq 0 && \
-  export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid "
+  export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuidcd "
 
 test ${#QA_LIBS_ADD} -gt 0 && \
   export QA_LIBS="${QA_LIBS} ${QA_LIBS_ADD}"
