@@ -223,8 +223,8 @@ class QA : public IObj
   std::vector<std::string> srcStr;
   std::string revision;
 
-  static std::string tableSheet;
-  static std::string tableSheetSub;
+  static std::string tableId;
+  static std::string tableIdSub;
 
   std::string n_data;
   std::string n_time;
@@ -260,8 +260,8 @@ class QA : public IObj
   void        setProcessing(void);
 };
 
-std::string QA::tableSheet=hdhC::empty;
-std::string QA::tableSheetSub=hdhC::empty;
+std::string QA::tableId=hdhC::empty;
+std::string QA::tableIdSub=hdhC::empty;
 
 #endif
 

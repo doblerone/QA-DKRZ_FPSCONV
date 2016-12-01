@@ -320,6 +320,12 @@ getBasename(std::string& );
 std::string
 getExtension(std::string& );
 
+//! get index
+/*!  index of a corresponding vector v with size()==sz. If -sz < index < 0, then
+     the reverse index is used. If index > -sz or index > sz, then index==0 */
+int
+getIndex(int index, int sz);
+
 //! Get all path components
 void
 getPathComponents(std::string &str, std::string &path,
