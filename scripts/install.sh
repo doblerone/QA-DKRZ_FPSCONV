@@ -842,11 +842,11 @@ if [ ${isShowInst:-f} = t ] ; then
 fi
 
 # c/c++ stand-alone programs
-test ${#GCC_LIBS} -eq 0 && \
-  export GCC_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg "
+test ${#QA_LIBS} -eq 0 && \
+  export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid "
 
-test ${#GCC_LIBS_ADD} -gt 0 && \
-  export GCC_LIBS="${GCC_LIBS} ${GCC_LIBS_ADD}"
+test ${#QA_LIBS_ADD} -gt 0 && \
+  export QA_LIBS="${QA_LIBS} ${QA_LIBS_ADD}"
 
 
 makeUtilities
