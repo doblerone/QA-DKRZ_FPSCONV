@@ -498,7 +498,7 @@ DRS_CV::checkMIPT_tableName(Split& x_filename)
   // table sheet name from global attributes has been checked
 
   // compare file entry to the one in global header attribute table_id
-  if( x_filename[1] != QA::tableSheet )
+  if( x_filename[1] != QA::tableId )
   {
     std::string key("7_8");
 
@@ -507,7 +507,7 @@ DRS_CV::checkMIPT_tableName(Split& x_filename)
       std::string capt("Ambiguous MIP table names, found ") ;
       capt += hdhC::tf_assign("MIP-table(file)", x_filename[1]) ;
       capt += " vs. global ";
-      capt += hdhC::tf_att(CMOR::n_table_id, QA::tableSheet);
+      capt += hdhC::tf_att(CMOR::n_table_id, QA::tableId);
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus(drsF, pQA->n_fail);
@@ -515,8 +515,8 @@ DRS_CV::checkMIPT_tableName(Split& x_filename)
     }
 
     // try the filename's MIP table name
-    if( QA::tableSheet.size() == 0 )
-      QA::tableSheet = pQA->qaExp.getMIP_tableName(x_filename[1]) ;
+    if( QA::tableId.size() == 0 )
+      QA::tableId = pQA->qaExp.getMIP_tableName(x_filename[1]) ;
   }
 
   return ;
@@ -953,6 +953,7 @@ DRS_CV::getPathBegIndex(
     std::map<std::string, std::string>& gM )
 {
   int ix=-1;
+  std::string sU;
   bool isActivity; // applied case-insensivity
 
   for( size_t i=0 ; i < drs.size() ; ++i)
@@ -964,12 +965,12 @@ DRS_CV::getPathBegIndex(
       if( x_e[j] == CMOR::n_activity )
       {
         isActivity=true;
-        s = hdhC::Upper()(s);
+        sU = hdhC::Upper()(s);
       }
       else
         isActivity=false;
 
-      if( s == gM[ x_e[j] ]  )
+      if( s == gM[ x_e[j] ] || sU == gM[ x_e[j] ] )
       {
         ix = static_cast<int>(i);
 
@@ -1286,7 +1287,7 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd,
   std::vector<size_t> ix;
 
   // a) yyyy
-  if( QA::tableSheet == QA_Exp::MIP_tableNames[1] )
+  if( QA::tableId == QA_Exp::MIP_tableNames[1] )
   {
     if( sd[0].size() != 4 )
       text.push_back(", expected yyyy, found " + sd[0] + "-" + sd[1]) ;
@@ -1307,7 +1308,7 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd,
 
   for(size_t i=0 ; i < ix.size() ; ++i )
   {
-    if( QA::tableSheet == QA_Exp::MIP_tableNames[ix[i]] )
+    if( QA::tableId == QA_Exp::MIP_tableNames[ix[i]] )
     {
       if( sd[0].size() != 6 )
         text.push_back(", expected yyyyMM, found " + sd[0] + "-" + sd[1]) ;
@@ -1317,8 +1318,8 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd,
   }
 
   // c) day, cfDay
-  if( QA::tableSheet == QA_Exp::MIP_tableNames[9]
-        || QA::tableSheet == QA_Exp::MIP_tableNames[14] )
+  if( QA::tableId == QA_Exp::MIP_tableNames[9]
+        || QA::tableId == QA_Exp::MIP_tableNames[14] )
   {
     if( sd[0].size() != 8 )
       text.push_back(", expected yyyyMMdd, found " + sd[0] + "-" + sd[1]) ;
@@ -1335,7 +1336,7 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd,
 
   for(size_t i=0 ; i < ix.size() ; ++i )
   {
-    if( QA::tableSheet == QA_Exp::MIP_tableNames[ix[i]] )
+    if( QA::tableId == QA_Exp::MIP_tableNames[ix[i]] )
     {
       if( sd[0].size() != 12 )
         text.push_back(", expected yyyyMMddhhmm, found " + sd[0] + "-" + sd[1]) ;
@@ -1345,7 +1346,7 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd,
   }
 
   // e) cfSites
-  if( QA::tableSheet == QA_Exp::MIP_tableNames[16] )
+  if( QA::tableId == QA_Exp::MIP_tableNames[16] )
   {
     if( sd[0].size() != 14 )
       text.push_back(", expected yyyyMMddhhmmss, found " + sd[0] + "-" + sd[1]) ;
@@ -1805,7 +1806,7 @@ CMOR::checkMIP_table(InFile& in, VariableMetaData& vMD,
       {
         // get properties of the table entry
         if( ! tEntry.attMap.empty()
-              && tableSheetBuf.size() > 1 && tableSheetBuf[0] == "Oyr" )
+              && tableIdBuf.size() > 1 && tableIdBuf[0] == "Oyr" )
         {
           // Omon-3D-tracer part II
           getMIPT_var(str0, bufEntry, v_col);
@@ -1823,10 +1824,10 @@ CMOR::checkMIP_table(InFile& in, VariableMetaData& vMD,
           getMIPT_var(str0, tEntry, v_col); // normal; mostly
       }
 
-      ++tableSheetBufIx;
+      ++tableIdBufIx;
     }
 
-    if( ifs.isEOF() || (tableSheetBufIx == tableSheetBuf.size()) )
+    if( ifs.isEOF() || (tableIdBufIx == tableIdBuf.size()) )
       isCont=false;
   }
 
@@ -1841,7 +1842,7 @@ CMOR::checkMIP_table(InFile& in, VariableMetaData& vMD,
       std::string capt(QA_Exp::getCaptionIntroVar(
                             pExp->varReqTable.basename, vMD));
       capt += "not found in ";
-      capt += hdhC::tf_assign("sheet", QA::tableSheet);
+      capt += hdhC::tf_assign("sheet", QA::tableId);
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
@@ -2625,7 +2626,7 @@ CMOR::checkMIPT_var_cellMeasures(
 
     if( notes->inq( key, vMD.var->name) )
     {
-      std::string currTable(QA::tableSheet) ;
+      std::string currTable(QA::tableId) ;
 
       std::string capt(QA_Exp::getCaptionIntroVar(
               currTable, vMD, n_cell_measures));
@@ -2695,7 +2696,7 @@ CMOR::checkMIPT_var_cellMethods(
 
     if( notes->inq( key, vMD.var->name) )
     {
-      std::string currTable(QA::tableSheet) ;
+      std::string currTable(QA::tableId) ;
 
       std::string capt(QA_Exp::getCaptionIntroVar(
               currTable, vMD, n_cell_methods));
@@ -2753,7 +2754,7 @@ CMOR::checkMIPT_var_longName(
             VariableMetaData& tEntry)
 {
   // special consideration for tracers in table sheet Omon
-  if( QA::tableSheet == "Oyr" && tableSheetBuf[0] == "Omon" )
+  if( QA::tableId == "Oyr" && tableIdBuf[0] == "Omon" )
   {
     // the name in Omon is taken from Oyr + 'at surface'
     std::string t(tEntry.attMap[n_long_name]);
@@ -2774,7 +2775,7 @@ CMOR::checkMIPT_var_longName(
 
   if( notes->inq( key, vMD.var->name) )
   {
-    std::string currTable(QA::tableSheet) ;
+    std::string currTable(QA::tableId) ;
 
     std::string capt(QA_Exp::getCaptionIntroVar(currTable, vMD, n_long_name));
     capt += "expected" ;
@@ -2839,11 +2840,11 @@ CMOR::checkMIPT_var_type(
 
     if( notes->inq( key, vMD.var->name) )
     {
-      std::string currTable(QA::tableSheet) ;
+      std::string currTable(QA::tableId) ;
 
       std::string capt(QA_Exp::getCaptionIntroVar(currTable, vMD, n_type));
       capt += "check discarded, not found in table " ;
-      capt += hdhC::tf_assign(QA::tableSheet);
+      capt += hdhC::tf_assign(QA::tableId);
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus("CV", pQA->n_fail);
@@ -2857,7 +2858,7 @@ CMOR::checkMIPT_var_type(
 
     if( notes->inq( key, vMD.var->name) )
     {
-      std::string currTable(QA::tableSheet) ;
+      std::string currTable(QA::tableId) ;
 
       std::string capt(QA_Exp::getCaptionIntroVar(currTable, vMD, n_type));
       capt += ", expected";
@@ -3680,17 +3681,17 @@ CMOR::findVarReqTableEntry(ReadLine& ifs, std::string& str0,
 
      x_line=str0;
 
-     if( tableSheetBufIx == 1 && ! tEntry.attMap.empty() )
+     if( tableIdBufIx == 1 && ! tEntry.attMap.empty() )
      {
-       if( tableSheetBuf[tableSheetBufIx] == "Omon" )
+       if( tableIdBuf[tableIdBufIx] == "Omon" )
        {
           if( x_line[1].find("1st table in Oyr") < std::string::npos )
             return true; // found an entry and the shape matches.
        }
 /*
-       else if( tableSheetBuf[0] == "cf3hr" )
+       else if( tableIdBuf[0] == "cf3hr" )
          isFindSubSheet=false;
-       else if( tableSheetBuf[0] == "cfSites" )
+       else if( tableIdBuf[0] == "cfSites" )
          isFindSubSheet=false;
 */
 
@@ -3714,7 +3715,7 @@ CMOR::findVarReqTableSheet(ReadLine& ifs, std::string& str0,
   // very special: a tracer variable was not found
   // in table sheet Omon, because it is defined in Oyr, but
   // some properties from the Omon
-  if( !tableSheetBuf.size() )
+  if( !tableIdBuf.size() )
     bufTableSheets(vMD);
 
   do
@@ -3731,7 +3732,7 @@ CMOR::findVarReqTableSheet(ReadLine& ifs, std::string& str0,
           if( (pos=x_col[2].rfind(hdhC::colon)) < std::string::npos )
             str0=x_col[2].substr(0, pos);
 
-        if( str0 == tableSheetBuf[tableSheetBufIx] )
+        if( str0 == tableIdBuf[tableIdBufIx] )
           return true;  // sub table found
       }
     }
@@ -3749,7 +3750,7 @@ CMOR::getVarReqTableSubSheetName(std::string& str0, VariableMetaData& vMD)
    size_t p;
    if( (p = str0.find(hdhC::colon)) < std::string::npos )
      // skip also a leading ' ' after the colon
-     QA::tableSheetSub = str0.substr(p+2) ;
+     QA::tableIdSub = str0.substr(p+2) ;
 
    return;
 }
@@ -3936,7 +3937,7 @@ CMOR::getMIPT_var(std::string& entry,
 void
 CMOR::initDefaults(void)
 {
-  tableSheetBufIx=0;
+  tableIdBufIx=0;
 
   return;
 }
@@ -4072,7 +4073,7 @@ CMOR::run(InFile& in, VariableMetaData& vMD)
   std::vector<struct DimensionMetaData> vs_f_DMD_entries;
 
   // Scan through the standard output table, respectivels variable requests.
-  if( QA::tableSheet.size() && ! vMD.var->isExcluded )
+  if( QA::tableId.size() && ! vMD.var->isExcluded )
   {
     checkMIP_table(in, vMD, vs_f_DMD_entries) ;
 
@@ -4082,47 +4083,47 @@ CMOR::run(InFile& in, VariableMetaData& vMD)
       // very special: a tracer variable was not found
       // in table sheet Omon, because it is defined in Oyr, but
       // some properties from the Omon
-      if( QA::tableSheet == "Omon" )
+      if( QA::tableId == "Omon" )
       {
-        tableSheetBuf = "Omon" ;
-        QA::tableSheet = "Oyr" ;
+        tableIdBuf = "Omon" ;
+        QA::tableId = "Oyr" ;
 
         is = checkMIP_table(in, vMD, vs_f_DMD_entries) ;
 
-        QA::tableSheet = "Omon" ;
-        QA::tableSheetSub =  "Marine Bioge" ;
-        tableSheetBuf = "Oyr" ;
+        QA::tableId = "Omon" ;
+        QA::tableIdSub =  "Marine Bioge" ;
+        tableIdBuf = "Oyr" ;
       }
-      else if( QA::tableSheet == "cf3hr" )
+      else if( QA::tableId == "cf3hr" )
       {
-        tableSheetBuf = "cf3hr" ;
-        QA::tableSheet = "Amon" ;
+        tableIdBuf = "cf3hr" ;
+        QA::tableId = "Amon" ;
         std::string saveCellMethods(vMD.attMap[n_cell_methods]);
         vMD.attMap[n_cell_methods]="time: point";
 
         is = checkMIP_table(in, vMD, vs_f_DMD_entries) ;
 
         // switch back to the original table required for the project table entry
-        QA::tableSheet = "cf3hr" ;
-        QA::tableSheetSub.clear() ;
-        tableSheetBuf = "Amon" ;
+        QA::tableId = "cf3hr" ;
+        QA::tableIdSub.clear() ;
+        tableIdBuf = "Amon" ;
 
         if( ! is )
           vMD.attMap[n_cell_methods]=saveCellMethods;
       }
-      else if( QA::tableSheet == "cfSites" )
+      else if( QA::tableId == "cfSites" )
       {
-        tableSheetBuf = "cfSites" ;
-        QA::tableSheet = "Amon" ;
+        tableIdBuf = "cfSites" ;
+        QA::tableId = "Amon" ;
         std::string saveCellMethods(vMD.attMap[n_cell_methods]);
         vMD.attMap[n_cell_methods]="time: point";
 
         is = checkMIP_table(in, vMD, vs_f_DMD_entries) ;
 
         // switch back to the original table required for the project table entry
-        QA::tableSheet = "cfSites" ;
-        QA::tableSheetSub =  "CFMIP 3-ho" ;
-        tableSheetBuf = "Amon" ;
+        QA::tableId = "cfSites" ;
+        QA::tableIdSub =  "CFMIP 3-ho" ;
+        tableIdBuf = "Amon" ;
 
         if( ! is )
           vMD.attMap[n_cell_methods]=saveCellMethods;
@@ -4138,23 +4139,23 @@ void
 CMOR::bufTableSheets(VariableMetaData& vMD)
 {
 /*
-  if( tableSheetBuf.size() )
+  if( tableIdBuf.size() )
   {
-    if( QA::tableSheet == "Omon" )
-      QA::tableSheetSub = "Marine Bioge" ;
-    else if( QA::tableSheet == "cf3hr" )
+    if( QA::tableId == "Omon" )
+      QA::tableIdSub = "Marine Bioge" ;
+    else if( QA::tableId == "cf3hr" )
     {
-      tableSheetSub.clear() ;
+      tableIdSub.clear() ;
 
-      if( tableSheetBuf.size() == 2 )
-        vMD.attMap[n_cell_methods]=tableSheetBuf[1];
+      if( tableIdBuf.size() == 2 )
+        vMD.attMap[n_cell_methods]=tableIdBuf[1];
     }
-    else if( QA::tableSheet == "cfSites" )
+    else if( QA::tableId == "cfSites" )
     {
-      QA::tableSheetSub = "CFMIP 3-ho" ;
+      QA::tableIdSub = "CFMIP 3-ho" ;
 
-      if( tableSheetBuf.size() == 2 )
-        vMD.attMap[n_cell_methods]=tableSheetBuf[1];
+      if( tableIdBuf.size() == 2 )
+        vMD.attMap[n_cell_methods]=tableIdBuf[1];
     }
   }
 
@@ -4162,27 +4163,27 @@ CMOR::bufTableSheets(VariableMetaData& vMD)
   {
 */
 
-  if( QA::tableSheet == "Omon" )
+  if( QA::tableId == "Omon" )
   {
-    tableSheetBuf.push_back("Oyr") ;
-    tableSheetBuf.push_back(QA::tableSheet) ;
+    tableIdBuf.push_back("Oyr") ;
+    tableIdBuf.push_back(QA::tableId) ;
   }
-  else if( QA::tableSheet == "cf3hr" )
+  else if( QA::tableId == "cf3hr" )
   {
-    tableSheetBuf.push_back(QA::tableSheet) ;
-    QA::tableSheet = "Amon" ;
-    tableSheetBuf.push_back(vMD.attMap[n_cell_methods]);
+    tableIdBuf.push_back(QA::tableId) ;
+    QA::tableId = "Amon" ;
+    tableIdBuf.push_back(vMD.attMap[n_cell_methods]);
     vMD.attMap[n_cell_methods]="time: point";
   }
-  else if( QA::tableSheet == "cfSites" )
+  else if( QA::tableId == "cfSites" )
   {
-    tableSheetBuf.push_back(QA::tableSheet) ;
-    QA::tableSheet = "Amon" ;
-    tableSheetBuf.push_back(vMD.attMap[n_cell_methods]);
+    tableIdBuf.push_back(QA::tableId) ;
+    QA::tableId = "Amon" ;
+    tableIdBuf.push_back(vMD.attMap[n_cell_methods]);
     vMD.attMap[n_cell_methods]="time: point";
   }
   else
-    tableSheetBuf.push_back(QA::tableSheet) ;
+    tableIdBuf.push_back(QA::tableId) ;
 
 //  }
 
@@ -4367,7 +4368,7 @@ QA_Exp::getCaptionIntroDim(
   std::string& t_DMD_outname = t_DMD.attMap[CMOR::n_output_dim_name] ;
 
   std::string intro("table=");
-  intro += QA::tableSheet + ", var(file)=";
+  intro += QA::tableId + ", var(file)=";
   intro += f_DMD.var->name + ", CMOR-dim=";
   intro += t_DMD.attMap[CMOR::n_CMOR_dimension] ;
 
@@ -4453,8 +4454,8 @@ QA_Exp::getFrequency(void)
 std::string
 QA_Exp::getMIP_tableName(std::string tName)
 {
-  if( QA::tableSheet.size() )
-    return QA::tableSheet;
+  if( QA::tableId.size() )
+    return QA::tableId;
 
   // the counter-parts in the attributes
   std::string tableID;
@@ -4476,16 +4477,16 @@ QA_Exp::getMIP_tableName(std::string tName)
   {
     if(  x_tableID[0].substr(1,4) == "able"
         || x_tableID[0].substr(1,4) == "ABLE" )
-      QA::tableSheet = x_tableID[1] ;
+      QA::tableId = x_tableID[1] ;
   }
   else if( x_tableID.size() )
-    QA::tableSheet = x_tableID[0] ;
+    QA::tableId = x_tableID[0] ;
 
   // check the format of the total line
   bool is=true;
   for( size_t i=0 ; i < MIP_tableNames.size() ; ++i )
   {
-    if( MIP_tableNames[i] == QA::tableSheet )
+    if( MIP_tableNames[i] == QA::tableId )
     {
       is=false ;
       break;
@@ -4505,8 +4506,8 @@ QA_Exp::getMIP_tableName(std::string tName)
       pQA->setExitState( notes->getExitState() ) ;
     }
 
-    QA::tableSheet.clear();
-    return QA::tableSheet;
+    QA::tableId.clear();
+    return QA::tableId;
   }
 
   // Is the date of the table given; within ()?
@@ -4536,7 +4537,7 @@ QA_Exp::getMIP_tableName(std::string tName)
     }
   }
 
-  return QA::tableSheet;
+  return QA::tableId;
 }
 
 std::string
@@ -4812,7 +4813,7 @@ QA_Exp::run(void)
 {
   if( inqTables() )
   {
-    QA::tableSheet = getMIP_tableName() ;
+    QA::tableId = getMIP_tableName() ;
 
     if( pQA->drs_cv_table.table_DRS_CV.is() )
     {
