@@ -612,7 +612,7 @@ DRS_CV::checkProductName(std::string& drs_product,
     capt += hdhC::tf_val(CMOR::n_product);
     capt += ", found" ;
     capt += hdhC::tf_val(drs_product) ;
-    capt += ", expected one of";
+    capt += ", expected ";
     capt += hdhC::tf_val(prod_choice);
 
     (void) notes->operate(capt) ;
