@@ -1305,6 +1305,21 @@ uint32_t fletcher32_LE_clear( T *data, size_t len, bool *reset, size_t nShift )
 
 // ----------------------------------------------------
 
+//! get index
+/*!  index of a corresponding vector v with size()==sz. If -sz < index < 0, then
+     the reverse index is used. If index > -sz or index > sz, then index==0 */
+int
+getIndex(int index, int sz)
+{
+  if( index == INT_MAX )
+      return 0;
+  
+  if( index < 0 && index > (-sz))
+     index = sz + index;
+
+  return index; // would raise an exception  outside the valid range
+}
+
 std::string
 getVector2Str(std::vector<std::string>& vs, bool isSpace, char sep)
 {

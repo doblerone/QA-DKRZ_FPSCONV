@@ -250,8 +250,8 @@ struct CMOR
 
   // a little bit intricated, because of Omon-3D tracers, cf3hr, and cfSites
   void                     bufTableSheets(VariableMetaData&);
-  std::vector<std::string> tableSheetBuf;
-  size_t                   tableSheetBufIx;
+  std::vector<std::string> tableIdBuf;
+  size_t                   tableIdBufIx;
 
   std::string parentExpID;
   std::string parentExpRIP;
