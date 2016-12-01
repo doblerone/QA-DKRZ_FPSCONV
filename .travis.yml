@@ -36,7 +36,7 @@ install:
 
 script:
   - touch .ignore_GitHub
-  - export GCC_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg"
+  - export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg"
   - ./install CF
   - ./install CORDEX
   - ./install CMIP5

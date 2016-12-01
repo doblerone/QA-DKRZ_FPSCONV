@@ -48,7 +48,7 @@ testValidNC.x: $(UTIL_SOURCE) $(UTIL_HEADER) nc_api.h NcAPI.cpp testValidNC.cpp
 
 %.x: %.cpp
 	$(CXX) $(CXXFLAGS) -o $@  $< \
-        -I $(QA_SRC)/include $(INCLUDE) $(LIB) $(LIBDL) $(GCC_LIBS)
+        -I $(QA_SRC)/include $(INCLUDE) $(LIB) $(LIBDL) $(QA_LIBS)
 
            #-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid
 
@@ -58,7 +58,7 @@ ${PRJ_NAME}.x: ${BASE_SOURCE} ${BASE_HEADER} $(QA_PRJ_HEADER) $(QA_PRJ_SRC) \
                $(QA_SOURCE) $(QA_HEADER) $(UTIL_SOURCE) $(UTIL_HEADER)
 	$(CXX) $(CXXFLAGS) -o ${PRJ_NAME}.x $(QA_SRC)/src/QA_main.cpp \
            -I $(QA_SRC)/include $(INCLUDE) \
-           $(LIB) $(LIBDL) $(GCC_LIBS)
+           $(LIB) $(LIBDL) $(QA_LIBS)
 
            #-ludunits2 -lnetcdf #-lhdf5_hl -lhdf5 -lz \
            #-lmfhdf -ldf -ljpeg -lssl -lcrypto
@@ -71,7 +71,7 @@ dkrz-cf-checker.x: CF_main.cpp CF.cpp $(BASE_SOURCE) ${BASE_SOURCE} \
                    $(QA_PRJ_HEADER) $(QA_HEADER) $(UTIL_SOURCE) $(UTIL_HEADER)
 	$(CXX) $(CXXFLAGS) -o dkrz-cf-checker.x $(QA_SRC)/src/CF_main.cpp \
            -I $(QA_SRC)/include $(INCLUDE) \
-           $(LIB) $(LIBDL) $(GCC_LIBS)
+           $(LIB) $(LIBDL) $(QA_LIBS)
 
            #-ludunits2 -lnetcdf #-lhdf5_hl -lhdf5 -lz \
            #-lmfhdf -ldf -ljpeg -lssl -lcrypto
