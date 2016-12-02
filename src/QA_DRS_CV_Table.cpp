@@ -103,7 +103,8 @@ DRS_CV_Table::read(void)
   bool isDS=false;
   bool isFE=false;
   std::string DS_sep("/");
-  std::string FE_sep("_");
+  std::string FE_sep("/");
+  // std::string FE_sep("_");
 
   while( ! ifs.getLine(s0) )
   {

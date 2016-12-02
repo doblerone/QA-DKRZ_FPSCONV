@@ -8,7 +8,7 @@ zlib=zlib-1.2.8
 udunits=udunits-2.2.20
 
 defaultProject=CORDEX
-supportedProjects=( CMIP5 CORDEX )
+supportedProjects=( CMIP5 CMIP6 CORDEX )
 
 descript()
 {
