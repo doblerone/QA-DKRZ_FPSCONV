@@ -375,7 +375,8 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
    {
      x_line = line ;
 
-     if( aValue == x_line[0] )
+     if( aValue == x_line[0]
+            || (isRCM && aValue == x_line[0].substr(0,aValue.size()) ) )
      {
         isModel=true;
 
