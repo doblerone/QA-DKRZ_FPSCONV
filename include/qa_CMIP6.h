@@ -11,6 +11,9 @@
 #include "qa_time.h"
 #include "qa_cnsty.h"
 
+#include "json/json-forwards.h"
+#include "json/json.h"
+
 //! Quality Control Program Unit for CMIP6.
 /*! All the QA considerations are covered by this class.\n
 Properties specified in standard_output.xlsx document

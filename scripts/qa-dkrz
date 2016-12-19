@@ -278,6 +278,13 @@ callQaConfig()
   done
   set +f
 
+  if [ ! "${PROJECT}" ] ; then
+     echo "qa-dkrz requires PROJECT=name in the configuration or on the command-line"
+     exit
+  fi
+
+  test ! "${PROJECT_AS}" && setKWL PROJECT_AS=${PROJECT}
+
 # invoked by option -E_DEBUG_MANAGER
   if [ ${#DEBUG_MANAGER} -gt 1 ] ; then
     exec 7<&2
@@ -421,7 +428,7 @@ callQaExecutor()
           PRINT_GREP_MARK \
           PROC_POOL \
           PROJECT \
-          PROJECT_NAME \
+          PROJECT_AS \
           PROJECT_DATA \
           PROJECT_TABLE \
           QA \
@@ -2609,15 +2616,14 @@ init()
     exit
   fi
 
-  test ! ${PROJECT} && PROJECT=NONE
-
   # package update requested and required?
   if [ !${NO_GIT} ] ; then
     # checksum of current qa-dkrz
     local md5_0
     md5_0=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
-    if ${QA_SRC}/install ${INSTALL_ARGS//,/ } ${PROJECT} ; then
+    if ${QA_SRC}/install ${INSTALL_ARGS//,/ } \
+                         --project_as=${PROJECT_AS} ${PROJECT} ; then
         local md5_1
         md5_1=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
@@ -2647,7 +2653,7 @@ init()
     fi
   fi
 
-  if [ ${PROJECT} = NONE ] ; then
+  if [ "${PROJECT_AS}" = NONE ] ; then
     std_out flush "PROJECT option is missing"
     exit 1
   fi
@@ -2968,7 +2974,7 @@ initTables()
 
   # default tables
   rsync -auz --exclude '*~' --exclude '.*' \
-     ${QA_HOME}/tables/projects/${PROJECT}/* ${TABLE_PATH}
+     ${QA_HOME}/tables/projects/${PROJECT_AS}/* ${TABLE_PATH}
 
   if [ "$PROJECT" != CF ] ; then
     rsync -auz --exclude '*~' --exclude '.*' \
@@ -3024,8 +3030,8 @@ initT()
    #pDir[0]=tables/projects/${prj}
    #pDir[1]=tables/projects
    # ipath to user defined modifications
-   pDir[0]=tables/${prj}
-   pDir[1]=tables
+   pDir[${#pDir[*]}]=tables/${prj}
+   pDir[${#pDir[*]}]=tables
 
    local ix p
 
@@ -3041,7 +3047,7 @@ initT()
         # explicitly in a sub-dir path
         p=${QA_HOME}/
       else
-        for(( ix=0 ; ix < 2 ; ++ix )) ; do
+        for(( ix=0 ; ix < ${#pDir[*]} ; ++ix )) ; do
 
           # scan through the precedence chain
           test -f ${QA_HOME}/${pDir[ix]}/${value} && p=${QA_HOME}/${pDir[ix]}/
@@ -3941,7 +3947,7 @@ runExample()
   fi
 
   echo "run"  > $TTY
-  echo "$QA_SRC/scripts/qa-dkrz -m --work=$dir/.qa-dkrz -f qa-test.task" > $TTY
+  echo "qa-dkrz -m --work=$dir/.qa-dkrz -f qa-test.task" > $TTY
   echo -e "\nNote: config.txt and tables are copied to $dir/.qa-dkrz\n" > $TTY
 
   exec $QA_SRC/scripts/qa-dkrz -m --work=$dir/.qa-dkrz -f qa-test.task

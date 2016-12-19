@@ -33,13 +33,8 @@
 #include "QA_time.cpp"
 #include "QA_cnsty.cpp"
 
-#if defined CORDEX
-  #include "QA_CORDEX.cpp"
-#elif defined CMIP5
-  #include "QA_CMIP5.cpp"
-#elif defined CMIP6
-  #include "jsoncpp.cpp"
-  #include "QA_CMIP6.cpp"
+#if defined QA_PRJ_SRC
+  #include QA_PRJ_SRC
 #endif
 
 #include "TimeControl.cpp"

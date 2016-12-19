@@ -4,8 +4,6 @@
 package=QA-DKRZ  # by default
 prg=install.sh
 
-availableProjects=( CORDEX CMIP5 )
-
 MAKEFILE=Makefile
 
 compilerSetting()
@@ -473,50 +471,52 @@ log()
 
 makeProject()
 {
+  PROJECT=$1
   local cxxFlags="${CXXFLAGS}"
 
-  for PROJECT in ${projects[*]} ; do
-    export PROJECT=$PROJECT
+  test "${PROJECT_AS}" && PROJECT=${PROJECT_AS}
 
-    if [ ${PROJECT} = CF ] ; then
-      local cfc=CF-checker
-      CXXFLAGS="${cxxFlags} -D CF_MACRO"
+  export PROJECT=$PROJECT
 
-    elif [ ${PROJECT} = MODIFY ] ; then
-      MAKEFILE=Makefile_modify
-      local cfc=ModifyNc
+  if [ ${PROJECT} = CF ] ; then
+    local cfc=CF-checker
+    CXXFLAGS="${cxxFlags} -D CF_MACRO"
 
+  elif [ ${PROJECT} = MODIFY ] ; then
+    MAKEFILE=Makefile_modify
+    local cfc=ModifyNc
+
+  else
+    export QA_PRJ_HEADER=qa_${PROJECT}.h
+    export QA_PRJ_SRC=QA_${PROJECT}.cpp
+    CXXFLAGS="${cxxFlags} -D ${PROJECT} "
+
+    unset cfc
+
+    if [ $(ps -ef | grep -c qa-DKRZ) -gt 1 ] ; then
+      # protect running sessions, but not really thread save
+      export PRJ_NAME=qqA-${PROJECT}
+      test -f $BIN/qA-${PROJECT}.x && \
+        cp -a $BIN/qA-${PROJECT}.x $BIN/${PRJ_NAME}.x
     else
-      export QA_PRJ_HEADER=qa_${PROJECT}.h
-      export QA_PRJ_SRC=QA_${PROJECT}.cpp
-      CXXFLAGS="${cxxFlags} -D ${PROJECT}"
-      unset cfc
-
-      if [ $(ps -ef | grep -c qa-DKRZ) -gt 1 ] ; then
-        # protect running sessions, but not really thread save
-        export PRJ_NAME=qqA-${PROJECT}
-        test -f $BIN/qA-${PROJECT}.x && \
-          cp -a $BIN/qA-${PROJECT}.x $BIN/${PRJ_NAME}.x
-      else
-        # nothing to protect
-        export PRJ_NAME=qA-${PROJECT}
-      fi
+      # nothing to protect
+      export PRJ_NAME=qA-${PROJECT}
     fi
+  fi
 
-    if ! make ${always} -q -C $BIN -f ${QA_SRC}/$MAKEFILE ${cfc} ; then
-       # not upto-date
-       if make ${always} ${mk_D} -C $BIN -f ${QA_SRC}/$MAKEFILE ${cfc} ; then
-         test ${PROJECT} != CF && log "make qa-${PROJECT}.x" DONE
-       else
-         test ${PROJECT} != CF && log "make qa-${PROJECT}.x" FAIL
-         exit 1
-       fi
-    fi
+  if ! make ${always} -q -C $BIN -f ${QA_SRC}/$MAKEFILE ${cfc} ; then
+     # not upto-date
+     if make ${always} ${mk_D} -C $BIN -f ${QA_SRC}/$MAKEFILE ${cfc} ; then
+       test ${PROJECT} != CF && log "make qa-${PROJECT}.x" DONE
+     else
+       test ${PROJECT} != CF && log "make qa-${PROJECT}.x" FAIL
+       exit 1
+     fi
+  fi
 
-    if [ ${PROJECT} != CF -a ${PROJECT} != MODIFY ] ; then
-      test ${PRJ_NAME:0:3} = qqA && mv $BIN/${PRJ_NAME}.x $BIN/qA-${PROJECT}.x
-    fi
-  done
+  if [ ${PROJECT} != CF -a ${PROJECT} != MODIFY ] ; then
+    test ${PRJ_NAME:0:3} = qqA && mv $BIN/${PRJ_NAME}.x $BIN/qA-${PROJECT}.x
+  fi
 
   return
 }
@@ -774,6 +774,8 @@ while getopts Bdhq:-: option ${args[*]}
 do
   UOPTARG="$OPTARG"
   tr_option UOPTARG
+  OPTNAME=${UOPTARG%%=*}
+  OPTVAL=${OPTARG#*=}
 
   case $option in
     B)  always=-B ;;                # unconditionally make all
@@ -781,7 +783,7 @@ do
     h)  descript
         exit ;;
     q)  QA_SRC=${OPTARG} ;;
-    -)  if [ "${UOPTARG}" = CONTINUE_LOG ] ; then
+    -)  if [ "${OPTNAME}" = CONTINUE_LOG ] ; then
            isContLog=t
         elif [ "${UOPTARG:0:5}" = BUILD ] ; then
            # make libraries in ${package}/local
@@ -790,18 +792,20 @@ do
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=install.sh' ] ; then
            set -x
            isDebug=t
-        elif [ "${UOPTARG}" = DISPLAY_COMP ] ; then
+        elif [ "${OPTNAME}" = DISPLAY_COMP ] ; then
            displayComp=t
            continue
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
            isLink=t
-        elif [ "${UOPTARG%%=*}" = PACKAGE ] ; then
-           package=${OPTARG#=*}
-        elif [ "${UOPTARG%=*}" = DEFAULT_PROJECT ] ; then
-           defaultProject=${OPTARG#*=}
-        elif [ "${UOPTARG%=*}" = SHOW-INST ] ; then
+        elif [ "${OPTNAME}" = PACKAGE ] ; then
+           package=${OPTVAL}
+        elif [ "${OPTNAME}" = PROJECT_AS ] ; then
+          PROJECT_AS="${OPTVAL}"
+        elif [ "${OPTNAME}" = DEFAULT_PROJECT ] ; then
+           defaultProject=${OPTVAL}
+        elif [ "${OPTNAME}" = SHOW-INST ] ; then
            isShowInst=t
-           test "${UOPTARG#*=}" = FULL && isShowInstFull
+           test "${OPTVAL}" = FULL && isShowInstFull
            continue
         fi
 
@@ -862,6 +866,39 @@ fi
 getRevNum REVISION
 export REVISION
 
-makeProject
+# list of all QA C++ source files and project key-words; the latter
+# are given as pseudo file name
+prj_cpp=( $(ls $QA_SRC/src/QA_*.cpp ) QA_CF.cpp QA_MODIFY.cpp )
+prj_cpp=( ${prj_cpp[*]##*/} )
+
+# rm those that are not project realted
+non_prj_cpp=( QA_cnsty.cpp QA_data.cpp QA_DRS_CV_Table.cpp QA_main.cpp QA_time.cpp )
+
+for(( i=0 ; i < ${#prj_cpp[*]} ; ++i )) ; do
+  for(( j=0 ; j < ${#non_prj_cpp[*]} ; ++j )) ; do
+    if [ "${prj_cpp[i]}" ==  ${non_prj_cpp[j]} ] ; then
+      unset prj_cpp[i]
+      break
+    fi
+  done
+done
+
+prj_cpp=( ${prj_cpp[*]} )
+
+for prj in ${projects[*]} ; do
+  for(( i=0 ; i < ${#prj_cpp[*]} ; ++i )) ; do
+    if [ QA_${prj}.cpp = ${prj_cpp[i]} ] ; then
+      makeProject $prj
+      continue 2
+    fi
+  done
+
+  undefPrj=${prj}
+done
+
+if [ "${undefPrj}" ] ; then
+  echo "undefined project(s): ${undefPrj[*]}"
+  exit 1
+fi
 
 exit 0

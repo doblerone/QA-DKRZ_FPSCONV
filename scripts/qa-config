@@ -74,27 +74,6 @@ setDefaults()
   setKWL SLEEP_PERIOD=300            # [s] export
 }
 
-add2qaConf()
-{
-  local prospect=$1
-
-  if [ ${prospect:0:2} = './' ] ; then
-    prospect=${prospect:2}
-  elif [ ${prospect:0:3} = '../' ] ; then
-    local myPwd=$(pwd)
-    prospect=${myPwd%/*}/${prospect:3}
-  fi
-
-  # found a name
-  # test whether this name was already specified
-  for(( i=0 ; i < ${#filePrecedence[*]} ; ++i )) ; do
-    test "${filePrecedence[i]}" = "${prospect}" && return 1
-  done
-
-  filePrecedence[${#filePrecedence[*]}]=${prospect}
-
-  return 0
-}
 
 changeGroupPermission()
 {
@@ -392,7 +371,7 @@ Usage: qa-DKRZ options
              Note that a filename must contain at least a single alpha char and
              that the step must not.
    --project_as=string
-             The current PROJECT is treated as PROJECT=string, but with
+             The current PROJECT is treated as PROJECT_AS=string, but with
              the name kept.
    --qa-work-dir  Path to tables, .qa-config file (if no \$HOME dirctory is
              accessible), and a CF_TestSuite.
@@ -454,117 +433,65 @@ $enableOptText
 
 }
 
-findEmbeddedConf()
+findProject()
 {
-  local currConf=$1
+  # Scan files for explicit PROJECT and PROJECT_AS specifications.
 
-  # Is there a QA_CONFIG assignment embedded in the current file?
-  # This separates commented-out from enabled QA_CONF assignment
-  # If fails, then try a backward comatibel approach
+  # find valid project names used in table
+  if [ ${#definedProjects[*]} -eq 0 ] ; then
+    definedProjects=( $( ls ${QA_HOME}/tables/projects) )
+    definedProjects=( ${definedProjects[*]} $( ls ${QA_HOME}/tables) )
 
-  if [ $currConf ] ; then
+    local i
+    for(( i=0 ; i < ${#definedProjects[*]} ; ++i )) ; do
+      if [ ${definedProjects[i]} = projects ] ; then
+         unset definedProjects[i]
+         definedProjects=( ${definedProjects[*]} )
+         break
+      fi
+    done
+  fi
+
+  # look for a specification in the current conf-files.
+  local val
+
+  if [ ! ${PROJECT} ] ; then
+    val=( $(grep "^[[:space:]]*[^#][[:space:]]*PROJECT=" $1 ) )
+    if [ "${val}" ] ; then
+      setKWL PROJECT=${val#*=}
+    fi
+  fi
+
+  if [ ! ${PROJECT_AS} ] ; then
+    val=( $(grep "^[[:space:]]*[^#][[:space:]]*PROJECT_AS=" $1 ) )
+    if [ "${val}" ] ; then
+      setKWL PROJECT_AS=${val#*=}
+    fi
+  fi
+
+  if [ ! ${PROJECT} ] ; then
     local item names name
     names=( QA_CONF QC_CONF qa_conf qc_conf )
 
     for name in ${names[*]} ; do
-      item="$(grep ${name}= ${currConf} 2> /dev/null )"
-      item="${item// /}"
-      item=( ${item} )           # several lines are possible
-      item=( ${item[*]%%\#*} )
-      item=( ${item[*]} )
-      item=${item#${name}=}
+      val=( $(grep "^[[:space:]]*[^#][[:space:]]*${name}=" $1 ) )
+      if [ "${val}" ] ; then
+        val=${val#*=}
+        val=${val%_qa.conf}
+        val=${val%_qc.conf}
 
-      test ${item} && break
-    done
+        for(( i=0 ; i < ${#definedProjects[*]} ; ++i )) ; do
+          if [ ${definedProjects[i]} = ${val} ] ; then
+             setKWL PROJECT=$val
+             setKWL PROJECT_AS=$val
+             return
+          fi
+        done
 
-    # when item is empty, but a PROJECT or PORJECT_AS is going to be
-    # found, then use this
-    findProject $currConf
-  fi
-
-  if [ ! "${item}" ] ; then
-     if [ ${PROJECT} ] ; then
-       item=${PROJECT}_qa.conf
-     else
-       return
-     fi
-  fi
-
-  local ix p
-  local pDir  # index 0 -> 3 provides precedence
-
-  if [ ${item} != ${item##*/} ] ; then
-    pDir[0]=${item%/*}/  # absolute path
-    item=${item##*/}
-  else
-    pDir[0]=$(pwd)/  # local path
-  fi
-
-  # backward compatibility: qc
-  local pos
-  if findStr ${item} _qc pos ; then
-    local item_alt=${item:0:pos}_qa${item:$((pos+3))}
-  fi
-
-  pDir[1]=${QA_HOME}/tables/
-  pDir[2]=${QA_HOME}/tables/${item%_*}/
-  pDir[3]=${QA_HOME}/tables/projects/
-  pDir[4]=${QA_HOME}/tables/projects/${item%_*}/
-  local ix
-
-  local items
-  declare -a items
-  items=( ${item} ${item_alt} )
-
-  for(( ix=0 ; ix < 5 ; ++ix )) ; do
-    for item in ${items[*]} ; do
-      if [ -f ${pDir[ix]}${item} ] ; then
-        if add2qaConf ${pDir[ix]}${item} ; then
-          findEmbeddedConf ${pDir[ix]}${item}
-        fi
         break
       fi
     done
-  done
-
-  return
-}
-
-findProject()
-{
-  # 1. Scan files for explicit PROJECT specifications.
-  # 2. Try to identify known default projects names in the filename.
-
-  local currConf=$1
-  local prj
-
-  # look for a specification in the current conf-files.
-  local name arg val
-  declare -a name arg
-  name=
-  arg=
-
-  val=( $(grep "^[[:space:]]*[^#][[:space:]]*${PROJECT:1}=" ${currConf} ) )
-  if [ "${val}" ] ; then
-    name[${#name[*]}]=${val%=*}
-    arg[${#arg[*]}]=${val#*=}
   fi
-
-  # find known project names
-  if [ ${#knownProjects[*]} -eq 0 ] ; then
-    knownProjects=( $( ls ${QA_HOME}/tables/projects) )
-  fi
-
-  # filename with a leading project name?
-  local item
-  for prj in ${knownProjects[*]} ; do
-    item=${currConf##*/}
-    if [ ${prj} = ${item:0:${#prj}} ] ; then
-      break
-    else
-      prj=
-    fi
-  done
 
   return
 }
@@ -599,23 +526,32 @@ getMultiLists()
   # note that a CF_check-list.conf file may be given in every project.
   # The rules given within would overwrite default CF ones.
 
-  local pDir  # index 0 -> 3 provides precedence
-
-  pDir[0]=$(pwd)  # local path
-  pDir[1]=${QA_HOME}/tables
-  pDir[2]=${QA_HOME}/tables/${PROJECT}
-  pDir[3]=${QA_HOME}/tables/projects/${PROJECT}
-
   local prjList cfList
   declare -a prjList cfList
 
-  # precedence of check lists: user-defined --> default
-  local fs=( CF_check-list.conf ${PROJECT}_check-list.conf)
+  for qacf in ${QA_CONFS//,/ } ; do
+     qa_cl=( ${qa_cl[*]} $(grep "^[[:space:]]*[^#][[:space:]]*QA_CHECK_LIST=" $qacf ) )
+  done
 
-  local p
+  # precedence of check lists: user-defined --> default
+  local fs=( CF_check-list.conf ${qa_cl[*]#*=} \
+             ${PROJECT}_check-list.conf \
+             ${PROJECT_AS}_check-list.conf )
+
+  local ff i p pL
   for p in ${pDir[*]} ; do
     test -f $p/${fs[0]} && cfList[${#cfList[*]}]=$p/${fs[0]}
-    test -f $p/${fs[1]} && prjList[${#prjList[*]}]=$p/${fs[1]}
+
+    # distinguish between user-defined, PROJECT and PROJECT_AS
+    for(( i=1 ; i < ${#fs[*]} ; ++i )) ; do
+      ff=${fs[i]}
+
+      for pL in ${prjList[*]} ; do
+         test ${pL} = $p/$ff && continue 2
+      done
+
+      test -f $p/${ff} && prjList[${#prjList[*]}]=$p/${ff}
+    done
   done
 
   p=${QA_HOME}/tables/projects/CF
@@ -671,60 +607,67 @@ getMultiLists()
   return
 }
 
-getPrecedence()
+findQAConfSeq()
 {
-  filePrecedence=( $* )
+  qaConfFileSeq=( $* )
 
   # the first two items of array 'task_priority' would have been
   # set while performing getops().
 
-  local i item qaResults swp sz1 sz
-
-  # in case there are multiple conf files, then 'task' files followed by
-  # the sequence of embedded QA_CONF assignments get
-  # priority with the order the task-files are specified.
-  sz1=$(( ${#filePrecedence[*]} -1 ))
-  sz=${#filePrecedence[*]}
-  local i1 i2
-
-  for(( i1=0 ; i1 < sz1 ; ++i1 )) ; do
-    for((i2=i1+1 ; i2 < sz ; ++i2 )) ; do
-      if [ "${filePrecedence[i1]##*.}" != task -a "${filePrecedence[i2]##*.}" = task ] ; then
-      swp=${filePrecedence[i1]}
-      filePrecedence[${i1}]=${filePrecedence[i2]}
-      filePrecedence[${i2}]=${swp}
-    fi
-    done
-  done
+  local i item qaResults
 
   # resolve relative paths
-  for(( i1=0 ; i1 < sz ; ++i1 )) ; do
-    if [ ${filePrecedence[i1]:0:2} = './' ] ; then
-      filePrecedence[i1]=${filePrecedence[i1]:2}
-    elif [ ${filePrecedence[i1]:0:3} = '../' ] ; then
+  for(( i=0 ; i < ${#qaConfFileSeq[*]} ; ++i )) ; do
+    if [ ${qaConfFileSeq[i1]:0:2} = './' ] ; then
+      qaConfFileSeq[i]=${qaConfFileSeq[i]:2}
+    elif [ ${qaConfFileSeq[i]:0:3} = '../' ] ; then
       item=$(pwd)
       item=${item%/*}
-      filePrecedence[i1]=${item}/${filePrecedence[i1]:3}
+      qaConfFileSeq[i]=${item}/${qaConfFileSeq[i]:3}
     fi
+
+    findProject ${qaConfFileSeq[i]}
   done
+
+  if [ ${PROJECT} ] ; then
+     test ! ${PROJECT_AS} && PROJECT_AS=$PROJECT
+  else
+     std_out "qa-dkrz requires PROJECT=name in the task-file or on the command-line"
+     std_out flush
+     exit 1
+  fi
+
+  # paths to files to be concatenated; highest priority for the first one.
+  # When PROJECT_AS and PROJECT are set differently, then PROJECT is derived
+  # from PROJECT_AS and gets higher priority of the two. Note that in such a case,
+  # there is no default setting for PROJECT, but only for PROJECT_AS. Configuration
+  # options pointing to files must begin with PROJECT or PROJECT_AS, respectively,
+  # followed by '_'.
+  pDir[0]=$(pwd)  # local path
+  pDir[${#pDir[*]}]=${QA_HOME}/tables
+  if [ ${#PROJECT} -gt 0 -a "${PROJECT}" != "${PROJECT_AS}" ] ; then
+    pDir[${#pDir[*]}]=${QA_HOME}/tables/${PROJECT}
+  else
+    pDir[${#pDir[*]}]=${QA_HOME}/tables/${PROJECT_AS}
+  fi
+  pDir[${#pDir[*]}]=${QA_HOME}/tables/projects/${PROJECT_AS}
+
 
   # This loop only works for filenames passed as parameters.
   # Go through the chain of files unless no more
   # is found or a path found before is found again;
   # an invalid file would also break processing
-  local j
+  local fs
 
-  if [ ${sz} -eq 0 ] ; then
-    findEmbeddedConf ${filePrecedence[i]}
-  else
-    for(( i=0 ; i < sz ; ++i )) ; do
-      # attach a chain of embedded conf-files
-      # sets also PROJECT if found in the sequence of conf-files.
-      if ! add2qaConf ${filePrecedence[i]} ; then
-        findEmbeddedConf ${filePrecedence[i]}
-      fi
-    done
-  fi
+  for(( i=0 ; i < ${#pDir[*]} ; ++i )) ; do
+    if ! fs=( $(ls ${pDir[i]}/*_qa.conf 2> /dev/null) ) ;then
+      fs=( $(ls ${pDir[i]}/*_qc.conf 2> /dev/null) )
+    fi
+
+    test ${#fs[*]} -gt 0 && \
+      qaConfFileSeq[${#qaConfFileSeq[*]}]=${fs[0]}
+  done
+
 
   return
 }
@@ -1699,7 +1642,7 @@ FS data directory: ${PROJECT_DATA[*]}
 
 setKWL()
 {
-#  test ${DEBUG_CONF} && voidX
+  test ${DEBUG_CONF} && voidX
 
   local key item value i val vals isAdd
   item="$*"
@@ -1838,7 +1781,7 @@ setKWL()
   # add key to the list
   keyWordList[${#keyWordList[*]}]=$key
 
-#  test ${DEBUG_CONF} && voidX
+  test ${DEBUG_CONF} && voidX
 
   if [ ${ONLY_SUMMARY:-f} != f -a "${ONLY_SUMMARY}" != all ] ; then
     setKWL LOG_FNAMES=${ONLY_SUMMARY}
@@ -2142,10 +2085,16 @@ do
           set -x
         elif [ ${UOPTARG:0:9} = '_PROJECT=' ] ; then
           setKWL ${UOPTARG:1}
+        elif [ ${UOPTARG%%=*} = '_QA_CONFIG' ] ; then
+          localQAC=${OPTARG#*=}
         fi
         ;;
-    f)  qaConf[${#qaConf[*]}]=${OPTARG}
-        test ! -f ${OPTARG} && noSuchFile=( ${noSuchFile[*]} ${OPTARG} )
+    f)  if [ -f ${OPTARG} ] ; then
+          qaConf[${#qaConf[*]}]=${OPTARG##*/}
+        else
+          test -c "$TTY" && echo "${OPTARG}: no such file" > $TTY
+          exit 1
+        fi
         ;;
     h)  isHelp=t ;;
     P)  setKWL PROJECT=$OPTARG ;;
@@ -2163,31 +2112,24 @@ if [ ${isHelp:-f} = t ] ; then
   exit 1
 fi
 
-if [ ${noSuchFile} ] ; then
-  for nsf in ${noSuchFile[*]} ; do
-    test -c "$TTY" && echo "${nsf}: no such file" > $TTY
-  done
-
-  exit 1
-fi
-
 # may be overwritten by configuration file or command-line
 setDefaults
 
-# get valid configuration files corresponding to the priority list
-getPrecedence ${qaConf[*]}
+# get valid configuration files corresponding to the priority list0
+test "${localQAC}"  && qaConf[${#qaConf[*]}]=${localQAC}
+findQAConfSeq ${qaConf[*]}
 
-# construct a comma-sep-list
-if [ ${#filePrecedence[*]} -gt 0 ] ; then
-  QA_CONFS="${filePrecedence[*]}"
+# construct a comma-sep-list, just for the log-file
+if [ ${#qaConfFileSeq[*]} -gt 0 ] ; then
+  QA_CONFS="${qaConfFileSeq[*]}"
   QA_CONFS="${QA_CONFS// /,}"
 
-  setKWL TASK=${filePrecedence[0]##*/}
+  setKWL TASK=${qaConfFileSeq[0]##*/}
 fi
 
-# proceed from low to high priority
-for(( i=${#filePrecedence[*]}-1 ; i > -1 ; --i )) ; do
-  parseConfigurationFile ${filePrecedence[i]}
+# proceed from low to high precedence
+for(( i=${#qaConfFileSeq[*]}-1 ; i > -1 ; --i )) ; do
+  parseConfigurationFile ${qaConfFileSeq[i]}
 done
 
 # command-line overwrites configuration file assignments
@@ -2234,7 +2176,7 @@ do
         set +f
         ;;
     m)  setKWL SIMPLE_STATUS_LINE=t ;;
-    P)  setKWL PROJECT=$UOPTARG ;;
+    P)  setKWL PROJECT=$OPTARG ;;
     Q)  setKWL NO_STATUS=t ;;
     q)  setKWL QUIET=t ;;
     S)  sl_args=( ${OPTARG//,/} )
@@ -2278,6 +2220,9 @@ do
 
         elif [ "$OPTARG" = "help" ] ; then
           : # done before
+
+        elif [ "${UOPTARG%=*}" = "PROJECT_AS" ] ; then
+          setKWL PROJECT_AS=${OPTARG#*=}
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
           if [ ${OPTARG} = ${OPTARG#*=} ] ; then
@@ -2330,6 +2275,8 @@ fi
 set +f
 
 if [ ${PROJECT} ] ; then
+  test !${PROJECT_AS} && setKWL PROJECT_AS=$PROJECT
+
   # almost everything is done here
   loadSetting
 else

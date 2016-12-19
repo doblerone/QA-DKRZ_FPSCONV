@@ -8,7 +8,6 @@ zlib=zlib-1.2.8
 udunits=udunits-2.2.20
 
 defaultProject=CORDEX
-supportedProjects=( CMIP5 CMIP6 CORDEX )
 
 descript()
 {
@@ -48,9 +47,23 @@ descript()
 
 getCurrPaths()
 {
-  # where all the work is going to take place
-  if [ ! $QA_HOME ] ; then
+  # path to the current user's home
+  if [ ! -w "$QA_HOME" ] ; then
+    if [ -n "${QA_HOME}" ] ; then
+      echo "no write permission to $QA_HOME"
+      exit 1
+    fi
+
     QA_HOME=~/.qa-dkrz
+    if [ ! -w ${QA_HOME} ] ; then
+      QA_HOME=$(pwd)/.qa-dkrz
+      if [ -w $QA_HOME ] ; then
+			echo "directory ${QA_HOME} is home-dir of the QA"
+      else
+			echo "no directory with write permission for .qa-dkrz"
+			exit 1
+      fi
+    fi
   fi
 
   # the config filename and location
@@ -59,14 +72,14 @@ getCurrPaths()
     exit 1
   fi
 
-  # not determined but may-be provided by the user
-  export CONFIG_FILE=$QA_HOME/config.txt
-
   if [ ! -w $QA_HOME ] ; then
     echo "directory $QA_HOME without write permissions,"
-    echo "please restart with added option --work=path"
+    echo "please, restart with added option --qa-home=path"
     exit 1
   fi
+
+  # automatically generated and updated
+  export CONFIG_FILE=$QA_HOME/config.txt
 
   return
 }
@@ -346,18 +359,27 @@ update()
     fi
 
     for prj in ${project[*]} ; do
+      test "${PROJECT_AS}" && prj=${PROJECT_AS}
+
       if [ "${prj}" != CF ] ; then
         ${QA_SRC}/scripts/get_project_tables \
             -P $prj --qa_path=${QA_SRC} ${DEBUG} \
             --config_file=$CONFIG_FILE ${isForceUp:+--force-update} \
             ${QA_HOME}/tables/projects/${prj}
+
+        test $? -gt 0 && exit 1
       fi
+
+      test "${PROJECT_AS}" && break
     done
 
     ${QA_SRC}/scripts/get_cfconventions \
         --qa_path=${QA_SRC} ${DEBUG} \
         --config_file=$CONFIG_FILE \
         ${QA_HOME}/tables/projects/CF
+
+    # error message already issued
+    test $? -gt 0 && exit 1
 #  fi
 
   return
@@ -418,6 +440,7 @@ do
     h)  descript
         exit ;;
     -)  OPTVAL=${OPTARG##*=}
+        OPTNAME=${UOPTARG%=*}
 
         if [ "${UOPTARG:0:7}" = AUTO_UP -o "${UOPTARG:0:7}" = AUTO-UP ] ; then
           if [ "${OPTVAL}" ] ; then
@@ -425,44 +448,46 @@ do
           else
             AUTO_UPDATE=AUTO_UPDATE=enabled
           fi
-        elif [ "${UOPTARG:0:5}" = BUILD ] ; then
+        elif [ "${OPTNAME}" = BUILD ] ; then
           isBuild=t
-        elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=install' ] ; then
+        elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
           DEBUG='--debug'
           set -x
-        elif [ "${UOPTARG}" = FORCE_UPDATE ] ; then
+        elif [ "${OPTNAME}" = FORCE_UPDATE ] ; then
           isForceUp=t
           isUpdateQA=t
-        elif [ "${UOPTARG%%=*}" = GET_TABLES ] ; then
+        elif [ "${OPTNAME}" = GET_TABLES ] ; then
           GET_TABLES=t
-        elif [ "${UOPTARG%%=*}" = HELP ] ; then
+        elif [ "${OPTNAME}" = HELP ] ; then
           descript
           exit
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
           isLink=t
         elif [ "${UOPTARG:0:6}" = ONLY_Q ] ; then
           :  # for backward compatibilty
-        elif [ "${UOPTARG:0:7}" = QA_SRC ] ; then
+        elif [ "${OPTNAME}" = PROJECT_AS ] ; then
+          PROJECT_AS="${OPTVAL}"
+        elif [ "${OPTNAME}" = QA_SRC ] ; then
           export QA_SRC=${OPTVAL}
-        elif [ "${UOPTARG:0:7}" = QA_HOME ] ; then
+        elif [ "${OPTNAME}" = QA_HOME ] ; then
           QA_HOME=${OPTVAL}
-        elif [ "${UOPTARG}" = SRC ] ; then
+        elif [ "${OPTNAME}" = SRC ] ; then
           :  # for backward compatibilty
-        elif [ "${UOPTARG%=*}" = SET_DEFAULT_PROJECT ] ; then
+        elif [ "${OPTNAME}" = SET_DEFAULT_PROJECT ] ; then
           DEF_PRJ=${OPTVAL}
           continue
         elif [ "${UOPTARG:0:2}" = UP ] ; then
           isUpdateQA=t
-        elif [ "${UOPTARG:0:4}" = WORK ] ; then
-          QA_HOME=${UOPTARG##*=}
-        elif [ "${UOPTARG:0:4}" = HDF5 ] ; then
-          hdf5=${UOPTARG##*=}
-        elif [ "${UOPTARG:0:6}" = NETCDF ] ; then
-          netcdf=${UOPTARG##*=}
-        elif [ "${UOPTARG:0:4}" = ZLIB ] ; then
-          zlib=${UOPTARG##*=}
-        elif [ "${UOPTARG:0:7}" = UDUNITS ] ; then
-          udunits=${UOPTARG##*=}
+        elif [ "${OPTNAME}" = WORK ] ; then
+          QA_HOME=${OPTVAL}
+        elif [ "${OPTNAME}" = HDF5 ] ; then
+          hdf5=${OPTVAL}
+        elif [ "${OPTNAME}" = NETCDF ] ; then
+          netcdf=${OPTVAL}
+        elif [ "${OPTNAME}" = ZLIB ] ; then
+          zlib=${OPTVAL}
+        elif [ "${OPTNAME}" = UDUNITS ] ; then
+          udunits=${OPTVAL}
         fi
 
         # collect options, which have not been processed above
@@ -524,7 +549,10 @@ else
   pcks=
 fi
 
-test "${project[0]}" = NONE && exit
+if [ "${project[0]}" = NONE ] ; then
+   echo "qa-dkrz requires PROJECT=name in the configuration or on the command-line"
+   exit
+fi
 
 exec $QA_SRC/scripts/install.sh ${debug} --pack=${package} \
 ${isContinueLog:+--continue_log} ${pcks} ${defPrj} \

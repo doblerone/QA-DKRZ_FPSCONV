@@ -1,3 +1,5 @@
+#include "jsoncpp.cpp"
+
 // #include "qa.h"
 
 CMIP6_CV::CMIP6_CV(QA* p, Variable* v)

@@ -45,12 +45,8 @@
 #include "qa_time.h"
 #include "qa_cnsty.h"
 
-#if defined CORDEX
-  #include "qa_CORDEX.h"
-#elif defined CMIP5
-  #include "qa_CMIP5.h"
-#elif defined CMIP6
-  #include "qa_CMIP6.h"
+#if defined QA_PRJ_HEADER
+  #include QA_PRJ_HEADER
 #endif
 
 #include "time_control.h"

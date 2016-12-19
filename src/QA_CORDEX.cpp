@@ -255,6 +255,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
 
         else if( x_e[x] == "StartTime-EndTime" )
           gM[x_e[x]] = n_ast ;
+
       }
       else
         gM[x_e[x]] = globalVar.getAttValue(cvMap[x_e[x]]) ;
@@ -278,6 +279,18 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
         ++countCI[ds];
 
       // special
+      else if( x_e[jx] == "RCMVersionID" )
+      {
+         if( drs[jx][0] == 'v' )
+         {
+            if( drs[jx] == "vAny" )
+            {
+              drs.replace(jx, globalVar.getAttValue("rcm_version_id") );
+              ++countCI[ds];
+            }
+         }
+      }
+
       else if( drs[jx] == "r0i0p0" && pQA->qaExp.getFrequency() == "fx" )
       {
         drs.replace(jx, globalVar.getAttValue("driving_model_ensemble_member") );
@@ -370,37 +383,42 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
    bool isInst=false;
 
    bool isRCM = (des == 'R') ? true : false ;
+   if(!isRCM)
+     isInst = true; // dummy, because not required for GCM
 
    while( ! ifs.getLine(line) )
    {
      x_line = line ;
 
      if( aValue == x_line[0]
-            || (isRCM && aValue == x_line[0].substr(0,aValue.size()) ) )
+            || (isRCM && aValue.substr(0,x_line[0].size()) == x_line[0] ) )
      {
-        isModel=true;
+        if( !isModel )
+          isModel=true;
 
         if( isRCM )
         {
+          // loops through all the file until a match for model && inst is found
           pQA->qaExp.RCMModelName = aValue;
 
           if( x_line.size() > 1 && instValue == x_line[1] )
           {
             pQA->qaExp.institute_id = instValue;
             isInst=true;
+            break;
           }
         }
         else
+        {
           pQA->qaExp.GCMModelName = aValue;
-
-
-        break;
+          break;
+        }
      }
    }
 
    ifs.close();
 
-   if( !isModel )
+   if( ! (isModel && isInst))
    {
      std::string key;
      if( des == 'G' )
@@ -410,57 +428,25 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 
      if( notes->inq( key, pQA->fileStr) )
      {
-       std::string capt(pQA->s_global);
-       capt += hdhC::blank;
-       capt += hdhC::tf_att(hdhC::empty, aName, aValue);
-       capt += "is not registered in table " ;
+       std::string capt;
+
+       if( isRCM )
+           capt = "RCM";
+       else
+           capt = "GCM";
+       capt += " model";
+       capt += hdhC::tf_val(aValue);
+       if( isRCM )
+       {
+         capt += " for institute_id" ;
+         capt += hdhC::tf_val(instValue);
+       }
+       capt += " is not registered in table " ;
        capt += tbl->getBasename();
 
        if( notes->operate(capt) )
        {
          notes->setCheckStatus(drsP,  pQA->n_fail );
-         pQA->setExitState( notes->getExitState() ) ;
-       }
-     }
-   }
-
-   if( isRCM && !isInst )
-   {
-     std::string key("1_3c");
-
-     if( notes->inq( key, pQA->fileStr) )
-     {
-       std::string capt(pQA->s_global);
-       capt += hdhC::blank;
-       capt += hdhC::tf_att(hdhC::empty, instName, instValue);
-       capt += "is not registered in table " ;
-       capt += tbl->getBasename();
-
-       if( notes->operate(capt) )
-       {
-         notes->setCheckStatus(drsP, pQA->n_fail );
-         pQA->setExitState( notes->getExitState() ) ;
-       }
-     }
-   }
-
-   if( isRCM && isModel && !isInst )
-   {
-     std::string key("1_3d");
-
-     if( notes->inq( key, pQA->fileStr) )
-     {
-       std::string capt("combination of ");
-       capt += pQA->s_global ;
-       capt += hdhC::blank;
-       capt += hdhC::tf_att(hdhC::empty, aName, aValue);
-       capt += "and " + hdhC::tf_assign(instName, instValue);
-       capt += " is unregistered in table ";
-       capt += tbl->getBasename();
-
-       if( notes->operate(capt) )
-       {
-         notes->setCheckStatus(drsP, pQA->n_fail );
          pQA->setExitState( notes->getExitState() ) ;
        }
      }
@@ -631,10 +617,14 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 
 
     // special: at least for the HH ESGF node, which has an additional trailing
-    // item for a versioning, e.g. 'v20121231'. This is ignored.
+    // item for a versioning, e.g. 'v20121231'. The digit nature is checked. But,
+    // not when rcm_version_id = vAny is set in PROJECT_CV_DRS.csv.
     size_t last = drs.size()-1 ;
-    if( drs[last][0] == 'v' && hdhC::isDigit(drs[last].substr(1)) )
-        drs.erase(last);
+    if( drs[last][0] == 'v' )
+    {
+        if( drs[last] == "vAny" || hdhC::isDigit(drs[last].substr(1)) )
+          drs.erase(last);
+    }
 
     //special: customisation
     for( size_t i=0 ; i < drs.size() ; ++i )
