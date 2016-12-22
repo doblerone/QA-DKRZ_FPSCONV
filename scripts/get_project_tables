@@ -6,6 +6,12 @@ cmip6()
    if [ ! -d $QA_SRC/scripts/xlsx2csv ] ; then
       cd $QA_SRC/scripts
       git clone http://github.com/dilshod/xlsx2csv &> cmip6_tables.log
+
+      if [ $? -gt 0 ] ; then
+        errMessage="git failed for xlsx2csv"
+        return
+      fi
+
       ln xlsx2csv/xlsx2csv.py
    fi
 
@@ -17,10 +23,16 @@ cmip6()
       http://proj.badc.rl.ac.uk/svn/exarch/CMIP6dreq/tags/latest/dreqPy/docs/CMIP6_MIP_tables.xlsx \
       &>> cmip6_tables.log
 
-   # location of extracted csv table sheets: ~/.qa-dkrz/tables/projects/CMIP6
+   if [ $? -gt 0 ] ; then
+      errMessage="wget CMIP6_MIP_tables.xlsx from http://proj.badc.rl.ac.uk"
+      return
+   fi
+
+      # location of extracted csv table sheets: ~/.qa-dkrz/tables/projects/CMIP6
    $QA_SRC/scripts/xlsx2csv.py -a -d '|' -l '\n' CMIP6_MIP_tables.xlsx CMIP6_MIP_tables
 
    # the CMIP6 json files
+
    if [ -d CMIP6_CVs ] ; then
      cd CMIP6_CVs
 
@@ -33,11 +45,17 @@ cmip6()
      git clone https://github.com/WCRP-CMIP/CMIP6_CVs
    fi
 
+   if [ $? -gt 0 ] ; then
+      errMessage="git failed for CMIP6_CVs from https://github.com/WCRP-CMIP"
+   fi
+
    return
 }
 
 cordex()
 {
+   local status
+
    if [ -d IS-ENES-Data.github.io ] ; then
      cd IS-ENES-Data.github.io
 
@@ -46,9 +64,16 @@ cordex()
      fi
 
      git fetch && git reset --hard origin/master &> /dev/null
+     status=$?
    else
      git clone https://github.com/IS-ENES-Data/IS-ENES-Data.github.io
+     status=$?
+
      ln -sf IS-ENES-Data.github.io/CORDEX_RCMs_ToU.txt CORDEX_RCMs_ToU.txt
+   fi
+
+   if [ $status -gt 0 ] ; then
+     errMessage="git failed for IS-ENES-Data.github.io"
    fi
 
    return
@@ -100,3 +125,9 @@ if [ "$prj" = CORDEX ] ; then
 elif [ "$prj" = CMIP6 ] ; then
   cmip6
 fi
+
+if [ "${errMessage}" ] ; then
+   echo "could not ${errMessage}"
+   exit 1
+fi
+

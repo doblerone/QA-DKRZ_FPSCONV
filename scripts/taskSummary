@@ -377,6 +377,9 @@ summaryY()
 ######## main ############
 
 # QA_SRC was exported
+  if [ ! ${QA_SRC} ] ; then
+    QA_SRC=${0%/scripts/*}
+  fi
 
   QA_RESULTS=QA_RESULTS # by default
   PROJECT='unkown_project'

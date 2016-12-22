@@ -1,10 +1,10 @@
 #updateConfigFile()
 #{
 
-# embedded function, i.e. has to included by source or '.'
+# embedded function, i.e. has to be included by source or '.'
 
-# note that such embedded functionality replaces positional parameters
-# by thos which are passed. If none are passed, then the positional parameters
+# note that such an embedded functionality replaces positional parameters
+# by those which are passed. If none are passed, then the positional parameters
 # of the calling instance are used.
 
 # For the passing of parameters from the calling instance here,

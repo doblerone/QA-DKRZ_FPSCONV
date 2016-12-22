@@ -37,9 +37,9 @@ install:
 script:
   - touch .ignore_GitHub
   - export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg"
-  - ./install CF
-  - ./install CORDEX
-  - ./install CMIP5
+  - ./install --qa-home=$(pwd) CF
+  - ./install --qa-home=$(pwd) CORDEX
+  - ./install --qa-home=$(pwd) CMIP5
 after_script:
   - test -d "./bin"
   - ./scripts/qa-dkrz --example

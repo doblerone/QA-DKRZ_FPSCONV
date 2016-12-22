@@ -245,7 +245,6 @@ callQaConfig()
     exit
   fi
 
-
   IFS="$OLD_IFS"
 
   if [ ! ${items[0]} ] ; then
@@ -277,6 +276,13 @@ callQaConfig()
     setKWL ${key}
   done
   set +f
+
+#  if [ ! "${PROJECT}" ] ; then
+#     echo "qa-dkrz requires PROJECT=name in the configuration or on the command-line"
+#     exit
+#  fi
+
+  test ! "${PROJECT_AS}" && setKWL PROJECT_AS=${PROJECT}
 
 # invoked by option -E_DEBUG_MANAGER
   if [ ${#DEBUG_MANAGER} -gt 1 ] ; then
@@ -421,7 +427,7 @@ callQaExecutor()
           PRINT_GREP_MARK \
           PROC_POOL \
           PROJECT \
-          PROJECT_NAME \
+          PROJECT_AS \
           PROJECT_DATA \
           PROJECT_TABLE \
           QA \
@@ -1484,6 +1490,29 @@ getFilenameBase()
   return
 }
 
+getHomePath()
+{
+  # where all the work is going to take place
+  if [ $QA_HOME ] ; then
+    test ${QA_HOME##*/} != '.qa-dkrz' && QA_HOME=${QA_HOME}/.qa-dkrz
+  else
+    QA_HOME=~/.qa-dkrz
+  fi
+
+  if ! mkdir -p $QA_HOME 2> /dev/null ; then
+    std_out "${0##*/}::getHomePath():"
+    std_out "could not mkdir $QA_HOME"
+    std_out "please restart with provided option --work=path"
+    std_out flush
+    exit 1
+  fi
+
+  setKWL QA_HOME=$QA_HOME
+  setKWL CONFIG_FILE=$QA_HOME/config.txt
+
+  return
+}
+
 ##//! Get the name of a host ready for a start of the \a qaExecutor
 
 ##/*!
@@ -2449,6 +2478,109 @@ getSelectedPaths()
   return
 }
 
+getQA_SRC()
+{
+  # extract the path to the root of the QA package
+
+  # is it in a conda built?
+  local x_conda=${0%/qa-dkrz}
+  if [ ${x_conda##*/} = bin ] ; then
+    x_conda=${x_conda%/bin}
+    if [ -d $x_conda/opt/qa-dkrz ] ; then
+       setKWL CONDA_ENV=t
+       setKWL QA_SRC=$x_conda/opt/qa-dkrz
+       return
+    fi
+  fi
+
+  local target isInvalid
+
+  if [ ${1:0:1} = '/' ] ; then
+    target=$1
+  else
+    target=$(pwd)/$1
+  fi
+
+  if [ -h $target ] ; then
+
+    # get the link
+    local link=$(ls -l $target | awk  '{print $(NF)}')
+
+    # link is relative, so make it absolute
+    test ${link:0:1} != '/' && link=${target%/*}/${link}
+
+    getQA_SRC ${link}
+
+  elif [ -f $target ] ; then
+
+    # a real instance, at first resolve .. and .
+    # works also for . or .. in the middle of the path
+
+    local xname=${target##*/}
+    target=${target%/*}  # remove the name of the script
+
+    local arr=( ${target//\// } )
+
+    local i j sz
+    sz=${#arr[*]}
+
+    for(( i=1 ; i < sz ; ++i )) ; do
+
+      if [ "${arr[i]}" = '.' ] ; then
+        unset arr[i]
+      elif [ "${arr[i]}" = '..' ] ; then
+        j=$((i-1))
+
+        # this takes into account adjacent . and/or .. with any depth
+        while [ ! ${arr[j]} ] ; do
+          j=$((j-1))
+        done
+        unset arr[j]
+        unset arr[i]
+      fi
+    done
+
+    # get rid of empty items
+    arr=( ${arr[*]} )
+
+    sz=${#arr[*]}
+
+    local tmp
+    for(( i=0 ; i < sz ; ++i )) ; do
+      tmp=${tmp}/${arr[i]}
+
+      if [ -f ${tmp}/.install_configure ] ; then
+        QA_SRC=$tmp
+        break
+      fi
+    done
+
+    test $i -eq $sz && isInvalid=t
+  else
+    isInvalid=t
+  fi
+
+  if [ ${isInvalid:-f} = t ] ; then
+
+    local str=$(ls -l $target 2> /dev/null | awk  '{print $(NF)}')
+
+    if [ ${str} ] ; then
+      str="invalid path=$0"
+    else
+      str="broken path=$0"
+    fi
+
+    std_out "${0##*/}::getQA_SRC():"
+    std_out "$str"
+    std_out flush
+    exit 1
+  fi
+
+  setKWL QA_SRC=${QA_SRC}
+
+  return
+}
+
 has()
 {
   local c i j t
@@ -2517,8 +2649,27 @@ init()
   NO_STATUS=f
   isTPUT=f
 
+  # sets: CONDA_ENV, QA_SRC
+  getQA_SRC $0
+
+  initExample
+  basic_args=( ${example_args[*]} -e_QA_SRC=${QA_SRC} )
+
+  # sets: QA_HOME, CONFIG_FILE
+  getHomePath
+  basic_args=( ${basic_args[*]} -e_QA_HOME=${QA_HOME} )
+
   # configuration
-  callQaConfig ${T[*]} $*
+  test ${CONDA_ENV} && basic_args=( ${basic_args[*]} -e_CONDA_ENV=${CONDA_ENV} )
+
+  # check whether tables have been initaially copied fomr QA_SRC to QA_HOME;
+  # if not, then do it.
+  if [ ! -d $QA_HOME/tables ] ; then
+    # note that QA_HOME points to .qa-dkrz wherever it is located
+    rsync -auz --exclude '*~' $QA_SRC/tables $QA_HOME &> /dev/null
+  fi
+
+  callQaConfig ${T[*]} ${basic_args[*]} $*
 
   if is_TTY  ; then
     if [ $NO_STATUS = f ] ; then
@@ -2603,21 +2754,14 @@ init()
     exit
   fi
 
-  if [ ${QA_EXAMPLE:-f} = t ] ; then
-    # run example for CORDEX
-    runExample
-    exit
-  fi
-
-  test ! ${PROJECT} && PROJECT=NONE
-
   # package update requested and required?
-  if [ !${NO_GIT} ] ; then
+  if [ ${NO_GIT:-f} = f -a ${NO_UPDATE:-f} = f ] ; then
     # checksum of current qa-dkrz
     local md5_0
     md5_0=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
-    if ${QA_SRC}/install ${INSTALL_ARGS//,/ } ${PROJECT} ; then
+    if ${QA_SRC}/install ${INSTALL_ARGS//,/ } \
+                         PROJECT_AS=${PROJECT_AS} ${PROJECT} ; then
         local md5_1
         md5_1=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
@@ -2628,7 +2772,6 @@ init()
        std_out flush "could not make: install ${PROJECT}"
        exit 1
     fi
-
   fi
 
   # expand comma-sep-list to arrays
@@ -2647,7 +2790,7 @@ init()
     fi
   fi
 
-  if [ ${PROJECT} = NONE ] ; then
+  if [ "${PROJECT_AS}" = NONE ] ; then
     std_out flush "PROJECT option is missing"
     exit 1
   fi
@@ -2968,7 +3111,7 @@ initTables()
 
   # default tables
   rsync -auz --exclude '*~' --exclude '.*' \
-     ${QA_HOME}/tables/projects/${PROJECT}/* ${TABLE_PATH}
+     ${QA_HOME}/tables/projects/${PROJECT_AS}/* ${TABLE_PATH}
 
   if [ "$PROJECT" != CF ] ; then
     rsync -auz --exclude '*~' --exclude '.*' \
@@ -3024,8 +3167,8 @@ initT()
    #pDir[0]=tables/projects/${prj}
    #pDir[1]=tables/projects
    # ipath to user defined modifications
-   pDir[0]=tables/${prj}
-   pDir[1]=tables
+   pDir[${#pDir[*]}]=tables/${prj}
+   pDir[${#pDir[*]}]=tables
 
    local ix p
 
@@ -3041,7 +3184,7 @@ initT()
         # explicitly in a sub-dir path
         p=${QA_HOME}/
       else
-        for(( ix=0 ; ix < 2 ; ++ix )) ; do
+        for(( ix=0 ; ix < ${#pDir[*]} ; ++ix )) ; do
 
           # scan through the precedence chain
           test -f ${QA_HOME}/${pDir[ix]}/${value} && p=${QA_HOME}/${pDir[ix]}/
@@ -3896,55 +4039,61 @@ rmBlock()
   return
 }
 
-runExample()
+initExample()
 {
-  # running an example for CORDEX
-  dir=$(pwd)
-  dir=${dir%/example}/example
+  test ${QA_EXAMPLE:-f} = f && return
 
-  test "${EXAMPLE_PATH}" && dir=${EXAMPLE_PATH}/example
+  # for running an example for CORDEX
+    if [ "${WORK}" ] ; then
+      setKWL EXAMPLE_PATH=${WORK}
+    else
+      setKWL EXAMPLE_PATH=$(pwd)/example
+    fi
 
-  test ${dir:0:1} != '/' && dir=$(pwd)/$dir
+    if [ ! "${QA_RESULTS}" ] ; then
+      setKWL QA_RESULTS=${EXAMPLE_PATH}/results
+      example_args[${#example_args[*]}]="-e_QA_RESULTS=${QA_RESULTS}"
+    fi
 
-  if ! mkdir -p ${dir} &> /dev/null ; then
-    echo "could not mkdir ${dir}, please use option --example=path"
-    exit
-  fi
+    test ! ${QA_HOME} && setKWL QA_HOME=${EXAMPLE_PATH}
 
-  cd $dir
+    example_args[${#example_args[*]}]='-m -f qa-test.task'
 
-  \rm -rf results config.txt data tables qa-test.task .qa-dkrz
+    test ${EXAMPLE_PATH:0:1} != '/' && EXAMPLE_PATH=$(pwd)/$EXAMPLE_PATH
 
-  echo "make examples in $dir " > $TTY
-  echo "make qa_test.task " > $TTY
+    if ! mkdir -p ${EXAMPLE_PATH} &> /dev/null ; then
+      echo "could not mkdir ${EXAMPLE_PATH}, please use option --work=path"
+      exit
+    fi
 
-  # prepare the example, if not done, yet
-  cp $QA_SRC/example/templates/qa-test.task .
-  sed -i "s%PROJECT_DATA=data%PROJECT_DATA=${dir}/data%" \
-         qa-test.task
-  sed -i "s%QA_RESULTS=results%QA_RESULTS=${dir}/results%" \
-         qa-test.task
+    cd ${EXAMPLE_PATH}
 
-  # data
-  echo "make data " > $TTY
-  tar --bzip2 -xf ${QA_SRC}/example/templates/data.tbz
-  fs=( $( find data -name "*.txt" ) )
+    \rm -rf results config.txt data tables qa-test.task .qa-dkrz
 
-  if which ncgen &> /dev/null ; then
-    for f in ${fs[*]} ; do
-      ncgen -x -k 3 -o ${f%txt}nc $f
-      \rm -f $f
-    done
-  else
-    echo "building data in example requires the ncgen utility"
-    exit
-  fi
+    echo "make examples in $EXAMPLE_PATH " > $TTY
+    echo "make qa_test.task " > $TTY
 
-  echo "run"  > $TTY
-  echo "$QA_SRC/scripts/qa-dkrz -m --work=$dir/.qa-dkrz -f qa-test.task" > $TTY
-  echo -e "\nNote: config.txt and tables are copied to $dir/.qa-dkrz\n" > $TTY
+    # prepare the example, if not done, yet
+    cp $QA_SRC/example/templates/qa-test.task .
+    sed -i "s%PROJECT_DATA=data%PROJECT_DATA=${EXAMPLE_PATH}/data%" \
+           qa-test.task
+    sed -i "s%QA_RESULTS=results%QA_RESULTS=${QA_RESULTS}%" \
+           qa-test.task
 
-  exec $QA_SRC/scripts/qa-dkrz -m --work=$dir/.qa-dkrz -f qa-test.task
+    # data
+    echo "make data " > $TTY
+    tar --bzip2 -xf ${QA_SRC}/example/templates/data.tbz
+    fs=( $( find data -name "*.txt" ) )
+
+    if which ncgen &> /dev/null ; then
+      for f in ${fs[*]} ; do
+        ncgen -x -k 3 -o ${f%txt}nc $f
+        \rm -f $f
+      done
+    else
+      echo "building data in example requires the ncgen utility"
+      exit
+    fi
 
   return
 }
@@ -3983,14 +4132,17 @@ rmEmptyPaths()
 
 setKWL()
 {
-  # store keywords, no values
+  # store keywords for empty values
   local key=${1%%=*}
-  test "${1}" != "${1/=/}" && local value=${1#*=}
+  local value
+  test "${1}" != "${1/=/}" && value=${1#*=}
 
   # was key already defined?
+  local i
   for(( i=0 ; i < ${#keyWordList[*]} ; ++i )) ; do
      if [ "${keyWordList[i]}" = "$key" ] ; then
       if [ ${value} ] ; then
+        # key available, but value has changed
         local asdf
         eval asdf=\$${key}
         if [ "$asdf" != "$value" ] ; then
@@ -4004,6 +4156,9 @@ setKWL()
 
   # add key to the list
   keyWordList[${#keyWordList[*]}]=$key
+
+  # only if set in this script
+  test "${value}" && eval $key="$value"
 
   return
 }
@@ -4802,6 +4957,43 @@ tryCom()
   return $retVal
 }
 
+tr_option()
+{
+  local line="${!1}"
+
+  local i=0
+  if [ ${line:i:3} = '-e_' -o ${line:i:3} = '-E_' ] ; then
+    i=3
+  elif [ ${line:i:2} = '--' ] ; then
+    i=2
+  fi
+  test ${i} -gt 0 && line=${line:i}
+
+  local sz=${#line}
+  for((i=0 ; i < sz ; ++i )) ; do
+    test "${line:i:1}" = '=' && break
+  done
+
+  if [ ${i} -eq ${sz} ] ; then
+    if [ ${i:0:1} = '-' ] ; then
+      :  # regular short option
+    else
+     line=$( echo "${line/% /}" | tr "[:lower:]" "[:upper:]" )
+     line=$( echo "${line}" | tr "-" "_" )
+    fi
+  else
+    local tmp0="${line:0:i}"
+    tmp0="${tmp0//QC/QA}"
+    tmp0=$( echo "${tmp0/% /}" | tr "[:lower:]" "[:upper:]" )
+    tmp0=$( echo "${tmp0}" | tr "-" "_" )
+    line="${tmp0}""${line:i}"
+  fi
+
+  eval ${1}=\${line}
+
+  return
+}
+
 voidX()
 {
   # toggle between set -x and set +x in a way that
@@ -4902,7 +5094,33 @@ fi
 
 rootPID=$$
 
-init $*
+for OPTARG in $* ; do
+  UOPTARG=${OPTARG}
+  tr_option UOPTARG
+
+  if [ ${UOPTARG%%=*} = CONDA_ENV ] ; then
+     setKWL CONDA_ENV=${OPTARG#*=}
+  elif [ ${UOPTARG} = DEBUG -o ${UOPTARG} = DEBUG_M ] ; then
+     set -x
+     uu_opts[${#uu_opts[*]}]=${OPTARG}
+  elif [ "${UOPTARG}" = EXAMPLE ] ; then
+    setKWL QA_EXAMPLE=t
+  elif [ ${UOPTARG%%=*} = QA_CONFIG ] ; then
+     setKWL QA_CONFIG==${OPTARG#*=}
+  elif [ ${UOPTARG%%=*} = QA_HOME ] ; then
+     setKWL QA_HOME=${OPTARG#*=}
+  elif [ ${UOPTARG%%=*} = QA_SRC ] ; then
+    setKWL QA_SRC=${OPTARG#*=}
+
+  elif [ ${UOPTARG%%=*} = WORK ] ; then
+     setKWL WORK=${OPTARG#*=}
+
+  else
+    uu_opts[${#uu_opts[*]}]=${OPTARG}
+  fi
+done
+
+init ${uu_opts[*]}
 
 test ${FLOW_TRACE:-f} = t && traceCalibration
 

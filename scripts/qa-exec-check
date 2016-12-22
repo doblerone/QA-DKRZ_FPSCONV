@@ -45,7 +45,7 @@ analyseExec()
 
     elif [ $status -gt 4 ] ; then
 
-      sTxt[${#sTxt[*]}]="text: qA-${PROJECT}.x: run-time error. \
+      sTxt[${#sTxt[*]}]="text: qA-${PROJECT_AS}.x: run-time error. \
 Note: possibly due to a bug in NetCDF 4.1.2 F90 lib. \
 However, the check was successful."
 
@@ -63,7 +63,7 @@ However, the check was successful."
 
     sessText="qA-${PROJECT}.x: run-time error, exit status: ${status}"
 
-    local s_out="${ans}qA-${PROJECT}.x: run-time error"
+    local s_out="${ans}qA-${PROJECT_AS}.x: run-time error"
 
     s_out="${s_out}\nfile: ${NEXT_FILE}"
     s_out="${s_out}\ndata_path: ${PROJECT_DATA}/${SUB_PATH}"
@@ -1024,7 +1024,7 @@ reportFindings()
 run()
 {
   local cmdText
-  cmdText="$NICE qA-${PROJECT}.x  --file=param_file_$$.txt"
+  cmdText="$NICE qA-${PROJECT_AS}.x  --file=param_file_$$.txt"
 
   sessText="run: ${cmdText}\n"
 
