@@ -336,10 +336,11 @@ update()
            --time-style=+'%s' ${QA_SRC}/scripts/qa_dkrz \
            | awk '{print $6}' 2> /dev/null )
 
-      test "$(getGitBranch)" != master && \
-        git checkout master &> /dev/null
+#      test "$(getGitBranch)" != master && \
+#        git checkout master &> /dev/null
+        git checkout $(getGitBranch) &> /dev/null
 
-      git fetch && git reset --hard origin/master &> /dev/null
+      git fetch && git reset --hard origin/$(getGitBranch) &> /dev/null
 #      git pull --no-edit -q origin master &> /dev/null
 
       if [ ${qa_dkrzDate} != $( ls -l \
