@@ -631,7 +631,7 @@ findQAConfSeq()
 
   if [ ${PROJECT} ] ; then
      test ! ${PROJECT_AS} && PROJECT_AS=$PROJECT
-  else
+  elif [ ${isExample:-f} = f ] ; then
      std_out "qa-dkrz requires PROJECT=name in the task-file or on the command-line"
      std_out flush
      exit 1
@@ -672,129 +672,7 @@ findQAConfSeq()
   return
 }
 
-getCurrPaths()
-{
-  # where all the work is going to take place
-  if [ ! $QA_HOME ] ; then
-    QA_HOME=~/.qa-dkrz
-  fi
 
-  if ! mkdir -p $QA_HOME 2> /dev/null ; then
-    std_out "${0##*/}::getCurrPaths():"
-    std_out "could not mkdir $QA_HOME"
-    std_out "please restart with provided option --work=path"
-    std_out flush
-    exit 1
-  fi
-
-  setKWL QA_HOME=$QA_HOME
-  setKWL CONFIG_FILE=$QA_HOME/config.txt
-
-  return
-}
-
-getQA_SRC()
-{
-  # extract the path to the root of the QA package
-
-  # is it in a conda built?
-  local x_conda=${0%/qa-dkrz}
-  if [ ${x_conda##*/} = bin ] ; then
-    x_conda=${x_conda%/bin}
-    if [ -d $x_conda/opt/qa-dkrz ] ; then
-       setKWL CONDA_ENV=t
-       setKWL QA_SRC=$x_conda/opt/qa-dkrz
-       return
-    fi
-  fi
-
-  local target isInvalid
-
-  if [ ${1:0:1} = '/' ] ; then
-    target=$1
-  else
-    target=$(pwd)/$1
-  fi
-
-  if [ -h $target ] ; then
-
-    # get the link
-    local link=$(ls -l $target | awk  '{print $(NF)}')
-
-    # link is relative, so make it absolute
-    test ${link:0:1} != '/' && link=${target%/*}/${link}
-
-    getQA_SRC ${link}
-
-  elif [ -f $target ] ; then
-
-    # a real instance, at first resolve .. and .
-    # works also for . or .. in the middle of the path
-
-    local xname=${target##*/}
-    target=${target%/*}  # remove the name of the script
-
-    local arr=( ${target//\// } )
-
-    local i j sz
-    sz=${#arr[*]}
-
-    for(( i=1 ; i < sz ; ++i )) ; do
-
-      if [ "${arr[i]}" = '.' ] ; then
-        unset arr[i]
-      elif [ "${arr[i]}" = '..' ] ; then
-        j=$((i-1))
-
-        # this takes into account adjacent . and/or .. with any depth
-        while [ ! ${arr[j]} ] ; do
-          j=$((j-1))
-        done
-        unset arr[j]
-        unset arr[i]
-      fi
-    done
-
-    # get rid of empty items
-    arr=( ${arr[*]} )
-
-    sz=${#arr[*]}
-
-    local tmp
-    for(( i=0 ; i < sz ; ++i )) ; do
-      tmp=${tmp}/${arr[i]}
-
-      if [ -f ${tmp}/.install_configure ] ; then
-        QA_SRC=$tmp
-        break
-      fi
-    done
-
-    test $i -eq $sz && isInvalid=t
-  else
-    isInvalid=t
-  fi
-
-  if [ ${isInvalid:-f} = t ] ; then
-
-    local str=$(ls -l $target 2> /dev/null | awk  '{print $(NF)}')
-
-    if [ ${str} ] ; then
-      str="invalid path=$0"
-    else
-      str="broken path=$0"
-    fi
-
-    std_out "${0##*/}::getQA_SRC():"
-    std_out "$str"
-    std_out flush
-    exit 1
-  fi
-
-  setKWL QA_SRC=${QA_SRC}
-
-  return
-}
 
 initSession()
 {
@@ -1423,6 +1301,7 @@ parseOPTARG()
 
   if [ "${key:0:7}" = DEBUG_C ] ; then
     set -x
+    DEBUG_CONF=t
     return
   fi
 
@@ -2044,11 +1923,6 @@ voidX()
 # ############### main ###############
 umask 002
 
-# called by qa-DKRZ with identical path
-# get execution path of QA scripts
-getQA_SRC $0
-getCurrPaths
-
 # very specific: convert -E_SELECT or -E_LOCK into -S or -L respectively.
 # Also, accept -E_SELECT param or -E_LOCK param, i.e. separated by a space
 for(( i=1 ; i <= $# ; ++i )) ; do
@@ -2080,13 +1954,19 @@ do
   tr_option UOPTARG
 
   case $option in
-  e|E)  if [ ${UOPTARG:0:8} = '_DEBUG_C' ] ; then
+  e|E)  if [ ${UOPTARG%%=*} = '_CONDA_ENV' ] ; then
+          setKWL CONDA_ENV=${OPTARG#*=}
+        elif [ ${UOPTARG:0:8} = '_DEBUG_C' ] ; then
           DEBUG_CONF=t
           set -x
         elif [ ${UOPTARG:0:9} = '_PROJECT=' ] ; then
           setKWL ${UOPTARG:1}
         elif [ ${UOPTARG%%=*} = '_QA_CONFIG' ] ; then
           localQAC=${OPTARG#*=}
+        elif [ ${UOPTARG%%=*} = '_QA_HOME' ] ; then
+          setKWL QA_HOME=${OPTARG#*=}
+        elif [ ${UOPTARG%%=*} = '_QA_SRC' ] ; then
+          setKWL QA_SRC=${OPTARG#*=}
         fi
         ;;
     f)  if [ -f ${OPTARG} ] ; then
@@ -2100,12 +1980,36 @@ do
     P)  setKWL PROJECT=$OPTARG ;;
     T)  TTY=${OPTARG} ;;
     x)  set -x
+        DEBUG_CONF=t
         ;;
-    -)  test "$OPTARG" = "help" && isHelp=t && continue
+    -)  if [ "$OPTARG" = help ] ; then
+           isHelp=t
+
+        elif [ "${UOPTARG}" = DEBUG ] ; then
+          set -x
+          installArgs="${installArgs}--debug,"
+          setKWL DEBUG_MANAGER
+        DEBUG_CONF=t
+
+        elif [ "${UOPTARG}" = EXAMPLE ] ; then
+          setKWL QA_EXAMPLE=t
+
+        elif [ "${UOPTARG%=*}" = HOME ] ; then
+           setKWL QA_HOME=${OPTARG#*=}
+           installArgs="${installArgs}QA_HOME=${QA_HOME},"
+
+        elif [ "${UOPTARG%=*}" = WORK ] ; then
+           setKWL QA_RESULTS=${OPTARG#*=}
+        fi
         ;;
    \?)  ;;
   esac
 done
+
+#if [ ${QA_EXAMPLE:-f} = t ] ; then
+#    output
+#    exit 0
+#fi
 
 if [ ${isHelp:-f} = t ] ; then
   descript
@@ -2187,41 +2091,16 @@ do
     x)  setKWL DEBUG_MANAGER=t
         setKWL DEBUG_EXECUTOR=t
         ;;  # already done for this script
-    -)  if [ "$OPTARG" = "help" ] ; then
-          descript
-          exit 1
-
-        elif [ "${UOPTARG:0:7}" = "AUTO_UP" ] ; then
+    -)  if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
           installArgs="${installArgs}--auto-up=${OPTARG#*=},"
 
-        elif [ "${UOPTARG:0:13}" = "AUTO_TABLE_UP" ] ; then
+        elif [ "${UOPTARG:0:13}" = AUTO_TABLE_UP ] ; then
           installArgs="${installArgs}--auto-table-up=${OPTARG#*=},"
-
-        elif [ "${UOPTARG:0:5}" = DEBUG ] ; then
-          set -x
-          if [ ${#OPTARG} -eq 5 -o ${OPTARG#*=} = qa-parse-config ] ; then
-            installArgs="${installArgs}--debug,"
-            setKWL DEBUG_MANAGER=t
-          else
-            installArgs="${installArgs}--debug=${OPTARG#*=},"
-          fi
-
-        elif [ "${UOPTARG:0:7}" = EXAMPLE ] ; then
-          setKWL QA_EXAMPLE=t
-          if [ ${OPTARG} != ${OPTARG#*=} ] ; then
-            setKWL EXAMPLE_PATH=${OPTARG#*=}
-          fi
-
-          output
-          exit 0
 
         elif [ "${OPTARG:0:4}" = fpid ] ; then
           setKWL FORMER_PID=$OPTARG
 
-        elif [ "$OPTARG" = "help" ] ; then
-          : # done before
-
-        elif [ "${UOPTARG%=*}" = "PROJECT_AS" ] ; then
+        elif [ "${UOPTARG%=*}" = PROJECT_AS ] ; then
           setKWL PROJECT_AS=${OPTARG#*=}
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
@@ -2234,12 +2113,17 @@ do
         elif [ "${UOPTARG%=*}" = SET_DEFAULT_PROJECT ] ; then
           installArgs="${installArgs}--set_default_project=${OPTARG#*=},"
 
+        elif [ "${UOPTARG:0:5}" = DEBUG ] ; then
+          : # done before
+        elif [ "${UOPTARG:0:7}" = EXAMPLE ] ; then
+          : # done before
+        elif [ "${UOPTARG:0:4}" = HOME ] ; then
+          : # done before
         elif [ "${UOPTARG:0:4}" = WORK ] ; then
-          installArgs="${installArgs}QA_HOME=${OPTARG#*=},"
-          setKWL QA_HOME=${OPTARG##*=}
+          : # done before
 
         else
-          echo "invalid option --${OPTARG}" > /dev/stderr
+          echo "invalid option --${OPTARG}" >> /dev/stderr
 #          descript
           exit 1
         fi
@@ -2262,7 +2146,7 @@ if [ $# -gt 0 ] ; then
   for f in $* ; do
      if [ ${f:0:1} != '/' ] ; then
         # just a (relative) filename on the command-line
-        sl_args=( ${sl_args[*]} $(pwd)/${f} )
+        sl_args=( ${sl_args[*]} $(pwd)/${f} )/
      else
         sl_args=( ${sl_args[*]} ${f} )
      fi

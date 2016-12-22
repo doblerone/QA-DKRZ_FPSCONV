@@ -45,10 +45,14 @@ descript()
   echo "  project-name(s)   At present CF, CMIP5, and CORDEX; the latter by default."
 }
 
-getCurrPaths()
+getHomePath()
 {
   # path to the current user's home
-  if [ ! -w "$QA_HOME" ] ; then
+  export QA_HOME
+
+  if [ -w "$QA_HOME" ] ; then
+    test ${QA_HOME##*/} != '.qa-dkrz' && QA_HOME=${QA_HOME}/.qa-dkrz
+  else
     if [ -n "${QA_HOME}" ] ; then
       echo "no write permission to $QA_HOME"
       exit 1
@@ -354,7 +358,8 @@ update()
 
 #  if . $QA_SRC/scripts/updateConfigFile.txt LAST_TABLE_UPDATE=$today \
 #              || [ ${isForceUp:-f} = t ] ; then
-    if [ "$QA_HOME" != "$QA_SRC" ] ; then
+    if [ ! -d $QA_HOME/tables ] ; then
+      # note that QA_HOME points to .qa-dkrz wherever it is located
       rsync -auz --exclude '*~' $QA_SRC/tables $QA_HOME &> /dev/null
     fi
 
@@ -516,6 +521,8 @@ for pck in $* ; do
   elif [ ${PCK:0:7} = QA_HOME ] ; then
     QA_HOME=${PCK:8}
     isForceUp=t
+  elif [ ${PCK:0:10} = PROJECT_AS ] ; then
+    PROJECT_AS=${PCK:11}
   else
     coll[${#coll[*]}]=$pck  # collect project names
     project[${#project[*]}]=$pck
@@ -523,7 +530,7 @@ for pck in $* ; do
 done
 
 getSrcPath $zeroArg  # sets also CONDA_ENV
-getCurrPaths
+getHomePath
 
 if . $QA_SRC/scripts/updateConfigFile.txt \
            DEFAULT_PROJECT${DEF_PRJ:+=}${DEF_PRJ} ; then

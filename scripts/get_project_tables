@@ -11,7 +11,7 @@ cmip6()
         errMessage="git failed for xlsx2csv"
         return
       fi
-      
+
       ln xlsx2csv/xlsx2csv.py
    fi
 
@@ -32,7 +32,7 @@ cmip6()
    $QA_SRC/scripts/xlsx2csv.py -a -d '|' -l '\n' CMIP6_MIP_tables.xlsx CMIP6_MIP_tables
 
    # the CMIP6 json files
-   
+
    if [ -d CMIP6_CVs ] ; then
      cd CMIP6_CVs
 
@@ -55,7 +55,7 @@ cmip6()
 cordex()
 {
    local status
-   
+
    if [ -d IS-ENES-Data.github.io ] ; then
      cd IS-ENES-Data.github.io
 
@@ -75,7 +75,7 @@ cordex()
    if [ $status -gt 0 ] ; then
      errMessage="git failed for IS-ENES-Data.github.io"
    fi
-       
+
    return
 }
 
@@ -127,7 +127,7 @@ elif [ "$prj" = CMIP6 ] ; then
 fi
 
 if [ "${errMessage}" ] ; then
-   echo "could not ${errMessage}" 
+   echo "could not ${errMessage}"
    exit 1
 fi
-      
+
