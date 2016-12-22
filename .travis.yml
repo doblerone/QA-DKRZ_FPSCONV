@@ -35,6 +35,7 @@ install:
   - echo "INCLUDE=\"${PREFIX}/include\"" >> install_configure
 
 script:
+  - pwd
   - touch .ignore_GitHub
   - export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg"
   - ./install CF
