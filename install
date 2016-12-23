@@ -564,4 +564,4 @@ fi
 
 exec $QA_SRC/scripts/install.sh ${debug} --pack=${package} \
 ${isContinueLog:+--continue_log} ${pcks} ${defPrj} \
-${coll[*]}
+${PROJECT_AS:+--PROJECT_AS=${PROJECT_AS}} ${coll[*]}
