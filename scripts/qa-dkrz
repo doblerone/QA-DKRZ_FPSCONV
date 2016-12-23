@@ -282,7 +282,7 @@ callQaConfig()
 #     exit
 #  fi
 
-  test ! "${PROJECT_AS}" && setKWL PROJECT_AS=${PROJECT}
+  test ! ${PROJECT_AS} && setKWL PROJECT_AS=${PROJECT}
 
 # invoked by option -E_DEBUG_MANAGER
   if [ ${#DEBUG_MANAGER} -gt 1 ] ; then

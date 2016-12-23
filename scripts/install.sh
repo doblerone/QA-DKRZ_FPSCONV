@@ -885,7 +885,13 @@ done
 
 prj_cpp=( ${prj_cpp[*]} )
 
-for prj in ${projects[*]} ; do
+if [ "${PROJECT_AS}" != "${projects[*]}" ] ; then
+  prjs=(${PROJECT_AS})
+else
+  prjs=( ${PROJECTS[*]} )
+fi
+
+for prj in ${prjs[*]} ; do
   for(( i=0 ; i < ${#prj_cpp[*]} ; ++i )) ; do
     if [ QA_${prj}.cpp = ${prj_cpp[i]} ] ; then
       makeProject $prj

@@ -2159,7 +2159,7 @@ fi
 set +f
 
 if [ ${PROJECT} ] ; then
-  test !${PROJECT_AS} && setKWL PROJECT_AS=$PROJECT
+  test ! ${PROJECT_AS} && setKWL PROJECT_AS=$PROJECT
 
   # almost everything is done here
   loadSetting
