@@ -885,7 +885,7 @@ done
 
 prj_cpp=( ${prj_cpp[*]} )
 
-if [ "${PROJECT_AS}" != "${projects[*]}" ] ; then
+if [ ${#PROJECT_AS[*]} -gt 0 -a "${PROJECT_AS}" != "${projects[*]}" ] ; then
   prjs=(${PROJECT_AS})
 else
   prjs=( ${PROJECTS[*]} )
