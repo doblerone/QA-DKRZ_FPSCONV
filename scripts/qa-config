@@ -456,7 +456,7 @@ findProject()
   local val
 
   if [ ! ${PROJECT} ] ; then
-    val=( $(grep "^[[:space:]]*[^#][[:space:]]*PROJECT=" $1 ) )
+    val=( $(grep "^[[:space:]]*[^#]*[[:space:]]*PROJECT=" $1 ) )
     if [ "${val}" ] ; then
       setKWL PROJECT=${val#*=}
     fi
