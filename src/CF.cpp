@@ -3697,7 +3697,7 @@ CF::chap22(void)
 
       if( var.attType[j] == NC_STRING )
       {
-        if( notes->inq(bKey + "22b", var.name) )
+        if( notes->inq(bKey + "26b", var.name) )
         {
           std::string capt(hdhC::tf_att(var.name, var.attName[j])) ;
           capt += "should not be type NC_STRING";
