@@ -1241,14 +1241,21 @@ getAllExps()
         getExperimentName ${fs[0]##*/}
       fi
 
-      if [ ${SHOW_EXP:-f} = t ] ; then
+      if [ ${SHOW_LOG_FNAME:-f} = t ] ; then
+        for(( i=0 ; i < ${#SLF[*]} ; ++i )) ; do
+           test ${SLF[i]} = ${CURR_LOG_FNAME} && continue 2
+        done
+        SLF[i]=${CURR_LOG_FNAME}
+
+        std_out ttyOnly "LOG_FNAME=${CURR_LOG_FNAME}\n"
+      elif [ ${SHOW_EXP:-f} = t ] ; then
         std_out ttyOnly "\r${blank}\r"
         std_out ttyOnly "LOG_FNAME=${CURR_LOG_FNAME}\n"
         std_out ttyOnly "PATH=${PROJECT_DATA}/${subPath}\n\n"
       fi
     done
 
-    if [ ${SHOW_EXP:-f} = t ] ; then
+    if [ ${SHOW_EXP:-f} = t -o ${SHOW_LOG_FNAME:-f} = t ] ; then
       if [ ${timeCounter} -eq 50 ] ; then
         std_out ttyOnly "\r${blank}\r"
         timeCounter=0
