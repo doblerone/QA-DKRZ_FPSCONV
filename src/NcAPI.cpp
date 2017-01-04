@@ -2142,7 +2142,7 @@ NcAPI::getAttString(std::string attName, std::string varName,
   bool &isDefined)
 {
   // Purpose of this specialisation: having a defined, but
-  // empty gattribute.
+  // empty attribute.
 
   // The boolean is set false, if there is no string stored.
 
@@ -2323,6 +2323,7 @@ NcAPI::getAttValues(std::vector<Type> &v, std::string attName, std::string varNa
        delete [] arr;
     }
     break;
+
     case NC_INT64:
     {
        long long *arr = new long long [sz] ;
@@ -2332,6 +2333,33 @@ NcAPI::getAttValues(std::vector<Type> &v, std::string attName, std::string varNa
        delete [] arr;
     }
     break;
+
+    /*
+    case NC_STRING:
+    {
+      char** arr = new char*[sz];
+      for(size_t i=0 ; i < sz ; ++i )
+        arr[i] = new char[2500];
+
+      if( ! (status=nc_get_att_string(ncid, varid, attName.c_str(), arr)) )
+      {
+        for( size_t i=0 ; i < sz ; ++i )
+        {
+          size_t len = sizeof(arr[i]) / sizeof(arr[i][0]) ;
+          for( size_t j=0 ; j < len ; ++j )
+            if( !j )
+              v.push_back(static_cast<Type>(arr[i][j]) ) ;
+            else
+              v.back() +=  static_cast<Type>(arr[i][j]) ;
+        }
+      }
+
+      for(size_t i=0 ; i < sz ; ++i )
+        delete [] arr[i];
+      delete [] arr;
+    }
+    break;
+*/
 
     default:
       status=0;

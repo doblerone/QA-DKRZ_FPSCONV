@@ -1864,6 +1864,11 @@ getNextVariable()
 #     $syncOpts -P ${nextPath} )"
   local nxtFl
 
+  if [ ${SHOW_SYNCFILES} ] ; then
+    echo "$syncOpts -P ${nextPath} ${nV_fls[*]}"
+    exit
+  fi
+
   nxtFl="$( ${QA_BIN#*:}/syncFiles.x \
      $syncOpts -P ${nextPath} ${nV_fls[*]} )"
 

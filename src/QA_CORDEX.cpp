@@ -2856,8 +2856,9 @@ QA_Exp::domainCheckDims(std::string item,
 
      f_name = dNames[i] ;
 
-     if( f_num == t_num )
+     if( f_num >= t_num )
         return;
+/*
      else if( f_num > t_num )
      {
         std::string key = "7_7";
@@ -2878,6 +2879,7 @@ QA_Exp::domainCheckDims(std::string item,
 
         return;
      }
+*/
   }
 
   std::string key = "7_7";

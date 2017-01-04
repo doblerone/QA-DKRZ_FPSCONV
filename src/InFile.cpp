@@ -398,6 +398,8 @@ InFile::getVariableAtt(Variable &var)
         for( size_t j=0 ; j < av.size() ; ++j )
           vs.push_back( hdhC::double2String( av[j], "p=5|adj" ) );
      }
+     else if( a_id == NC_STRING )
+        nc.getAttValues(vs, var.attName[i], t );
 
      if( ! vs.size() )
         vs.push_back("");

@@ -124,6 +124,7 @@ class Ensemble
           getIso8601(std::string);
    std::string
           getOutput(void);
+   bool   getAttText(int, int, const char*, std::vector<std::string>& );
    int    getTimes(std::string &);
    void   print(void);
    void   printDateSpan(void);
@@ -628,6 +629,48 @@ Ensemble::getOutput(void)
   return s ;
 }
 
+bool
+Ensemble::getAttText(int ncid, int varid, const char* aName,
+                     std::vector<std::string>& vs )
+{
+  // true for failure
+  vs.clear();
+
+  nc_type xtypep;
+  size_t len;
+
+  if( nc_inq_att(ncid, varid, aName, &xtypep, &len) )
+      return true;
+
+  if( xtypep == 12 )
+  {
+    char** arr = new char*[len];
+    for(size_t i=0 ; i < len ; ++i )
+      arr[i] = new char[250];
+
+    if( nc_get_att_string(ncid, varid, aName, arr) )
+        return true;
+
+    for( size_t i=0 ; i < len ; ++i )
+        vs.push_back(arr[i]);
+
+    for(size_t i=0 ; i < len ; ++i )
+      delete [] arr[i];
+    delete [] arr;
+  }
+  else if( xtypep == 2 )
+  {
+    char uc[len+1] ;
+    if( nc_get_att_text(ncid, varid, aName, uc) )
+       return true;
+
+    uc[len]='\0';
+    vs.push_back(uc);
+  }
+
+  return false;
+}
+
 int
 Ensemble::getTimes(std::string &str)
 {
@@ -710,56 +753,31 @@ Ensemble::getTimes(std::string &str)
      }
 
      // reference calendar
-     if( (status = nc_inq_attlen(ncid, varid, "calendar", &len) ) )
+     std::vector<std::string> vs;
+
+     if( getAttText(ncid, varid, "calendar", vs) )
      {  // failure
-       member[i]->state = "missing calendar";
+       member[i]->state = "missing or invalid calendar attribute";
        nc_close(ncid);
        continue;
      }
      else
-     {
-       char *uc= new char [len+1] ;
-       if( (status = nc_get_att_text(ncid, varid, "calendar", uc) ) )
-       {
-         member[i]->state = "missing calendar";
+       // successful reading of calendar
+       member[i]->refDate.setCalendar(vs[0]) ;
+
+       // reference date
+     if( getAttText(ncid, varid, "units", vs) )
+     {  // failure
+         member[i]->state = "missing or invalid units attribute";
          nc_close(ncid);
          continue;
-       }
+     }
+     else
+     {
+       if( vs[0].find("%Y") < std::string::npos )
+          member[i]->refDate.setFormattedDate();
        else
-       { // successful reading of calendar
-         uc[len]='\0';
-         member[i]->refDate.setCalendar(uc) ;
-         delete [] uc;
-
-         // reference date
-         if( (status = nc_inq_attlen(ncid, varid, "units", &len) ) )
-         {
-           member[i]->state = "missing reference date";
-           nc_close(ncid);
-           continue;
-         }
-         else
-         {
-           char *uc= new char [len+1] ;
-           if( (status = nc_get_att_text(ncid, varid, "units", uc) ) )
-           {
-              member[i]->state = "missing time units";
-              nc_close(ncid);
-              continue;
-           }
-           else
-           {
-             uc[len]='\0';
-
-             std::string str(uc);
-             if( str.find("%Y") < std::string::npos )
-                member[i]->refDate.setFormattedDate();
-             else
-               member[i]->refDate = uc ;
-             delete [] uc;
-           }
-         }
-       }
+          member[i]->refDate = vs[0] ;
      }
 
      // time values: fist and last
