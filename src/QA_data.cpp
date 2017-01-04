@@ -503,7 +503,7 @@ Outlier::test(QA_Data *pQAD)
         for(size_t k=ma_d.validRangeBegin[j] ; k < ma_d.validRangeEnd[j] ; ++k )
           extr[recNum++] = ma_d[k] ;
 
-    // prevent spurious minima slightly above absolute minimum of zero.
+    // for preventing spurious minima slightly above zero.
     double extrMin = extr[0];
     double extrMax = extr[0];
     for( size_t j=1 ; j < recNum ; ++j )
@@ -620,6 +620,22 @@ Outlier::test(QA_Data *pQAD)
            isOut = true;
         }
       }
+    }
+
+    if( isOut )
+    {
+        if( i==0 && extrMax > 0. &&  extrMin > 0. )
+        {
+          double mult=ave[i]/extrMin;
+          if( mult > 1.e+07 )
+            isOut=false;
+        }
+        else if( i && extrMax < 0. &&  extrMin < 0. )
+        {
+          double mult=ave[i]/extrMax;
+          if( mult > 1.e+07 )
+            isOut=false;
+        }
     }
 
     if( isOut )
