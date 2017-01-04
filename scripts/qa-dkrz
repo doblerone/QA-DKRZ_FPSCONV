@@ -5139,7 +5139,7 @@ test ${FLOW_TRACE:-f} = t && traceCalibration
 trap terminate TERM
 trap finally EXIT
 
-test ${SHOW_EXP:-f} = t  && getAllExps && exit
+test ${SHOW_EXP:-f} = t -o ${SHOW_LOG_FNAME:-f} = t && getAllExps && exit
 
 ### the inifinit loop: over all experiments again and again ####
 check
