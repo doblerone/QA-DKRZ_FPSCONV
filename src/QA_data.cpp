@@ -1468,7 +1468,7 @@ QA_Data::flush(void)
      double samMin = statMin.getSampleMin();
      double samMax = statMax.getSampleMax();
 
-     if( samMin < -1.e+15 || samMax > 1.e+15 )
+     if( samMin < -1.e+15 || samMax > 1.e+17 )
      {
        bool isMax=true;
        if(samMin < -1.e+15)
