@@ -627,13 +627,13 @@ Outlier::test(QA_Data *pQAD)
         if( extrMin > 0. )
         {
           double th=(ave[i]-extrMin)/extrMin;
-          if( th > 1.e+05 )
+          if( th > 1.e+03 )
             isOut=false;
         }
         else if( extrMax < 0. )
         {
           double th=(ave[i]-extrMax)/extrMax;
-          if( th > 1.e+05 )
+          if( th > 1.e+03 )
             isOut=false;
         }
     }
@@ -1462,6 +1462,38 @@ QA_Data::flush(void)
        statMin.add( dataOutputBuffer.min[i] );
        statMax.add( dataOutputBuffer.max[i] );
        statAve.add( dataOutputBuffer.ave[i] );
+     }
+
+     // any extraordinary extreme value?
+     double samMin = statMin.getSampleMin();
+     double samMax = statMax.getSampleMax();
+
+     if( samMin < -1.e+15 || samMax > 1.e+15 )
+     {
+       bool isMax=true;
+       if(samMin < -1.e+15)
+         isMax=false;
+
+       std::string key=("6_16");
+       if( notes->inq( key, name, "NO_MT") )
+       {
+         std::string capt(hdhC::tf_var(name, hdhC::colon)) ;
+         capt += "extraordinary extreme value, found";
+
+         if( isMax )
+           capt += hdhC::tf_val( hdhC::double2String(samMax));
+         else
+           capt += hdhC::tf_val( hdhC::double2String(samMin));
+
+         std::string text;
+         double samMinMax = statMin.getSampleMax();
+         double samMaxMin = statMax.getSampleMin();
+         if( (isMax && samMax == samMaxMin) || (samMin == samMinMax) )
+            text = "supection of an erroneous set missing_value";
+
+         (void) notes->operate(capt, text) ;
+         notes->setCheckStatus(pQA->n_data, pQA->n_fail);
+       }
      }
 
      dataOutputBuffer.flush();

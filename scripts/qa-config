@@ -632,9 +632,7 @@ findQAConfSeq()
   if [ ${PROJECT} ] ; then
      test ! ${PROJECT_AS} && PROJECT_AS=$PROJECT
   elif [ ${isExample:-f} = f ] ; then
-     std_out "qa-dkrz requires PROJECT=name in the task-file or on the command-line"
-     std_out flush
-     exit 1
+     return
   fi
 
   # paths to files to be concatenated; highest priority for the first one.
@@ -2163,8 +2161,6 @@ if [ ${PROJECT} ] ; then
 
   # almost everything is done here
   loadSetting
-else
-  std_out flush "PROJECT option is missing"
 fi
 
 output
