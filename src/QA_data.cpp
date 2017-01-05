@@ -624,16 +624,16 @@ Outlier::test(QA_Data *pQAD)
 
     if( isOut )
     {
-        if( i==0 && extrMax > 0. &&  extrMin > 0. )
+        if( extrMin > 0. )
         {
-          double mult=ave[i]/extrMin;
-          if( mult > 1.e+07 )
+          double th=(ave[i]-extrMin)/extrMin;
+          if( th > 1.e+05 )
             isOut=false;
         }
-        else if( i && extrMax < 0. &&  extrMin < 0. )
+        else if( extrMax < 0. )
         {
-          double mult=ave[i]/extrMax;
-          if( mult > 1.e+07 )
+          double th=(ave[i]-extrMax)/extrMax;
+          if( th > 1.e+05 )
             isOut=false;
         }
     }
