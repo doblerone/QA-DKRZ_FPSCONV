@@ -444,7 +444,7 @@ public:
 
 //! Variable objects for netcdf meta-data
   /*! Only the objects are created.*/
-  void   createVarMetaData(void);
+  void   createVarMetaData();
 
   //! Get global attribute 'frequency'
   std::string

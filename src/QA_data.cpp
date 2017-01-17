@@ -256,10 +256,9 @@ SharedRecordFlag::store(void)
 }
 
 
-Outlier::Outlier( QA *p, size_t vi, std::string nm)
+Outlier::Outlier( QA *p, std::string nm)
 {
   pQA=p;
-  vMD_ix=vi;
   name=nm;
 }
 
@@ -396,6 +395,9 @@ Outlier::test(QA_Data *pQAD)
 
   if( ! pQA->isCheckData )
     return retCode;
+
+  if( notes->findAnnotation("6_16", name) )
+      return retCode;  // a test is pointless
 
   std::vector<std::string> names;
 
@@ -720,10 +722,9 @@ Outlier::test(QA_Data *pQAD)
 }
 
 
-ReplicatedRecord::ReplicatedRecord( QA *p, size_t i, std::string nm)
+ReplicatedRecord::ReplicatedRecord( QA *p, std::string nm)
 {
   pQA=p;
-  vMD_ix=i;
   name=nm;
 
   groupSize=0;
@@ -851,9 +852,8 @@ ReplicatedRecord::parseOption(std::vector<std::string> &options)
         // enable clearing of the least significant bits for R32 flags
         if( numOfClearBits )
         {
-           pQA->qaExp.varMeDa[vMD_ix].var->pDS->enableChecksumWithClearedBits(
-                 numOfClearBits ) ;
-           pQA->qaExp.varMeDa[vMD_ix].qaData.numOfClearedBitsInChecksum = numOfClearBits;
+           vMD->var->pDS->enableChecksumWithClearedBits( numOfClearBits ) ;
+           vMD->qaData.numOfClearedBitsInChecksum = numOfClearBits;
         }
       }
       else if( cvs[i].substr(0,11) == "only_groups" )
@@ -897,7 +897,7 @@ ReplicatedRecord::test(int nRecs, size_t bufferCount, size_t nextFlushBeg,
   for( size_t j=0 ; j < bufferCount ; ++j )
   {
     int n ;
-    n = pQA->qaExp.varMeDa[vMD_ix].qaData.sharedRecordFlag.buffer[j];
+    n = vMD->qaData.sharedRecordFlag.buffer[j];
 
     // exclude code numbers 100 and 200
     if( n > 99 && n < 400 )
@@ -940,7 +940,7 @@ ReplicatedRecord::test(int nRecs, size_t bufferCount, size_t nextFlushBeg,
         int high ;
 
         while( ma_chks[i]
-          == (high=pQA->qaExp.varMeDa[vMD_ix].qaData.dataOutputBuffer.checksum[j]) )
+          == (high=vMD->qaData.dataOutputBuffer.checksum[j]) )
         {
           // we suspect identity.
           // is it a group?
@@ -995,8 +995,8 @@ ReplicatedRecord::test(int nRecs, size_t bufferCount, size_t nextFlushBeg,
       size_t countGroupMembers=0;
       int high;
 
-      while( pQA->qaExp.varMeDa[vMD_ix].qaData.dataOutputBuffer.checksum[j]
-        == (high=pQA->qaExp.varMeDa[vMD_ix].qaData.dataOutputBuffer.checksum[i]) )
+      while( vMD->qaData.dataOutputBuffer.checksum[j]
+        == (high=vMD->qaData.dataOutputBuffer.checksum[i]) )
       {
         // we suspect identity.
         ++countGroupMembers;
@@ -1012,7 +1012,7 @@ ReplicatedRecord::test(int nRecs, size_t bufferCount, size_t nextFlushBeg,
         arr_1st_bool[i++] = false;
 
         if( low0 == -1 )
-          low0 = pQA->qaExp.varMeDa[vMD_ix].qaData.dataOutputBuffer.checksum[j0];
+          low0 = vMD->qaData.dataOutputBuffer.checksum[j0];
 
         if( i == bufferCount )
           break;
@@ -1044,8 +1044,7 @@ ReplicatedRecord::test(int nRecs, size_t bufferCount, size_t nextFlushBeg,
   {
     if( status[i] && status[i] < 4 )
     {
-      pQA->qaExp.varMeDa[vMD_ix].qaData.sharedRecordFlag.buffer[i]
-           += 3200;
+      vMD ->qaData.sharedRecordFlag.buffer[i] += 3200;
 
       if( isGroup )
         isGroup=false;
@@ -1179,6 +1178,9 @@ ReplicatedRecord::report(std::vector<std::string> &range,
 
 QA_Data::QA_Data()
 {
+   validMax=1.e+17;
+   validMin=-1.e+15;
+
    // only used in context of enabled replication test
    allRecordsAreIdentical=true;
 
@@ -1212,9 +1214,34 @@ QA_Data::~QA_Data()
 }
 
 void
-QA_Data::applyOptions(bool isPost)
+QA_Data::applyOptions(std::vector<std::string>& optStr)
 {
-   return;
+  for( size_t i=0 ; i < optStr.size() ; ++i)
+  {
+     Split split(optStr[i], "=");
+
+     if( split[0] == "dVMX"
+          || split[0] == "defaultValidMax" || split[0] == "default_valid_max" )
+     {
+        if( split.size() == 2 )
+          // path to the directory where the execution takes place
+          validMax = hdhC::string2Double(split[1]);
+
+        continue;
+     }
+
+     if( split[0] == "dVMN"
+          || split[0] == "defaultValidMin" || split[0] == "default_valid_min" )
+     {
+        if( split.size() == 2 )
+          // path to the directory where the execution takes place
+          validMin = hdhC::string2Double(split[1]);
+
+        continue;
+     }
+  }
+
+  return;
 }
 
 void
@@ -1468,14 +1495,14 @@ QA_Data::flush(void)
      double samMin = statMin.getSampleMin();
      double samMax = statMax.getSampleMax();
 
-     if( samMin < -1.e+15 || samMax > 1.e+17 )
+     if( samMin < validMin || samMax > validMax )
      {
        bool isMax=true;
-       if(samMin < -1.e+15)
+       if(samMin < validMin)
          isMax=false;
 
        std::string key=("6_16");
-       if( notes->inq( key, name, "NO_MT") )
+       if( notes->inq( key, name, ANNOT_NO_MT) )
        {
          std::string capt(hdhC::tf_var(name, hdhC::colon)) ;
          capt += "extraordinary extreme value, found";
@@ -1517,7 +1544,34 @@ QA_Data::init(QA *q, std::string nm)
    name = nm;
 
    // apply parsed command-line args
-   applyOptions();
+   applyOptions(q->optStr);
+
+
+/*
+   doesn't work, because according to CF Conventions, each value outside
+   of valid_range is a valid missing_value. Relying on this, such values are
+   not taken into account at all and therefore not detectable.
+
+   int j;
+   std::string str("valid_range");
+
+   if( (j=var->getAttIndex(str)) > -1)
+   {
+       Split x_vr(var->getAttValue(str));
+       validMin = hdhC::string2Double( x_vr[0] );
+       validMax = hdhC::string2Double( x_vr[1] );
+   }
+   else
+   {
+       str = "valid_min";
+       if( (j=var->getAttIndex(str)) > -1 )
+         validMin = hdhC::string2Double(var->getAttValue(str));
+
+       str = "valid_max";
+       if( (j=var->getAttIndex(str)) > -1)
+         validMax = hdhC::string2Double(var->getAttValue(str));
+   }
+*/
 
    dataOutputBuffer.setName(name) ;
    sharedRecordFlag.setName(nm + "_flag") ;

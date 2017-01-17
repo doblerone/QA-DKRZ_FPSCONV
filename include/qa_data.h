@@ -52,7 +52,7 @@ class DataOutputBuffer
 class Outlier
 {
   public:
-  Outlier( QA*, size_t vmdIX, std::string name);
+  Outlier( QA*, std::string name);
   ~Outlier(){;}
 
   static bool
@@ -65,6 +65,7 @@ class Outlier
       exploit the function N(sigma) as criterion.*/
   void  parseOption(std::vector<std::string>&);
   void  setAnnotation(Annotation *p){notes=p;}
+  void  setVMD(VariableMetaData* p){vMD=p;}
   bool  test(QA_Data*);
 
   std::vector<std::string> options;
@@ -75,6 +76,7 @@ class Outlier
 
   Annotation *notes;
   QA *pQA;
+  VariableMetaData* vMD;
 } ;
 
 class ReplicatedRecord
@@ -87,7 +89,7 @@ class ReplicatedRecord
       in the array itself.*/
 
   public:
-  ReplicatedRecord( QA*, size_t vMDix, std::string name);
+  ReplicatedRecord( QA*, std::string name);
   ~ReplicatedRecord(){;}
 
   void   getRange(size_t ix, size_t sz, size_t recNum,
@@ -103,6 +105,7 @@ class ReplicatedRecord
             bool isMultiple );
   void   setAnnotation(Annotation *p){notes=p;}
   void   setGroupSize(size_t i){groupSize=i;}
+  void   setVMD(VariableMetaData* p){vMD=p;}
   void   test( int nRecs, size_t bufferCount, size_t nextFlushBeg,
             bool isMultiple );
 
@@ -115,6 +118,7 @@ class ReplicatedRecord
   size_t vMD_ix;
   Annotation *notes;
   QA* pQA;
+  VariableMetaData* vMD;
 } ;
 
 class SharedRecordFlag
@@ -152,7 +156,7 @@ class QA_Data
   QA_Data();
   ~QA_Data();
 
-  void   applyOptions(bool isPost=false);
+  void   applyOptions(std::vector<std::string>& optStr);
 
   //! Collects the results of checked records.
   /*! Does not really print, but store in the 'qaNcOutData' object.*/
@@ -186,6 +190,7 @@ class QA_Data
   void   setNextFlushBeg(size_t n);
   void   setStatisticsAttribute(NcAPI*);
   void   setValidRangeAtt(NcAPI*, std::string&, double* arr, size_t sz, nc_type);
+  void   setVar(Variable* p){var=p;}
   void   store(hdhC::FieldData &);
 
   void   test( int, hdhC::FieldData &);
@@ -202,6 +207,9 @@ class QA_Data
 
   double currMin;
   double currMax;
+
+  double validMin;
+  double validMax;
 
   Statistics<double> statAve;
   Statistics<double> statMin;
@@ -245,6 +253,7 @@ class QA_Data
   Outlier *outlier;
   QA *pQA;
   ReplicatedRecord *replicated;
+  Variable* var;
 };
 
 #endif

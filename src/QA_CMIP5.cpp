@@ -4856,6 +4856,8 @@ VariableMetaData::VariableMetaData(QA *p, Variable *v)
      var = new Variable ;
      isNewVar=true;
    }
+
+   qaData.setVar(var);
 }
 
 VariableMetaData::~VariableMetaData()

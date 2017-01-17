@@ -705,7 +705,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 
   if( text.size() )
   {
-    std::string capt("DRS path:");
+    std::string capt("DRS path: ");
 
     for( size_t i=0 ; i < text.size() ; ++i )
     {
@@ -831,10 +831,9 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
           continue;
       }
 
-      text = " check failed, path component " ;
       text += hdhC::tf_assign(x_e[j],drs[drsBeg+j]) ;
-      text += " does not match global attribute value " ;
-      text += hdhC::tf_val(t) ;
+      text += " does not match global " ;
+      text += hdhC::tf_att(hdhC::empty,x_e[j],t) ;
 
       break;
     }
@@ -5072,6 +5071,8 @@ VariableMetaData::VariableMetaData(QA *p, Variable *v)
 {
    pQA = p;
    var = v;
+
+   qaData.setVar(v);
 }
 
 VariableMetaData::~VariableMetaData()

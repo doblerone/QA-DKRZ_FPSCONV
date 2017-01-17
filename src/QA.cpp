@@ -1403,8 +1403,7 @@ QA::setProcessing(void)
       if( ReplicatedRecord::isSelected( *(vMD.var),
               replicationOpts, qaTime.name ) )
       {
-        vMD.qaData.replicated =
-            new ReplicatedRecord(this, i, vMD.var->name);
+        vMD.qaData.replicated = new ReplicatedRecord(this, vMD.var->name);
         vMD.qaData.replicated->setAnnotation(notes);
         vMD.qaData.replicated->parseOption(replicationOpts) ;
       }
@@ -1417,7 +1416,7 @@ QA::setProcessing(void)
       {
         vMD.qaData.enableOutlierTest=true;
 
-        vMD.qaData.outlier = new Outlier(this, i, vMD.var->name);
+        vMD.qaData.outlier = new Outlier(this, vMD.var->name);
         vMD.qaData.outlier->setAnnotation(notes);
         vMD.qaData.outlier->parseOption(outlierOpts);
       }
