@@ -27,7 +27,6 @@ class LogSummary(object):
         self.project=''
         self.prj_var_ix = -1
         self.prj_frq_ix = -1
-        self.pathBase=''
 
 
     def annotation_add(self, path_id, var_id, blk, i):
@@ -183,65 +182,76 @@ class LogSummary(object):
             pathPrefix.append([])
             for ix in range(annot_sz):
                 if jx < len(pItems[ix]):
+                    isBreak=False
                     for i in range(len(pItems[ix][jx])):
-                        if pItems[ix][jx][i] != '*':
-                            pathPrefix[jx].append(pItems[ix][jx][i])
-                    break
+                        if pItems[ix][jx][i] == '*':
+                            isBreak=True
+                            break
+                        pathPrefix[jx].append(pItems[ix][jx][i])
+
+                    if isBreak:
+                        break
 
         # common path; skip non-project prefix
         # col=0 for pItems[ix][0] == '', when applied from the beginning
         # col=-1 for LOG_PATH_BASE found within pItems
 
-        col=[]
-        for jx in range(sz_jx_max):
-            if len(pItems[0][jx][0]):
-                col.append(-1)
-            else:
-                col.append(0)
+        #col=[]
+        #for jx in range(sz_jx_max):
+        #    if len(pItems[0][jx]):
+        #        col.append(-1)
+        #    else:
+        #        col.append(0)
 
+        col = -1
         isBreak=[]
 
         while True:
             for jx in range(sz_jx_max):
-                col[jx] += 1
+                #col[jx] += 1
+                col += 1
 
                 if jx == len(isBreak):
                     isBreak.append(False)
 
-                ref_str=''
                 for ix in range(annot_sz):
-                    if jx < len(pItems[ix]):
-                        if len(ref_str) == 0:
-                            ref_str = pItems[ix][jx][col[jx]]
-                        elif pItems[ix][jx][col[jx]] == '*':
+                    if len(pItems[ix][0]) == 0:
+                        isBreak[jx]=True
+                        break
+
+                    try:
+                        if pItems[ix][jx][col] == '*':
                             isBreak[jx]=True
                             break
+                    except:
+                        pass
                 else:
-                    if len(ref_str) > 0:
-                        for kx in range(annot_sz):
-                            if jx < len(pItems[kx]):
-                                del pItems[kx][jx][col[jx]]
+                    for kx in range(annot_sz):
+                        if jx < len(pItems[kx]):
+                            del pItems[kx][jx][col]
 
-                col[jx] -= 1  # because the next item slipped into current col
+                    col -= 1  # because the next item slipped into current col
 
             for jx in range(sz_jx_max):
                 if not isBreak[jx]:
                     break
             else:
-                break  # this breaks the while loop
+                break  # breaks the while loop
 
-        # check whether the first col is always ''
+        # check whether the first column is always ''
         for jx in range(sz_jx_max):
             isAlways=True
             for ix in range(annot_sz):
                 if len(pItems[ix]) > jx:
-                    if len(pItems[ix][jx][0]):
-                        isAlways=False
+                    if len(pItems[ix][jx]):
+                        if len(pItems[ix][jx][0]):
+                            isAlways=False
 
             if isAlways:
                 for ix in range(annot_sz):
                     if len(pItems[ix]) > jx:
-                        del pItems[ix][jx][0]
+                        if len(pItems[ix][jx]):
+                            del pItems[ix][jx][0]
 
         # align columns
         ref_val=[]
@@ -256,13 +266,13 @@ class LogSummary(object):
 
 
         for jx in range(sz_jx_max):
-            fO_ix=occur_ix[jx][0]
+            f0_ix=occur_ix[jx][0]
 
-            name = self.getPathPrefix(pathPrefix[jx])
+            name = self.getPathPrefix(pathPrefix[jx], pItems[f0_ix][jx])
             fl = os.path.join(self.f_annot, name + '.json')
 
             with open(fl, 'w') as fd:
-                self.write_json_header(pathPrefix[jx], pItems[fO_ix][jx], fd)
+                self.write_json_header(pathPrefix[jx], pItems[f0_ix][jx], fd)
 
                 # write annotations for given path prefixes or kind of MIP names
                 isInit=True
@@ -713,7 +723,8 @@ class LogSummary(object):
                 items_aix.append([aix])
 
         if sep == '/':
-            if len(self.pathBase):
+            try:
+                self.pathBase
                 for jx in range(len(items)):
                     count=0
                     for i in range(len(items[jx])):
@@ -729,7 +740,7 @@ class LogSummary(object):
                         self.items_del_count = [count]
                     else:
                         self.items_del_count.append(count)
-            else:
+            except:
                 try:
                     self.items_del_count
                 except:
@@ -753,9 +764,10 @@ class LogSummary(object):
 
             # items from the preamble
             for line in fd:
-                blk.append(line.rstrip(' \n'))
+                line = line.rstrip(' \n')
+                blk.append(line)
 
-                words = line.split()
+                words = line.split(None, 1)
 
                 if words[0] == 'PROJECT:' and len(self.project) == 0:
                     self.project = words[1]
@@ -773,12 +785,34 @@ class LogSummary(object):
                         self.prj_var_ix = 0
                         self.prj_frq_ix = 1
 
-                elif words[0] == 'LOG_PATH_BASE:':
-                        self.pathBase = words[1]
+                elif words[0] == 'DRS_PATH_BASE:' \
+                        or words[0] == 'LOG_PATH_BASE:' \
+                            or words[0] == 'EXP_PATH_BASE:':
+                    self.pathBase = words[1]
+
+                elif words[0] == 'LOG_PATH_INDEX:' \
+                        or words[0] == 'EXP_PATH_INDEX:':
+                    # the following does not seem to work, although it should
+                    # self.logPathIndex = words[1].split('[, ]')
+                    #so, a work-around
+                    w2=words[1].replace('[','')
+                    w2=w2.replace(']','')
+                    self.logPathIndex = w2.split(', ')
 
                 elif words[0] == 'items:':
                     self.blk_last_line = fd.next().rstrip(' \n')
                     break
+
+            # for logPathIndex, pathBase has also to be defined
+            try:
+                self.logPathIndex
+            except:
+                pass
+            else:
+                try:
+                    self.pathBase
+                except:
+                    del self.logPathIndex
 
             if get_prmbl:
                 return blk
@@ -820,17 +854,30 @@ class LogSummary(object):
         return blk
 
 
-    def getPathPrefix(self, prefix):
-        # default: turn a path into '_' separated string
-        # if given, use a project provided identification string instead
+    def getPathPrefix(self, prefix, astItems):
+        # Default: turn a path into '_' separated string.
+        # If given, use a project provided identification string instead.
+        # If available, use LOG_PATH_INDEX for assembling a unique name
+
+        path = prefix
+        path.extend(astItems)
+        if len(path[0]) == 0:
+            del path[0]
 
         s=''
-        for p in prefix:
-            if len(p) > 0:
+        sz = len(path)
+
+        try:
+            currIx = self.logPathIndex
+        except:
+            currIx = range(len(path))
+
+        for i in range(len(currIx)):
+            ix = int(currIx[i])
+            if ix < sz and path[ix] != '*':
                 if len(s) > 0:
                     s += '_'
-
-                s += p
+                s += path[ix]
 
         return s
 
@@ -1217,7 +1264,7 @@ class LogSummary(object):
                 del pathPrefix[0]
 
         while True:
-            if len(pItems[0]) == 0:
+            if len(pItems) and len(pItems[0]) == 0:
                 del pItems[0]
             else:
                 break
