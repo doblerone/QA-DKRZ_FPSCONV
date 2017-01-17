@@ -1267,6 +1267,12 @@ set_qa_par()
  test ${DATA_IN_PRODUCTION:-f} = t && \
    par=${par}"${s}"dIP
 
+ test ${DEFAULT_VALID_MAX:-f} = t && \
+   par=${par}"${s}"dVMX
+
+ test ${DEFAULT_VALID_MIN:-f} = t && \
+   par=${par}"${s}"dVMN
+
  test ${DISABLE_CONSISTENCY_CHECK:-f} = t && \
    par=${par}"${s}"dCC
 
