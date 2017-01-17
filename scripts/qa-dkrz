@@ -390,6 +390,8 @@ callQaExecutor()
           CS_STAND_ALONE \
           CS_TABLE \
           DATA_IN_PRODUCTION \
+          DEFAULT_VALID_MAX \
+          DEFAULT_VALID_MIN \
           DISABLE_INF_NAN \
           DISABLE_TIME_BOUNDS_CHECK \
           EMAIL_TO \
@@ -959,8 +961,11 @@ QA result path: ${target}\nRemoved QA results by following links."
        fi
     fi
 
-    # also delete table entries
+    # also delete log-table entries
     rmBlock $LOG_FNAME_DIR/$CURR_LOG_FNAME.log ${fBase[ix]}
+
+    # and also delete consistency table entries
+#    rmConsistTableEntry $LOG_FNAME_DIR/$CURR_LOG_FNAME.log ${fBase[ix]}
 
     if [ "$isMessage" != f ] ; then
       local note
@@ -4051,6 +4056,38 @@ rmBlock()
   return
 }
 
+rmConsistTableEntry()
+{
+  test $# -lt 2 && return
+
+  local file=$1
+  local pattern=$2
+
+  # get all lines with line numbers having ' file: pattern'
+  local nums num sz i
+
+  declare -a nums
+  nums=($(grep -n "[[:space:]]*file:[[:space:]]*${pattern}" $1 ))
+
+  # extract the numbers
+  nums=(${nums[*]#file:})
+  nums=(${nums[*]%${pattern}*})
+  nums=(${nums[*]%:})
+
+  # remove all blocks by default. $2==num keeps the num last occurrences
+  sz=$(( ${#nums[*]} -1))
+  test $3 && sz=$((sz-$3))
+  test ${sz} -lt 0 && return
+
+  for(( i=sz ; i > -1  ; --i )) ; do
+    num=$(( ${nums[i]} -1 ))
+
+    sed  -i "$num,/status:/ d" $file
+  done
+
+  return
+}
+
 initExample()
 {
   test ${QA_EXAMPLE:-f} = f && return
@@ -4399,9 +4436,12 @@ taskSum()
          qa_res=${QA_RESULTS}/check_logs
       fi
 
-      /bin/bash ${QA_SRC}/scripts/taskSummary ${DEBUG_X} \
-        -p ${qa_res} --src=$QA_SRC \
-        ${cvr} ${ers} ${prj} ${qrs} ${tcl} ${LOG_FNAMES[exp_ix]} &
+#      /bin/bash ${QA_SRC}/scripts/taskSummary ${DEBUG_X} \
+#        -p ${qa_res} --src=$QA_SRC \
+#        ${cvr} ${ers} ${prj} ${qrs} ${tcl} ${LOG_FNAMES[exp_ix]} &
+
+      python ${QA_SRC}/scripts/python/qa-dkrz/qa_summary.py \
+            ${qa_res}/${LOG_FNAMES[exp_ix]} &
 
       pidBuf[i]=$!
       isStart=f
