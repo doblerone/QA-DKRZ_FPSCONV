@@ -71,7 +71,8 @@ class LogSummary(object):
             ix = len(self.annot_capt)
 
             self.annot_capt.append(capt)
-            self.annot_tag.append(impact + '_' + tag)
+            self.annot_tag.append(tag)
+            self.annot_impact.append(impact)
 
             self.annot_fName_id.append([var_id])
             self.annot_path_id.append([path_id])
@@ -119,6 +120,10 @@ class LogSummary(object):
 
         annot_sz = len(self.annot_capt)
 
+        # there is not a single annotation
+        if annot_sz == 0:
+            return
+
         for ix in range(annot_sz):
             # get scope
             a, b = self.annotation_getItems(ix)
@@ -139,7 +144,7 @@ class LogSummary(object):
                 sz_jx_max_ix=ix
 
         # some pItems member have no '*', i.e. they represent a single path.
-        # Make them also variable
+        # Make them also variable, but only if there is any variable pItems object.
         for jx in range(sz_jx_max):
             count=[]
             count_max_ix=0
@@ -238,6 +243,7 @@ class LogSummary(object):
             else:
                 break  # breaks the while loop
 
+        '''
         # check whether the first column is always ''
         for jx in range(sz_jx_max):
             isAlways=True
@@ -252,7 +258,8 @@ class LogSummary(object):
                     if len(pItems[ix]) > jx:
                         if len(pItems[ix][jx]):
                             del pItems[ix][jx][0]
-
+        '''
+        '''
         # align columns
         ref_val=[]
         for jx in range(sz_jx_max):
@@ -263,7 +270,7 @@ class LogSummary(object):
                 if len(pItems[ix]) > jx:
                     if ref_val[jx] != pItems[ix][jx] and len(pItems[ix][jx]):
                         pItems[ix].insert(jx, [])
-
+        '''
 
         for jx in range(sz_jx_max):
             f0_ix=occur_ix[jx][0]
@@ -274,19 +281,37 @@ class LogSummary(object):
             with open(fl, 'w') as fd:
                 self.write_json_header(pathPrefix[jx], pItems[f0_ix][jx], fd)
 
-                # write annotations for given path prefixes or kind of MIP names
+                # write annotations for given path prefixes or a kind of MIP name
                 isInit=True
-                #for jx in range(sz_jx_max):
+
                 for ix in occur_ix[jx]:
                     self.write_json_annot(ix, jx,
-                            pItems[ix][jx], ampNames_ix[ix][jx],
+                            pItems[ix], ampNames_ix[ix],
+                            fItems[ix], fItems_aix[ix], amfNames_ix[ix],
                             fd, init=isInit )
 
                     isInit=False
 
                 self.write_json_annot(0, 0,
-                    pItems[0][0], ampNames_ix[0][0],
+                    pItems[0], ampNames_ix[0],
+                    fItems[0], fItems_aix[0], amfNames_ix[0],
                     fd, final_annot=True, final=True )
+
+        '''
+        # write a file with annotation, path and file name for each tag
+        for ix in range(len(self.annot_tag)):
+            # basePath = self.getPathPrefix(pathPrefix[jx], pItems[f0_ix][jx])
+            tag = self.annot_tag[ix].strip("'")
+
+            name = self.annot_impact[ix] + '_'+ tag
+            fl = os.path.join(self.tag_dir, tag)
+
+            with open(fl, 'w') as fd:
+                self.write_tag_file(ix, tag, pathPrefix,
+                    pItems[ix], ampNames_ix[ix],
+                    fItems[ix], fItems_aix[ix], amfNames_ix[ix],
+                    fd)
+        '''
 
         return
 
@@ -373,235 +398,6 @@ class LogSummary(object):
 
         return amNames_ix
 
-
-    def annotation_getItemsX(self, ix):
-        # ix: index of annotation
-        # self.prj_var_ix: path with variable as i-th component
-        # self.prj_frq_ix: path with frequency as i-th component
-
-        # number of variables
-        sz_var = len(self.annot_fName_id[ix])
-
-        # find identical indices of path and variable items
-        # within the annot_..._ids
-        api = self.annot_path_id[ix]
-        afi = self.annot_fName_id[ix]
-
-        # Find the beginning of a path common for the entire annotation.
-        # Note that each index of p_items stores a list of corresponding
-        # path components.
-
-        # init of pItems[[]] found for this, i.e. ix-th, annotation.
-        # Mutable items are represented by '*'
-        # pItems takes into account the possibility that different annotation
-        # paths are of different size. pItems_api[[]] gives corresponding
-        # api elements.
-        pItems, pItems_api = self.getAnnotSource(api)
-
-        if len(pItems[0]) == 0:
-            del pItems[0]
-
-        # mutable items within the current annotation
-        fItems, fItems_afi = self.getAnnotSource(afi, sep='_')
-
-        # entire experiment, i.e. for all path components?
-        if len(afi) == len(self.fName_ids):
-            count = 0
-            for jx in range(len(self.annot_fName_id[ix])):
-                count += len(self.annot_fName_dt_id[ix][jx])
-
-            #if count == self.file_count:
-            #    return [['experiment', [path], [] ]]
-
-        ampNames=[]      # name of components in the annotation; list of list
-        ampNames_ix=[]  # index of var-name in annot_fName_id
-
-        # mutable path items within the current annotation
-        for m in range(len(pItems)):
-            ampNames.append([])
-            ampNames_ix.append([])
-            j=-1
-
-            for n in range(len(pItems[m])):
-                if pItems[m][n] == '*':
-                    j += 1
-                    ampNames[m].append([])
-                    ampNames_ix[m].append({})
-
-                    for i in range(len(pItems_api[m])):
-                        p_id = pItems_api[m][i]
-
-                        # jx = self.fName_ids[id][self.prj_var_ix]
-                        jx = self.path_ids[p_id][n]
-
-                        # find all var_ids containing p_items index jx
-                        item = self.p_items[jx]
-
-                        try:
-                            ampNames_ix[m][j][item]
-                        except:
-                            ampNames[m][j].append(item)
-                            ampNames_ix[m][j][item] = [p_id]
-                        else:
-                            ampNames_ix[m][j][item].append(p_id)
-
-
-        # mutable filename items within the current annotation
-        amfNames=[]      # name of components in the annotation; list of list
-        amfNames_ix=[]  # index of var-name in annot_fName_id
-        amfNames_p_ix=[]
-        for m in range(len(fItems)):
-            amfNames.append([])
-            amfNames_ix.append([])
-            amfNames_p_ix.append([])
-            j=-1
-
-            for n in range(len(fItems[m])):
-                if fItems[m][n] == '*':
-                    j += 1
-                    amfNames[m].append([])
-                    amfNames_ix[m].append({})
-                    amfNames_p_ix[m].append({})
-
-                    for i in range(len(fItems_afi[m])):
-                        f_id = fItems_afi[m][i]
-
-                        # jx = self.fName_ids[id][self.prj_var_ix]
-                        jx = self.fName_ids[f_id][n]
-
-                        # find all var_ids containing p_items index jx
-                        item = self.f_items[jx]
-
-                        # find the 'm' index of pItems[m]
-                        p_id = self.f_p_ids[f_id]
-                        for m2 in range(len(pItems_api)):
-                            isBreak=False
-                            for n2 in range(len(pItems_api[m2])):
-                                if pItems_api[m2][n2] == p_id:
-                                    p_id=m2
-                                    isBreak
-                                    break
-                            if isBreak:
-                                break
-
-                        try:
-                            amfNames_ix[m][j][item]
-                        except:
-                            amfNames[m][j].append(item)
-                            amfNames_ix[m][j][item] = [f_id]
-                            amfNames_p_ix[m][j][item] = [p_id]
-                        else:
-                            amfNames_ix[m][j][item].append(f_id)
-                            amfNames_p_ix[m][j][item].append(p_id)
-
-
-        path=''
-        # assemble paths
-        scope=['']
-        n=0
-
-        '''
-        for i in range(1,len(pItems)):
-            scope.append([])
-
-            if len(self.p_drs[i]) == 1:
-                # static path component
-                path += '/' + pItems[i]
-                scope[i].append('*')
-            elif len(self.p_drs[i]) == len(ampNames[n]):
-                # pItems[i] == '*',
-                # i.e. all mutable items of the current path component
-                path += '/' + pItems[i]
-                scope[i].append('*')
-                n += 1
-            else:
-                # a sub-set of all mutable items of the current path component
-                scope[i] = ampNames[n]
-                n += 1
-        '''
-
-
-
-
-
-
-        '''
-          example:
-          ampNames   : [['day', 'mon'],
-                        ['tas', 'tasmax', 'tasmin']]
-          ampNames_ix: [{'day': [12, 13, 14], 'mon': [34, 35, 36]},
-                        {'tasmax': [13, 35], 'tasmin': [14, 36], 'tas': [12, 34]}]
-
-          Note: here, var-acronyms and frequencies appear. The index, which
-                corresponds to the variable, has to be determined by comparison
-                to self.var_ids, which in turn was derived by use of self.prj_var_ix,
-                i.e. the position of the variable in the filename for a given project.
-        '''
-
-        # find the ampNames which are associated  e.g. all frequencies
-        ampNames_mult=[]
-        for i in range(len(ampNames_ix)):
-            keys_i = ampNames_ix[i].keys()
-            ampNames_mult.append({})
-
-            # The indices pointed to by keys are available in one of the
-            # keys of other ampNames_ix keys such that all keys of this
-            # particular ampNames_ix item are matched.
-            for key_i in keys_i:
-                ix_i_vals=ampNames_ix[i][key_i]
-
-                for j in range(len(ampNames_ix)):
-                    foundKeys=[]
-                    if i == j:  # identity
-                        continue
-
-                    keys_j = ampNames_ix[j].keys()
-                    for key_j in keys_j:
-                        for ix_i_val in ix_i_vals:
-                            if ix_i_val in ampNames_ix[j][key_j]:
-                                foundKeys.append(key_j)
-
-                    if len(foundKeys) == len(keys_j):
-                        ampNames_mult[i][key_i]=foundKeys
-
-
-        # atomic variable across the entire experiment;
-        # note that ampNames are unique
-
-        var_exp=[]
-        path_exp=[]
-        isAllAtom=[]  # curr annotated var with all frequencies: True
-        isFrqAtom=[]  # curr annotated var with less than all frequencies: True
-
-        '''
-        for i in range(len(ampNames[vIx]) -1,-1,-1):
-            name = ampNames[vIx][i]
-
-            isAllAtom.append([])  # collect freqs for each var
-            isFrqAtom.append([])  # collect freqs for each var
-
-            countA=0 # annot_var with available freqs
-            countC=0 # corresponding var with all freq
-
-            for f in ampNames_ix[vIx][name]:
-
-                numA = len( self.annot_fName_dt_id[ix][f] )
-                countA += numA
-
-                numC = self.var_dt_count[afi[f]]
-                countC += numC
-
-                if numA == numC:
-                    isFrqAtom[i].append(True)
-                else:
-                    isFrqAtom[i].append(False)
-
-            if countA == countC:
-                isAllAtom.append(True)
-            else:
-                isAllAtom.append(False)
-        '''
-        return scope
 
 
     def check_for_skipping(self, blk, skip_fBase):
@@ -908,7 +704,7 @@ class LogSummary(object):
         return i
 
 
-    def period_final(self):
+    def period_final(self, log_name):
         # find indices for the different frequencies,
         # note that these are dependent on the project
 
@@ -929,12 +725,12 @@ class LogSummary(object):
 
             word = name.rsplit('_', 2)
             for j in range(len(frqs)):
-                if word[1] == frqs[j]:
+                if word[2] == frqs[j]:
                     frqs_id[j].append(i)
                     break
             else:
                 # append new lists
-                frqs.append(word[1])
+                frqs.append(word[2])
                 frqs_id.append([i])
                 frqs_beg.append(self.atomicBeg[i])
                 frqs_end.append(self.atomicEnd[i])
@@ -950,7 +746,9 @@ class LogSummary(object):
                     frqs_end[j] = self.atomicEnd[ix[i]]
 
         # yaml output to a file in directory 'Period'
-        with open(self.f_perd, 'w') as fd:
+        f_period  = os.path.join(self.f_period, log_name + '.period')
+
+        with open(f_period, 'w') as fd:
             fd.write("--- # Time intervals of atomic variables.\n")
 
             for j in range(len(frqs)):
@@ -987,14 +785,14 @@ class LogSummary(object):
                     fd.write(line)
 
         # human-readable output into Summary
-        f_hr_sum  = os.path.join(self.sum_dir, 'time_range.txt')
         hyphen     = ' - '
         mark_ok    = '    '
         mark_left  = '--> '
         mark_right = ' <--'
         sz_max += 1
 
-        with open(f_hr_sum, 'w') as fd:
+        self.f_range  = os.path.join(self.f_period, log_name + '.range')
+        with open(self.f_range, 'w') as fd:
             fd.write("# Time intervals of atomic variables.\n")
 
             for j in range(len(frqs)):
@@ -1078,14 +876,12 @@ class LogSummary(object):
 
         # sub-directories in check_logs
         self.f_annot = os.path.join(log_path, 'Annotations')
-        self.f_perd  = os.path.join(log_path, 'Period')
-        self.sum_dir = os.path.join(log_path, 'Summary', log_name)
+        self.f_period  = os.path.join(log_path, 'Period')
+        self.tag_dir = os.path.join(log_path, 'Tags', log_name)
 
         qa_util.mkdirP(self.f_annot)
-        qa_util.mkdirP(self.f_perd)
-        qa_util.mkdirP(self.sum_dir)
-
-        self.f_perd  = os.path.join(self.f_perd, log_name + '.period')
+        qa_util.mkdirP(self.f_period)
+        #qa_util.mkdirP(self.tag_dir)
 
         # time range of atomic variables; in order to save mem,
         # beg and end, respectively, are linked to the name by the
@@ -1105,7 +901,8 @@ class LogSummary(object):
         self.dt=[]             # time intervals of sub-temp files
 
         self.annot_capt=[]     # brief annotations
-        self.annot_tag=[]      # corresponding impact-tag
+        self.annot_impact=[]      # corresponding  severity level
+        self.annot_tag=[]      # corresponding tag
         self.annot_scope=[]    # brief annotations
         self.annot_fName_id=[]   # for each var involved
         self.annot_path_id=[]  #
@@ -1197,7 +994,7 @@ class LogSummary(object):
                             self.subst_period(fName_id_ix, path_id, fse)
 
         # test for ragged time intervals of atomic variables for given frequency
-        self.period_final()
+        self.period_final(log_name)
 
         self.annotation_merge()
 
@@ -1279,7 +1076,7 @@ class LogSummary(object):
 
         j=-1
 
-        # remedy when a member of pastPrefix is also in pItems
+        # remedy when a member of pathPrefix is also in pItems
         raPath=[]
         notAppended=True
         for pP in pathPrefix:
@@ -1312,8 +1109,8 @@ class LogSummary(object):
 
     def write_json_annot(self, ix, jx,
                             pItems, ampNames_ix,
+                            fItems, fItems_aix, amfNames_ix,
                             fd, init=False, final=False, final_annot=False):
-                            #fItems, amfNames_ix,
         # write annotation
         tab='    '
 
@@ -1338,18 +1135,36 @@ class LogSummary(object):
             fd.write(',\n' + 2*tab + '{\n')
 
         for k in range(len(ampNames_ix)):
-            fd.write(3*tab + self.shared_DRS[k] + '": ')
+            if len(ampNames_ix[k]) > jx:
+                fd.write(3*tab + self.shared_DRS[k] + '": ')
 
-            keys = str( ampNames_ix[k].keys() )
-            keys = keys.replace("'",'"')
-            fd.write(keys + ',\n')
+                keys = str( ampNames_ix[k][jx].keys() )
+                keys = keys.replace("'",'"')
+                fd.write(keys + ',\n')
 
         capt = self.annot_capt[ix].strip("'")
         fd.write(3*tab + '"caption": "' + capt + '",\n')
 
-        severe = 'x'
-        fd.write(3*tab + '"severity": "' + severe + '"\n')
+        impact = self.annot_impact[ix].strip("'")
+        fd.write(3*tab + '"severity": "' + impact + '"\n')
         fd.write(2*tab + '}')
+
+        return
+
+
+    def write_tag_file(self, ix,  tag, pathPrefix,
+                            pItems, ampNames_ix,
+                            fItems, fItems_aix, amfNames_ix,
+                            fd):
+        # write annotation files for tag[ix]
+
+        capt = self.annot_capt[ix].strip("'")
+        impact = self.annot_impact[ix].strip("'")
+        #tag = self.annot_tag[ix].strip("'")
+
+        fd.write('annotation: ' + capt + '\n')
+        fd.write('impact:     ' + impact + '\n')
+        fd.write('tag:        ' + tag + '\n')
 
         return
 
