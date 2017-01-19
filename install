@@ -38,7 +38,7 @@ descript()
   echo "  --show-inst       Display properties of the current installation."
   echo "  --up[date]        Update the QA package from the repository."
   echo "                    Note: not for netCDF, HDF5, udunits2 or zlib."
-  echo "  --work=path       Location of the .config.txt file and project tables,"
+  echo "  --work=path       Location of the .config.txt file and project tables"
   echo "                    ~/.qa-dkrz by default. Required if multiple users are"
   echo "                    to access the same set of tables."
   echo ""
@@ -357,8 +357,6 @@ update()
 
   . $QA_SRC/scripts/updateConfigFile.txt QA_REVISION${packRev:+=}$packRev
 
-#  if . $QA_SRC/scripts/updateConfigFile.txt LAST_TABLE_UPDATE=$today \
-#              || [ ${isForceUp:-f} = t ] ; then
     if [ ! -d $QA_HOME/tables ] ; then
       # note that QA_HOME points to .qa-dkrz wherever it is located
       rsync -auz --exclude '*~' $QA_SRC/tables $QA_HOME &> /dev/null

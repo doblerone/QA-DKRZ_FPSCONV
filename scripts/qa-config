@@ -270,7 +270,7 @@ $sendText
 
 Usage: qa-DKRZ options
 
-  Quality Control of file system based ${PROJECT} experiments.
+  Quality Assurance of file system based ${PROJECT} experiments.
 
   QA for file system (FS) based data of climatological experiments
   contained in netCDF files.
@@ -341,11 +341,9 @@ Usage: qa-DKRZ options
   enabled via the command-line, e.g. -E_DEBUG_... .
 
   Options:
-   -E_...    Enable where ... indicates a configuration directive.
-             An key-word with appended '=' character expects a value;
-             items without assignments are boolean switches (t or f) where
-             a key-word without any assign,ment expands to (t).
-             Detailed description is given in file
+   -E_OPT[=val]    Enable where OPT indicates a configuration directive.
+             A key-word without assignments is a boolean switches set True.
+             E_OPT is case-insensitiv. Detailed description is given in file
              QA-DKRZ/example/CORDEX_qa.conf .
    -f name   Read configuration.
              Note: one configuration file may contain frequently
@@ -360,8 +358,18 @@ Usage: qa-DKRZ options
    -S        Selection of paths and variables (see config-file).
    -x        Equivalent to -E_DEBUG_C -E_DEBUG_E -E_DEBUG_M.
    --auto-up[=disable]
-             Permanently enable/disable automatic svn updates:
-             no assigment enables, disabling by: --auto-up=d or --auto-up=disable .
+             Permanently enable/disable automatic updates [default: disable].
+             Disable a previously enabled option: --auto-up=d[isable].
+   --debug   Show bash execution commands of install, qa-config, qa-dkrz, qa-dkrz
+   --example Run the example.
+   --force-update
+             Update tables; by default this is done during the first run of
+             the current day.
+   --home=/path
+             Path to the .qa-dkrz directory [default: user's home]. Also the
+             location where external tables are copied and updated as well where
+             users may define their permanent modification of tables.
+             Equivalent to option QA_HOME.
    --pb[=filename[,step]]
              Progress bar properties.
              Output of number of processed data files and total number of data files;
@@ -369,18 +377,21 @@ Usage: qa-DKRZ options
              redirected if option -m is also active. The step defines the stepping rate
              of the output in terms of percentage; 1% by default.
              Note that a filename must contain at least a single alpha char and
-             that the step must not.
+             that the step must not (obsolete).
    --project_as=string
              The current PROJECT is treated as PROJECT_AS=string, but with
              the name kept.
-   --qa-work-dir  Path to tables, .qa-config file (if no \$HOME dirctory is
-             accessible), and a CF_TestSuite.
-             There are two defaults depending on the way the QA-DKRZ package
-             was fetched:
-               a) user's \$HOME for a miniconda-built package.
-               b) package path if cloned from GitHub and the install script is applied.
-             qa-work-dir is also the location of check results
-             if the QA_RESULTS option is omitted.
+   --set-default-project=PROJECT
+             If the installation is done from GitHub, then the command QA-DKRZ/install
+             without assignment of a project name, then the binary is compiled
+             for CORDEX. This option changes the default permanently .
+             Not for the installation by conda.
+   --work    Location of check results. Usually set by option QA_RESULTS.
+             However for running the example, then also the HOME for .qa-dkrz
+             and tables.
+
+             Note that the script QA-DKRZ/install provides some more build-specific
+             options (only for installation from GitHub).
 
 ${enableOptText}
 !
@@ -393,6 +404,7 @@ displayComLineOptions()
 
       Additional options usually enabled on the command-line:
       CHECK_TOOLS           Check and show availability of tools and exit.
+      CLEAR[=arg]           Clear previous annotations
       DEBUG_C[ONFIGURATOR]  Log qaConfiguration processing to stderr.
       DEBUG_E[XECUTOR]      Log qaExecutor processing to files corresponding to
                             variable names (where qa-DKRZ was started).
@@ -401,13 +413,18 @@ displayComLineOptions()
       FLOW_TRACE            Flow trace analysis of the qa-DKRZ main-loop.
                             Note that specific commenting-in is required.
       NEXT[=num]            Process the next num variables.
+      NO_SUMMARY            Cancel summary
       ONLY_SUMMARY          Post-processed by default when ever a check
                             was performed (usually not necessary, because
                             this is performed at the end of a run).
+      PY_SUMMARY            New python based summary.
       SHOW_CALL             Show the qA_main.x call; no execution.
+      SHOW_CLEAR[=arg]      Show SELECTed file names scheduled for clearing annotations.
       SHOW_CONF             Show configuration and exit.
-      SHOW_EXP              Show names of paths with scheduled variables.
+      SHOW_EXP              Show paths of SELECTed variables and log-file name.
+      SHOW_LOG_FNAME        SHow log-file names corresponding to SELECTed variables.
       SHOW_NEXT[=num}       Show num next scheduled variables and paths.
+      TRADITIONAL_SUMMARY   Former bash-based summary.
       REFRESH_CF_STANDARD   wget original sources from PCMDI into QA-DKRZ/tables.
       REUSE_PATH_LIST       Use a path-list left previously for a resumed session.
       CHECK_PERMISSION[=str]  Test whether directories and/or files are writable (w),
@@ -1661,7 +1678,7 @@ setKWL()
   test ${DEBUG_CONF} && voidX
 
   if [ ${ONLY_SUMMARY:-f} != f -a "${ONLY_SUMMARY}" != all ] ; then
-    setKWL LOG_FNAMES=${ONLY_SUMMARY}
+    test ${ONLY_SUMMARY} != t && setKWL LOG_FNAMES=${ONLY_SUMMARY}
   fi
 
   return 0
@@ -2092,14 +2109,12 @@ do
     -)  if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
           installArgs="${installArgs}--auto-up=${OPTARG#*=},"
 
-        elif [ "${UOPTARG:0:13}" = AUTO_TABLE_UP ] ; then
-          installArgs="${installArgs}--auto-table-up=${OPTARG#*=},"
-
-        elif [ "${OPTARG:0:4}" = fpid ] ; then
-          setKWL FORMER_PID=$OPTARG
-
-        elif [ "${UOPTARG%=*}" = PROJECT_AS ] ; then
-          setKWL PROJECT_AS=${OPTARG#*=}
+        elif [ "${UOPTARG:0:5}" = DEBUG ] ; then
+          : # done before
+        elif [ "${UOPTARG:0:7}" = EXAMPLE ] ; then
+          : # done before
+        elif [ "${UOPTARG:0:4}" = HOME ] ; then
+          : # done before
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
           if [ ${OPTARG} = ${OPTARG#*=} ] ; then
@@ -2108,15 +2123,12 @@ do
             setKWL PROGRESS_BAR=${OPTARG#*=}  # file to write to
           fi
 
+        elif [ "${UOPTARG%=*}" = PROJECT_AS ] ; then
+          setKWL PROJECT_AS=${OPTARG#*=}
+
         elif [ "${UOPTARG%=*}" = SET_DEFAULT_PROJECT ] ; then
           installArgs="${installArgs}--set_default_project=${OPTARG#*=},"
 
-        elif [ "${UOPTARG:0:5}" = DEBUG ] ; then
-          : # done before
-        elif [ "${UOPTARG:0:7}" = EXAMPLE ] ; then
-          : # done before
-        elif [ "${UOPTARG:0:4}" = HOME ] ; then
-          : # done before
         elif [ "${UOPTARG:0:4}" = WORK ] ; then
           : # done before
 

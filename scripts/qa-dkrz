@@ -318,9 +318,9 @@ callQaConfig()
 
 #  set +f
 
-  if [ "${SHOW_CLEAR}" -a "${SHOW_CLEAR}" != t ] ; then
-    # SHOW_CLEAR may contain same assignment than CLEAR itself
-    test ! ${CLEAR} && CLEAR=${SHOW_CLEAR}
+  if [ "${SHOW_CLEAR}" ] ; then
+    # SHOW_CLEAR may contain the same assignment as CLEAR itself
+    test ! ${CLEAR} && CLEAR="${SHOW_CLEAR}"
     SHOW_CLEAR=t
   fi
 
@@ -892,9 +892,9 @@ clear()
                 test "${tx:0:7}" != 'qa_lock' && continue
              fi
 
-             if [ ${SHOW_CLEAR:-f} = t ] ; then
-               std_out ttyOnly "SUB-PATH=${subPath}"
-               std_out ttyOnly "\t${t}\tLINK\n"
+             if [ "${SHOW_CLEAR}" ] ; then
+               std_out ttyOnly "\nSUB-PATH=${subPath}"
+               std_out ttyOnly "\n\t${t}\tLINK\n"
              else
                # note: '\rm -f any' returns always 'true'
                if \
@@ -950,15 +950,18 @@ QA result path: ${target}\nRemoved QA results by following links."
     done
 
     if [ ${isRm} = t ] ; then
-       if [ ${SHOW_CLEAR:-f} = t ] ; then
-         std_out ttyOnly "SUB-PATH=${subPath}"
-         std_out ttyOnly "\t${fBase[ix]}\n"
+       if [ "${SHOW_CLEAR}" ] ; then
+         std_out ttyOnly "\nSUB-PATH=${subPath}"
+         std_out ttyOnly "\n\t${fBase[ix]}\n"
+         return 0
        else
          # remove selected
          tryCom \
          \rm -f "${fs[*]}"
          isMessage=t
        fi
+    else
+       test "${SHOW_CLEAR}" && return 0
     fi
 
     # also delete log-table entries
@@ -1050,6 +1053,25 @@ copyPreamble()
 # fi
 
   return
+}
+
+disableStatusLine()
+{
+  # no status line for SHOW_CALL
+  if [ ${SHOW_CALL:-f} = t -o ${SHOW_CLEAR:-f} = t ] ; then
+    NO_STATUS=t
+    SIMPLE_STATUS_LINE=f
+    NO_STATUS=f
+    return 0
+  fi
+
+  # no status line at all
+  if [ ${SIMPLE_STATUS_LINE:-f} = f ] ; then
+    NO_STATUS=t
+    return 0
+  fi
+
+  return 1
 }
 
 displayStatusLine()
@@ -1191,7 +1213,7 @@ finally()
 
   if [ ${isShow:-f} = f -a ${isTERM:-f} = f ] ; then
     if [ ${isAnythingDone:-f} = t -a ${NO_SUMMARY:-f} = f ] ; then
-      taskSum
+      summary_task
     fi
   fi
 
@@ -1823,6 +1845,12 @@ getNextVariable()
   qa_fl=$( ls ${QA_RESULTS}/data/${subPath}/qa_${1}.nc 2> /dev/null)
 
   # apply rules, clearings, and test for qa_note files
+  if [ "${SHOW_CLEAR}" ] ; then
+    clear
+    nextFile=
+    return 0
+  fi
+
   if \
 #trace \
     testLocks $1 qa_fl ; then
@@ -2174,11 +2202,8 @@ getPaths()
     fi
   done
 
-  test ${ONLY_SUMMARY} && REUSE_PATH_LIST=t
-
   # only those paths that are selected and contain netCDF files
-  if [ ${REUSE_PATH_LIST:-f} = f \
-       -o ! -f ${SESSION_LOGDIR}/path-list.txt ] \
+  if [ ! -f ${SESSION_LOGDIR}/path-list.txt ] \
        || ! grep -q -- '---EOF---' ${SESSION_LOGDIR}/path-list.txt ; then
     \rm -f "${pathListFile}"
 
@@ -2669,7 +2694,9 @@ init()
   # sets: CONDA_ENV, QA_SRC
   getQA_SRC $0
 
-  initExample
+  test ${QA_EXAMPLE:-f} = t && initExample
+
+  # note: if not --example, then example_args is empty
   basic_args=( ${example_args[*]} -e_QA_SRC=${QA_SRC} )
 
   # sets: QA_HOME, CONFIG_FILE
@@ -2688,12 +2715,14 @@ init()
 
   callQaConfig ${T[*]} ${basic_args[*]} $*
 
-  if is_TTY  ; then
-    if [ $NO_STATUS = f ] ; then
-     if [ ${SIMPLE_STATUS_LINE:-f} = t ] ; then
-       isTPUT=t
-        if ! which tput &> /dev/null ; then
-          isTPUT=f
+  if disableStatusLine ; then
+    if is_TTY  ; then
+      if [ $NO_STATUS = f ] ; then
+        if [ ${SIMPLE_STATUS_LINE:-f} = t ] ; then
+          isTPUT=t
+          if ! which tput &> /dev/null ; then
+            isTPUT=f
+          fi
         fi
       fi
     fi
@@ -2802,7 +2831,7 @@ init()
     # only summary of provided logfile names with absolute path
     if [ ${LOG_FNAMES} ] ; then
       LOG_FNAMES=( ${LOG_FNAMES//,/ } )
-      taskSum
+      summary_task
       exit
     fi
   fi
@@ -2823,10 +2852,6 @@ init()
   if [ ${CHECKSUM:-f} = f ] ; then
     test "${CS_STAND_ALONE}" -o "${CS_DIR}" && CHECKSUM=t
   fi
-
-  # no status for SHOW_CALL
-  test ${SHOW_CALL:-f} = t && NO_STATUS=t
-  test ${SIMPLE_STATUS_LINE:-f} = f && NO_STATUS=t
 
   # parse REATTEMPT_LIMIT and SLEEP_TIME
   intTryComRepeat
@@ -2859,6 +2884,12 @@ init()
   for nET in ${NUM_EXEC_THREADS[*]} ; do
     maxNumExecThreads=$(( maxNumExecThreads + nET ))
   done
+
+  if [ "${SHOW_CLEAR}" ] ; then
+    # precedence of any CLEAR assignment
+    test ${CLEAR:-f} = f -o "${CLEAR}" = t && CLEAR="${SHOW_CLEAR}"
+    SHOW_CLEAR=t
+  fi
 
   initProjectTableName
 
@@ -2921,7 +2952,7 @@ init()
        LOG_FNAMES=( ${LOG_FNAMES[*]##*/} )
      fi
 
-     taskSum
+     summary_task
      exit
   fi
 
@@ -4090,8 +4121,6 @@ rmConsistTableEntry()
 
 initExample()
 {
-  test ${QA_EXAMPLE:-f} = f && return
-
   # for running an example for CORDEX
     if [ "${WORK}" ] ; then
       setKWL EXAMPLE_PATH=${WORK}
@@ -4331,7 +4360,19 @@ std_out()
   return
 }
 
-taskSum()
+summary_detectType()
+{
+  local qa_res=$1
+  local logFName=${2%.log}
+
+  if [ -d ${qa_res}/Summary/$logFName ] ; then
+    return 1
+  fi
+
+  return 0
+}
+
+summary_task()
 {
   test ${NO_SUMMARY:-f} = t && return
 
@@ -4365,14 +4406,14 @@ taskSum()
   if [ ${ONLY_SUMMARY:-f} != f -a ${ONLY_SUMMARY:-f} != all ] ; then
     for(( exp_ix=0 ; exp_ix < ${#LOG_FNAMES[*]} ; ++exp_ix )) ; do
       if [ "${LOG_FNAMES[exp_ix]}" != "${LOG_FNAMES[exp_ix]#*/}" ] ; then
-         lnf_path=${LOG_FNAMES[exp_ix]%/*}
+         lnf_path=${LOG_FNAMES[exp_ix]%/*}/
          break
       fi
     done
 
     for(( exp_ix=0 ; exp_ix < ${#LOG_FNAMES[*]} ; ++exp_ix )) ; do
       if [ "${LOG_FNAMES[exp_ix]}" = "${LOG_FNAMES[exp_ix]#*/}" ] ; then
-         LOG_FNAMES[exp_ix]=$lnf_path/${LOG_FNAMES[exp_ix]}
+         LOG_FNAMES[exp_ix]=${lnf_path}${LOG_FNAMES[exp_ix]}
          break
       fi
     done
@@ -4436,12 +4477,23 @@ taskSum()
          qa_res=${QA_RESULTS}/check_logs
       fi
 
-#      /bin/bash ${QA_SRC}/scripts/taskSummary ${DEBUG_X} \
-#        -p ${qa_res} --src=$QA_SRC \
-#        ${cvr} ${ers} ${prj} ${qrs} ${tcl} ${LOG_FNAMES[exp_ix]} &
+      # detect the kind of summary structure (traditionally or new)
+      if [ ${PY_SUMMARY:-f} = f -a ${TRADITIONAL_SUMMARY:-f} = f ] ; then
+        if summary_detectType ${qa_res} ${LOG_FNAMES[exp_ix]} ; then
+           PY_SUMMARY=t
+        else
+           PY_SUMMARY=f
+        fi
+      fi
 
-      python ${QA_SRC}/scripts/python/qa-dkrz/qa_summary.py \
-            ${qa_res}/${LOG_FNAMES[exp_ix]} &
+      if [ ${PY_SUMMARY} ] ; then
+         python ${QA_SRC}/scripts/python/qa-dkrz/qa_summary.py \
+              ${qa_res}/${LOG_FNAMES[exp_ix]} &
+      else
+         /bin/bash ${QA_SRC}/scripts/taskSummary ${DEBUG_X} \
+           -p ${qa_res} --src=$QA_SRC \
+           ${cvr} ${ers} ${prj} ${qrs} ${tcl} ${LOG_FNAMES[exp_ix]} &
+      fi
 
       pidBuf[i]=$!
       isStart=f
