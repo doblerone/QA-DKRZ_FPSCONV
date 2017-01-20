@@ -1,0 +1,109 @@
+# DRS Controlled Vocabulary + CMIP6 Model Output Requirements.
+
+# A comment begins with '#'; leading or trailing blanks are discarded.
+# Ampersand \ at the end of a line indicates a continous line, whose leading blanks
+# are ingored.
+# Variables or keyword 'global' are indicated by a trailing ':'.
+# Attributes must not have a trailing ':'.
+# Requested value by a plain assignment, one out of several |-separated values,
+# as well as ranges [val1, val2].
+# Special Blocks are framed by BEGIN: name and END: name, each alone
+# on a line.
+
+DS-SEP=/
+FE-SEP=_
+
+BEGIN: DRS
+# possible DRS paths with names (including blanks) from the DRS-CV.
+# DS: directory structure, FE: filename encoding.
+# Embracing <> may be omitted
+  CMIP6-DS: <mip_era>/<activity_id>/<institution_id>/<source_id>/<experiment_id>\
+           /<member_id>/<table_id>/<variable_id>/<grid_label>/<version>
+
+#  ESGF-DS: <activity>/<product>/<institute>/<model>/<experiment>/<frequency>\
+#           /<modeling realm>/<MIP table>/<ensemble member>/<version number>\
+#           /<variable name>
+
+# a ToDo for later: use >_< instead of /
+  CMIP6-FE:<variable_id>/<table_id>/<experiment_id>/<source_id>/<member_id>\
+           /<grid_label>.nc
+
+#  GRIDSPEC-FE:<gridspec>_<modeling realm>_<frequency>_<model>_<experiment>\
+#           _<ensemble member>.nc
+
+# Special format: <DRS-CV name> = global attribute name.
+# Components of directory and file structure.
+# Note that requested values are not part of the DRS_CV check.
+  <mip_era>             # mip_era.json
+  <activity_id>         # CMIP6_activity_id.json + CMIP6_experiment_id.json
+  <experiment_id>       # CMIP6_experiment_id.json
+  <institution_id>      # CMIP6_institution_id.json
+  <grid_label>          # CMIP6_grid_label.json
+  <member_id>           # [<sub_experiment_id>-]<variant_label>
+  <source_id>           # CMIP6_source_id.json
+  <table_id>            # CMIP6_table_id.json
+  <temporal subset>
+  <variable_id>
+  <version>             # v[[:digits:]]
+#  <gridspec>
+#  <geographical info>
+END: DRS
+
+# VAR_TYPE is the type of a variable (note: checked via std_output table)
+#DATA_VAR:
+#   VAR_TYPE=float
+#AUX_VAR:
+#   VAR_TYPE=double
+
+# Format: global_att [ = DRS-path item [= value]
+# this reflects a mapping between global and DRS and
+# expected value or comma-sep values as choice. If there is no mapping
+# necessary, but a value is provided, then globa_att = DRS-path item
+# must be set nevertheless.
+
+# -> CMIP6_CVs indicates a table
+# Note: dependencies on other items is not indicated, but checked
+
+global:
+   activity_id                          #-> CMIP6_CVs
+   branch_method
+   branch_time_in_child
+   branch_time_in_parent
+   contact
+   Conventions  = Conventions  = CF-1.7,UGRID
+   creation_date                        # YYYY-MM-DDTHH:MM:SSZ
+   data_specs_version
+   experiment
+   experiment_id                        #-> CMIP6_CVs
+   external_variables
+   forcing_index
+   frequency                            #-> CMIP6_CVs
+   further_info_url
+   grid
+   grid_label                           #-> CMIP6_CVs
+   initialization_index
+   institution
+   institution_id                       #-> CMIP6_CVs
+   mip_era     = mip_era  = CMIP6       #-> CMIP6_CVs
+   nominal_resolution                   #-> CMIP6_CVs
+   parent_activity_id
+   parent_experiment_id
+   parent_mip_era
+   parent_source_id
+   parent_time_units
+   parent_variant_label
+   physics_index
+   product = output
+   realization_index
+   realm                                #-> CMIP6_CVs
+   required_global_attributes           #-> CMIP6_CVs
+   source
+   source_id                            #-> CMIP6_CVs
+   source_type
+   sub_experiment
+   sub_experiment_id
+   table_id                             #-> CMIP6_CVs
+   tracking_id
+   variable_id
+   variant_info
+   variant_label
