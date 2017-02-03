@@ -998,7 +998,13 @@ class LogSummary(object):
 
         self.annotation_merge()
 
+        self.sendMail()
+
         return
+
+
+    def self.sendMail(self):
+      return
 
 
     def set_curr_dt(self, fse):

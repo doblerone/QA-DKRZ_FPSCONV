@@ -1023,19 +1023,27 @@ reportFindings()
 
 run()
 {
-  local cmdText
-  cmdText="$NICE qA-${PROJECT_AS}.x  --file=param_file_$$.txt"
+  local cmd
+  cmd="$NICE qA-${PROJECT_AS}.x  --file=param_file_$$.txt"
 
   sessText="run: ${cmdText}\n"
 
   # +++++++++++++ run the QA executable
-  ${cmdText} > out_${name}.txt &
+  ${cmd} > out_${name}.txt &
   runPID=$!
   wait_fnct $runPID
   # ++++++++++++++++++++++++++++++++++
 
   # read output of the run
   ans=$(<out_${name}.txt)
+
+  # run CMOR3 (D.Nadeau, LLNL)
+  if [ ${RUN_CMOR3_LLNL} ] ; then
+    declare -a annot_CMOR_LLNL
+
+    run_CMOR3_LLNL
+    convertCMOR_out2QA
+  fi
 
 #trace \
   parseOutput
@@ -1044,6 +1052,123 @@ run()
   test ${LOG_CPU_TIME:-f} = t && logTime $realTime $cpuTime $status
 }
 
+convertCMOR_out2QA()
+{
+  local i flag_txt
+  for((i=0 ; i < ${#annot[*]} ; ++i )) ; do
+     flag_txt="FLAG-BEGL1-CMOR3_${#annot[i]}:CAPT-BEG"
+     flag_txt="${flag_txt}${annot[i]}"
+     flag_txt="${flag_txt}CAPT-ENDFLAG-END"
+
+     ans="${ans}${flag_txt}"
+  done
+
+  return 0
+}
+
+run_CMOR3_LLNL()
+{
+  . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3
+  . $QA_SRC/scripts/parseConfigFile PrePARE
+
+  export PATH=${PrePARE%/*}:${PATH}
+
+  source activate cmor &> /dev/null
+
+  export UDUNITS2_XML_PATH=${CONDA_FOR_CMOR3}/envs/cmor/share/udunits/udunits2.xml
+
+  local file table_path
+
+  local words
+  declare -a words
+
+  while read -a words ; do
+    if [ ${words[0]} = '-p' ] ; then
+       file=${words[1]}
+    elif [ ${words[0]} = '-f' ] ; then
+      file=${file}/${words[1]}
+      break
+    fi
+  done < param_file_$$.txt
+
+  # find the right table depends on data which has to be checked,
+  # thus it could be nonconforming
+  table_path=$QA_HOME/tables/projects/CMIP6/cmip6-cmor-tables/Tables
+
+  local table_id=$( ${QA_SRC}/bin/getNC_att.x $file --only-value table_id)
+
+  # check whether at leat one of the two name an existing json-table
+  local mip_table=${table_path}/CMIP6_${table_id}.json
+  if ! ls ${mip_table} &> /dev/null ; then
+    # still contains the filename without path
+    local x_fname
+    declare -a x_fname
+    x_fname=( ${words[1]//_/ } )
+    mip_table=${table_path}/CMIP6_${x_fname[1]}.json
+
+    if ! ls ${mip_table} &> /dev/null ; then
+       if [ -c "$TTY" ] ; then
+         echo 'Invalid MIP Table in filename and attributes'
+         echo 'Cancel CMOR3_LLN run'
+         return 1
+       fi
+    fi
+  fi
+
+  local i j line lines out
+  out="$(python $PrePARE \
+                        ${mip_table} \
+                        ${file} \
+                        2>&1 | cat -E )"
+
+  source deactivate cmor
+
+  local blk_on=f
+
+  j=0
+  for(( i=0 ; i < ${#out} ; ++i )) ; do
+    if [ "${out:i:1}" = '$' ] ; then
+      j=$((j+1))
+    else
+      lines[j]="${lines[j]}${out:i:1}"
+    fi
+  done
+
+  j=0
+  blk_on=f
+
+  for(( i=0 ; i < ${#lines[*]} ; ++i )) ; do
+    line="${lines[i]//\"/}"
+    test "${line}" = '' && continue
+
+    if [ $(expr match "${line}" '[^!]*!\+') -gt 5 ] ; then
+      if [ ${blk_on} = f ] ; then
+        blk_on=t
+      else
+        blk_on=f
+        j=$((j+1))
+      fi
+
+      continue
+    fi
+
+    if [ ${blk_on} = t ] ; then
+      if [ $(expr match "${line}" '^[[:space:]]*![[:space:]]*$') -eq 0 ] ; then
+        # clear the beginning
+        for(( start=1 ; start < ${#line} ; ++start )) ; do
+          test "${line:start:1}" = '!' && continue
+          test "${line:start:1}" = ' ' && continue
+
+          break
+        done
+
+        annot[j]="${annot[j]}${line:start}\n"
+      fi
+    fi
+  done
+
+  return 0
+}
 ##//!Send annotations to the list of email recipients.
 
 sendEMail()
@@ -1308,7 +1433,7 @@ set_qa_par()
  test ${NON_REGULAR_TIME_STEP:-f} = t && \
    par=${par}"${s}"nRTS
 
- if [ "${OUTLIER_TEST}" ] ; then
+ if [ ${OUTLIER_TEST:-f } != f ] ; then
    tmp=
    OUTLIER_TEST="${OUTLIER_TEST[*]}"
    for(( i=0 ; i < ${#OUTLIER_TEST} ; ++i )) ; do
@@ -1340,7 +1465,7 @@ set_qa_par()
  test ${#QA_NCFILE_FLAGS} -gt 0 && \
    par=${par}"${s}"qNF=${QA_NCFILE_FLAGS}
 
- if [ "${REPLICATED_RECORD}" ] ; then
+ if [ "${REPLICATED_RECORD:-f}" != f ] ; then
    # convert array to comma-separated list
    REPLICATED_RECORD="${REPLICATED_RECORD[*]}"
    par=${par}"${s}"rR="${REPLICATED_RECORD// /,}"
@@ -1905,6 +2030,7 @@ wait_fnct()
 ## netCDF file. Those of successfully checked sub-temporal files
 ## of a given variable are collected in a file in QA_RESULT/PROJECT/data/...DRS-structure
 ##*/
+
 
 writeTrackingID()
 {

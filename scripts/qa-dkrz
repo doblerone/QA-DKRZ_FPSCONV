@@ -387,6 +387,7 @@ callQaExecutor()
           CF_NOTE_LEVEL_LIMIT \
           CHECK_MODE \
           CHECKSUM \
+          CONFIG_FILE \
           CS_STAND_ALONE \
           CS_TABLE \
           DATA_IN_PRODUCTION \
@@ -433,12 +434,14 @@ callQaExecutor()
           PROJECT_DATA \
           PROJECT_TABLE \
           QA \
+          QA_HOME \
           QA_HOST \
           QA_NCFILE_FLAGS \
           QA_RESULTS \
           QA_SRC \
           REATTEMPT_LIMIT \
           REPLICATED_RECORD \
+          RUN_CMOR3_LLNL \
           SESSION \
           SESSION_LOGDIR \
           SHOW_CALL \
@@ -480,7 +483,8 @@ callQaExecutor()
     text="${text}\nIMPORTED_PATH=${QA_BIN#*:}"
     echo -e "$text" > $procFile
 
-    $QA_SRC/scripts/$QA_FILE_EXECUTER "${ca}QA_SRC=${QA_SRC} PROC_POOL=$PROC_POOL PROC_FILE=${procFile##*/} PAR_PID=${rootPID}" &
+    $QA_SRC/scripts/$QA_FILE_EXECUTER "${ca}QA_SRC=${QA_SRC} \
+         PROC_POOL=$PROC_POOL PROC_FILE=${procFile##*/} PAR_PID=${rootPID}" &
   else
     local bin
     for bin in ${QA_BIN[*]} ; do
@@ -653,7 +657,7 @@ checkClosedMessages()
          tryCom \
          \rm -f "$ff"
 
-         isAnythingDone=t
+#         isAnythingDone=t
       fi
     done
 
@@ -1212,7 +1216,8 @@ finally()
   \rm -f ${SESSION_LOGDIR}/pid.$rootPID
 
   if [ ${isShow:-f} = f -a ${isTERM:-f} = f ] ; then
-    if [ ${isAnythingDone:-f} = t -a ${NO_SUMMARY:-f} = f ] ; then
+#    if [ ${isAnythingDone:-f} = t -a ${NO_SUMMARY:-f} = f ] ; then
+    if [ ${NO_SUMMARY:-f} = f ] ; then
       summary_task
     fi
   fi
@@ -1526,23 +1531,14 @@ getFilenameBase()
 
 getHomePath()
 {
-  # where all the work is going to take place
-  if [ $QA_HOME ] ; then
-    test ${QA_HOME##*/} != '.qa-dkrz' && QA_HOME=${QA_HOME}/.qa-dkrz
-  else
-    QA_HOME=~/.qa-dkrz
-  fi
+  setKWL CONFIG_FILE=~/.qa-dkrz/config.txt
 
-  if ! mkdir -p $QA_HOME 2> /dev/null ; then
-    std_out "${0##*/}::getHomePath():"
-    std_out "could not mkdir $QA_HOME"
-    std_out "please restart with provided option --work=path"
-    std_out flush
-    exit 1
+  # where all the work is going to take place
+  if ! . $QA_SRC/scripts/parseConfigFile QA_HOME ; then
+     QA_HOME=~/.qa-dkrz
   fi
 
   setKWL QA_HOME=$QA_HOME
-  setKWL CONFIG_FILE=$QA_HOME/config.txt
 
   return
 }
@@ -1948,7 +1944,7 @@ getNextVariable()
       local num=${#nV_fls[*]}
 #    fi
 
-    isAnythingDone=t
+#    isAnythingDone=t
 
     y_impact=L2
     if [ $status -eq 3 ] ; then
@@ -1994,7 +1990,7 @@ getNextVariable()
       local num=${#nV_fls[*]}
 #    fi
 
-    isAnythingDone=t
+#    isAnythingDone=t
 
     # issue annotation
     y_impact=L2
@@ -2691,6 +2687,12 @@ init()
   NO_STATUS=f
   isTPUT=f
 
+  export uCF_blkBeg
+  export uCF_blkEnd
+
+  declare -a uCF_lines
+  export uCF_lines
+
   # sets: CONDA_ENV, QA_SRC
   getQA_SRC $0
 
@@ -2801,22 +2803,47 @@ init()
   fi
 
   # package update requested and required?
-  if [ ${NO_GIT:-f} = f -a ${NO_UPDATE:-f} = f ] ; then
+  if [ ${CONDA_ENV:-f} = f -a ${UPDATE:-enable} = enable ] ; then
     # checksum of current qa-dkrz
     local md5_0
     md5_0=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
-    if ${QA_SRC}/install ${INSTALL_ARGS//,/ } \
-                         PROJECT_AS=${PROJECT_AS} ${PROJECT} ; then
-        local md5_1
-        md5_1=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
+    local isInstall
+#    if . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE ; then
+       isInstall=t
+#    else
+#       local quest
+#       echo -e "\n Do you want to update external programs and/or tables? " > $TTY
+#       echo -n "Saying 'auto-up' would always automatically search updates. "  > $TTY
 
-        test ${md5_0} != ${md5_1} && \
-            exec ${QA_SRC}/scripts/qa-dkrz ${initial_params[*]}
-    else
-       # could not make the executable for the given project
-       std_out flush "could not make: install ${PROJECT}"
-       exit 1
+#       while : ; do
+#         read -p "<yes, [no], or auto-up>: " quest 2> $TTY
+
+#         case ${quest:0:4} in
+#           ( y | yes )  isInstall=t ; break ;;
+#           ( no | '' ) isInstall=f
+#                      . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE=disable
+#                      break ;;
+#                auto ) INSTALL_ARGS="--auto-up,${INSTALL_ARGS}" ; isInstall=t ; break  ;;
+#                    *) ;;
+#         esac
+#       done
+#    fi
+
+    if [ "${isInstall}" = t ] ; then
+      if ${QA_SRC}/install ${TTY:+-T } ${TTY} ${INSTALL_ARGS//,/ } \
+                           PROJECT_AS=${PROJECT_AS} ${PROJECT} ; then
+
+          local md5_1
+          md5_1=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
+
+          test ${md5_0} != ${md5_1} && \
+              exec ${QA_SRC}/scripts/qa-dkrz ${initial_params[*]}
+      else
+         # could not make the executable for the given project
+         std_out flush "could not make: install ${PROJECT}"
+         exit 1
+      fi
     fi
   fi
 
@@ -2877,7 +2904,7 @@ init()
 
 #  set -f
   # read ~/.qa-dkrz/conf-.txt for the current revision of tha package
-  . $QA_SRC/scripts/updateConfigFile.txt QA_REVISION
+  . $QA_SRC/scripts/parseConfigFile QA_REVISION
 
   maxNumExecThreads=0
   local nET
@@ -4365,11 +4392,11 @@ summary_detectType()
   local qa_res=$1
   local logFName=${2%.log}
 
-  if [ -d ${qa_res}/Summary/$logFName ] ; then
-    return 1
+  if ls ${qa_res}/Annotations/*.json &> /dev/null ; then
+    return 0
   fi
 
-  return 0
+  return 1
 }
 
 summary_task()
@@ -4486,7 +4513,7 @@ summary_task()
         fi
       fi
 
-      if [ ${PY_SUMMARY} ] ; then
+      if [ ${PY_SUMMARY} = t ] ; then
          python ${QA_SRC}/scripts/python/qa-dkrz/qa_summary.py \
               ${qa_res}/${LOG_FNAMES[exp_ix]} &
       else
@@ -5188,12 +5215,8 @@ if tty -s ; then TTY=$(tty) ; fi
 QA_CONFIG=qa-config
 QA_FILE_EXECUTER=qa-exec-check
 
-if ! which git &> /dev/null ; then
-  NO_GIT=t
-fi
-
-if ! which wget &> /dev/null ; then
-  NO_WGET=t
+if ! which git &> /dev/null || ! which wget &> /dev/null ; then
+  UPDATE=disable
 fi
 
 rootPID=$$

@@ -1340,7 +1340,11 @@ parseOPTARG()
   elif [ "${key}" = OUTLIER_TEST ] ; then
     for(( i=0 ; i < ${#keyWordList[*]} ; ++i )) ; do
       if [ "${key}" = ${keyWordList[i]} ] ; then
-        OUTLIER_TEST="${value}","${OUTLIER_TEST[*]// /,}"
+        if [ ${value} = f ] ; then
+          OUTLIER_TEST=f
+        else
+          OUTLIER_TEST="${value}","${OUTLIER_TEST[*]// /,}"
+        fi
         return
       fi
     done

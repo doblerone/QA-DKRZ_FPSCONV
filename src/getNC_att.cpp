@@ -47,52 +47,84 @@ int main(int argc,char *argv[])
     exceptionError( ostr.str() );  // exits
   }
 
-  std::string s;
-  std::string str;
+  std::string att;
+  bool isOnlyValue=false;
+
+  std::vector<std::string> vs_att;
+  std::vector<std::string> vs_val;
 
   for( int i=2 ; i < argc ; ++i )
   {
-    s=argv[i];
+    att=argv[i];
 
-    if( ! nc.isAttValid(s) )
+    if( att == "-h" || att == "--help" )
     {
-      std::cout << s << "= " ;
-      continue;
+        std::cout << "usage: getNC_att.x [--help] [--only-value] att-name [att-name ...]";
+        std::cout << std::endl ;
+        exit(1);
     }
 
-    if( s == "record_num" )
+    if( att == "--only-value" )
     {
-      size_t sz = nc.getNumOfRecords() ;
+        isOnlyValue=true;
+        continue;
+    }
 
-      std::cout << "record_num=" << sz << " " ;
+    if( ! nc.isAttValid(att) )
+    {
+      if( !isOnlyValue )
+      {
+        vs_att.push_back(att);
+        vs_val.push_back("");
+        continue;
+      }
+    }
+
+    if( att == "record_num" )
+    {
+      std::ostringstream ostr;
+      ostr << nc.getNumOfRecords() ;
+
+      vs_att.push_back("record_num");
+      vs_val.push_back(ostr.str());
+
       continue;
     }
 
     // is it a number or a char?
-    if( nc.layout.globalAttType[nc.layout.globalAttMap[s]] == NC_CHAR )
+    if( nc.layout.globalAttType[nc.layout.globalAttMap[att]] == NC_CHAR )
     {
-      str.clear();
-      str=nc.getAttString(s);
-      if( str.size() == 0 )
-        std::cout << s << "= " ;
-      else
-        std::cout << s << '=' << str << " " ;
+      vs_att.push_back(att);
+      vs_val.push_back(nc.getAttString(att));
     }
     else
     {
        // is a number
        std::vector<double> v;
-       nc.getAttValues(v, s);
+       nc.getAttValues(v, att);
        if( v.size() )
        {
-         std::cout << s << "=" << v[0] ;
+         std::ostringstream ostr;
+         ostr << v[0] ;
          for( size_t j=1 ; j < v.size() ; ++j )
-           std::cout << "," << v[j] ;
-         std::cout << " " ;
+            ostr << "," << v[j] ;
+
+         vs_att.push_back(att);
+         vs_val.push_back(ostr.str());
        }
-       else
-         std::cout << s << "= " ;
     }
+  }
+
+  for( size_t i=0 ; i < vs_att.size() ; ++i )
+  {
+    if(i)
+        std::cout << " " ;
+
+    if( !isOnlyValue )
+        std::cout << vs_att[i] << "=" ;
+
+    if( vs_val[i].size() )
+      std::cout << vs_val[i] ;
   }
 
   return 0;

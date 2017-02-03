@@ -1,0 +1,366 @@
+
+cmip6()
+{
+   # pwd is QA_HOME
+
+   if ! . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3 ; then
+      # required for CMOR from LLNL
+     make_miniconda  # also set in .qa-dkrz/config.txt
+   elif [ ! -d ${CONDA_FOR_CMOR3} ] ; then
+     make_miniconda  # also set in .qa-dkrz/config.txt
+   fi
+
+   if ! . $QA_SRC/scripts/parseConfigFile XLSX2CSV  ; then
+     if ! xlsx2csv ; then
+       return 1
+     fi
+   fi
+
+   if ! cmip6_mip ; then
+     return 1
+   fi
+
+   if ! cmip6_cmor ; then
+     return 1
+   fi
+
+   return 0
+}
+
+cmip6_mip()
+{
+   local curPWD=$(pwd)
+
+   mkdir -p ${QA_HOME}/tables/projects/CMIP6
+   cd ${QA_HOME}/tables/projects/CMIP6 &> /dev/null
+
+   wget -l1 -N -np  \
+      http://proj.badc.rl.ac.uk/svn/exarch/CMIP6dreq/tags/latest/dreqPy/docs/CMIP6_MIP_tables.xlsx \
+      &>> log_cmip6_tables.txt
+
+   if [ $? -gt 0 ] ; then
+      err[${#err[*]}]="wget CMIP6_MIP_tables.xlsx from http://proj.badc.rl.ac.uk"
+      cd - &> /dev/null
+      return 1
+   fi
+
+   # location of extracted csv table sheets: [~/.qa-dkrz/tables/projects/CMIP6]
+   $QA_HOME/xlsx2csv/xlsx2csv.py -a -d '|' -l '\n' \
+       CMIP6_MIP_tables.xlsx CMIP6_MIP_tables
+
+   # the CMIP6 json files
+   if [ -d CMIP6_CVs ] ; then
+     cd CMIP6_CVs
+
+     if [ "$(getGitBranch)" != master ] ; then
+       git checkout master &> /dev/null
+     fi
+
+     git fetch && git reset --hard origin/master &>> log_cmip6_tables.txt
+   else
+     git clone https://github.com/WCRP-CMIP/CMIP6_CVs &>> log_cmip6_tables.txt
+   fi
+
+   if [ $? -gt 0 ] ; then
+      err[${#err[*]}]="git failed for CMIP6_CVs from https://github.com/WCRP-CMIP"
+      return 1
+   fi
+
+   . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE=$today
+
+   return 0
+}
+
+cmip6_cmor()
+{
+   # Clone the CMIP6 table to your working directory.
+   # Disable SSL verification (firewall only).
+
+   cd ${QA_HOME}/tables/projects/CMIP6/cmip6-cmor-tables &> /dev/null
+
+   if [ -d ${QA_HOME}/tables/projects/CMIP6/cmip6-cmor-tables ] ; then
+     #look for an update
+
+     local remote
+     declare -a remote
+     remote=( $( git remote -v ) )
+     if [ ${remote[1]##*/} = 'cmip6-cmor-tables.git' ] ; then
+       git fetch && git reset --hard origin/master &> log_cmip6-cmor-tables.txt
+     fi
+   else
+     git clone https://github.com/PCMDI/cmip6-cmor-tables.git &> log_cmip6-cmor.txt
+   fi
+
+   if [ $? -gt 0 ] ; then
+     cat log_cmip6-cmor-tables.txt > ${TTY}
+   fi
+
+   # install cmor, it will also install cdms2.
+   test ! ${CONDA_FOR_CMOR3} && \
+     . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3
+
+   # environment already installed?
+   if [ -d ${CONDA_FOR_CMOR3}/envs/cmor ] ; then
+     source activate cmor
+     ${CONDA_FOR_CMOR3}/bin/conda install -c conda-forge -c pcmdi -c uvcdat cmor \
+          | tee -a log_cmip6-cmor.txt > ${TTY}
+     source deactivate cmor
+   else
+      ${CONDA_FOR_CMOR3}/bin/conda create -n cmor \
+           -c conda-forge -c pcmdi -c uvcdat cmor \
+          | tee -a log_cmip6-cmor.txt > ${TTY}
+   fi
+
+   if [ $? -gt 0 ] ; then
+      err[${#err[*]}]="could not ${CONDA_FOR_CMOR3}/bin/conda install -c conda-forge -c pcmdi -c uvcdat cmor"
+      return 1
+   fi
+
+   cd - &> /dev/null
+
+   . $QA_SRC/scripts/parseConfigFile \
+        PrePARE=${QA_HOME}/miniconda/envs/cmor/bin/PrePARE.py
+
+   return 0
+}
+
+cordex()
+{
+   local status
+
+   if ! mkdir -p $QA_HOME/tables/projects/$prj ; then
+     mkdir -p $1
+     return 1
+   fi
+
+   cd $QA_HOME/tables/projects/$prj
+
+   if [ -d IS-ENES-Data.github.io ] ; then
+     cd IS-ENES-Data.github.io
+
+     if [ "$(getGitBranch)" != master ] ; then
+       git checkout master &> /dev/null
+     fi
+
+     local remote
+     remote=( $( git remote -v ) )
+     if [ ${remote[1]##*/} = 'IS-ENES-Data.github.io' ] ; then
+       git fetch && git reset --hard origin/master &>> log_cordex_tables.txt
+       status=$?
+     fi
+   else
+     git clone https://github.com/IS-ENES-Data/IS-ENES-Data.github.io \
+       &>> log_cordex_tables.txt
+     status=$?
+
+     ln -sf IS-ENES-Data.github.io/CORDEX_RCMs_ToU.txt CORDEX_RCMs_ToU.txt
+   fi
+
+   if [ $status -gt 0 ] ; then
+     err[${#err[*]}]="git failed for IS-ENES-Data.github.io"
+   fi
+
+   return
+}
+
+gPT_main()
+{
+  declare -a err
+
+  while getopts hP:-: option
+  do
+    case $option in
+      h)  ;;
+      P)  local prj=${OPTARG} ;;
+      -) if [ ${OPTARG%=*} = "config_file" ] ; then
+           local CONFIG_FILE=${OPTARG#*=}
+#         elif [ ${OPTARG} == 'debug' ] ; then
+#           set -x
+         elif [ ${OPTARG} == 'force-update' ] ; then
+           local isForceUp=t
+         elif [ ${OPTARG%=*} = "qa_home" ] ; then
+           local QA_HOME=${OPTARG#*=}
+         elif [ ${OPTARG%=*} = "qa_src" ] ; then
+           local QA_SRC=${OPTARG##*=}
+         fi
+         ;;
+     \?) return 1 ;;
+    esac
+  done
+
+  if [ ! ${QA_HOME} ] ; then
+    echo "could not do: cd ${HOME}"
+    return 1
+  fi
+
+  cd $QA_HOME &> /dev/null
+
+  # search for updates only once a day
+  today=$( date '+%Y%m%d' )
+
+  if [ ${isForceUp:-f} = f ] ; then
+    if . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE=$today  ; then
+      return 0
+    fi
+  fi
+
+  if [ "$prj" = CORDEX ] ; then
+    cordex
+  elif [ "$prj" = CMIP6 ] ; then
+    cmip6
+  fi
+
+  if [ ${#err[*]} -gt 0 ] ; then
+     local k
+     for(( k=0 ; k < ${#err[*]} ; ++k )) ; do
+        echo -e "${err[k]}"
+     done
+
+     return 1
+  fi
+
+  return 0
+}
+
+make_miniconda()
+{
+   local quest
+
+   # test for an existing PrePARE executable
+   local prg
+   if prg=$( which conda 2> /dev/null) ; then
+     prg=${prg%/*}
+     prg=${prg%/*}
+     CONDA_FOR_CMOR3=$prg
+
+     local i fs t0 t1
+     declare -a fs times
+     fs=( $( find $prg -name "PrePARE.py" ) )
+     t0=$( ls -l --time-style='+%s' ${fs[0]} | awk '{print $6}')
+     PrePARE=${fs[0]}
+
+     for(( i=1 ; i < ${#fs[*]} ; ++i )) ; do
+       t1=$( ls -l --time-style='+%s' ${fs[0]} | awk '{print $6}')
+       if [ $t1 -gt $t0 ] ; then
+          t0=t1
+          PrePARE=${fs[i]}
+       fi
+     done
+
+     if [ ${PrePARE} ] ; then
+        local foundP=t
+
+        echo -e "\nFound PrePARE.py in your conda environment." > ${TTY}
+        echo -e -n "Do you want to use this?\nNot recommended; will not search updates" > ${TTY}
+        while :  ; do
+          read -p " <y[es], [no]>: "  quest 2> ${TTY}
+          case $quest in
+             ( y | yes) foundP=t ; break ;;
+             ( no | '') foundP=f ; break ;;
+                      *)  ;;
+          esac
+        done
+
+        if [ $foundP = t ] ; then
+          . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3=${CONDA_FOR_CMOR3}
+          . $QA_SRC/scripts/parseConfigFile PrePARE=${PrePARE}
+          return 0
+        fi
+     fi
+   fi
+
+   # no conda in PATH
+   if [ ! -d ${QA_HOME}/miniconda ] ; then
+     echo "Running CMOR requires conda." > ${TTY}
+
+     local conda_path isRead
+
+     while : ; do
+       echo -e "\nSaying not read would approve the '3-clause BSD License'! ." > ${TTY}
+       read -p "  <yes [in ${QA_HOME}/miniconda], your-path, read license, [no]>: " \
+            quest 2> ${TTY}
+
+       test ${quest:0:4} = read && quest=r
+       isRead=f
+
+       case $quest in
+         ( y | yes) conda_path=${QA_HOME}/miniconda  ;;
+         ( no | '') exit 1  ;;
+         r) isRead=t ;;
+         *) conda_path=${quest} ;;
+       esac
+
+       if [ ${conda_path:-f} != f -o ${isRead} = t ] ; then
+         if [ ! -f Miniconda-latest-Linux-x86_64.sh ] ; then
+           wget -l1 -N -np \
+              https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
+         fi
+
+         if [ ${isRead} = t ] ; then
+            bash Miniconda-latest-Linux-x86_64.sh  > ${TTY} << EOF
+
+no
+EOF
+            continue
+         fi
+       fi
+
+       if [ ${conda_path:-f} ] ; then
+         test ${conda_path##*/} = miniconda && \
+            conda_path=${conda_path%/*}
+
+         if [ ! -d ${conda_path}/miniconda ] ; then
+            bash Miniconda-latest-Linux-x86_64.sh -b -p ${conda_path}/miniconda \
+                 > ${TTY}
+            test $? -gt 0 && return 1
+         fi
+
+         break
+       fi
+     done
+
+     if [ ! -w ${conda_path} ] ; then
+        err[${#err[*]}]="Sorry, no write permission for ${conda_path}; Exit"
+        return 1
+     fi
+
+     CONDA_FOR_CMOR3=$conda_path/miniconda
+
+     if [ ! -x "${CONDA_FOR_CMOR3/bin/conda}" ] ; then
+        err[${#err[*]}]="Installation of conda failed; please try manually; Exit"
+        return 1
+     fi
+
+   else
+     CONDA_FOR_CMOR3=${QA_HOME}/miniconda
+   fi
+
+   . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3=${CONDA_FOR_CMOR3}
+
+   return 0
+}
+
+xlsx2csv()
+{
+   if [ -f $QA_HOME/xlsx2csv/xlsx2csv.py ] ; then
+      . $QA_SRC/scripts/parseConfigFile XLSX2CSV=$QA_HOME/xlsx2csv/xlsx2csv.py
+   else
+      git clone http://github.com/dilshod/xlsx2csv &>> log_install_xlsx2csv.txt
+
+      if [ $? -gt 0 ] ; then
+        err[${#err[*]}]="git failed for xlsx2csv"
+        return 1
+      fi
+
+      . $QA_SRC/scripts/parseConfigFile XLSX2CSV=$QA_HOME/xlsx2csv/xlsx2csv.py
+   fi
+
+   return 0
+}
+
+
+# main
+
+gPT_main $*
+
+return $?

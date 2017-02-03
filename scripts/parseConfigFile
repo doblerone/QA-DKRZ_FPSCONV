@@ -1,0 +1,146 @@
+# embedded function, i.e. has to be included by source or '.'
+
+# note that such an embedded functionality replaces positional parameters
+# by those which are passed. If none are passed, then the positional parameters
+# of the calling instance are used.
+
+# return 0 for a match between provided parameter=value and config file
+#          or an enabled one.
+# return 1 for a new parameter, a mismatch, disable, or a set variable.
+
+readCF()
+{
+   # adjust for spaces a user may have edited into the section
+
+   # because of embedded code, uCF_lines stay vivid once set.
+
+   local sz=0
+
+   # arrays cannot be exported, but single line may be
+   if [ "${uCF_line_0}" ] ; then
+     local i
+     sz=$(( ${uCF_blkEnd:-0} - ${uCF_blkBeg:-0} +1 ))
+
+     for(( i=0 ; i < ${sz} ; ++i )) ; do
+       eval uCF_lines[${i}]="\${uCF_line_${i}}"
+     done
+
+     return 0
+   fi
+
+   if [ ${#uCF_lines[*]} -eq 0 ] ; then
+       uCF_blkBeg=0
+       sz=0 # number in the file, not in the block
+
+       while read line ; do
+         sz=$((sz + 1))
+
+         test "${uCF_is}" -a ! "${line}" && break
+
+         if [ "${line}" = ${QA_SRC}: ] ; then
+           uCF_is=t
+           uCF_blkBeg=$sz
+           continue
+         fi
+
+         if [ ${uCF_is} ] ; then
+           line=${line// /}
+
+           while [ ${line/==/=} != ${line} ] ; do
+             line=${line/==/=}
+           done
+
+           uCF_lines[${#uCF_lines[*]}]="${line}"
+         fi
+       done < ${CONFIG_FILE}
+
+       test ${sz} -gt 0 && uCF_blkEnd=$((sz -1 ))
+   fi
+
+   # append a new section and a particular default for auto-update
+   if [ ${uCF_blkBeg} -eq 0 ] ; then
+       echo -e "\n${QA_SRC}:"                >> $CONFIG_FILE
+
+#       echo AUTO_UPDATE=enabled              >> $CONFIG_FILE
+#       uCF_lines[${#uCF_lines[*]}]="${AUTO_UPDATE=enabled}"
+
+       echo DEFAULT_PROJECT=$defaultProject  >> $CONFIG_FILE
+       uCF_lines[${#uCF_lines[*]}]="DEFAULT_PROJECT=${defaultProject}"
+
+       uCF_blkBeg=$((sz+2))
+       uCF_blkEnd=$uCF_blkBeg
+   fi
+
+   # export array as single lines
+   local i
+   for(( i=0 ; i < ${#uCF_lines[*]} ; ++i )) ; do
+     export uCF_line_${i}="${uCF_lines[i]}"
+   done
+
+   export uCF_blkBeg
+   export uCF_blkEnd
+
+   return 0
+}
+
+updateConfFile()
+{
+   # check items
+   local param=$1
+   local param_name=${param%=*}
+   local param_value=${param#*=}
+
+   if [ "${param_value}" = d ] ; then
+       param=${param_name}=disable
+       param_value=disable
+   elif [ "${param_value}" = ${param_name} ] ; then
+       param_value=
+   fi
+
+   local i retVal
+   for(( i=0 ; i < ${#uCF_lines[*]} ; ++i )) ; do
+       if [ ${uCF_lines[i]%=*} = ${param_name} ] ; then
+
+         if [ "${param}" = "${param_name}" ] ; then
+           # read value from the config file and set variable
+           eval ${uCF_lines[i]}
+           retVal=0
+         elif [ ${uCF_lines[i]} = ${param} ] ; then
+           if [ ${param_value} = disable ] ; then
+             # disable
+             retVal=1
+           else
+             # enable or unchanged (matched).
+             retVal=0
+           fi
+         elif [ "${param_value}" ] ; then
+           lineNum=$((uCF_blkBeg+i+1))
+           sed -i "${lineNum} c${param}" $CONFIG_FILE &> /dev/null
+           retVal=1
+         fi
+
+         return $retVal
+       fi
+   done
+
+   # not defined
+   test ! "${param_value}" && return 1
+
+   # new
+   sed -i "${uCF_blkEnd} a${param}" $CONFIG_FILE &> /dev/null
+   uCF_lines[${#uCF_lines[*]}]="${param}"
+   uCF_blkEnd=$(( uCF_blkEnd + 1 ))
+
+   return 1
+}
+
+
+# main
+
+test ! -f ${CONFIG_FILE} && touch ${CONFIG_FILE}
+
+test ${#uCF_lines[*]} -eq 0 && readCF
+
+updateConfFile $*
+
+return $?
