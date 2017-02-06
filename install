@@ -144,10 +144,10 @@ getHomePath()
   else
     # take QA_HOME from the config file, if it exists.
     if ! . $QA_SRC/scripts/parseConfigFile QA_HOME ; then
-      echo -e "\nPlease, specify QA_HOME [default: ${HOME}], " > ${TTY}
+      echo -e "\nPlease, specify QA_HOME [default: ${HOME}/.qa-dkrz], " > ${TTY}
       read -p "the spot for external tables and programs: " QA_HOME 2> ${TTY}
 
-      test ! ${QA_HOME} && QA_HOME=${HOME}
+      test ! ${QA_HOME} && QA_HOME=${HOME}/.qa-dkrz
 
       if mkdir -p ${QA_HOME} &> /dev/null ; then
         . $QA_SRC/scripts/parseConfigFile QA_HOME=${QA_HOME}
@@ -181,8 +181,10 @@ getRevNum()
       currIdent=${currIdent#*=}
     fi
   else
+    cd $QA_SRC
     branch=$(getGitBranch)
     currIdent=$(git log --pretty=format:'%h' -n 1)
+    cd -
   fi
 
   eval ${1}=${branch}-${currIdent}
@@ -443,9 +445,9 @@ update_QA()
            --time-style=+'%s' ${QA_SRC}/scripts/qa_dkrz \
            | awk '{print $6}' 2> /dev/null )
 
-#      test "$(getGitBranch)" != master && \
-#        git checkout master &> /dev/null
-        git checkout $(getGitBranch) &> /dev/null
+      test "$(getGitBranch)" != master && \
+        git checkout master &> /dev/null
+#        git checkout $(getGitBranch) &> /dev/null
 
       git fetch && git reset --hard origin/$(getGitBranch) &> /dev/null
 #      git pull --no-edit -q origin master &> /dev/null
@@ -458,10 +460,13 @@ update_QA()
     fi
   fi
 
-  if [ ! -d $QA_HOME/tables ] ; then
-    # note that QA_HOME points to .qa-dkrz wherever it is located
-    rsync -auz --exclude '*~' $QA_SRC/tables $QA_HOME &> /dev/null
+  if ! mkdir -p $QA_HOME/tables  ; then
+    echo "could not mkdir -p $QA_HOME/tables"
+    exit 1
   fi
+
+  # note that QA_HOME points to .qa-dkrz wherever it is located
+  rsync -auz --exclude '*~' $QA_SRC/tables $QA_HOME &> /dev/null
 
   return
 }
