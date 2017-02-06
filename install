@@ -181,10 +181,10 @@ getRevNum()
       currIdent=${currIdent#*=}
     fi
   else
-    cd $QA_SRC
+    cd $QA_SRC &> /dev/null
     branch=$(getGitBranch)
     currIdent=$(git log --pretty=format:'%h' -n 1)
-    cd -
+    cd - &> /dev/null
   fi
 
   eval ${1}=${branch}-${currIdent}
