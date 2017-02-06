@@ -571,7 +571,7 @@ QA::init(void)
 
    // experiment specific obj: set parent, pass over options
    // check consistency between sub-sequent files or experiments
-   if(isCheckCNSTY)
+   if(isCheckCNSTY && (fileSequenceState == 's' || fileSequenceState == 'x') )
    {
       // return true for a) no previous check available,
       //                 b) deviation from a privous check are found
