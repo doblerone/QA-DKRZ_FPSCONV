@@ -147,6 +147,8 @@ getHomePath()
       echo -e "\nPlease, specify QA_HOME [default: ${HOME}], " > ${TTY}
       read -p "the spot for external tables and programs: " QA_HOME 2> ${TTY}
 
+      test ! ${QA_HOME} && QA_HOME=${HOME}
+
       if mkdir -p ${QA_HOME} &> /dev/null ; then
         . $QA_SRC/scripts/parseConfigFile QA_HOME=${QA_HOME}
       else
