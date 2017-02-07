@@ -1003,7 +1003,7 @@ class LogSummary(object):
         return
 
 
-    def self.sendMail(self):
+    def sendMail(self):
       return
 
 
