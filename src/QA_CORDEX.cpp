@@ -999,7 +999,7 @@ DRS_CV::testPeriod(Split& x_f)
         capt += "is not centred around <time> value." ;
 
         (void) notes->operate(capt) ;
-        notes->setCheckStatus(drsF, pQA->n_fail );
+        notes->setCheckStatus("TIME", pQA->n_fail );
       }
     }
   }
@@ -1015,7 +1015,7 @@ DRS_CV::testPeriod(Split& x_f)
         capt += "is missing";
 
         (void) notes->operate(capt) ;
-        notes->setCheckStatus(drsF, pQA->n_fail);
+        notes->setCheckStatus("TIME", pQA->n_fail);
       }
     }
   }
