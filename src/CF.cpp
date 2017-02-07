@@ -8992,9 +8992,10 @@ CF::chap74b(Variable& var,
   {
     if( notes->inq(bKey + "74e", var.name) )
     {
-      std::string capt("Due to ");
-      capt += hdhC::tf_att(var.name, n_cell_methods + " for climatologies:") ;
-      capt += hdhC::tf_att(timeName, n_climatology, hdhC::upper) + "is missing" ;
+      std::string capt(hdhC::tf_att(var.name, n_cell_methods));
+      capt += " for climatologies requires " ;
+      capt += hdhC::tf_att(timeName, n_climatology, hdhC::upper) ;
+      capt += "instead of <time_bnds>" ;
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus( n_CF, fail );
