@@ -8992,10 +8992,14 @@ CF::chap74b(Variable& var,
   {
     if( notes->inq(bKey + "74e", var.name) )
     {
-      std::string capt(hdhC::tf_att(var.name, n_cell_methods));
-      capt += " for climatologies requires " ;
-      capt += hdhC::tf_att(timeName, n_climatology, hdhC::upper) ;
-      capt += "instead of <time_bnds>" ;
+      std::string capt("The value of ");
+      capt += hdhC::tf_att(var.name, n_cell_methods);
+      capt += " entails" ;
+      capt += hdhC::tf_val(timeName) ;
+      capt += ":" + n_climatology ;
+      capt += "instead of" ;
+      capt += hdhC::tf_val(timeName);
+      capt += ":time_bnds" ;
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus( n_CF, fail );
