@@ -14,12 +14,13 @@ readCF()
 
    # because of embedded code, uCF_lines stay vivid once set.
 
-   local sz=0
+   local sz
 
-   # arrays cannot be exported, but single line may be
+   # arrays cannot be exported, but a single line may be.
+   # this work-around prevents repeatedly reading of the config file
    if [ "${uCF_line_0}" ] ; then
      local i
-     sz=$(( ${uCF_blkEnd:-0} - ${uCF_blkBeg:-0} +1 ))
+     sz=$(( ${uCF_blkEnd:-0} - ${uCF_blkBeg:-0} ))
 
      for(( i=0 ; i < ${sz} ; ++i )) ; do
        eval uCF_lines[${i}]="\${uCF_line_${i}}"
@@ -28,53 +29,54 @@ readCF()
      return 0
    fi
 
-   if [ ${#uCF_lines[*]} -eq 0 ] ; then
-       uCF_blkBeg=0
-       sz=0 # number in the file, not in the block
+   test ${uCF_blkBeg} && return 0
 
-       while read line ; do
-         sz=$((sz + 1))
+   uCF_blkBeg=0
+   sz=0 # number in the file, not in the block
+   local uCF_is=f
 
-         test "${uCF_is}" -a ! "${line}" && break
+   while read line ; do
+       sz=$((sz + 1))
 
-         if [ "${line}" = ${QA_SRC}: ] ; then
+       test "${uCF_is}" = t -a ! "${line}" && break
+
+       if [ "${line}" = ${QA_SRC}: ] ; then
            uCF_is=t
            uCF_blkBeg=$sz
            continue
-         fi
+       fi
 
-         if [ ${uCF_is} ] ; then
+       if [ ${uCF_is} = t ] ; then
            line=${line// /}
 
            while [ ${line/==/=} != ${line} ] ; do
-             line=${line/==/=}
+               line=${line/==/=}
            done
 
            uCF_lines[${#uCF_lines[*]}]="${line}"
-         fi
-       done < ${CONFIG_FILE}
+       fi
+   done < ${CONFIG_FILE}
 
-       test ${sz} -gt 0 && uCF_blkEnd=$((sz -1 ))
-   fi
+   test ${sz} -gt 0 && uCF_blkEnd=$sz
 
    # append a new section and a particular default for auto-update
    if [ ${uCF_blkBeg} -eq 0 ] ; then
        echo -e "\n${QA_SRC}:"                >> $CONFIG_FILE
 
-#       echo AUTO_UPDATE=enabled              >> $CONFIG_FILE
-#       uCF_lines[${#uCF_lines[*]}]="${AUTO_UPDATE=enabled}"
+#      echo AUTO_UPDATE=enabled              >> $CONFIG_FILE
+#      uCF_lines[${#uCF_lines[*]}]="${AUTO_UPDATE=enabled}"
 
-       echo DEFAULT_PROJECT=$defaultProject  >> $CONFIG_FILE
-       uCF_lines[${#uCF_lines[*]}]="DEFAULT_PROJECT=${defaultProject}"
+#      echo DEFAULT_PROJECT=$defaultProject  >> $CONFIG_FILE
+#      uCF_lines[${#uCF_lines[*]}]="DEFAULT_PROJECT=${defaultProject}"
 
-       uCF_blkBeg=$((sz+2))
-       uCF_blkEnd=$uCF_blkBeg
+      uCF_blkBeg=$((sz+2))
+      uCF_blkEnd=$uCF_blkBeg
    fi
 
    # export array as single lines
    local i
    for(( i=0 ; i < ${#uCF_lines[*]} ; ++i )) ; do
-     export uCF_line_${i}="${uCF_lines[i]}"
+      export uCF_line_${i}="${uCF_lines[i]}"
    done
 
    export uCF_blkBeg
@@ -128,7 +130,12 @@ updateConfFile()
 
    # new
    sed -i "${uCF_blkEnd} a${param}" $CONFIG_FILE &> /dev/null
-   uCF_lines[${#uCF_lines[*]}]="${param}"
+
+   local sz=${#uCF_lines[*]}
+
+   uCF_lines[sz]="${param}"
+   export uCF_line_${i}="${uCF_lines[sz]}"
+
    uCF_blkEnd=$(( uCF_blkEnd + 1 ))
 
    return 1
@@ -136,6 +143,14 @@ updateConfFile()
 
 
 # main
+
+if [ "$1" = '--force_reading' ] ; then
+  shift
+
+  unset uCF_line_0
+  unset uCF_lines
+  unset uCF_blkBeg
+fi
 
 test ! -f ${CONFIG_FILE} && touch ${CONFIG_FILE}
 

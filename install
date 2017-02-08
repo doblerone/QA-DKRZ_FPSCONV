@@ -144,7 +144,7 @@ getHomePath()
   else
     # take QA_HOME from the config file, if it exists.
     if ! . $QA_SRC/scripts/parseConfigFile QA_HOME ; then
-      echo -e "\nPlease, specify QA_HOME [default: ${HOME}/.qa-dkrz], " > ${TTY}
+      echo -e "\nPlease, specify QA_HOME [default: ${QA_SRC}/HOME/.qa-dkrz], " > ${TTY}
       read -p "the spot for external tables and programs: " QA_HOME 2> ${TTY}
 
       test ! ${QA_HOME} && QA_HOME=${HOME}/.qa-dkrz
@@ -174,11 +174,10 @@ getRevNum()
   local branch currIdent
 
   if [ $CONDA_ENV ] ; then
-    if branch=$(grep branch $QA_SRC/install.log 2> /dev/null) ; then
-      branch=${branch#*=}
-    fi
-    if currIdent=$(grep branch $QA_SRC/install.log 2> /dev/null) ; then
-      currIdent=${currIdent#*=}
+    declare -a branch
+    if branch=( $(cat $QA_SRC/install.log 2> /dev/null) ) ; then
+      branch[0]=${branch[0]#*=}
+      currIdent=${branch[1]#*=}
     fi
   else
     cd $QA_SRC &> /dev/null
@@ -393,7 +392,7 @@ update_external()
 #          item=${tmp[++i]}
 #          item=${item}-${tmp[++i]}
 
-          conda update -c birdhouse -c conda-forge qa-dkrz # &> /dev/null
+          conda update -c birdhouse -c conda-forge qa-dkrz  &> /dev/null
 
           getRevNum packRev
 

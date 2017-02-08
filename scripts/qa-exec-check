@@ -209,6 +209,69 @@ clearProcPool()
   fi
 }
 
+convertCMOR_out2QA()
+{
+  local i flag_txt n isFirst isTxt sz
+  isFirst=t
+  isTxt=f
+
+  for((i=0 ; i < ${#annot_CMOR_LLNL[*]} ; ++i )) ; do
+     flag_txt="FLAG-BEGL1-CMOR3_${#annot_CMOR_LLNL[i]}:CAPT-BEG"
+
+     # take into account that the last char may-be the '.'
+     # of the first and only sentence.
+     sz=$(( ${#annot_CMOR_LLNL[i]} -1 ))
+
+     for(( n=0 ; n < sz ; ++n )) ; do
+       # convert \n to blanks
+       if [ "${annot_CMOR_LLNL[i]:n:1}" = ';' ] ; then
+         flag_txt="${flag_txt},"
+         continue
+       elif [ "${annot_CMOR_LLNL[i]:n:2}" = '\n' ] ; then
+         n=$((n+1))
+         flag_txt="${flag_txt} "
+         continue
+       fi
+
+       # find the first sentence
+       if [ ${isFirst} = t ] ; then
+         if [ "${annot_CMOR_LLNL[i]:n:1}" = '.' ] ; then
+           if [ "${annot_CMOR_LLNL[i]:n:2}" = '. ' ] ; then
+              flag_txt="${flag_txt}CAPT-ENDTXT-BEG"
+              isTxt=t
+              isFirst=f
+              continue
+           fi
+         fi
+       else
+         if [ "${annot_CMOR_LLNL[i]:n:1}" = '.' ] ; then
+           if [ "${annot_CMOR_LLNL[i]:n:2}" = '. ' ] ; then
+              flag_txt="${flag_txt};"
+              continue
+           fi
+         fi
+       fi
+
+       flag_txt="${flag_txt}${annot_CMOR_LLNL[i]:n:1}"
+     done
+
+     flag_txt="${flag_txt}${annot_CMOR_LLNL[i]:sz:1}"
+
+     if [ ${isTxt} = t ] ; then
+       flag_txt="${flag_txt}TXT-END"
+     else
+       flag_txt="${flag_txt}CAPT-END"
+     fi
+
+#     flag_txt="${flag_txt}${annot_CMOR_LLNL[i]}"
+     flag_txt="${flag_txt}FLAG-END"
+
+     ans="${ans}${flag_txt}"
+  done
+
+  return 0
+}
+
 ##//! THE QA of a netCDF file
 
 runQA()
@@ -1052,20 +1115,6 @@ run()
   test ${LOG_CPU_TIME:-f} = t && logTime $realTime $cpuTime $status
 }
 
-convertCMOR_out2QA()
-{
-  local i flag_txt
-  for((i=0 ; i < ${#annot[*]} ; ++i )) ; do
-     flag_txt="FLAG-BEGL1-CMOR3_${#annot[i]}:CAPT-BEG"
-     flag_txt="${flag_txt}${annot[i]}"
-     flag_txt="${flag_txt}CAPT-ENDFLAG-END"
-
-     ans="${ans}${flag_txt}"
-  done
-
-  return 0
-}
-
 run_CMOR3_LLNL()
 {
   . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3
@@ -1162,7 +1211,7 @@ run_CMOR3_LLNL()
           break
         done
 
-        annot[j]="${annot[j]}${line:start}\n"
+        annot_CMOR_LLNL[j]="${annot_CMOR_LLNL[j]} ${line:start}"
       fi
     fi
   done

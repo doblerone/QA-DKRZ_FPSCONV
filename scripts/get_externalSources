@@ -85,7 +85,8 @@ cmip6_cmor()
      declare -a remote
      remote=( $( git remote -v ) )
      if [ ${remote[1]##*/} = 'cmip6-cmor-tables.git' ] ; then
-       git fetch && git reset --hard origin/master &> log_cmip6-cmor-tables.txt
+       git fetch &> log_cmip6-cmor-tables.txt \
+       && git reset --hard origin/master &> log_cmip6-cmor-tables.txt
      fi
    else
      git clone https://github.com/PCMDI/cmip6-cmor-tables.git &> log_cmip6-cmor.txt
@@ -101,10 +102,10 @@ cmip6_cmor()
 
    # environment already installed?
    if [ -d ${CONDA_FOR_CMOR3}/envs/cmor ] ; then
-     source activate cmor
+     source ${CONDA_FOR_CMOR3}/envs/cmor/bin/activate cmor
      ${CONDA_FOR_CMOR3}/bin/conda install -c conda-forge -c pcmdi -c uvcdat cmor \
-          | tee -a log_cmip6-cmor.txt > ${TTY}
-     source deactivate cmor
+          | tee -a log_cmip6-cmor.txt 2> ${TTY}
+     source ${CONDA_FOR_CMOR3}/envs/cmor/bin/deactivate cmor
    else
       ${CONDA_FOR_CMOR3}/bin/conda create -n cmor \
            -c conda-forge -c pcmdi -c uvcdat cmor \
@@ -145,7 +146,8 @@ cordex()
      local remote
      remote=( $( git remote -v ) )
      if [ ${remote[1]##*/} = 'IS-ENES-Data.github.io' ] ; then
-       git fetch && git reset --hard origin/master &>> log_cordex_tables.txt
+       git fetch &>> log_cordex_tables.txt \
+       && git reset --hard origin/master &>> log_cordex_tables.txt
        status=$?
      fi
    else
@@ -271,12 +273,13 @@ make_miniconda()
 
    # no conda in PATH
    if [ ! -d ${QA_HOME}/miniconda ] ; then
-     echo "Running CMOR requires conda." > ${TTY}
+     echo -e "\nRunning CMOR requires conda, which will be installed" > ${TTY}
+     echo    "regardless of any other conda instance. " > ${TTY}
+     echo    "Saying not 'read license' would approve the '3-clause BSD License'! ." > ${TTY}
 
      local conda_path isRead
 
      while : ; do
-       echo -e "\nSaying not read would approve the '3-clause BSD License'! ." > ${TTY}
        read -p "  <yes [in ${QA_HOME}/miniconda], your-path, read license, [no]>: " \
             quest 2> ${TTY}
 
