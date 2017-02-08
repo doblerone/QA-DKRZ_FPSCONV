@@ -8997,7 +8997,7 @@ CF::chap74b(Variable& var,
       capt += " entails" ;
       capt += hdhC::tf_val(timeName) ;
       capt += ":" + n_climatology ;
-      capt += "instead of" ;
+      capt += " instead of" ;
       capt += hdhC::tf_val(timeName);
       capt += ":time_bnds" ;
 
