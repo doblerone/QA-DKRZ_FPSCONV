@@ -144,7 +144,7 @@ getHomePath()
   else
     # take QA_HOME from the config file, if it exists.
     if ! . $QA_SRC/scripts/parseConfigFile QA_HOME ; then
-      echo -e "\nPlease, specify QA_HOME [default: ${QA_SRC}/HOME/.qa-dkrz], " > ${TTY}
+      echo -e "\nPlease, specify variable QA_HOME [default: ${QA_SRC}/HOME], " > ${TTY}
       read -p "the spot for external tables and programs: " QA_HOME 2> ${TTY}
 
       test ! ${QA_HOME} && QA_HOME=${HOME}/.qa-dkrz
@@ -335,26 +335,40 @@ saveAsCycle()
 
 tr_option()
 {
-  local phrase="${!1}"
+  local line="${!1}"
+  local i pref
 
-  local sz i
-  local sz=${#phrase}
+#  test "${line:0:1}" != '-' && return
+
+  for(( i=0 ; i < ${#line} ; ++i )) ; do
+    if [ ${line:i:1} != - ] ; then
+      line=${line:i}
+      break
+    fi
+  done
+
+  local sz
+  sz=${#line}
+
   for((i=0 ; i < sz ; ++i )) ; do
-    test "${phrase:i:1}" = '=' && break
+    test "${line:i:1}" = '=' && break
   done
 
   if [ ${i} -eq ${sz} ] ; then
-    phrase=$( echo "${phrase/% /}" | tr "[:lower:]" "[:upper:]" )
-    phrase=$( echo "${phrase}" | tr "-" "_" )
+    if [ ${i} -gt 1 ] ; then
+      line=$( echo "${line/% /}" | tr "[:lower:]" "[:upper:]" )
+      line=$( echo "${line}" | tr "-" "_" )
+    fi
   else
-    local tmp0="${phrase:0:i}"
+    local tmp0="${line:0:i}"
     tmp0="${tmp0//QC/QA}"
     tmp0=$( echo "${tmp0/% /}" | tr "[:lower:]" "[:upper:]" )
     tmp0=$( echo "${tmp0}" | tr "-" "_" )
-    phrase="${tmp0}""${phrase:i}"
+    line="${tmp0}""${line:i}"
   fi
 
-  eval ${1}=\${phrase}
+  eval ${1}=\${line}
+
   return
 }
 
@@ -407,14 +421,20 @@ update_external()
     test "${PROJECT_AS}" && prj=${PROJECT_AS}
 
     if [ "${prj}" != CF ] ; then
-      if ! . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE=${today} \
-            || [ ${isUpdateQA:-f} = t ]; then
+      # check it here in order to prevent an update of the config-file in case
+      # that the installation failed or war terminated.
+      . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE
+      eval isLU=\${prj}_LAST_UPDATE
+
+      if [ "${isLU}" != ${today} -o ${isUpdateQA:-f} = t ]; then
          . ${QA_SRC}/scripts/get_externalSources \
              -P $prj --qa_src=${QA_SRC} \
              --qa_home=${QA_HOME} --config_file=${CONFIG_FILE} \
              ${isForceUp:+--force-update}
 
          test $? -gt 0 && exit 1
+
+         . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE=${today}
       fi
     fi
 
@@ -482,33 +502,27 @@ if [ $# -gt 0 ] ; then
   for(( i=0 ; i < ${#sArgs[*]} ; ++i )) ; do
     # some args are accepted without '--'
     A="${sArgs[i]}"
-    tr_option A
+#    tr_option A
+    A=$( echo "${A/% /}" | tr "[:lower:]" "[:upper:]" )
 
     if [ "${A:0:5}" = AUTO_ ] ; then
       sArgs[${i}]=--${sArgs[${i}]}
-      A="--${A}"
     elif [ "${A:0:5}" = DEBUG ] ; then
       sArgs[${i}]=--${sArgs[${i}]}
-      A="--${A}"
     elif [ "${A:0:4}" = HELP ] ; then
       sArgs[${i}]=--${sArgs[${i}]}
-      A="--${A}"
     elif [ "${A:0:4}" = LINK ] ; then
       sArgs[${i}]=--${sArgs[${i}]}
-      A="--${A}"
     elif [ "${A:0:6}" = ONLY-Q ] ; then
       sArgs[${i}]=--${sArgs[${i}]}
-      A="--${A}"
     elif [ "${A:0:3}" = SRC  ] ; then
       sArgs[${i}]=--${sArgs[${i}]}
-      A="--${A}"
     elif [ "${A:0:2}" = UP ] ; then
       sArgs[${i}]=--${sArgs[${i}]}
-      A="--${A}"
     fi
 
-    if [ "${A%=*}" = '--DEBUG' ] ; then
-      test ${A} = '--DEBUG' -o ${A#*=} = ${0##*/} && set -x
+    if [ "${A%=*}" = 'DEBUG' ] ; then
+      test ${A} = 'DEBUG' -o ${A#*=} = ${0##*/} && set -x
     fi
   done
 fi
@@ -525,7 +539,7 @@ do
         exit ;;
     T)  TTY="${OPTARG}" ;;
     -)  OPTVAL=${OPTARG##*=}
-        OPTNAME=${UOPTARG%=*}
+        OPTNAME=${UOPTARG%%=*}
 
         if [ "${UOPTARG:0:4}" = AUTO ] ; then
           autoUpArgs[${#autoUpArgs[*]}]=$UOPTARG
@@ -574,7 +588,7 @@ do
         fi
 
         # collect options, which have not been processed above
-        coll[${#coll[*]}]=--${OPTARG}
+        coll[${#coll[*]}]=--${UOPTARG}
         ;;
    \?)  descript
         echo $*

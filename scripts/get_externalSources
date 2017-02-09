@@ -24,6 +24,8 @@ cmip6()
      return 1
    fi
 
+   . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE=$today
+
    return 0
 }
 
@@ -65,8 +67,6 @@ cmip6_mip()
       err[${#err[*]}]="git failed for CMIP6_CVs from https://github.com/WCRP-CMIP"
       return 1
    fi
-
-   . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE=$today
 
    return 0
 }
@@ -200,12 +200,6 @@ gPT_main()
   # search for updates only once a day
   today=$( date '+%Y%m%d' )
 
-  if [ ${isForceUp:-f} = f ] ; then
-    if . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE=$today  ; then
-      return 0
-    fi
-  fi
-
   if [ "$prj" = CORDEX ] ; then
     cordex
   elif [ "$prj" = CMIP6 ] ; then
@@ -275,7 +269,7 @@ make_miniconda()
    if [ ! -d ${QA_HOME}/miniconda ] ; then
      echo -e "\nRunning CMOR requires conda, which will be installed" > ${TTY}
      echo    "regardless of any other conda instance. " > ${TTY}
-     echo    "Saying not 'read license' would approve the '3-clause BSD License'! ." > ${TTY}
+     echo    "Saying 'yes' or specificaion of a path would approve the '3-clause BSD License'! ." > ${TTY}
 
      local conda_path isRead
 
@@ -283,7 +277,7 @@ make_miniconda()
        read -p "  <yes [in ${QA_HOME}/miniconda], your-path, read license, [no]>: " \
             quest 2> ${TTY}
 
-       test ${quest:0:4} = read && quest=r
+       test "${quest:0:4}" = read && quest=r
        isRead=f
 
        case $quest in

@@ -1542,17 +1542,27 @@ getHomePath()
   else
     # take QA_HOME from the config file, if it exists.
     if ! . $QA_SRC/scripts/parseConfigFile QA_HOME ; then
-      echo -e "\nPlease, specify QA_HOME [default: ${QA_SRC}/HOME/.qa-dkrz], " > ${TTY}
+      echo -e "\nPlease, specify QA_HOME [default: ${QA_SRC}/HOME], " > ${TTY}
       read -p "the spot for external tables and programs: " QA_HOME 2> ${TTY}
 
-      test ! ${QA_HOME} && QA_HOME=${HOME}/.qa-dkrz
+      test ! ${QA_HOME} && QA_HOME=${QA_SRC}/HOME
 
-      if mkdir -p ${QA_HOME} &> /dev/null ; then
-        . $QA_SRC/scripts/parseConfigFile QA_HOME=${QA_HOME}
-      else
-        echo  "could not mkdir QA_HOME=${QA_HOME}"
-        exit 1
-     fi
+      local i
+      for i in 1 2 3 ; do
+        if [ ${i} -eq 3 ] ; then
+          echo "Could not mkdir QA_HOME=${QA_HOME}."
+          exit 1
+        fi
+
+        if mkdir -p ${QA_HOME} &> /dev/null ; then
+          . $QA_SRC/scripts/parseConfigFile QA_HOME=${QA_HOME}
+          break
+        fi
+
+        echo "Could not mkdir QA_HOME=${QA_HOME}."
+        QA_HOME=${HOME}/.qa-dkrz
+        read -p "Do you want to try: ${QA_HOME} " QA_HOME 2> ${TTY}
+      done
     fi
 
     if [ ! -w $QA_HOME ] ; then

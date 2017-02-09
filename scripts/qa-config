@@ -1321,7 +1321,6 @@ parseOPTARG()
   fi
 
   if [ "${key:0:7}" = DEBUG_M ] ; then
-    installArgs="${installArgs}--debug,"
     setKWL DEBUG_MANAGER=${value:-t}
     return
   fi
@@ -1350,7 +1349,7 @@ parseOPTARG()
     done
 
   elif [ "${key}" = QA_HOME ] ; then
-    installArgs="${installArgs}QA_HOME=${OPTARG#*=},"
+    installArgs="${installArgs}--QA_HOME=${OPTARG#*=},"
   fi
 
   # no more syntax checks; invoke all
@@ -2032,7 +2031,7 @@ do
 
         elif [ "${OPTARG%%=*}" = HOME ] ; then
            setKWL QA_HOME=${OPTARG#*=}
-           installArgs="${installArgs}QA_HOME=${QA_HOME},"
+           installArgs="${installArgs}--QA_HOME=${QA_HOME},"
 
         elif [ "${OPTARG%%=*}" = WORK ] ; then
            setKWL QA_RESULTS=${OPTARG#*=}

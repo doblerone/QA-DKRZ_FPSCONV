@@ -24,6 +24,11 @@ readCF()
 
      for(( i=0 ; i < ${sz} ; ++i )) ; do
        eval uCF_lines[${i}]="\${uCF_line_${i}}"
+
+#       if [ "${#uCF_lines[i]}" -eq 0 ] ; then
+#         unset uCF_lines[i]
+#         break
+#       fi
      done
 
      return 0
@@ -36,9 +41,9 @@ readCF()
    local uCF_is=f
 
    while read line ; do
-       sz=$((sz + 1))
-
        test "${uCF_is}" = t -a ! "${line}" && break
+
+       sz=$((sz + 1))
 
        if [ "${line}" = ${QA_SRC}: ] ; then
            uCF_is=t
@@ -55,6 +60,7 @@ readCF()
 
            uCF_lines[${#uCF_lines[*]}]="${line}"
        fi
+
    done < ${CONFIG_FILE}
 
    test ${sz} -gt 0 && uCF_blkEnd=$sz
