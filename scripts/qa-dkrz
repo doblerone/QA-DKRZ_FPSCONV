@@ -2715,14 +2715,14 @@ init()
   test ${QA_EXAMPLE:-f} = t && initExample
 
   # note: if not --example, then example_args is empty
-  basic_args=( ${example_args[*]} -e_QA_SRC=${QA_SRC} )
+  basic_args=( ${example_args[*]} -E_QA_SRC=${QA_SRC} )
 
   # sets: QA_HOME, CONFIG_FILE
   getHomePath
-  basic_args=( ${basic_args[*]} -e_QA_HOME=${QA_HOME} )
+  basic_args=( ${basic_args[*]} -E_QA_HOME=${QA_HOME} )
 
   # configuration
-  test ${CONDA_ENV} && basic_args=( ${basic_args[*]} -e_CONDA_ENV=${CONDA_ENV} )
+  test ${CONDA_ENV} && basic_args=( ${basic_args[*]} -E_CONDA_ENV=${CONDA_ENV} )
 
   # check whether tables have been initaially copied fomr QA_SRC to QA_HOME;
   # if not, then do it.
@@ -4189,7 +4189,7 @@ initExample()
 
     if [ ! "${QA_RESULTS}" ] ; then
       setKWL QA_RESULTS=${EXAMPLE_PATH}/results
-      example_args[${#example_args[*]}]="-e_QA_RESULTS=${QA_RESULTS}"
+      example_args[${#example_args[*]}]="-E_QA_RESULTS=${QA_RESULTS}"
     fi
 
     test ! ${QA_HOME} && setKWL QA_HOME=${EXAMPLE_PATH}
@@ -5125,26 +5125,30 @@ tryCom()
 tr_option()
 {
   local line="${!1}"
+  local i pref
 
-  local i=0
-  if [ ${line:i:3} = '-e_' -o ${line:i:3} = '-E_' ] ; then
-    i=3
-  elif [ ${line:i:2} = '--' ] ; then
-    i=2
-  fi
-  test ${i} -gt 0 && line=${line:i}
+  test ${line:0:1} != '-' -a ! \( "${2}" = '-E' -o "${2}" = '-e' \) && return
 
-  local sz=${#line}
+  for(( i=0 ; i < ${#line} ; ++i )) ; do
+    if [ ${line:i:1} != - ] ; then
+      line=${line:i}
+      break
+    else
+      pref="${pref}-"
+    fi
+  done
+
+  local sz
+  sz=${#line}
+
   for((i=0 ; i < sz ; ++i )) ; do
     test "${line:i:1}" = '=' && break
   done
 
   if [ ${i} -eq ${sz} ] ; then
-    if [ ${i:0:1} = '-' ] ; then
-      :  # regular short option
-    else
-     line=$( echo "${line/% /}" | tr "[:lower:]" "[:upper:]" )
-     line=$( echo "${line}" | tr "-" "_" )
+    if [ ${i} -gt 1 ] ; then
+      line=$( echo "${line/% /}" | tr "[:lower:]" "[:upper:]" )
+      line=$( echo "${line}" | tr "-" "_" )
     fi
   else
     local tmp0="${line:0:i}"
@@ -5154,7 +5158,7 @@ tr_option()
     line="${tmp0}""${line:i}"
   fi
 
-  eval ${1}=\${line}
+  eval ${1}=\${pref}\${line}
 
   return
 }
@@ -5257,13 +5261,10 @@ rootPID=$$
 
 for OPTARG in $* ; do
   UOPTARG=${OPTARG}
-  tr_option UOPTARG
+  tr_option UOPTARG $prev_opt
 
-  if [ ${UOPTARG%%=*} = CONDA_ENV ] ; then
-     setKWL CONDA_ENV=${OPTARG#*=}
-  elif [ ${UOPTARG} = DEBUG -o ${UOPTARG} = DEBUG_M ] ; then
+  if [ ${UOPTARG} = DEBUG -o ${UOPTARG} = DEBUG_M ] ; then
      set -x
-     uu_opts[${#uu_opts[*]}]=${OPTARG}
   elif [ "${UOPTARG}" = EXAMPLE ] ; then
     setKWL QA_EXAMPLE=t
   elif [ ${UOPTARG%%=*} = QA_CONFIG ] ; then
@@ -5272,13 +5273,12 @@ for OPTARG in $* ; do
      setKWL QA_HOME=${OPTARG#*=}
   elif [ ${UOPTARG%%=*} = QA_SRC ] ; then
     setKWL QA_SRC=${OPTARG#*=}
-
   elif [ ${UOPTARG%%=*} = WORK ] ; then
      setKWL WORK=${OPTARG#*=}
-
-  else
-    uu_opts[${#uu_opts[*]}]=${OPTARG}
   fi
+
+  uu_opts[${#uu_opts[*]}]=${UOPTARG}
+  prev_opt=${UOPTARG}
 done
 
 init ${uu_opts[*]}

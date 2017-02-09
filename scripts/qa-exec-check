@@ -1117,12 +1117,15 @@ run()
 
 run_CMOR3_LLNL()
 {
-  . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3
-  . $QA_SRC/scripts/parseConfigFile PrePARE
+  if ! . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3 ; then
+    return
+  elif ! . $QA_SRC/scripts/parseConfigFile PrePARE ; then
+    return
+  fi
 
   export PATH=${PrePARE%/*}:${PATH}
 
-  source activate cmor &> /dev/null
+  source ${CONDA_FOR_CMOR3}/envs/cmor/bin/activate cmor &> /dev/null
 
   export UDUNITS2_XML_PATH=${CONDA_FOR_CMOR3}/envs/cmor/share/udunits/udunits2.xml
 
@@ -1170,7 +1173,7 @@ run_CMOR3_LLNL()
                         ${file} \
                         2>&1 | cat -E )"
 
-  source deactivate cmor
+  source ${CONDA_FOR_CMOR3}/envs/cmor/bin/deactivate cmor
 
   local blk_on=f
 

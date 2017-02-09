@@ -1867,17 +1867,18 @@ tr_option()
   done
 
   if [ ${i} -eq ${sz} ] ; then
-    if [ ${i} -eq 2 -a ${i:0:1} = '-' ] ; then
-      :
+    if [ ${i} -eq 2 -a ${line:0:1} = '-' ] ; then
+      test ${DEBUG_CONF} && voidX
+      return
     else
-     line=$( echo "${line/% /}" | tr "[:lower:]" "[:upper:]" )
-     line=$( echo "${line}" | tr "-" "_" )
+      line=$( echo "${line/% /}" | tr "[:lower:]" "[:upper:]" )
+      line=${line:0:1}$( echo "${line:1}" | tr "-" "_" )
     fi
   else
     local tmp0="${line:0:i}"
     tmp0="${tmp0//QC/QA}"
     tmp0=$( echo "${tmp0/% /}" | tr "[:lower:]" "[:upper:]" )
-    tmp0=$( echo "${tmp0}" | tr "-" "_" )
+    tmp0=${tmp0:0:1}$( echo "${tmp0:1}" | tr "-" "_" )
     line="${tmp0}""${line:i}"
   fi
 
@@ -1943,48 +1944,64 @@ voidX()
 umask 002
 
 # very specific: convert -E_SELECT or -E_LOCK into -S or -L respectively.
-# Also, accept -E_SELECT param or -E_LOCK param, i.e. separated by a space
+# Accept -E_SELECT=param, -ESELECT=param, -E SELECT=param
+# Case-insensitive, and also for LOCK.
+
+declare -a arg
+
 for(( i=1 ; i <= $# ; ++i )) ; do
   item=${!i}
-  tr_option item
 
-  arg=
-
-  if [ ${item:0:9} = '-E_SELECT' -o ${item:0:7} = '-E_LOCK' ] ; then
-    j=$((i+1))
-    if [ ${item#*=} != ${item} ] ; then
-       arg="-${item:3:1} ${item#*=}"  # prefixed by -S or -L followed by arg
-    elif [ ${!j:0:1} != '-' ] ; then
-       arg="-${item:3:1} ${!j}"
-       j=$((j+1))
+  if [ ${item:0:2} = '-E' ] ; then
+    if [ ${item} = '-E' ] ; then
+       # opt-arg is space separated
+       arg[${#arg[*]}]='-E'
+    elif [ ${item:0:3} = '-E_' ] ; then
+       # opt-arg is underscore separated
+       arg[${#arg[*]}]='-E'
+       arg[${#arg[*]}]="${item:3}"
+    else
+       # opt-arg is aligned to -E
+       arg[${#arg[*]}]='-E'
+       arg[${#arg[*]}]="${item:2}"
     fi
-  fi
 
-  if [ ${arg} ] ; then
-     set -- ${*:1:$((i-1))} ${arg} ${*:j}
-     arg=
+    j=$(( ${#arg[*]} -1 ))
+    j0=$((j-1))
+
+    if [ ${arg[j]:0:6} = 'SELECT' -o ${arg[j]:0:4} = 'LOCK' ] ; then
+      # overwrite last arg, i.e. '-E'
+      if [ ${arg[j]#*=} != ${arg[j]} ] ; then
+         arg[j0]="-${arg[j]:0:1}"
+         arg[j]="${item#*=}"  # prefixed by -S or -L followed by arg
+      fi
+    fi
+
+  else
+    arg[${#arg[*]}]="$item"
   fi
 done
+
+if [ "${arg}" ] ; then
+   set -- ${arg[*]}
+fi
 
 # stage 0: scan for configuration files etc.
 while getopts :d:D:e:E:f:hmP:QqL:S:s:T:Vx-: option
 do
-  UOPTARG=${OPTARG}
-  tr_option UOPTARG
-
   case $option in
-  e|E)  if [ ${UOPTARG%%=*} = '_CONDA_ENV' ] ; then
+  e|E)  if [ ${OPTARG%%=*} = 'CONDA_ENV' ] ; then
           setKWL CONDA_ENV=${OPTARG#*=}
-        elif [ ${UOPTARG:0:8} = '_DEBUG_C' ] ; then
+        elif [ ${OPTARG:0:7} = 'DEBUG_C' ] ; then
           DEBUG_CONF=t
           set -x
-        elif [ ${UOPTARG:0:9} = '_PROJECT=' ] ; then
-          setKWL ${UOPTARG:1}
-        elif [ ${UOPTARG%%=*} = '_QA_CONFIG' ] ; then
+        elif [ ${OPTARG%%=*} = 'PROJECT=' ] ; then
+          setKWL ${OPTARG}
+        elif [ ${OPTARG%%=*} = 'QA_CONFIG' ] ; then
           localQAC=${OPTARG#*=}
-        elif [ ${UOPTARG%%=*} = '_QA_HOME' ] ; then
+        elif [ ${OPTARG%%=*} = 'QA_HOME' ] ; then
           setKWL QA_HOME=${OPTARG#*=}
-        elif [ ${UOPTARG%%=*} = '_QA_SRC' ] ; then
+        elif [ ${OPTARG%%=*} = 'QA_SRC' ] ; then
           setKWL QA_SRC=${OPTARG#*=}
         fi
         ;;
@@ -2004,31 +2021,26 @@ do
     -)  if [ "$OPTARG" = help ] ; then
            isHelp=t
 
-        elif [ "${UOPTARG}" = DEBUG ] ; then
+        elif [ "${OPTARG}" = DEBUG ] ; then
           set -x
           installArgs="${installArgs}--debug,"
           setKWL DEBUG_MANAGER
         DEBUG_CONF=t
 
-        elif [ "${UOPTARG}" = EXAMPLE ] ; then
+        elif [ "${OPTARG}" = EXAMPLE ] ; then
           setKWL QA_EXAMPLE=t
 
-        elif [ "${UOPTARG%=*}" = HOME ] ; then
+        elif [ "${OPTARG%%=*}" = HOME ] ; then
            setKWL QA_HOME=${OPTARG#*=}
            installArgs="${installArgs}QA_HOME=${QA_HOME},"
 
-        elif [ "${UOPTARG%=*}" = WORK ] ; then
+        elif [ "${OPTARG%%=*}" = WORK ] ; then
            setKWL QA_RESULTS=${OPTARG#*=}
         fi
         ;;
    \?)  ;;
   esac
 done
-
-#if [ ${QA_EXAMPLE:-f} = t ] ; then
-#    output
-#    exit 0
-#fi
 
 if [ ${isHelp:-f} = t ] ; then
   descript
@@ -2082,15 +2094,13 @@ set -f
 unset OPTIND
 while getopts d:D:e:E:f:hmP:QqL:S:s:T:x-: option
 do
-  UOPTARG=$OPTARG
-  tr_option UOPTARG
 
   case $option in
     d|D) # disable previously enabled options
          unsetKWL ${OPTARG} ;;
     e|E) # Enable features or set parameters
-        test ${UOPTARG:0:8} != '_DEBUG_C' && parseOPTARG ${UOPTARG:1}
-        ;;
+         test ${OPTARG:0:7} != 'DEBUG_C' && parseOPTARG ${OPTARG}
+         ;;
     f)  # already done
         ;;
     h)  # already done
@@ -2110,14 +2120,14 @@ do
     x)  setKWL DEBUG_MANAGER=t
         setKWL DEBUG_EXECUTOR=t
         ;;  # already done for this script
-    -)  if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
+    -)  if [ "${OPTARG:0:7}" = AUTO_UP ] ; then
           installArgs="${installArgs}--auto-up=${OPTARG#*=},"
 
-        elif [ "${UOPTARG:0:5}" = DEBUG ] ; then
+        elif [ "${OPTARG:0:5}" = DEBUG ] ; then
           : # done before
-        elif [ "${UOPTARG:0:7}" = EXAMPLE ] ; then
+        elif [ "${OPTARG:0:7}" = EXAMPLE ] ; then
           : # done before
-        elif [ "${UOPTARG:0:4}" = HOME ] ; then
+        elif [ "${OPTARG:0:4}" = HOME ] ; then
           : # done before
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
@@ -2127,13 +2137,13 @@ do
             setKWL PROGRESS_BAR=${OPTARG#*=}  # file to write to
           fi
 
-        elif [ "${UOPTARG%=*}" = PROJECT_AS ] ; then
+        elif [ "${OPTARG%=*}" = PROJECT_AS ] ; then
           setKWL PROJECT_AS=${OPTARG#*=}
 
-        elif [ "${UOPTARG%=*}" = SET_DEFAULT_PROJECT ] ; then
+        elif [ "${OPTARG%=*}" = SET_DEFAULT_PROJECT ] ; then
           installArgs="${installArgs}--set_default_project=${OPTARG#*=},"
 
-        elif [ "${UOPTARG:0:4}" = WORK ] ; then
+        elif [ "${OPTARG:0:4}" = WORK ] ; then
           : # done before
 
         else
