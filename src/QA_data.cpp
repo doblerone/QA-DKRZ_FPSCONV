@@ -644,38 +644,34 @@ Outlier::test(QA_Data *pQAD)
     {
       retCode=true;
 
-      double currTime;
-      std::string cTime;
-
       std::string key("R");
       key += hdhC::itoa(errNum[i]);
       if( notes->inq( key, name) )
       {
         pQAD->sharedRecordFlag.currFlag += errNum[i];
 
-        // fine for absolute and relative Dates
-        // search the maximum outlier
+        // sort outlier values
+        size_t swap_t;
+        double swap_d;
+        size_t sz=outRec.size()-1;
 
-        size_t outlRec;
-        double outlValue;
-        std::string currDateStrMax;
-
-        outlRec = outRec[0] ;
-        outlValue = outVal[0] ;
-
-        double cT = pQA->qaTime.ma_t[outRec[0]] ;
-        currDateStrMax = pQA->qaTime.refDate.getDate(cT).str();
-
-        for( size_t k=1 ; k < outRec.size() ; ++k )
+        for( size_t k0=0 ; k0 < sz ; ++k0 )
         {
-          if ( outVal[k] < outlValue )
-            continue;
+          size_t k_max=k0;
 
-          cT = pQA->qaTime.ma_t[outRec[k]] ;
-          currDateStrMax = pQA->qaTime.refDate.getDate(cT).str();
+          for( size_t k1=k0+1 ; k1 < outRec.size() ; ++k1 )
+            if ( outVal[k0] < outVal[k1] )
+                k_max = k1 ;
 
-          outlValue = outVal[k] ;
-          outlRec = outRec[k] ;
+          if ( k_max > k0 )
+          {
+            swap_d = outVal[k0];
+            swap_t = outRec[k0];
+            outVal[k0] = outVal[k_max];
+            outRec[k0] = outRec[k_max];
+            outVal[k_max] = swap_d;
+            outRec[k_max] = swap_t;
+          }
         }
 
         std::ostringstream ostr(std::ios::app);
@@ -688,26 +684,29 @@ Outlier::test(QA_Data *pQAD)
         }
         ostr << ", found strongest at rec# ";
 
-        ostr << outlRec ;
+        ostr << outRec[0] ;
         ostr << ", value=" ;
-        ostr << std::setw(12) << std::setprecision(5) << outlValue;
+        ostr << std::setw(12) << std::setprecision(5) << outVal[0];
 
         std::string capt(ostr.str());
 
         ostr.str("");  // clear previous contents
 
-        MtrxArr<int> ma_i;
+        double cT;
+        MtrxArr<int> ma_t;
         for( size_t k=0 ; k < outRec.size() ; ++k )
         {
           // adjust coded flags
           pQAD->sharedRecordFlag.adjustFlag(errNum[i], outRec[k] ) ;
 
-          currTime = pQA->qaTime.ma_t[outRec[k]] ;
 
-          ostr << "\nrec#=" << outRec[k];
-          ostr << ", date=" << pQA->qaTime.refDate.getDate(currTime).str();
-          ostr << ", value=";
-          ostr << std::setw(12) << std::setprecision(5) << outVal[k];
+          if( (cT=pQA->nc->getData(ma_t, pQA->qaTime.name, outRec[k], 1)) < MAXDOUBLE)
+          {
+            ostr << "\nrec#=" << outRec[k];
+            ostr << ", date=" << pQA->qaTime.refDate.getDate(cT).str();
+            ostr << ", value=";
+            ostr << std::setw(12) << std::setprecision(5) << outVal[k];
+          }
         }
 
         if( (retCode=notes->operate(capt, ostr.str())) )
