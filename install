@@ -392,6 +392,8 @@ update()
 
 update_external()
 {
+  test ${isInternet:-t} = f && return
+
   if ! . $QA_SRC/scripts/parseConfigFile QA_LAST_UPDATE=${today} \
         || [ ${isUpdateQA:-f} = t ]; then
     if [ ${isCondaUpdate:-t} = t -a -w ${QA_SRC} ] ; then
@@ -455,27 +457,29 @@ update_external()
 
 update_QA()
 {
-  if ! . $QA_SRC/scripts/parseConfigFile QA_LAST_UPDATE=${today} \
-        || [ ${isUpdateQA:-f} = t ]; then
-    if [ ! -f ${QA_SRC}/.ignore_GitHub ] ; then
-      cd $QA_SRC
+  if [ ${isInternet:-t} = t ] ; then
+    if ! . $QA_SRC/scripts/parseConfigFile QA_LAST_UPDATE=${today} \
+          || [ ${isUpdateQA:-f} = t ]; then
+      if [ ! -f ${QA_SRC}/.ignore_GitHub ] ; then
+        cd $QA_SRC
 
-      # is qa-dkrz going to change?
-      local qa_dkrzDate=$(ls -l \
-           --time-style=+'%s' ${QA_SRC}/scripts/qa_dkrz \
-           | awk '{print $6}' 2> /dev/null )
+        # is qa-dkrz going to change?
+        local qa_dkrzDate=$(ls -l \
+             --time-style=+'%s' ${QA_SRC}/scripts/qa_dkrz \
+             | awk '{print $6}' 2> /dev/null )
 
-      test "$(getGitBranch)" != master && \
-        git checkout master &> /dev/null
-#        git checkout $(getGitBranch) &> /dev/null
+        test "$(getGitBranch)" != master && \
+          git checkout master &> /dev/null
+#         git checkout $(getGitBranch) &> /dev/null
 
-      git fetch && git reset --hard origin/$(getGitBranch) &> /dev/null
-#      git pull --no-edit -q origin master &> /dev/null
+        git fetch && git reset --hard origin/$(getGitBranch) &> /dev/null
+#       git pull --no-edit -q origin master &> /dev/null
 
-      if [ ${qa_dkrzDate} != $( ls -l \
-           --time-style=+'%s' ${QA_SRC}/scripts/qa_dkrz \
-           | awk '{print $6}' 2> /dev/null ) ] ; then
-        exitVal=101
+        if [ ${qa_dkrzDate} != $( ls -l \
+             --time-style=+'%s' ${QA_SRC}/scripts/qa_dkrz \
+             | awk '{print $6}' 2> /dev/null ) ] ; then
+          exitVal=101
+        fi
       fi
     fi
   fi

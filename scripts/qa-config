@@ -371,6 +371,7 @@ Usage: qa-DKRZ options
              users may define their permanent modification of tables.
              Equivalent to option QA_HOME.
    --no-conda-update  Only for the builder of the conda qa-dkrz package
+   --no-internet      Usage in off-line mode.
    --pb[=filename[,step]]
              Progress bar properties.
              Output of number of processed data files and total number of data files;
@@ -2131,6 +2132,9 @@ do
           : # done before
 
         elif [ "${OPTARG}" = NO_CONDA_UPDATE ] ; then
+          installArgs="${installArgs}--${OPTARG},"
+
+        elif [ "${OPTARG}" = NO_INTERNET ] ; then
           installArgs="${installArgs}--${OPTARG},"
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
