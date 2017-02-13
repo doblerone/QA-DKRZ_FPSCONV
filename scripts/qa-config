@@ -2122,6 +2122,7 @@ do
         setKWL DEBUG_EXECUTOR=t
         ;;  # already done for this script
     -)  if [ "${OPTARG:0:7}" = AUTO_UP ] ; then
+          setKWL AUTO_UP=t
           installArgs="${installArgs}--auto-up=${OPTARG#*=},"
 
         elif [ "${OPTARG:0:5}" = DEBUG ] ; then
