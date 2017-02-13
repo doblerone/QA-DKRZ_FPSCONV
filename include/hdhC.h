@@ -522,6 +522,9 @@ std::string
 tf_att(std::vector<std::string*>& vs,  bool colon, bool blank, bool isUpper);
 
 std::string
+tf_range(std::string v0, std::string v1, std::string blnk=empty);
+
+std::string
 tf_val(std::string v, std::string blnk=empty);
 
 std::string

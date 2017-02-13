@@ -1313,7 +1313,7 @@ getIndex(int index, int sz)
 {
   if( index == INT_MAX )
       return 0;
-  
+
   if( index < 0 && index > (-sz))
      index = sz + index;
 
@@ -1854,6 +1854,21 @@ tf_att(std::vector<std::string*>& p,
     s += colon;
 
   if(isBlank)
+    s += blank;
+
+  return s ;
+}
+
+std::string
+tf_range(std::string v0, std::string v1, std::string blnk)
+{
+  std::string s(" <");
+  s += v0 ;
+  s += " - " ;
+  s += v1 ;
+  s += ">" ;
+
+  if(blnk.size())
     s += blank;
 
   return s ;
