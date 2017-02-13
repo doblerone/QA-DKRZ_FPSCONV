@@ -370,6 +370,7 @@ Usage: qa-DKRZ options
              location where external tables are copied and updated as well where
              users may define their permanent modification of tables.
              Equivalent to option QA_HOME.
+   --no-conda-update  Only for the builder of the conda qa-dkrz package
    --pb[=filename[,step]]
              Progress bar properties.
              Output of number of processed data files and total number of data files;
@@ -2128,6 +2129,9 @@ do
           : # done before
         elif [ "${OPTARG:0:4}" = HOME ] ; then
           : # done before
+
+        elif [ "${OPTARG}" = NO_CONDA_UPDATE ] ; then
+          installArgs="${installArgs}--${OPTARG},"
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
           if [ ${OPTARG} = ${OPTARG#*=} ] ; then

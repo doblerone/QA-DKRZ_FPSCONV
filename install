@@ -196,7 +196,7 @@ getSrcPath()
   # extract the path to the root of the QA package
 
   # is it in a conda built?
-  if [ ! ${isBuildCondaQA} ] && getCondaPath $0 QA_SRC ; then
+  if getCondaPath $0 QA_SRC ; then
     export QA_SRC
   fi
 
@@ -377,7 +377,7 @@ update()
   # search for updates only once a day
   local today=$( date '+%Y%m%d' )
 
-  test ${isBuildCondaQA:-f} = f && update_external
+  test ${isCondaBuild:-f} = f && update_external
 
   update_QA
 
@@ -394,7 +394,7 @@ update_external()
 {
   if ! . $QA_SRC/scripts/parseConfigFile QA_LAST_UPDATE=${today} \
         || [ ${isUpdateQA:-f} = t ]; then
-    if [ ${CONDA_ENV:-f} != f -a -w ${QA_SRC} ] ; then
+    if [ ${isCondaUpdate:-t} = t -a -w ${QA_SRC} ] ; then
       # look for a new conda-built package
 #      local tmp
 #      declare -a tmp
@@ -419,14 +419,15 @@ update_external()
 
   for prj in ${project[*]} ; do
     test "${PROJECT_AS}" && prj=${PROJECT_AS}
+    local lastUpdate
 
     if [ "${prj}" != CF ] ; then
       # check it here in order to prevent an update of the config-file in case
       # that the installation failed or war terminated.
       . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE
-      eval isLU=\${prj}_LAST_UPDATE
+      eval lastUpdate=\${prj}_LAST_UPDATE
 
-      if [ "${isLU}" != ${today} -o ${isUpdateQA:-f} = t ]; then
+      if [ "${lastUpdate}" != ${today} -o ${isUpdateQA:-f} = t ]; then
          . ${QA_SRC}/scripts/get_externalSources \
              -P $prj --qa_src=${QA_SRC} \
              --qa_home=${QA_HOME} --config_file=${CONFIG_FILE} \
@@ -545,8 +546,6 @@ do
           autoUpArgs[${#autoUpArgs[*]}]=$UOPTARG
         elif [ "${OPTNAME}" = BUILD ] ; then
           isBuild=t
-        elif [ "${OPTNAME}" = BUILD_CONDA_QA ] ; then
-          isBuildCondaQA=t
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
           DEBUG='--debug'
           set -x
@@ -562,6 +561,8 @@ do
           QA_HOME=${OPTVAL}
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
           isLink=t
+        elif [ "${UOPTARG}" = NO_CONDA_UPDATE ] ; then
+          isCondaUpdate=f
         elif [ "${UOPTARG:0:6}" = ONLY_Q ] ; then
           :  # for backward compatibilty
         elif [ "${OPTNAME}" = PROJECT_AS ] ; then
