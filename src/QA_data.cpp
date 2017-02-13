@@ -699,7 +699,6 @@ Outlier::test(QA_Data *pQAD)
           // adjust coded flags
           pQAD->sharedRecordFlag.adjustFlag(errNum[i], outRec[k] ) ;
 
-
           if( (cT=pQA->nc->getData(ma_t, pQA->qaTime.name, outRec[k], 1)) < MAXDOUBLE)
           {
             ostr << "\nrec#=" << outRec[k];
@@ -1269,35 +1268,58 @@ QA_Data::checkFinally(Variable *var)
    {
      if( constValueRecordStartTime.size() == (constValueRecordEndTime.size() + 1) )
      {
+       // the range with constant records reached the file end
        constValueRecordEndTime.push_back(pQA->qaTime.currTimeValue) ;
-       constValueRecordEndRec.push_back(pIn->currRec) ;
+       constValueRecordEndRec.push_back(pIn->currRec-1) ;
      }
 
      std::string key=("R200");
      if( notes->inq( key, name) )
      {
        std::string capt("data range");
-       if( constValueRecordStartTime.size() > 1 )
-         capt += "s";
-       capt += " totally with constant value, found";
+       capt += " totally with constant value ";
        capt += hdhC::tf_val(constValueRecord[0]);
-       if( constValueRecordStartTime.size() > 1 )
-         capt += " first";
 
-       capt += " for time indices ";
-       std::string r( hdhC::double2String(constValueRecordStartRec[0]) );
-                   r += " - " ;
-                   r += hdhC::double2String(constValueRecordEndRec[0]);
-       capt += hdhC::tf_val(r);
+       std::string text;
+       for( size_t i=0 ; i < constValueRecordStartRec.size() ; ++i )
+       {
+         if(i)
+           text += "\n" ;
 
-       capt += ", time values ";
-       r =  hdhC::double2String(constValueRecordStartTime[0]) ;
-       r += " - " ;
-       r += hdhC::double2String(constValueRecordEndTime[0]);
+         text="rec#:";
 
-       capt += hdhC::tf_val(r);
+         if( constValueRecordStartRec[i] == constValueRecordEndRec[i] )
+         {
+           text += hdhC::tf_val( hdhC::double2String(constValueRecordStartRec[i]) );
 
-       (void) notes->operate(capt) ;
+           double cT0;
+           cT0 = pQA->qaTime.ma_t[ constValueRecordStartRec[0] ] ;
+
+           std::string date0(pQA->qaTime.refDate.getDate(cT0).str());
+
+           text += ", date: ";
+           text += hdhC::tf_val(date0);
+
+         }
+         else
+         {
+           text += hdhC::tf_range(
+                         hdhC::double2String(constValueRecordStartRec[0]),
+                         hdhC::double2String(constValueRecordEndRec[0]) );
+
+           double cT0, cT1;
+           cT0 = pQA->qaTime.ma_t[ constValueRecordStartRec[0] ] ;
+           cT1 = pQA->qaTime.ma_t[ constValueRecordEndRec[0] ] ;
+
+           std::string date0(pQA->qaTime.refDate.getDate(cT0).str());
+           std::string date1(pQA->qaTime.refDate.getDate(cT1).str());
+
+           text += ", dates:";
+           text += hdhC::tf_range(date0, date1);
+         }
+       }
+
+       (void) notes->operate(capt, text) ;
        notes->setCheckStatus(pQA->n_data, pQA->n_fail);
      }
    }
