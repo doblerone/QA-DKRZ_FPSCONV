@@ -377,7 +377,7 @@ update()
   # search for updates only once a day
   local today=$( date '+%Y%m%d' )
 
-  test ${isCondaBuild:-f} = f && update_external
+  update_external
 
   update_QA
 
@@ -562,6 +562,9 @@ do
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
           isLink=t
         elif [ "${UOPTARG}" = NO_CONDA_UPDATE ] ; then
+          isCondaUpdate=f
+        elif [ "${UOPTARG}" = NO_INTERNET ] ; then
+          isInternet=f
           isCondaUpdate=f
         elif [ "${UOPTARG:0:6}" = ONLY_Q ] ; then
           :  # for backward compatibilty

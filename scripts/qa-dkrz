@@ -3227,7 +3227,7 @@ initTables()
   # 5) 4) also for option USE_STRICT.
 
   # default tables
-  rsync -auz --exclude '*~' --exclude '.*' \
+  rsync --copy-links -auz --exclude '*~' --exclude '.*' \
      ${QA_HOME}/tables/projects/${PROJECT_AS}/* ${TABLE_PATH}
 
   if [ "$PROJECT" != CF ] ; then
