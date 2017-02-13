@@ -2829,18 +2829,21 @@ init()
   fi
 
   # package update requested and required?
-  if [ ${UPDATE:-enable} = enable ] ; then
+  if . $QA_SRC/scripts/parseConfigFile \
+         AUTO_UPDATE${AUTO_UP:+=}${AUTO_UP} ; then
+    UPDATE=t
+  fi
+
+  if [ ${UPDATE:-f} = t ] ; then
     # checksum of current qa-dkrz
     local md5_0
     md5_0=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
-    local isInstall
 #    if . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE ; then
-       isInstall=t
 #    else
 #       local quest
 #       echo -e "\n Do you want to update external programs and/or tables? " > $TTY
-#       echo -n "Saying 'auto-up' would always automatically search updates. "  > $TTY
+#       echo -n "Saying 'yes' would always automatically search updates. <yes, [no]: >"  > $TTY
 
 #       while : ; do
 #         read -p "<yes, [no], or auto-up>: " quest 2> $TTY
@@ -2856,20 +2859,18 @@ init()
 #       done
 #    fi
 
-    if [ "${isInstall}" = t ] ; then
-      if ${QA_SRC}/install ${TTY:+-T } ${TTY} ${INSTALL_ARGS//,/ } \
+    if ${QA_SRC}/install ${TTY:+-T } ${TTY} ${INSTALL_ARGS//,/ } \
                            PROJECT_AS=${PROJECT_AS} ${PROJECT} ; then
 
-          local md5_1
-          md5_1=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
+        local md5_1
+        md5_1=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
-          test ${md5_0} != ${md5_1} && \
-              exec ${QA_SRC}/scripts/qa-dkrz ${initial_params[*]}
-      else
-         # could not make the executable for the given project
-         std_out flush "could not make: install ${PROJECT}"
-         exit 1
-      fi
+        test ${md5_0} != ${md5_1} && \
+            exec ${QA_SRC}/scripts/qa-dkrz ${initial_params[*]}
+    else
+       # could not make the executable for the given project
+       std_out flush "could not make: install ${PROJECT}"
+       exit 1
     fi
   fi
 

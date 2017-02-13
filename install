@@ -172,6 +172,7 @@ getRevNum()
   # get current revision number; this determines whether it is
   # before a change of defaults happened.
   local branch currIdent
+  declare -a branch
 
   if [ $CONDA_ENV ] ; then
     declare -a branch
@@ -181,12 +182,12 @@ getRevNum()
     fi
   else
     cd $QA_SRC &> /dev/null
-    branch=$(getGitBranch)
+    branch[0]=$(getGitBranch)
     currIdent=$(git log --pretty=format:'%h' -n 1)
     cd - &> /dev/null
   fi
 
-  eval ${1}=${branch}-${currIdent}
+  eval ${1}=${branch[0]}-${currIdent}
 
   return
 }

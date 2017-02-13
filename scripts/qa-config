@@ -2123,6 +2123,7 @@ do
         ;;  # already done for this script
     -)  if [ "${OPTARG:0:7}" = AUTO_UP ] ; then
           setKWL AUTO_UP=t
+          setKWL UPDATE=t
           installArgs="${installArgs}--auto-up=${OPTARG#*=},"
 
         elif [ "${OPTARG:0:5}" = DEBUG ] ; then
@@ -2150,6 +2151,10 @@ do
 
         elif [ "${OPTARG%=*}" = SET_DEFAULT_PROJECT ] ; then
           installArgs="${installArgs}--set_default_project=${OPTARG#*=},"
+
+        elif [ "${OPTARG:0:2}" = UP ] ; then
+           setKWL UPDATE=t
+          installArgs="${installArgs}--up,"
 
         elif [ "${OPTARG:0:4}" = WORK ] ; then
           : # done before
