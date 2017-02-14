@@ -1,0 +1,12 @@
+name: qa-dkrz-cmip6 
+channels:
+- conda-forge
+- pcmdi
+- uvcdat
+- birdhouse
+- defaults
+dependencies:
+- python=2.7
+- qa-dkrz=0.6.4
+- cmor=3.2.1
+- cmip6-cmor-tables=3.2.1
