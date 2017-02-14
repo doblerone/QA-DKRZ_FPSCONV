@@ -661,7 +661,7 @@ fi
 
 test ! "$project" && project=(${DEFAULT_PROJECT#*=})
 
-test ${isCondaBuild:-t} = f && update
+test ${isCondaBuild:-t} = t && update
 
 test ${CONDA_ENV} && exit  # miniconda built executables
 
