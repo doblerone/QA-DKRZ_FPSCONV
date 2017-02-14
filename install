@@ -263,7 +263,7 @@ getSrcPath()
         # final check
         if [ ! -e $tmp/install ] ; then
            echo "$tmp is not QA_SRC; EXIT"
-           exit
+           exit 1
         fi
 
         export QA_SRC=$tmp
@@ -542,7 +542,7 @@ do
     B)  coll[${#coll[*]}]=-B ;;
     d)  coll[${#coll[*]}]=-d ;;
     h)  descript
-        exit ;;
+        exit 1 ;;
     T)  TTY="${OPTARG}" ;;
     -)  OPTVAL=${OPTARG##*=}
         OPTNAME=${UOPTARG%%=*}
@@ -561,7 +561,7 @@ do
           GET_TABLES=t
         elif [ "${OPTNAME}" = HELP ] ; then
           descript
-          exit
+          exit 1
         elif [ "${OPTNAME}" = HOME -o "${OPTNAME}" = WORK ] ; then
           QA_HOME=${OPTVAL}
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
