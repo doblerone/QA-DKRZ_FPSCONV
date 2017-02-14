@@ -22,7 +22,7 @@ readCF()
      local i
      sz=$(( ${uCF_blkEnd:-0} - ${uCF_blkBeg:-0} ))
 
-     for(( i=0 ; i < ${sz} ; ++i )) ; do
+     for(( i=0 ; i < sz ; ++i )) ; do
        eval uCF_lines[${i}]="\${uCF_line_${i}}"
 
 #       if [ "${#uCF_lines[i]}" -eq 0 ] ; then
@@ -63,17 +63,17 @@ readCF()
 
    done < ${CONFIG_FILE}
 
-   test ${sz} -gt 0 && uCF_blkEnd=$sz
+   test ${sz} -gt 0 && uCF_blkEnd=${sz}
 
    # append a new section and a particular default for auto-update
    if [ ${uCF_blkBeg} -eq 0 ] ; then
        echo -e "\n${QA_SRC}:"                >> $CONFIG_FILE
 
 #      echo AUTO_UPDATE=enabled              >> $CONFIG_FILE
-#      uCF_lines[${#uCF_lines[*]}]="${AUTO_UPDATE=enabled}"
+#      uCF_lines[${#uCF_lines[*]}]="AUTO_UPDATE=enabled"
 
 #      echo DEFAULT_PROJECT=$defaultProject  >> $CONFIG_FILE
-#      uCF_lines[${#uCF_lines[*]}]="DEFAULT_PROJECT=${defaultProject}"
+#      uCF_lines[${#uCF_lines[*]}]=DEFAULT_PROJECT="${defaultProject}"
 
       uCF_blkBeg=$((sz+2))
       uCF_blkEnd=$uCF_blkBeg

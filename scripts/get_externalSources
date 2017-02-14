@@ -251,8 +251,8 @@ make_miniconda()
         while :  ; do
           read -p " <y[es], [no]>: "  quest 2> ${TTY}
           case $quest in
-             ( y | yes) foundP=t ; break ;;
-             ( no | '') foundP=f ; break ;;
+             ( y | yes ) foundP=t ; break ;;
+             ( no | '' ) foundP=f ; break ;;
                       *)  ;;
           esac
         done
