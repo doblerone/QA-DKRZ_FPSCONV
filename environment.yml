@@ -3,10 +3,10 @@ channels:
 - conda-forge
 - pcmdi
 - uvcdat
-- birdhouse
+- h-dh
 - defaults
 dependencies:
 - python=2.7
-- qa-dkrz=0.6.4
+- qa-dkrz=0.6.5
 - cmor=3.2.1
 - cmip6-cmor-tables=3.2.1
