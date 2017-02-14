@@ -551,6 +551,8 @@ do
           autoUpArgs[${#autoUpArgs[*]}]=$UOPTARG
         elif [ "${OPTNAME}" = BUILD ] ; then
           isBuild=t
+        elif [ "${OPTNAME}" = CONDA_BUILD ] ; then
+          isCondaBuild=f
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
           DEBUG='--debug'
           set -x
@@ -659,7 +661,7 @@ fi
 
 test ! "$project" && project=(${DEFAULT_PROJECT#*=})
 
-update
+test ${isCondaBuild:-t} && update
 
 test ${CONDA_ENV} && exit  # miniconda built executables
 
