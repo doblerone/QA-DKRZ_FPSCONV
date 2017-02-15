@@ -370,8 +370,8 @@ Usage: qa-DKRZ options
              location where external tables are copied and updated as well where
              users may define their permanent modification of tables.
              Equivalent to option QA_HOME.
-   --no-conda-update  Only for the builder of the conda qa-dkrz package
-   --no-internet      Usage in off-line mode.
+   --conda-update  Update the qa-dkrz package by conda.
+   --no-internet   Usage in off-line mode.
    --pb[=filename[,step]]
              Progress bar properties.
              Output of number of processed data files and total number of data files;
@@ -1351,7 +1351,7 @@ parseOPTARG()
     done
 
   elif [ "${key}" = QA_HOME ] ; then
-    installArgs="${installArgs}--QA_HOME=${OPTARG#*=},"
+    installArgs+="--QA_HOME=${OPTARG#*=},"
   fi
 
   # no more syntax checks; invoke all
@@ -2024,7 +2024,7 @@ do
 
         elif [ "${OPTARG}" = DEBUG ] ; then
           set -x
-          installArgs="${installArgs}--debug,"
+          installArgs+="--debug,"
           setKWL DEBUG_MANAGER
         DEBUG_CONF=t
 
@@ -2033,7 +2033,7 @@ do
 
         elif [ "${OPTARG%%=*}" = HOME ] ; then
            setKWL QA_HOME=${OPTARG#*=}
-           installArgs="${installArgs}--QA_HOME=${QA_HOME},"
+           installArgs+="--QA_HOME=${QA_HOME},"
 
         elif [ "${OPTARG%%=*}" = WORK ] ; then
            setKWL QA_RESULTS=${OPTARG#*=}
@@ -2124,7 +2124,7 @@ do
     -)  if [ "${OPTARG:0:7}" = AUTO_UP ] ; then
           setKWL AUTO_UP=t
           setKWL UPDATE=t
-          installArgs="${installArgs}--auto-up=${OPTARG#*=},"
+          installArgs+="--auto-up=${OPTARG#*=},"
 
         elif [ "${OPTARG:0:5}" = DEBUG ] ; then
           : # done before
@@ -2133,11 +2133,11 @@ do
         elif [ "${OPTARG:0:4}" = HOME ] ; then
           : # done before
 
-        elif [ "${OPTARG}" = NO_CONDA_UPDATE ] ; then
-          installArgs="${installArgs}--${OPTARG},"
+        elif [ "${OPTARG}" = CONDA_UPDATE ] ; then
+          installArgs+="--${OPTARG},"
 
         elif [ "${OPTARG}" = NO_INTERNET ] ; then
-          installArgs="${installArgs}--${OPTARG},"
+          installArgs+="--${OPTARG},"
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
           if [ ${OPTARG} = ${OPTARG#*=} ] ; then
@@ -2150,11 +2150,11 @@ do
           setKWL PROJECT_AS=${OPTARG#*=}
 
         elif [ "${OPTARG%=*}" = SET_DEFAULT_PROJECT ] ; then
-          installArgs="${installArgs}--set_default_project=${OPTARG#*=},"
+          installArgs+="--set_default_project=${OPTARG#*=},"
 
         elif [ "${OPTARG:0:2}" = UP ] ; then
-           setKWL UPDATE=t
-          installArgs="${installArgs}--up,"
+          setKWL UPDATE=t
+          installArgs+="--up,"
 
         elif [ "${OPTARG:0:4}" = WORK ] ; then
           : # done before

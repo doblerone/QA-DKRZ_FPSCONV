@@ -1,3 +1,167 @@
+cf()
+{
+   local org=http://cfconventions.org
+
+   cf_html
+
+   return $?
+}
+
+cf_html()
+{
+  # htmnl page containing access to cf related tables
+  local html=standard-names.html
+  wget -q -N $org/$html
+
+  if [ ! -f ${file} ] ; then
+    err[${#err[*]}]="failed wget -N $org/$html"
+    return 1
+  fi
+
+  parse_html "Standard Name Table" xml
+  parse_html "Area Type Table" xml
+  parse_html "Standardized Region List" html
+
+  return 0
+}
+
+convert_html2txt()
+{
+  if [ "${2}" = "Standardized Region List" ] ; then
+    convert_html2txt_region "$1"
+  fi
+
+  return 0
+}
+
+convert_html2txt_region()
+{
+  local htmlFile=${1}
+  local txtFile=CF_${1%html}txt
+
+  if [ -f ${txtFile} ] ; then
+    local h_date=$(ls -l --time-style='+%Y%m%d' ${htmlFile} | awk '{print $6}')
+    local t_date=$(ls -l --time-style='+%Y%m%d' ${txtFile} | awk '{print $6}')
+
+    test ${h_date} -lt ${t_date} && return 0
+  fi
+
+  # convert html to plain text
+
+  rm -f ${txtFile}
+  isSearchBeg=t
+  local txt
+  while read line ; do
+    txt=
+    for(( i=0 ; i < ${#line} ; ++i )) ; do
+      if [ ${isSearchBeg} = t ] ; then
+        test "${line:i:4}" = '</p>' && isSearchBeg=f
+        continue
+      fi
+
+      # rm leading
+      test "${line:i:1}" = ' ' && continue
+      test "${line:i:6}" = '</div>' && return
+      if [ "${line:i:1}" = '<' ] ; then
+        echo "${txt}" >> ${txtFile}
+        txt=
+        continue 2
+      fi
+
+      txt=${txt}"${line:i:1}"
+    done
+  done < ${htmlFile}
+
+  return 0
+}
+
+convert_xml2txt()
+{
+  if [ "${2}" = "Area Type Table" ] ; then
+    convert_xml2txt_area "$1"
+  fi
+
+  return 0
+}
+
+convert_xml2txt_area()
+{
+  local xmlFile=${1}
+  local txtFile=CF_${1%xml}txt
+
+  if [ -f ${txtFile} ] ; then
+    local h_date=$(ls -l --time-style='+%Y%m%d' ${xmlFile} | awk '{print $6}')
+    local t_date=$(ls -l --time-style='+%Y%m%d' ${txtFile} | awk '{print $6}')
+
+    test ${h_date} -lt ${t_date} && return 0
+  fi
+
+  # convert html to plain text
+
+  rm -f ${txtFile}
+  local txt
+  while read line ; do
+    for(( i=0 ; i < ${#line} ; ++i )) ; do
+      # rm leading blanks
+      test "${line:i:1}" = ' ' && continue
+
+      if [ "${line:i:10}" = '<entry id=' ] ; then
+        line=${line#*=}
+        line=${line:1:$((${#line}-3))}
+        echo "${line}" >> ${txtFile}
+
+        continue 2
+      fi
+
+      break  #get next line
+    done
+  done < ${xmlFile}
+
+  return 0
+}
+
+parse_html()
+{
+  local table="$1"
+  local type=$2
+
+  # extract the relative path to the latest version
+  local line="$(grep -A 3 "$table" $html | grep $type)"
+  local i cf_table_name
+  local isSearchBeg=t
+
+  for(( i=0 ; i < ${#line} ; ++i )) ; do
+    if [ ${isSearchBeg} = t ] ; then
+      test "${line:i:1}" = '"' && isSearchBeg=f
+
+      continue
+    fi
+
+    test "${line:i:1}" = '"' && break
+
+    cf_table_name=${cf_table_name}"${line:i:1}"
+  done
+
+  if [ ${#cf_table_name} -eq 0 ] ; then
+    err[${#err[*]}]="grep failed to find string ${table} in file $html"
+    return 1
+  fi
+
+  if [ ${#cf_table_name} -gt 0 ] ; then
+    if ! wget -q -N $org/${cf_table_name} ; then
+      err[${#err[*]}]="failed wget -q -N $org/${cf_table_name}"
+      return 1
+    fi
+  fi
+
+  if [ ${cf_table_name##*.} = html ] ; then
+    convert_html2txt ${cf_table_name##*/} "${table}"
+  elif [ ${cf_table_name##*.} = xml ] ; then
+    convert_xml2txt ${cf_table_name##*/} "${table}"
+  fi
+
+  return $?
+}
 
 cmip6()
 {
@@ -23,8 +187,6 @@ cmip6()
    if ! cmip6_cmor ; then
      return 1
    fi
-
-   . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE=$today
 
    return 0
 }
@@ -102,10 +264,12 @@ cmip6_cmor()
 
    # environment already installed?
    if [ -d ${CONDA_FOR_CMOR3}/envs/cmor ] ; then
-     source ${CONDA_FOR_CMOR3}/envs/cmor/bin/activate cmor
+     source ${CONDA_FOR_CMOR3}/envs/cmor/bin/activate cmor &> /dev/null
+
      ${CONDA_FOR_CMOR3}/bin/conda install -c conda-forge -c pcmdi -c uvcdat cmor \
           | tee -a log_cmip6-cmor.txt 2> ${TTY}
-     source ${CONDA_FOR_CMOR3}/envs/cmor/bin/deactivate cmor
+
+     source ${CONDA_FOR_CMOR3}/envs/cmor/bin/deactivate &> /dev/null
    else
       ${CONDA_FOR_CMOR3}/bin/conda create -n cmor \
            -c conda-forge -c pcmdi -c uvcdat cmor \
@@ -167,54 +331,6 @@ cordex()
 
 gPT_main()
 {
-  declare -a err
-
-  while getopts hP:-: option
-  do
-    case $option in
-      h)  ;;
-      P)  local prj=${OPTARG} ;;
-      -) if [ ${OPTARG%=*} = "config_file" ] ; then
-           local CONFIG_FILE=${OPTARG#*=}
-#         elif [ ${OPTARG} == 'debug' ] ; then
-#           set -x
-         elif [ ${OPTARG} == 'force-update' ] ; then
-           local isForceUp=t
-         elif [ ${OPTARG%=*} = "qa_home" ] ; then
-           local QA_HOME=${OPTARG#*=}
-         elif [ ${OPTARG%=*} = "qa_src" ] ; then
-           local QA_SRC=${OPTARG##*=}
-         fi
-         ;;
-     \?) return 1 ;;
-    esac
-  done
-
-  if [ ! ${QA_HOME} ] ; then
-    echo "could not do: cd ${HOME}"
-    return 1
-  fi
-
-  cd $QA_HOME &> /dev/null
-
-  # search for updates only once a day
-  today=$( date '+%Y%m%d' )
-
-  if [ "$prj" = CORDEX ] ; then
-    cordex
-  elif [ "$prj" = CMIP6 ] ; then
-    cmip6
-  fi
-
-  if [ ${#err[*]} -gt 0 ] ; then
-     local k
-     for(( k=0 ; k < ${#err[*]} ; ++k )) ; do
-        echo -e "${err[k]}"
-     done
-
-     return 1
-  fi
-
   return 0
 }
 
@@ -307,9 +423,14 @@ EOF
             conda_path=${conda_path%/*}
 
          if [ ! -d ${conda_path}/miniconda ] ; then
-            bash Miniconda-latest-Linux-x86_64.sh -b -p ${conda_path}/miniconda \
-                 > ${TTY}
-            test $? -gt 0 && return 1
+            if ! bash Miniconda-latest-Linux-x86_64.sh -b -p ${conda_path}/miniconda \
+                 > ${TTY} ; then
+
+              if [ ! -w ${conda_path} ] ; then
+                 err[${#err[*]}]="failed bash Miniconda-latest-Linux-x86_64.sh -b -p ${conda_path}/miniconda"
+                 return 1
+              fi
+            fi
          fi
 
          break
@@ -357,7 +478,61 @@ xlsx2csv()
 
 
 # main
+declare -a err
 
-gPT_main $*
+while getopts hP:-: option
+do
+  case $option in
+    h)  ;;
+    P)  prj=${OPTARG} ;;
+    -) if [ ${OPTARG%=*} = "config_file" ] ; then
+         CONFIG_FILE=${OPTARG#*=}
+#         elif [ ${OPTARG} == 'debug' ] ; then
+#           set -x
+       elif [ ${OPTARG} == 'force-update' ] ; then
+         isForceUp=t
+       elif [ ${OPTARG%=*} = "qa_home" ] ; then
+         QA_HOME=${OPTARG#*=}
+       elif [ ${OPTARG%=*} = "qa_src" ] ; then
+         QA_SRC=${OPTARG##*=}
+       fi
+       ;;
+   \?) exit 1 ;;
+  esac
+done
 
-return $?
+if [ ! ${QA_HOME} ] ; then
+  echo "could not cd ${HOME}"
+  return 1
+fi
+
+cd $QA_HOME &> /dev/null
+
+# search for updates only once a day
+today=$( date '+%Y%m%d' )
+
+. $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE
+eval pLU=\${prj}_LAST_UPDATE
+
+test "${pLU}" = $today -a ${isForceUp:-f} = f && return 0
+
+if [ "$prj" = CORDEX ] ; then
+  cordex
+elif [ "$prj" = CMIP6 ] ; then
+  cmip6
+fi
+
+# Note that CF may-be stand-alone or together with another project
+cf
+
+if [ ${#err[*]} -gt 0 ] ; then
+   for(( k=0 ; k < ${#err[*]} ; ++k )) ; do
+      echo -e "${err[k]}"
+   done
+
+   exit 1
+fi
+
+. $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE=${today}
+
+exit 0

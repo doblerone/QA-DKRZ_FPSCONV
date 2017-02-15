@@ -89,6 +89,7 @@ descript()
   echo "  --auto-up         Enable automatic updates from the repository at the"
   echo "                    beginning of a run. Suspended by --auto-up=d[isable]."
   echo "                    Enabled initially by default."
+  echo "  --conda-update    Update the qa-dkrz package by conda."
   echo "  --build           Download and build required libraries."
   echo "  --debug[=script]  Display execution commands. If the name of a script"
   echo "                    is assigned, then debug only this one."
@@ -397,7 +398,7 @@ update_external()
 
   if ! . ${QA_SRC}/scripts/parseConfigFile QA_LAST_UPDATE=${today} \
         || [ ${isUpdateQA:-f} = t ]; then
-    if [ ${isCondaUpdate:-t} = t -a -w "${QA_SRC}" ] ; then
+    if [ ${isCondaUpdate:-f} = t -a -w "${QA_SRC}" ] ; then
       # look for a new conda-built package
 #      local tmp
 #      declare -a tmp
@@ -424,34 +425,24 @@ update_external()
     test "${PROJECT_AS}" && prj=${PROJECT_AS}
     local lastUpdate
 
-    if [ "${prj}" != CF ] ; then
-      # check it here in order to prevent an update of the config-file in case
-      # that the installation failed or war terminated.
-      . ${QA_SRC}/scripts/parseConfigFile ${prj}_LAST_UPDATE
-      eval lastUpdate=\${prj}_LAST_UPDATE
+    # check it here in order to prevent an update of the config-file in case
+    # that the installation failed or war terminated.
+    . ${QA_SRC}/scripts/parseConfigFile ${prj}_LAST_UPDATE
+    eval lastUpdate=\${prj}_LAST_UPDATE
 
-      if [ "${lastUpdate}" != ${today} -o ${isUpdateQA:-f} = t ]; then
-         . ${QA_SRC}/scripts/get_externalSources \
-             -P $prj --qa_src=${QA_SRC} \
-             --qa_home=${QA_HOME} --config_file=${CONFIG_FILE} \
-             ${isForceUp:+--force-update}
+    if [ "${lastUpdate}" != ${today} -o ${isUpdateQA:-f} = t ]; then
+       . ${QA_SRC}/scripts/get_externalSources \
+           -P $prj --qa_src=${QA_SRC} \
+           --qa_home=${QA_HOME} --config_file=${CONFIG_FILE} \
+           ${isForceUp:+--force-update}
 
-         test $? -gt 0 && exit 1
+       test $? -gt 0 && exit 1
 
-         . ${QA_SRC}/scripts/parseConfigFile ${prj}_LAST_UPDATE=${today}
-      fi
+       . ${QA_SRC}/scripts/parseConfigFile ${prj}_LAST_UPDATE=${today}
     fi
 
     test "${PROJECT_AS}" && break
   done
-
-  if ! . ${QA_SRC}/scripts/parseConfigFile CF_LAST_UPDATE=${today} \
-        || [ ${isUpdateQA:-f} = t ]; then
-      ${QA_SRC}/scripts/get_cfconventions \
-         --qa_path=${QA_SRC} ${DEBUG} \
-         --config_file=$CONFIG_FILE \
-         ${QA_HOME}/tables/projects/CF
-  fi
 
   return
 }
@@ -568,11 +559,10 @@ do
           QA_HOME=${OPTVAL}
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
           isLink=t
-        elif [ "${UOPTARG}" = NO_CONDA_UPDATE ] ; then
-          isCondaUpdate=f
+        elif [ "${UOPTARG}" = CONDA_UPDATE ] ; then
+          isCondaUpdate=t
         elif [ "${UOPTARG}" = NO_INTERNET ] ; then
           isInternet=f
-          isCondaUpdate=f
         elif [ "${UOPTARG:0:6}" = ONLY_Q ] ; then
           :  # for backward compatibilty
         elif [ "${OPTNAME}" = PROJECT_AS ] ; then

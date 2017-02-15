@@ -1173,7 +1173,7 @@ run_CMOR3_LLNL()
                         ${file} \
                         2>&1 | cat -E )"
 
-  source ${CONDA_FOR_CMOR3}/envs/cmor/bin/deactivate cmor
+  source ${CONDA_FOR_CMOR3}/envs/cmor/bin/deactivate &> /dev/null
 
   local blk_on=f
 
