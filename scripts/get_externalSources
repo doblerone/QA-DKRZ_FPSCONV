@@ -512,7 +512,7 @@ cd $QA_HOME &> /dev/null
 today=$( date '+%Y%m%d' )
 
 . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE
-eval pLU=\${prj}_LAST_UPDATE
+eval pLU=\$${prj}_LAST_UPDATE
 
 test "${pLU}" = $today -a ${isForceUp:-f} = f && return 0
 
