@@ -4305,7 +4305,7 @@ CF::chap26(void)
                 capt += "and " + hdhC::tf_att(aName);
                 capt += "have to be the same type, found ";
                 capt += hdhC::tf_val(pIn->nc.getTypeStr(var.attType[j])) ;
-                capt += " and";
+                capt += ", expected";
                 capt += hdhC::tf_val(pIn->nc.getTypeStr(var.type)) ;
 
                 (void) notes->operate(capt) ;
@@ -4894,7 +4894,7 @@ CF::chap35(void)
                 capt += f_name[k1] ;
                 capt += " require same number of items, found ";
                 capt += hdhC::tf_assign("num", hdhC::itoa(pf[k0]->size())) ;
-                capt += " and";
+                capt += " vs.";
                 capt += hdhC::tf_val(hdhC::itoa(pf[k1]->size())) ;
 
                 (void) notes->operate(capt) ;
@@ -5588,9 +5588,9 @@ CF::chap432(Variable& var,
       capt += "The attributes " + n_formula_terms + " and " ;
       capt += n_standard_name + " are not compatible";
 
-      std::string text("found: " + var.name + hdhC::colon) ;
-      text += hdhC::tf_assign(n_standard_name, var.attValue[att_sn_ix][0]) + " and " ;
-      text += var.name + hdhC::colon + hdhC::tf_assign(n_formula_terms, var.attValue[att_ft_ix][0]) ;
+      std::string text("found ") ;
+      text += hdhC::tf_att(var.name, n_standard_name, var.attValue[att_sn_ix][0]) + " vs. " ;
+      text += hdhC::tf_att(var.name,n_formula_terms, var.attValue[att_ft_ix][0]) ;
 
       (void) notes->operate(capt, text) ;
       notes->setCheckStatus( n_CF, fail );
@@ -6042,7 +6042,7 @@ CF::chap432_verify_FT(
              capt += hdhC::tf_val(paramVarUnits[k].first, hdhC::blank);
              capt += "should be identical, found";
              capt += hdhC::tf_val(paramVarUnits[0].second, hdhC::blank) ;
-             capt += "and" ;
+             capt += "vs." ;
              capt += hdhC::tf_val(paramVarUnits[k].second) ;
 
              (void) notes->operate(capt) ;
