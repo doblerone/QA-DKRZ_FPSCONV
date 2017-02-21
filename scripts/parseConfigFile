@@ -110,9 +110,14 @@ updateConfFile()
        if [ ${uCF_lines[i]%=*} = ${param_name} ] ; then
 
          if [ "${param}" = "${param_name}" ] ; then
-           # read value from the config file and set variable
-           eval ${uCF_lines[i]}
-           retVal=0
+           if [ "${uCF_lines[i]#*=}" = disable ] ; then
+             # disable
+             retVal=1
+           else
+             # read value from the config file and set variable
+             eval ${uCF_lines[i]}
+             retVal=0
+           fi
          elif [ ${uCF_lines[i]} = ${param} ] ; then
            if [ ${param_value} = disable ] ; then
              # disable

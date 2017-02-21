@@ -511,6 +511,14 @@ cd $QA_HOME &> /dev/null
 # search for updates only once a day
 today=$( date '+%Y%m%d' )
 
+# Note that CF may-be stand-alone or together with another project
+. $QA_SRC/scripts/parseConfigFile CF_LAST_UPDATE
+if [ ! \( "${CF_LAST_UPDATE}" = $today -a ${isForceUp:-f} = f \) ] ; then
+   if cf ; then
+     . $QA_SRC/scripts/parseConfigFile CF_LAST_UPDATE=$today
+   fi
+fi
+
 . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE
 eval pLU=\$${prj}_LAST_UPDATE
 
@@ -522,8 +530,6 @@ elif [ "$prj" = CMIP6 ] ; then
   cmip6
 fi
 
-# Note that CF may-be stand-alone or together with another project
-cf
 
 if [ ${#err[*]} -gt 0 ] ; then
    for(( k=0 ; k < ${#err[*]} ; ++k )) ; do

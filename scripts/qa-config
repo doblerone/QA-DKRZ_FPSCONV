@@ -124,7 +124,7 @@ checkTools()
     fi
   fi
 
-  if [ ! -x ${QA_SRC}/bin/qa-${PROJECT_AS}.x ] ; then
+  if [ ! -x ${QA_SRC}/bin/qA-${PROJECT_AS}.x ] ; then
     isExit=t ;
     std_out "Executable ${QA_SRC}/bin/qa-${PROJECT_AS}.x not available."
     std_out "Please, run: ${QA_SRC}/install ${PROJECT_AS}"
@@ -1857,20 +1857,46 @@ tr_option()
 
   local line="${!1}"
 
+  if [ "${2}" ] ; then
+    if [ ${#2} -eq 2 -a ${2:0:1} = '-' ] ; then
+       # $2 indicates that this is the value of a ordinary option
+       # in this case a value not of the form key=val is considered a value.
+       local isOO=t
+    fi
+  fi
+
+  local i pref
+  for(( i=0 ; i < ${#line} ; ++i )) ; do
+    if [ ${line:i:1} != - ] ; then
+      line=${line:i}
+      break
+    else
+      pref="${pref}-"
+    fi
+  done
+
   local sz i
   local sz=${#line}
+
+  if [ ${sz} -eq 1 -a ${#pref} -eq 1 ] ; then
+     test ${DEBUG_CONF} && voidX
+     return
+  fi
+
   for((i=0 ; i < sz ; ++i )) ; do
     test "${line:i:1}" = '=' && break
   done
 
   if [ ${i} -eq ${sz} ] ; then
-    if [ ${i} -eq 2 -a ${line:0:1} = '-' ] ; then
-      test ${DEBUG_CONF} && voidX
-      return
-    else
-      line=$( echo "${line/% /}" | tr "[:lower:]" "[:upper:]" )
-      line=${line:0:1}$( echo "${line:1}" | tr "-" "_" )
+    if [ ${isOO:-f} = t ] ; then
+       # it is a value
+       test ${DEBUG_CONF} && voidX
+       return
     fi
+
+    # var-name without any value
+    line=$( echo "${line/% /}" | tr "[:lower:]" "[:upper:]" )
+    line=${line:0:1}$( echo "${line:1}" | tr "-" "_" )
   else
     local tmp0="${line:0:i}"
     tmp0="${tmp0//QC/QA}"
@@ -1879,7 +1905,8 @@ tr_option()
     line="${tmp0}""${line:i}"
   fi
 
-  eval ${1}=\${line}
+# test "${pref}" = '--' && pref=
+  eval ${1}=\${pref}\${line}
 
   test ${DEBUG_CONF} && voidX
   return
@@ -1945,9 +1972,12 @@ umask 002
 # Case-insensitive, and also for LOCK.
 
 declare -a arg
+prev_opt=none
 
 for(( i=1 ; i <= $# ; ++i )) ; do
   item=${!i}
+  tr_option item $prev_opt
+  prev_opt=${item}
 
   if [ ${item:0:2} = '-E' ] ; then
     if [ ${item} = '-E' ] ; then
@@ -2027,7 +2057,7 @@ do
         elif [ "${OPTARG}" = EXAMPLE ] ; then
           setKWL QA_EXAMPLE=t
 
-        elif [ "${OPTARG%%=*}" = HOME ] ; then
+        elif [ "${OPTARG%%=*}" = HOME -o "${OPTARG%%=*}" = QA_HOME ] ; then
            setKWL QA_HOME=${OPTARG#*=}
            installArgs+="--QA_HOME=${QA_HOME},"
 
@@ -2071,7 +2101,7 @@ test ${QA_CONFS} && setKWL QA_CONF=${QA_CONFS}
 
 # look for multiple occurrences; pass command-line notes as parameter
 for(( i=0 ; i < ${#comLine[*]} ; ++i )) ; do
-  cL=${comLine[i]:3}
+  cL=${comLine[i]}
   test ! ${cL} && continue
 
   tr_option cL
@@ -2155,16 +2185,24 @@ do
           installArgs+="--set_default_project=${OPTARG#*=},"
 
         elif [ "${OPTARG:0:2}" = UP ] ; then
-          setKWL UPDATE=t
-          installArgs+="--up,"
+          OPTVAL=${OPTARG#*=}
+          if [ "${OPTVAL}" = no -o "${OPTVAL:0:1}" = f -o "${OPTVAL:0:1}" = d ] ; then
+            OPTVAL=f
+          else
+            OPTVAL=t
+          fi
+
+          setKWL UPDATE=${OPTVAL}
+          installArgs+="--up=${OPTVAL},"
 
         elif [ "${OPTARG:0:4}" = WORK ] ; then
           : # done before
 
         else
-          echo "invalid option --${OPTARG}" >> /dev/stderr
+          :
+#         echo "invalid option --${OPTARG}" >> /dev/stderr
 #          descript
-          exit 1
+#         exit 1
         fi
         ;;
    \?)  #descript
@@ -2183,11 +2221,13 @@ test ${DATA_ROOT_FS} && setKWL PROJECT_DATA=${DATA_ROOT_FS}
 if [ $# -gt 0 ] ; then
   # any valid files specified on the command-line
   for f in $* ; do
-     if [ ${f:0:1} != '/' ] ; then
-        # just a (relative) filename on the command-line
-        sl_args=( ${sl_args[*]} $(pwd)/${f} )/
-     else
-        sl_args=( ${sl_args[*]} ${f} )
+     if [ -f ${f} ] ; then
+       if [ ${f:0:1} = '/' ] ; then
+          sl_args[${#sl_args[*]}]=${f}
+       else
+          # just a (relative) filename on the command-line
+          sl_args[${#sl_args[*]}]=$(pwd)/${f} 
+       fi
      fi
 
   done

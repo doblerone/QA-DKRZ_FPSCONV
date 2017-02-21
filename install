@@ -527,7 +527,11 @@ do
           DEF_PRJ=${OPTVAL}
           continue
         elif [ "${UOPTARG:0:2}" = UP ] ; then
-          isUpdate=t
+          if [ "${OPTVAL}" = no -o "${OPTVAL:0:1}" = f -o "${OPTVAL:0:1}" = d ] ; then
+            isUpdate=f
+          else
+            isUpdate=t
+          fi
         elif [ "${OPTNAME}" = HDF5 ] ; then
           hdf5=${OPTVAL}
         elif [ "${OPTNAME}" = NETCDF ] ; then
@@ -597,12 +601,12 @@ fi
 
 test ! "$project" && project=(${DEFAULT_PROJECT#*=})
 
-if [ "${AUTO_UPDATE}" ] ; then
-  if [ "${AUTO_UPDATE:0:1}" = e ] ; then
+test "${UPDATE}" = t && isUpdate=t
+
+if [ ${AUTO_UPDATE} ] ; then
+  if . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=${AUTO_UPDATE} ; then
     isUpdate=t
   fi
-
-  . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=${AUTO_UPDATE}
 elif . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE ; then
   isUpdate=t
 fi

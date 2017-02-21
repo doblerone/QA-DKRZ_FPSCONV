@@ -1302,24 +1302,6 @@ getAllExps()
   exec 0<&9 9<&-
 }
 
-getCF_STD_NAME()
-{
-  local p
-  p=${QA_SRC}/tables/projects/CF
-
-  local name=cf-standard-name-table.xml
-
-  # a short-cut. It is not necessary to poll pcmdi each call.
-  if [ ${REFRESH_CF_STANDARD:-f} = t ] ; then
-    wget --tries=3 -q -N --no-use-server-timestamps \
-      --directory-prefix=$p \
-      http://cf-pcmdi.llnl.gov/documents/cf-standard-names/standard-name-table/current/${name} \
-      &> /dev/null
-  fi
-
-  return
-}
-
 getDateRange()
 {
 
@@ -2757,9 +2739,11 @@ init()
   fi
 
   # package update requested and required?
-  if . $QA_SRC/scripts/parseConfigFile \
+  if [ ! ${UPDATE} ] ; then
+    if . $QA_SRC/scripts/parseConfigFile \
          AUTO_UPDATE${AUTO_UP:+=}${AUTO_UP} ; then
-    UPDATE=t
+      UPDATE=t
+    fi
   fi
 
   if [ ${UPDATE:-f} = t ] ; then
@@ -4120,18 +4104,18 @@ rmConsistTableEntry()
 initExample()
 {
   # for running an example for CORDEX
-    if [ "${WORK}" ] ; then
-      setKWL EXAMPLE_PATH=${WORK}
+    if [ "${QA_HOME}" ] ; then
+      setKWL EXAMPLE_PATH=${QA_HOME}/example
+      example_args[${#example_args[*]}]="--up=no"
     else
       setKWL EXAMPLE_PATH=$(pwd)/example
+      setKWL QA_HOME=${EXAMPLE_PATH}
     fi
 
     if [ ! "${QA_RESULTS}" ] ; then
       setKWL QA_RESULTS=${EXAMPLE_PATH}/results
       example_args[${#example_args[*]}]="-E_QA_RESULTS=${QA_RESULTS}"
     fi
-
-    test ! ${QA_HOME} && setKWL QA_HOME=${EXAMPLE_PATH}
 
     example_args[${#example_args[*]}]='-m -f qa-test.task'
 
@@ -5097,6 +5081,7 @@ tr_option()
     line="${tmp0}""${line:i}"
   fi
 
+  test "${pref}" = '--' && pref=
   eval ${1}=\${pref}\${line}
 
   return
@@ -5192,35 +5177,39 @@ if tty -s ; then TTY=$(tty) ; fi
 QA_CONFIG=qa-config
 QA_FILE_EXECUTER=qa-exec-check
 
-if ! which git &> /dev/null || ! which wget &> /dev/null ; then
-  UPDATE=disable
-fi
-
 rootPID=$$
 
 for OPTARG in $* ; do
-  UOPTARG=${OPTARG}
-  tr_option UOPTARG $prev_opt
-
-  if [ ${UOPTARG} = DEBUG -o ${UOPTARG} = DEBUG_M ] ; then
-     set -x
-  elif [ "${UOPTARG}" = EXAMPLE ] ; then
-    setKWL QA_EXAMPLE=t
-  elif [ ${UOPTARG%%=*} = QA_CONFIG ] ; then
-     setKWL QA_CONFIG==${OPTARG#*=}
-  elif [ ${UOPTARG%%=*} = QA_HOME ] ; then
-     setKWL QA_HOME=${OPTARG#*=}
-  elif [ ${UOPTARG%%=*} = QA_SRC ] ; then
-    setKWL QA_SRC=${OPTARG#*=}
-  elif [ ${UOPTARG%%=*} = WORK ] ; then
-     setKWL WORK=${OPTARG#*=}
+  if [ ${OPTARG:0:2} = '-E' -o ${OPTARG:0:2} = '-e' ] ; then
+     optargs=( ${OPTARG/_/ } )
+  else
+     optargs=( ${OPTARG} )
   fi
 
-  uu_opts[${#uu_opts[*]}]=${UOPTARG}
-  prev_opt=${UOPTARG}
+  for UOPTARG in ${optargs[*]} ; do
+
+    tr_option UOPTARG $prev_opt
+
+    if [ ${UOPTARG} = DEBUG -o ${UOPTARG} = DEBUG_M ] ; then
+       set -x
+    elif [ "${UOPTARG}" = EXAMPLE ] ; then
+      QA_EXAMPLE=t
+    elif [ ${UOPTARG%%=*} = QA_CONFIG ] ; then
+      QA_CONFIG==${OPTARG#*=}
+    elif [ ${UOPTARG%%=*} = QA_HOME ] ; then
+      QA_HOME=${OPTARG#*=}
+    elif [ ${UOPTARG%%=*} = QA_SRC ] ; then
+      QA_SRC=${OPTARG#*=}
+    elif [ ${UOPTARG%%=*} = WORK ] ; then
+      QA_HOME=${OPTARG#*=}
+    fi
+
+    uu_opts[${#uu_opts[*]}]=${UOPTARG}
+    prev_opt=${UOPTARG}
+  done
 done
 
-init ${uu_opts[*]}
+init $*
 
 test ${FLOW_TRACE:-f} = t && traceCalibration
 
