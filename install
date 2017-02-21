@@ -18,63 +18,6 @@ export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
 #   PROJECT_TABLES: Project related tables and programs; PROJECT substituted by
 #                   current project name(s).
 
-AUTO_OPTS=( CMOR3_LLNL \
-            CONDA_FOR_CMOR3 \
-            PROJECT_TABLES \
-          )
-
-auto_up()
-{
-  local key param name value
-
-  # strip the 'auto=' prefix
-  local param="${1%%=*}"
-  if [ "${arg:0:4}" = AUTO ] ; then
-    param=${1#*=}
-  fi
-
-  local csl
-  declare -a csl
-  csl=( ${param//,/ } )
-
-  local isForAll=f
-
-  for param in ${csl[*]} ; do
-    value=${param#*=}
-    name=${param%=*}
-
-    if [ ${value} = ${param} -o ${value:0:1} = e ] ; then
-      value=enable
-    elif [ ${value:0:1} = d ] ; then
-      value=disable
-    fi
-
-    for key in ${AUTO_OPTS[*]} ; do
-       if [ ${key} = ${name} ] ; then
-         . ${QA_SRC}/scripts/parseConfigFile AUTO-UP_${name}=${value}
-         continue 2  # skip the is-for-all part
-       fi
-    done
-
-    # not a particular one, thus apllicable to all
-    if [ ${#csl[*]} -gt 1 ] ; then
-      echo "ambiguous auto-option. Please, check the command-line. EXIT"
-      exit 1
-    fi
-
-    isForAll=t
-    break
-  done
-
-  if [ ${isForAll} = t ] ; then
-    for key in ${AUTO_OPTS[*]} ; do
-       . ${QA_SRC}/scripts/parseConfigFile AUTO-UP_${key}=${value}
-    done
-  fi
-
-  return 0
-}
-
 descript()
 {
   echo "Usage: install [options] [project[s]]"
@@ -89,7 +32,7 @@ descript()
   echo "  --auto-up         Enable automatic updates from the repository at the"
   echo "                    beginning of a run. Suspended by --auto-up=d[isable]."
   echo "                    Enabled initially by default."
-  echo "  --conda-update    Update the qa-dkrz package by conda."
+  echo "  --conda-update    Update the qa-dkrz package when istalled by conda."
   echo "  --build           Download and build required libraries."
   echo "  --debug[=script]  Display execution commands. If the name of a script"
   echo "                    is assigned, then debug only this one."
@@ -397,8 +340,8 @@ update_external()
   test ${isInternet:-t} = f && return
 
   if ! . ${QA_SRC}/scripts/parseConfigFile QA_LAST_UPDATE=${today} \
-        || [ ${isUpdateQA:-f} = t ]; then
-    if [ ${isCondaUpdate:-f} = t -a -w "${QA_SRC}" ] ; then
+        || [ ${isUpdate:-f} = t ]; then
+    if [ ${isCondaBuild:-f} = t -a -w "${QA_SRC}" ] ; then
       # look for a new conda-built package
 #      local tmp
 #      declare -a tmp
@@ -415,6 +358,7 @@ update_external()
           getRevNum packRev
 
           exitVal=101
+          isInternet=f  # this blocks getting sources from GitHun
 #          break
 #        fi
 #      done
@@ -428,9 +372,9 @@ update_external()
     # check it here in order to prevent an update of the config-file in case
     # that the installation failed or war terminated.
     . ${QA_SRC}/scripts/parseConfigFile ${prj}_LAST_UPDATE
-    eval lastUpdate=\${prj}_LAST_UPDATE
+    eval lastUpdate=\$${prj}_LAST_UPDATE
 
-    if [ "${lastUpdate}" != ${today} -o ${isUpdateQA:-f} = t ]; then
+    if [ "${lastUpdate}" != ${today} -o ${isUpdate:-f} = t ]; then
        . ${QA_SRC}/scripts/get_externalSources \
            -P $prj --qa_src=${QA_SRC} \
            --qa_home=${QA_HOME} --config_file=${CONFIG_FILE} \
@@ -440,8 +384,6 @@ update_external()
 
        . ${QA_SRC}/scripts/parseConfigFile ${prj}_LAST_UPDATE=${today}
     fi
-
-    test "${PROJECT_AS}" && break
   done
 
   return
@@ -451,7 +393,7 @@ update_QA()
 {
   if [ ${isInternet:-t} = t ] ; then
     if ! . ${QA_SRC}/scripts/parseConfigFile QA_LAST_UPDATE=${today} \
-          || [ ${isUpdateQA:-f} = t ]; then
+          || [ ${isUpdate:-f} = t ]; then
       if [ ! -f ${QA_SRC}/.ignore_GitHub ] ; then
         cd ${QA_SRC}
 
@@ -538,18 +480,26 @@ do
     -)  OPTVAL=${OPTARG##*=}
         OPTNAME=${UOPTARG%%=*}
 
-        if [ "${UOPTARG:0:4}" = AUTO ] ; then
-          autoUpArgs[${#autoUpArgs[*]}]=$UOPTARG
+        if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
+          au_arg=$( echo "${UOPTARG#*=}" | tr "[:lower:]" "[:upper:]" )
+          if [ ${au_arg} = AUTO_UP -o ${au_arg:0:1} = E -o ${au_arg:0:1} = T ] ; then
+             au_arg=enable
+          elif [ ${au_arg:0:1} = D -o ${au_arg:0:1} = F ] ; then
+             au_arg=disable
+          fi
+          AUTO_UPDATE=${au_arg}
+          continue
+
         elif [ "${OPTNAME}" = BUILD ] ; then
           isBuild=t
         elif [ "${OPTNAME}" = CONDA_BUILD ] ; then
-          isCondaBuild=f
+          isCondaBuild=t
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
           DEBUG='--debug'
           set -x
         elif [ "${OPTNAME}" = FORCE_UPDATE ] ; then
           isForceUp=t
-          isUpdateQA=t
+          isUpdate=t
         elif [ "${OPTNAME}" = GET_TABLES ] ; then
           GET_TABLES=t
         elif [ "${OPTNAME}" = HELP ] ; then
@@ -559,7 +509,7 @@ do
           QA_HOME=${OPTVAL}
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
           isLink=t
-        elif [ "${UOPTARG}" = CONDA_UPDATE ] ; then
+        elif [ "${UOPTARG:0:8}" = CONDA_UP -o "${UOPTARG}" = UPDATE_CONDA ] ; then
           isCondaUpdate=t
         elif [ "${UOPTARG}" = NO_INTERNET ] ; then
           isInternet=f
@@ -577,7 +527,7 @@ do
           DEF_PRJ=${OPTVAL}
           continue
         elif [ "${UOPTARG:0:2}" = UP ] ; then
-          isUpdateQA=t
+          isUpdate=t
         elif [ "${OPTNAME}" = HDF5 ] ; then
           hdf5=${OPTVAL}
         elif [ "${OPTNAME}" = NETCDF ] ; then
@@ -637,10 +587,6 @@ mkdir -p ${HOME}/.qa-dkrz
 getSrcPath $zeroArg  # sets also CONDA_ENV
 getHomePath
 
-#if [ "${autoUpArgs}" ] ; then
-#  auto_up ${autoUpArgs[*]}
-#fi
-
 if ! . ${QA_SRC}/scripts/parseConfigFile \
              DEFAULT_PROJECT${DEF_PRJ:+=}${DEF_PRJ} ; then
   # get or set value.
@@ -651,7 +597,17 @@ fi
 
 test ! "$project" && project=(${DEFAULT_PROJECT#*=})
 
-test ${isCondaBuild:-t} = t && update
+if [ "${AUTO_UPDATE}" ] ; then
+  if [ "${AUTO_UPDATE:0:1}" = e ] ; then
+    isUpdate=t
+  fi
+
+  . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=${AUTO_UPDATE}
+elif . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE ; then
+  isUpdate=t
+fi
+
+test ${isUpdate:-f} = t && update
 
 test ${CONDA_ENV} && exit  # miniconda built executables
 

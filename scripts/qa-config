@@ -124,6 +124,12 @@ checkTools()
     fi
   fi
 
+  if [ ! -x ${QA_SRC}/bin/qa-${PROJECT_AS}.x ] ; then
+    isExit=t ;
+    std_out "Executable ${QA_SRC}/bin/qa-${PROJECT_AS}.x not available."
+    std_out "Please, run: ${QA_SRC}/install ${PROJECT_AS}"
+  fi
+
   # all machines must share the same file system
 
   # invoke execution paths
@@ -429,16 +435,6 @@ displayComLineOptions()
       TRADITIONAL_SUMMARY   Former bash-based summary.
       REFRESH_CF_STANDARD   wget original sources from PCMDI into QA-DKRZ/tables.
       REUSE_PATH_LIST       Use a path-list left previously for a resumed session.
-      CHECK_PERMISSION[=str]  Test whether directories and/or files are writable (w),
-                            readable(r), or executable(x) and are applied to user (u),
-                            to group (g), and/or to other (o) permissions; a=ugo.
-                            Note that ugo are combined by OR. Examples:
-                              a) a or ugo is equivalent to u+r,g+r0,o+r
-                              b) u+w,go+r equiv. to u+w,g+r,o+r
-                              c) u+x,o,g+w equiv. to u+x,g+w,o+r
-                              d) by default: u+r,g+r,o+r
-                            Simple usage for checking readability for all:
-                               qa-dkrz -e_project_data=path -e_check_permission
 "
 
   test $# -eq 0 && return
@@ -2122,9 +2118,15 @@ do
         setKWL DEBUG_EXECUTOR=t
         ;;  # already done for this script
     -)  if [ "${OPTARG:0:7}" = AUTO_UP ] ; then
-          setKWL AUTO_UP=t
-          setKWL UPDATE=t
-          installArgs+="--auto-up=${OPTARG#*=},"
+          au_arg=${OPTARG#*=}
+          if [ ${au_arg} = AUTO_UP -o ${au_arg:0:1} = E -o -o ${au_arg:0:1} = T ] ; then
+             au_arg=enable
+             setKWL AUTO_UP=t
+             setKWL UPDATE=t
+          elif [ ${au_arg:0:1} = D -o ${au_arg:0:1} = F ] ; then
+             au_arg=disable
+          fi
+          installArgs+="--auto-up=${au_arg},"
 
         elif [ "${OPTARG:0:5}" = DEBUG ] ; then
           : # done before

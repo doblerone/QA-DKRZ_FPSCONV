@@ -535,4 +535,4 @@ fi
 
 . $QA_SRC/scripts/parseConfigFile ${prj}_LAST_UPDATE=${today}
 
-exit 0
+return 0
