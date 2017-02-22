@@ -6,7 +6,7 @@
 
 # return 0 for a match between provided parameter=value and config file
 #          or an enabled one.
-# return 1 for a new parameter, a mismatch, disable, or a set variable.
+# return 1 for a new/updated parameter, a mismatch, disable, a set variable, or not defined.
 
 readCF()
 {
@@ -91,6 +91,16 @@ readCF()
    return 0
 }
 
+show_lines()
+{
+  local i retVal
+  for(( i=0 ; i < ${#uCF_lines[*]} ; ++i )) ; do
+       echo ${uCF_lines[i]}
+  done
+
+  return
+}
+
 updateConfFile()
 {
    # check items
@@ -98,9 +108,12 @@ updateConfFile()
    local param_name=${param%=*}
    local param_value=${param#*=}
 
-   if [ "${param_value}" = d ] ; then
+   if [ "${param_value:0:1}" = d -o "${param_value:0:1}" = f ] ; then
        param=${param_name}=disable
        param_value=disable
+   elif [ "${param_value:0:1}" = t ] ; then
+       param=${param_name}=enable
+       param_value=enable
    elif [ "${param_value}" = ${param_name} ] ; then
        param_value=
    fi
@@ -110,25 +123,36 @@ updateConfFile()
        if [ ${uCF_lines[i]%=*} = ${param_name} ] ; then
 
          if [ "${param}" = "${param_name}" ] ; then
+           # request
            if [ "${uCF_lines[i]#*=}" = disable ] ; then
-             # disable
+             eval ${param_name}=f
              retVal=1
+           elif [ "${uCF_lines[i]#*=}" = enable ] ; then
+             eval ${param_name}=t
+             retVal=0
            else
              # read value from the config file and set variable
              eval ${uCF_lines[i]}
              retVal=0
            fi
          elif [ ${uCF_lines[i]} = ${param} ] ; then
+           # comparison
            if [ ${param_value} = disable ] ; then
              # disable
+             eval ${param_name}=f
              retVal=1
-           else
+           elif [ ${param_value} = enable ] ; then
              # enable or unchanged (matched).
+             eval ${param_name}=t
+             retVal=0
+           else
+             # match
              retVal=0
            fi
          elif [ "${param_value}" ] ; then
            lineNum=$((uCF_blkBeg+i+1))
            sed -i "${lineNum} c${param}" $CONFIG_FILE &> /dev/null
+           uCF_lines[i]="${param_name}=${param_value}"
            retVal=1
          fi
 
@@ -162,6 +186,11 @@ if [ "$1" = '--force_reading' ] ; then
   unset uCF_lines
   unset uCF_blkBeg
 fi
+
+#if [ "$1" = --show_lines ] ; then
+#  show_lines
+#  return
+#fi
 
 test ! -f ${CONFIG_FILE} && touch ${CONFIG_FILE}
 

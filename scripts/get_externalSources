@@ -491,9 +491,9 @@ do
 #           set -x
        elif [ ${OPTARG} == 'force-update' ] ; then
          isForceUp=t
-       elif [ ${OPTARG%=*} = "qa_home" ] ; then
+       elif [ ${OPTARG%=*} = "qa-home" ] ; then
          QA_HOME=${OPTARG#*=}
-       elif [ ${OPTARG%=*} = "qa_src" ] ; then
+       elif [ ${OPTARG%=*} = "qa-src" ] ; then
          QA_SRC=${OPTARG##*=}
        fi
        ;;

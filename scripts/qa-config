@@ -1976,21 +1976,22 @@ prev_opt=none
 
 for(( i=1 ; i <= $# ; ++i )) ; do
   item=${!i}
-  tr_option item $prev_opt
-  prev_opt=${item}
+  ITEM=${item}
+  tr_option ITEM $prev_opt
+  prev_opt=${ITEM}
 
-  if [ ${item:0:2} = '-E' ] ; then
-    if [ ${item} = '-E' ] ; then
+  if [ ${ITEM:0:2} = '-E' ] ; then
+    if [ ${ITEM} = '-E' ] ; then
        # opt-arg is space separated
        arg[${#arg[*]}]='-E'
-    elif [ ${item:0:3} = '-E_' ] ; then
+    elif [ ${ITEM:0:3} = '-E_' ] ; then
        # opt-arg is underscore separated
        arg[${#arg[*]}]='-E'
-       arg[${#arg[*]}]="${item:3}"
+       arg[${#arg[*]}]="${ITEM:3}"
     else
        # opt-arg is aligned to -E
        arg[${#arg[*]}]='-E'
-       arg[${#arg[*]}]="${item:2}"
+       arg[${#arg[*]}]="${ITEM:2}"
     fi
 
     j=$(( ${#arg[*]} -1 ))
@@ -2000,7 +2001,7 @@ for(( i=1 ; i <= $# ; ++i )) ; do
       # overwrite last arg, i.e. '-E'
       if [ ${arg[j]#*=} != ${arg[j]} ] ; then
          arg[j0]="-${arg[j]:0:1}"
-         arg[j]="${item#*=}"  # prefixed by -S or -L followed by arg
+         arg[j]="${ITEM#*=}"  # prefixed by -S or -L followed by arg
       fi
     fi
 
@@ -2016,20 +2017,26 @@ fi
 # stage 0: scan for configuration files etc.
 while getopts :d:D:e:E:f:hmP:QqL:S:s:T:Vx-: option
 do
+  UOPTARG="${OPTARG}"
+  tr_option UOPTARG
+
+  OPTNAME=${UOPTARG%%=*}
+  OPTVAL=${OPTARG#*=}
+
   case $option in
-  e|E)  if [ ${OPTARG%%=*} = 'CONDA_ENV' ] ; then
-          setKWL CONDA_ENV=${OPTARG#*=}
-        elif [ ${OPTARG:0:7} = 'DEBUG_C' ] ; then
+  e|E)  if [ ${OPTNAME} = 'CONDA_ENV' ] ; then
+          setKWL CONDA_ENV=${OPTVAL}
+        elif [ ${OPTNAME:0:7} = 'DEBUG_C' ] ; then
           DEBUG_CONF=t
           set -x
-        elif [ ${OPTARG%%=*} = 'PROJECT=' ] ; then
+        elif [ ${OPTNAME} = 'PROJECT=' ] ; then
           setKWL ${OPTARG}
-        elif [ ${OPTARG%%=*} = 'QA_CONFIG' ] ; then
-          localQAC=${OPTARG#*=}
-        elif [ ${OPTARG%%=*} = 'QA_HOME' ] ; then
-          setKWL QA_HOME=${OPTARG#*=}
-        elif [ ${OPTARG%%=*} = 'QA_SRC' ] ; then
-          setKWL QA_SRC=${OPTARG#*=}
+        elif [ ${OPTNAME} = 'QA_CONFIG' ] ; then
+          localQAC=${OPTVAL}
+        elif [ ${OPTNAME} = 'QA_HOME' ] ; then
+          setKWL QA_HOME=${OPTVAL}
+        elif [ ${OPTNAME} = 'QA_SRC' ] ; then
+          setKWL QA_SRC=${OPTVAL}
         fi
         ;;
     f)  if [ -f ${OPTARG} ] ; then
@@ -2048,21 +2055,21 @@ do
     -)  if [ "$OPTARG" = help ] ; then
            isHelp=t
 
-        elif [ "${OPTARG}" = DEBUG ] ; then
+        elif [ "${OPTNAME}" = DEBUG ] ; then
           set -x
           installArgs+="--debug,"
           setKWL DEBUG_MANAGER
         DEBUG_CONF=t
 
-        elif [ "${OPTARG}" = EXAMPLE ] ; then
+        elif [ "${OPTNAME}" = EXAMPLE ] ; then
           setKWL QA_EXAMPLE=t
 
-        elif [ "${OPTARG%%=*}" = HOME -o "${OPTARG%%=*}" = QA_HOME ] ; then
-           setKWL QA_HOME=${OPTARG#*=}
+        elif [ "${OPTNAME}" = HOME -o "${OPTNAME}" = QA_HOME ] ; then
+           setKWL QA_HOME=${OPTVAL}
            installArgs+="--QA_HOME=${QA_HOME},"
 
-        elif [ "${OPTARG%%=*}" = WORK ] ; then
-           setKWL QA_RESULTS=${OPTARG#*=}
+        elif [ "${OPTNAME}" = WORK ] ; then
+           setKWL QA_RESULTS=${OPTVAL}
         fi
         ;;
    \?)  ;;
@@ -2121,12 +2128,17 @@ set -f
 unset OPTIND
 while getopts d:D:e:E:f:hmP:QqL:S:s:T:x-: option
 do
+  UOPTARG="${OPTARG}"
+  tr_option UOPTARG
+
+  OPTNAME=${UOPTARG%%=*}
+  OPTVAL=${OPTARG#*=}
 
   case $option in
     d|D) # disable previously enabled options
-         unsetKWL ${OPTARG} ;;
+         unsetKWL ${OPTNAME} ;;
     e|E) # Enable features or set parameters
-         test ${OPTARG:0:7} != 'DEBUG_C' && parseOPTARG ${OPTARG}
+         test ${OPTNAME:0:7} != 'DEBUG_C' && parseOPTARG ${OPTARG}
          ;;
     f)  # already done
         ;;
@@ -2147,46 +2159,47 @@ do
     x)  setKWL DEBUG_MANAGER=t
         setKWL DEBUG_EXECUTOR=t
         ;;  # already done for this script
-    -)  if [ "${OPTARG:0:7}" = AUTO_UP ] ; then
-          au_arg=${OPTARG#*=}
-          if [ ${au_arg} = AUTO_UP -o ${au_arg:0:1} = E -o -o ${au_arg:0:1} = T ] ; then
-             au_arg=enable
+    -)  if [ "${OPTNAME:0:7}" = AUTO_UP ] ; then
+          tr_option OPTVAL
+
+          if [ ${OPTVAL} = AUTO_UP -o ${OPTVAL:0:1} = E -o ${OPTVAL:0:1} = T ] ; then
+             OPTVAL=enable
              setKWL AUTO_UP=t
              setKWL UPDATE=t
-          elif [ ${au_arg:0:1} = D -o ${au_arg:0:1} = F ] ; then
-             au_arg=disable
+          elif [ ${OPTVAL:0:1} = D -o ${OPTVAL:0:1} = F ] ; then
+             OPTVAL=disable
           fi
-          installArgs+="--auto-up=${au_arg},"
+          installArgs+="--auto-up=${OPTVAL},"
 
-        elif [ "${OPTARG:0:5}" = DEBUG ] ; then
+        elif [ "${OPTNAME:0:5}" = DEBUG ] ; then
           : # done before
-        elif [ "${OPTARG:0:7}" = EXAMPLE ] ; then
+        elif [ "${OPTNAME:0:7}" = EXAMPLE ] ; then
           : # done before
-        elif [ "${OPTARG:0:4}" = HOME ] ; then
+        elif [ "${OPTNAME:0:4}" = HOME ] ; then
           : # done before
 
-        elif [ "${OPTARG}" = CONDA_UPDATE ] ; then
+        elif [ "${OPTNAME}" = CONDA_UPDATE ] ; then
           installArgs+="--${OPTARG},"
 
-        elif [ "${OPTARG}" = NO_INTERNET ] ; then
+        elif [ "${OPTNAME:0:3}" = NET ] ; then
           installArgs+="--${OPTARG},"
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
-          if [ ${OPTARG} = ${OPTARG#*=} ] ; then
+          if [ ${OPTARG} = ${OPTVAL} ] ; then
             setKWL PROGRESS_BAR=t
           else
-            setKWL PROGRESS_BAR=${OPTARG#*=}  # file to write to
+            setKWL PROGRESS_BAR=${OPTVAL}  # file to write to
           fi
 
-        elif [ "${OPTARG%=*}" = PROJECT_AS ] ; then
-          setKWL PROJECT_AS=${OPTARG#*=}
+        elif [ "${OPTNAME%=*}" = PROJECT_AS ] ; then
+          setKWL PROJECT_AS=${OPTVAL}
 
-        elif [ "${OPTARG%=*}" = SET_DEFAULT_PROJECT ] ; then
-          installArgs+="--set_default_project=${OPTARG#*=},"
+        elif [ "${OPTNAME}" = SET_DEFAULT_PROJECT ] ; then
+          installArgs+="--set_default_project=${OPTVAL},"
 
-        elif [ "${OPTARG:0:2}" = UP ] ; then
-          OPTVAL=${OPTARG#*=}
-          if [ "${OPTVAL}" = no -o "${OPTVAL:0:1}" = f -o "${OPTVAL:0:1}" = d ] ; then
+        elif [ "${OPTNAME:0:2}" = UP ] ; then
+          OPTVAL=$( echo "${OPTVAL}" | tr "[:lower:]" "[:upper:]" )
+          if [ "${OPTVAL}" = NO -o "${OPTVAL:0:1}" = F -o "${OPTVAL:0:1}" = D ] ; then
             OPTVAL=f
           else
             OPTVAL=t
@@ -2195,7 +2208,7 @@ do
           setKWL UPDATE=${OPTVAL}
           installArgs+="--up=${OPTVAL},"
 
-        elif [ "${OPTARG:0:4}" = WORK ] ; then
+        elif [ "${OPTNAME:0:4}" = WORK ] ; then
           : # done before
 
         else
@@ -2226,7 +2239,7 @@ if [ $# -gt 0 ] ; then
           sl_args[${#sl_args[*]}]=${f}
        else
           # just a (relative) filename on the command-line
-          sl_args[${#sl_args[*]}]=$(pwd)/${f} 
+          sl_args[${#sl_args[*]}]=$(pwd)/${f}
        fi
      fi
 
