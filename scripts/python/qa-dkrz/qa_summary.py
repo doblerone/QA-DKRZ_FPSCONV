@@ -185,17 +185,19 @@ class LogSummary(object):
         pathPrefix=[]
         for jx in range(sz_jx_max):
             pathPrefix.append([])
-            for ix in range(annot_sz):
-                if jx < len(pItems[ix]):
-                    isBreak=False
-                    for i in range(len(pItems[ix][jx])):
-                        if pItems[ix][jx][i] == '*':
-                            isBreak=True
-                            break
-                        pathPrefix[jx].append(pItems[ix][jx][i])
 
-                    if isBreak:
-                        break
+            for ix in range(annot_sz):
+                for jx2 in range(sz_jx_max):
+                    if jx2 < len(pItems[ix]):
+                        isBreak=False
+                        for i in range(len(pItems[ix][jx])):
+                            if pItems[ix][jx][i] == '*':
+                                isBreak=True
+                                break
+                            pathPrefix[jx].append(pItems[ix][jx][i])
+
+                        if isBreak:
+                            break
 
         # common path; skip non-project prefix
         # col=0 for pItems[ix][0] == '', when applied from the beginning
