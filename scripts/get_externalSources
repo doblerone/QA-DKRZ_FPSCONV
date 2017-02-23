@@ -167,13 +167,6 @@ cmip6()
 {
    # pwd is QA_HOME
 
-   if ! . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3 ; then
-      # required for CMOR from LLNL
-     make_miniconda  # also set in .qa-dkrz/config.txt
-   elif [ ! -d ${CONDA_FOR_CMOR3} ] ; then
-     make_miniconda  # also set in .qa-dkrz/config.txt
-   fi
-
    if ! . $QA_SRC/scripts/parseConfigFile XLSX2CSV  ; then
      if ! xlsx2csv ; then
        return 1
@@ -182,6 +175,20 @@ cmip6()
 
    if ! cmip6_mip ; then
      return 1
+   fi
+
+   . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3
+
+   if [ $? -gt 0 ] ; then
+      if [ ${CONDA_PATH:-f} = t ] ; then
+        CONDA_FOR_CMOR3=${CONDA_PATH}
+        . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3=${CONDA_FOR_CMOR3}
+      else
+        # required for CMOR from LLNL; parseConfigFile is called in make_miniconda
+        if [ ${CONDA_FOR_CMOR3:-f} = f -o ! -d ${CONDA_FOR_CMOR3} ] ; then
+          make_miniconda
+        fi
+      fi
    fi
 
    if ! cmip6_cmor ; then
@@ -327,11 +334,6 @@ cordex()
    fi
 
    return
-}
-
-gPT_main()
-{
-  return 0
 }
 
 make_miniconda()

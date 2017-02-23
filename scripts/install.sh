@@ -473,7 +473,7 @@ makeProject()
 {
   PROJECT=$1
   local cxxFlags="${CXXFLAGS}"
-
+  local CXXFLAGS
   test "${PROJECT_AS}" && PROJECT=${PROJECT_AS}
 
   export PROJECT=$PROJECT

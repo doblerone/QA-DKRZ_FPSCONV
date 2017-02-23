@@ -61,9 +61,41 @@ getCondaPath()
   path=${path%/*}
 
   if ls ${path%/*}/conda-meta/qa-dkrz* &> /dev/null ; then
+    export CONDA_PATH=${path%/*}
     eval ${2}=${path}/qa-dkrz
-    export CONDA_ENV=t
 
+    # find the PreARE
+    local fs f i t t0
+    declare -a fs
+    fs=( $( find ${CONDA_PATH} -type f -name "PrePARE.py" ) )
+    if [ ${#fs[*]} -eq 0 ] ; then
+      echo "could not locate PrePARE.py; this is considered an error."
+      exit
+    elif [ ${#fs[*]} -eq 1 ] ; then
+      f=${fs[0]}
+    else
+      # find the youngest; there could be more than one of equal age
+      f=${fs[0]}
+      t=$( ls -l --time-style=+'%s' $f | awk '{print $6}' 2> /dev/null )
+
+      for(( i=1 ; i < ${#fs[*]} ; ++i )) ; do
+         t0=$( ls -l --time-style=+'%s' ${fs[i]} | awk '{print $6}' 2> /dev/null )
+         if [ ${t0} -gt ${t} ] ; then
+           f=${fs[i]}
+           t=$t0
+         fi
+      done
+    fi
+
+    if ! . ${QA_SRC}/scripts/parseConfigFile PrePARE ; then
+       . ${QA_SRC}/scripts/parseConfigFile PrePARE=${f}
+    fi
+
+    if ! . ${QA_SRC}/scripts/parseConfigFile CONDA_FOR_CMOR3 ; then
+       . ${QA_SRC}/scripts/parseConfigFile CONDA_FOR_CMOR3=${CONDA_PATH}
+    fi
+
+    exit
     return 0
   fi
 
@@ -117,7 +149,7 @@ getRevNum()
   local branch currIdent
   declare -a branch
 
-  if [ $CONDA_ENV ] ; then
+  if [ $CONDA_PATH ] ; then
     declare -a branch
     if branch=( $(cat ${QA_SRC}/install.log 2> /dev/null) ) ; then
       branch[0]=${branch[0]#*=}
@@ -507,7 +539,7 @@ done
 
 mkdir -p ${HOME}/.qa-dkrz
 
-getSrcPath $zeroArg  # sets also CONDA_ENV
+getSrcPath $zeroArg  # sets also CONDA_PATH
 getHomePath
 
 OPTIND=
@@ -661,7 +693,7 @@ fi
 
 update
 
-test ${CONDA_ENV} && exit  # miniconda built executables
+test ${CONDA_PATH} && exit  # miniconda built executables
 
 pcks="--zlib=$zlib --hdf5=$hdf5 --netcdf=$netcdf --udunits=$udunits"
 
