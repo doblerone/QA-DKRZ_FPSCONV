@@ -1,0 +1,109 @@
+getSrcPath()
+{
+  # extract the path to the root of the QA package
+
+  # is it in a conda built?
+  if . ${0%/*}/getCondaPath $0 ; then
+    return
+  fi
+
+  test ${QA_SRC} && return
+
+  local target isInvalid
+
+  if [ ${1:0:1} = '/' ] ; then
+    target=$1
+  else
+    target=$(pwd)/$1
+  fi
+
+  if [ -h $target ] ; then
+
+    # get the link
+    local link=$(ls -l $target | awk  '{print $(NF)}')
+
+    # link is relative, so make it absolute
+    test ${link:0:1} != '/' && link=${target%/*}/${link}
+
+
+    . ${0%/*}/getSrcPath $link
+
+  elif [ -f $target ] ; then
+
+    # a real instance, at first resolve .. and .
+    # works also for . or .. in the middle of the path
+
+    local xname=${target##*/}
+    target=${target%/*}  # remove the name of the script
+
+    local arr=( ${target//\// } )
+
+    local i j sz
+    sz=${#arr[*]}
+
+    for(( i=1 ; i < sz ; ++i )) ; do
+
+      if [ "${arr[i]}" = '.' ] ; then
+        unset arr[i]
+      elif [ "${arr[i]}" = '..' ] ; then
+        j=$((i-1))
+
+        # this takes into account adjacent . and/or .. with any depth
+        while [ ! ${arr[j]} ] ; do
+          j=$((j-1))
+        done
+        unset arr[j]
+        unset arr[i]
+      fi
+    done
+
+    # get rid of empty items
+    arr=( ${arr[*]} )
+
+    sz=${#arr[*]}
+
+    local tmp
+    for(( i=0 ; i < sz ; ++i )) ; do
+      tmp=${tmp}/${arr[i]}
+
+      if [ -f ${tmp}/.install_configure ] ; then
+        # final check
+        if [ ! -e $tmp/install ] ; then
+           echo "$tmp is not QA_SRC; EXIT"
+           exit 1
+        fi
+
+        export QA_SRC=$tmp
+        break
+      fi
+    done
+
+    test $i -eq $sz && isInvalid=t
+  else
+    isInvalid=t
+  fi
+
+  if [ ${isInvalid:-f} = t ] ; then
+
+    local str=$(ls -l $target 2> /dev/null | awk  '{print $(NF)}')
+
+    if [ ${#str} -gt 0 ] ; then
+      str="invalid path=${0}"
+    else
+      str="broken path=${0}"
+    fi
+
+    echo "${str}"
+
+    exit 1
+  fi
+
+  export QA_SRC=${QA_SRC}
+
+  return
+}
+
+# main
+getSrcPath $*
+
+
