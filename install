@@ -562,9 +562,13 @@ for pck in $* ; do
 done
 
 THIS=${0%/*}
-cd ${THIS} &> /dev/null
-THIS=$(pwd)
-cd - &> /dev/null
+if [ ${THIS} != $0 ] ; then
+  cd ${THIS} &> /dev/null
+  THIS=$(pwd)
+  cd - &> /dev/null
+else
+  THIS=$(pwd)
+fi
 
 test ${THIS##*/} = scripts && THIS=${THIS%/*}
 
