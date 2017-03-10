@@ -352,6 +352,17 @@ update_QA_SRC()
 
 # ----- main ------
 
+THIS=${0%/*}
+if [ ${THIS} != $0 ] ; then
+  cd ${THIS} &> /dev/null
+  THIS=$(pwd)
+  cd - &> /dev/null
+else
+  THIS=$(pwd)
+fi
+
+test ${THIS##*/} = scripts && THIS=${THIS%/*}
+
 zeroArg=$0
 allArgs=($*)
 
@@ -560,17 +571,6 @@ for pck in $* ; do
     projects[${#projects[*]}]=$pck
   fi
 done
-
-THIS=${0%/*}
-if [ ${THIS} != $0 ] ; then
-  cd ${THIS} &> /dev/null
-  THIS=$(pwd)
-  cd - &> /dev/null
-else
-  THIS=$(pwd)
-fi
-
-test ${THIS##*/} = scripts && THIS=${THIS%/*}
 
 # resolve symbolic links
 . ${THIS}/scripts/getSrcPath
