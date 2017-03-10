@@ -2,28 +2,38 @@
 
 package=QA-DKRZ
 
+export CONDA_CMOR_CHANNELS='-c,conda-forge,-c,pcmdi,-c,uvcdat'
+export CONDA_QA_CHANNELS='-c,birdhouse,-c,conda-forge,--channel birdhouse/label/dev'
+
+export CONDA_QA_ENV
+export CONDA_CMOR_ENV
+
+export CONDA_QA_NAME=qa-dkrz
+export CONDA_CMOR_NAME=cmor
+
 hdf5=hdf5-1.8.17
 netcdf=netcdf-4.4.1
 zlib=zlib-1.2.8
 udunits=udunits-2.2.20
 
-defaultProject=CORDEX
+default_prj=CORDEX
 
 export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
+test ! -f $HOME/.qa-dkrz/config.txt && touch $HOME/.qa-dkrz/config.txt
 
 # options with auto-update feature (option: --auto-up_feature)
-#   CMOR3_LLNL:     the CMOR3 checker (D. Nadeau, LLNL)
+#   CMOR_LLNL:     the CMOR checker (D. Nadeau, LLNL)
 #   GIT_QA:         all QA updates touching write-protected locations
 #   QA_SRC:         QA sources; disabled for conda-installed QA-DKRZ
 #   PROJECT_TABLES: Project related tables and programs; PROJECT substituted by
-#                   current project name(s).
+#                   current projects name(s).
 
 descript()
 {
-  echo "Usage: install [options] [project[s]]"
+  echo "Usage: install [options] [projects[s]]"
   echo "Purpose: Install/update 'the Quality Control Software Package'"
   echo "for checking climate simulation meta-data provided in netCDF format."
-  echo "Details at https://redmine.dkrz.de/projects/cordex/wiki/DKRZ_QC_Tool"
+  echo "Details at https://redmine.dkrz.de/projectss/cordex/wiki/DKRZ_QC_Tool"
   echo ''
   echo "Options:"
   echo "  -B                Unconditionally re-make all QA executables."
@@ -32,9 +42,9 @@ descript()
   echo "  --auto-up=expr    Control automatic updates from the repository at the"
   echo "                    beginning of a run. Valid expressions for enabling:"
   echo "                    enable, e, t. Suspending: disable, d, suspend, s."
-  echo "  --auto-up=bird    Control automatic updates of the conda installed QA package."
   echo "  --build           Download and build required libraries."
-  echo "  --debug[=script]  Display execution commands. If the name of a script"
+  echo "  --debug[=scrienv pt]"
+  echo "                    Display execution commands. If the name of a script"
   echo "                    is assigned, then debug only this one."
   echo "  --help            Display usage and exit."
   echo "  --home=path       Same as QA_HOME."
@@ -46,100 +56,18 @@ descript()
   echo "  --show-inst       Display properties of the current installation."
   echo "  --up[date]        Update external packages from the repository."
   echo "                    Note: not for netCDF, HDF5, udunits2 or zlib."
-  echo "  --up=bird[house]  Update the qa-dkrz package when installed by conda."
-  echo "  --qa-home=path    Location of the project tables and external programs."
+  echo "  --up              Update the qa-dkrz package when installed by conda."
+  echo "  --qa-home=path    Location of the projects tables and external programs."
   echo "                    Also for user-modified QA tables."
   echo "  --work=path       Same as --qa-home."
   echo ""
-  echo "  project-name(s)   At present CF, CMIP5, and CORDEX; the latter by default."
-}
-
-getCondaPath()
-{
-  # was this script launched from qa-dkrz of a conda installation?
-  local path=${1%/*}
-  path=${path%/*}
-
-  if ls ${path%/*}/conda-meta/qa-dkrz* &> /dev/null ; then
-    export CONDA_PATH=${path%/*}
-    eval ${2}=${path}/qa-dkrz
-
-    # find the PreARE
-    local fs f i t t0
-    declare -a fs
-    fs=( $( find ${CONDA_PATH} -type f -name "PrePARE.py" ) )
-    if [ ${#fs[*]} -eq 0 ] ; then
-      echo "could not locate PrePARE.py; this is considered an error."
-      exit
-    elif [ ${#fs[*]} -eq 1 ] ; then
-      f=${fs[0]}
-    else
-      # find the youngest; there could be more than one of equal age
-      f=${fs[0]}
-      t=$( ls -l --time-style=+'%s' $f | awk '{print $6}' 2> /dev/null )
-
-      for(( i=1 ; i < ${#fs[*]} ; ++i )) ; do
-         t0=$( ls -l --time-style=+'%s' ${fs[i]} | awk '{print $6}' 2> /dev/null )
-         if [ ${t0} -gt ${t} ] ; then
-           f=${fs[i]}
-           t=$t0
-         fi
-      done
-    fi
-
-    if ! . ${QA_SRC}/scripts/parseConfigFile PrePARE ; then
-       . ${QA_SRC}/scripts/parseConfigFile PrePARE=${f}
-    fi
-
-    if ! . ${QA_SRC}/scripts/parseConfigFile CONDA_FOR_CMOR3 ; then
-       . ${QA_SRC}/scripts/parseConfigFile CONDA_FOR_CMOR3=${CONDA_PATH}
-    fi
-
-    exit
-    return 0
-  fi
-
-  return 1
+  echo "  projects-name(s)   At present CF, CMIP5, and CORDEX; the latter by default."
 }
 
 getGitBranch()
 {
    git branch | grep '*' | awk '{print $2}'
    return
-}
-
-getHomePath()
-{
-  # path to the current user's home
-  export QA_HOME
-
-  if [ "${QA_HOME}" ] ; then
-    # if it is a new path, then adjust the config file
-    . ${QA_SRC}/scripts/parseConfigFile QA_HOME=${QA_HOME}
-  else
-    # take QA_HOME from the config file, if it exists.
-    if ! . ${QA_SRC}/scripts/parseConfigFile QA_HOME ; then
-      echo -e "\nPlease, specify variable QA_HOME [default: ${QA_SRC}/HOME], " > ${TTY}
-      read -p "the spot for external tables and programs: " QA_HOME 2> ${TTY}
-
-      test ! ${QA_HOME} && QA_HOME=${HOME}/.qa-dkrz
-
-      if mkdir -p ${QA_HOME} &> /dev/null ; then
-        . ${QA_SRC}/scripts/parseConfigFile QA_HOME=${QA_HOME}
-      else
-        echo  "could not mkdir QA_HOME=${QA_HOME}"
-        exit 1
-     fi
-    fi
-
-    if [ ! -w ${QA_HOME} ] ; then
-      echo "directory ${QA_HOME} without write permissions,"
-      echo "please, restart with added option --qa-home=path"
-      exit 1
-    fi
-  fi
-
-  return
 }
 
 getRevNum()
@@ -149,7 +77,7 @@ getRevNum()
   local branch currIdent
   declare -a branch
 
-  if [ $CONDA_PATH ] ; then
+  if [ $CONDA_QA_PATH ] ; then
     declare -a branch
     if branch=( $(cat ${QA_SRC}/install.log 2> /dev/null) ) ; then
       branch[0]=${branch[0]#*=}
@@ -163,110 +91,6 @@ getRevNum()
   fi
 
   eval ${1}=${branch[0]}-${currIdent}
-
-  return
-}
-
-getSrcPath()
-{
-  # extract the path to the root of the QA package
-
-  # is it in a conda built?
-  if getCondaPath $0 QA_SRC ; then
-    export QA_SRC
-  fi
-
-  test ${QA_SRC} && return
-
-  local target isInvalid
-
-  if [ ${1:0:1} = '/' ] ; then
-    target=$1
-  else
-    target=$(pwd)/$1
-  fi
-
-  if [ -h $target ] ; then
-
-    # get the link
-    local link=$(ls -l $target | awk  '{print $(NF)}')
-
-    # link is relative, so make it absolute
-    test ${link:0:1} != '/' && link=${target%/*}/${link}
-
-    getSrcPath ${link}
-
-  elif [ -f $target ] ; then
-
-    # a real instance, at first resolve .. and .
-    # works also for . or .. in the middle of the path
-
-    local xname=${target##*/}
-    target=${target%/*}  # remove the name of the script
-
-    local arr=( ${target//\// } )
-
-    local i j sz
-    sz=${#arr[*]}
-
-    for(( i=1 ; i < sz ; ++i )) ; do
-
-      if [ "${arr[i]}" = '.' ] ; then
-        unset arr[i]
-      elif [ "${arr[i]}" = '..' ] ; then
-        j=$((i-1))
-
-        # this takes into account adjacent . and/or .. with any depth
-        while [ ! ${arr[j]} ] ; do
-          j=$((j-1))
-        done
-        unset arr[j]
-        unset arr[i]
-      fi
-    done
-
-    # get rid of empty items
-    arr=( ${arr[*]} )
-
-    sz=${#arr[*]}
-
-    local tmp
-    for(( i=0 ; i < sz ; ++i )) ; do
-      tmp=${tmp}/${arr[i]}
-
-      if [ -f ${tmp}/.install_configure ] ; then
-        # final check
-        if [ ! -e $tmp/install ] ; then
-           echo "$tmp is not QA_SRC; EXIT"
-           exit 1
-        fi
-
-        export QA_SRC=$tmp
-        break
-      fi
-    done
-
-    test $i -eq $sz && isInvalid=t
-  else
-    isInvalid=t
-  fi
-
-  if [ ${isInvalid:-f} = t ] ; then
-
-    local str=$(ls -l $target 2> /dev/null | awk  '{print $(NF)}')
-
-    if [ ${#str} -gt 0 ] ; then
-      str="invalid path=${0}"
-    else
-      str="broken path=${0}"
-    fi
-
-    echo "${str}"
-
-    exit 1
-  fi
-
-  export QA_SRC=${QA_SRC}
 
   return
 }
@@ -350,14 +174,39 @@ tr_option()
 
 update()
 {
-  # search for updates only once a day
-  local today=$( date '+%Y%m%d' )
+  local project=$1
 
-  . ${QA_SRC}/scripts/parseConfigFile INTERNET
+  # search for updates only once a day
+  today=$( date '+%Y%m%d' )
+
+  if [ ${CONDA_QA_PATH} ] ; then
+    test ! ${CONDA_QA_ENV} && \
+      . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
+
+    . ${QA_SRC}/scripts/parseConfigFile LAST_CONDA_QA_UPDATE
+    if [ "${LAST_CONDA_QA_UPDATE}" != $today ] ; then
+      if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
+                      "${CONDA_QA_PATH}" "${CONDA_QA_ENV}" ; then
+
+        . ${QA_SRC}/scripts/parseConfigFile LAST_CONDA_QA_UPDATE=$today
+        . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
+      fi
+    fi
+  else
+     if ! update_QA_SRC ; then
+       return $?
+     fi
+  fi
 
   update_external
 
-  test ${isUpdate:-f} = t && update_QA
+  if ! mkdir -p ${QA_HOME}/tables  ; then
+    echo "could not mkdir -p ${QA_HOME}/tables"
+    exit 41
+  fi
+
+  # note that QA_HOME points to .qa-dkrz wherever it is located
+  rsync -auz --exclude '*~' $QA_SRC/tables ${QA_HOME} &> /dev/null
 
   # revison num of the package
   local packRec
@@ -368,78 +217,111 @@ update()
   return 0
 }
 
-update_external()
+update_CONDA()
 {
+  local conda_name=$1      # is always defined
+  local conda_channels=$2  # is always defined
+  local conda_path=$3      # is always defined
+  local conda_env=$4       # could be empty
+  local action=$5          # could be empty
+  local status=1
+
+  test ${conda_env} = none && conda_env=cmor
+  test ! ${action} && action=update
+
+  test "${LAST_CONDA_UPDATE}" = ${today} && return
   test ${INTERNET:-t} = f && return
+  test "${conda_env}" = '-n ' && conda_env=
 
-  if . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE_BIRDHOUSE ; then
-    isBirdhouseUp=${AUTO_UPDATE_BIRDHOUSE}
-  fi
+  if [ ! -w "${QA_SRC}" ] ; then
+    echo "no write-permission for ${QA_SRC}"
+    exit 41
+  elif [ ${action} = update ] ; then
+    # look for a new conda-built package
+    echo "searching ${conda_name} updates" > ${TTY}
 
-  if [ ${isBirdhouseUp:-f} = t ] ; then
-      if [ ! -w "${QA_SRC}" ] ; then
-       echo "no write-permission for ${QA_SRC}"
-       exit 1
-      else
-        # look for a new conda-built package
-        set -f
-        local tmp
-        declare -a tmp
-        tmp=( $(conda search -c birdhouse -c conda-forge qa-dkrz 2> /dev/null) )
+    set -f
+    local tmp
+    declare -a tmp
+    tmp=( $( ${conda_path}/bin/conda search ${conda_env:+-n ${conda_env}} \
+                      ${conda_channels//,/ } \
+                      ${conda_name} 2> /dev/null ) ) > ${TTY}
 
-        local i item sz
-        sz=${#tmp[*]}
-        for(( i=0 ; i < sz ; ++i )) ; do
-          if [ "${tmp[i]}" = '*' ] ; then
-            item=${tmp[++i]}
-            item=${item}-${tmp[++i]}
-            i=$((i+2))
+    local i item sz
+    sz=${#tmp[*]}
+    for(( i=0 ; i < sz ; ++i )) ; do
+      if [ "${tmp[i]}" = '*' -o "${tmp[i]}" = '.' ] ; then
+        item=${tmp[++i]}
+        item=${item}-${tmp[++i]}
+        i=$((i+2))
 
-            if [ $i -lt $sz ] ; then
-              # there is a newer one
-              conda update -c birdhouse -c conda-forge qa-dkrz  &> /dev/null
+        if [ $i -lt $sz ] ; then
+          # there is a newer one
+          ${conda_path}/bin/conda ${action} ${conda_env:+-n ${conda_env}} \
+                       ${conda_channels//,/ } \
+                       ${conda_name} &> ${TTY}
+        fi
 
-              exitVal=101
-              INTERNET=f  # this blocks getting sources from GitHun
-            fi
-            break
-          fi
-        done
-
-        set +f
+        status=0
+        break
       fi
+    done
+
+    set +f
+  else
+    # only CMOR could here be created
+    ${conda_path}/bin/conda ${action} ${conda_env:+-n ${conda_env}} \
+            ${CONDA_CMOR_CHANNELS//,/ } ${CONDA_CMOR_NAME} > ${TTY}
+
+    if [ $? -eq 0 ] ; then
+      if [ ${CONDA_CMOR_ENV} ] ; then
+        PrePARE=${conda_path}/envs/${CONDA_CMOR_ENV}/bin/PrePARE.py
+        . $QA_SRC/scripts/parseConfigFile CONDA_CMOR_ENV=${conda_env}
+      else
+        PrePARE=${conda_path}/bin/PrePARE.py
+        . $QA_SRC/scripts/parseConfigFile CONDA_CMOR_ENV=none
+      fi
+
+      . $QA_SRC/scripts/parseConfigFile \
+         PrePARE=${conda_path}/envs/cmor/bin/PrePARE.py
+
+      status=0
+      echo "Please, note that activation/deactivation is not required in this place." > $TTY
+    fi
   fi
 
-  test ${isUpdate:-f} = f && return
-
-  for prj in ${project[*]} ; do
-    test "${PROJECT_AS}" && prj=${PROJECT_AS}
-    local lastUpdate
-
-    # check it here in order to prevent an update of the config-file in case
-    # that the installation failed or war terminated.
-    . ${QA_SRC}/scripts/parseConfigFile ${prj}_LAST_UPDATE
-    eval lastUpdate=\$${prj}_LAST_UPDATE
-
-    if [ "${lastUpdate}" != ${today} -o ${isForceUpdate:-f} = t ]; then
-       . ${QA_SRC}/scripts/get_externalSources \
-           -P $prj --qa-src=${QA_SRC} \
-           --qa-home=${QA_HOME} --config_file=${CONFIG_FILE} \
-           ${isUpdate:+--force-update}
-
-       test $? -gt 0 && exit 1
-
-       . ${QA_SRC}/scripts/parseConfigFile ${prj}_LAST_UPDATE=${today}
-    fi
-  done
-
-  return
+  return $status
 }
 
-update_QA()
+update_external()
+{
+  test ${INTERNET:-t} = f && return 0
+
+  test "${PROJECT_AS}" && prj=${PROJECT_AS}
+
+  local lastUpdate
+  eval lastUpdate=LAST_${prj}_UPDATE
+
+  # check it here in order to prevent an update of the config-file in case
+  # that the installation failed or war terminated.
+  if [ "${lastUpdate}" != ${today} -o ${isForceUpdate:-f} = t ]; then
+     . ${QA_SRC}/scripts/get_externalSources \
+         -P $prj --qa-src=${QA_SRC} \
+         --qa-home=${QA_HOME} --config_file=${CONFIG_FILE} \
+         ${isUpdate:+--force-update}
+
+     test $? -gt 0 && exit 41
+
+     . ${QA_SRC}/scripts/parseConfigFile LAST_${prj}_UPDATE=${today}
+  fi
+
+  return 0
+}
+
+update_QA_SRC()
 {
   if [ ${INTERNET:-t} = t ] ; then
-    if ! . ${QA_SRC}/scripts/parseConfigFile QA_LAST_UPDATE=${today} \
+    if ! . ${QA_SRC}/scripts/parseConfigFile LAST_QA_UPDATE=${today} \
           || [ ${isUpdate:-f} = t ]; then
       if [ ! -f ${QA_SRC}/.ignore_GitHub ] ; then
         cd ${QA_SRC}
@@ -459,24 +341,17 @@ update_QA()
         if [ ${qa_dkrzDate} != $( ls -l \
              --time-style=+'%s' ${QA_SRC}/scripts/qa_dkrz \
              | awk '{print $6}' 2> /dev/null ) ] ; then
-          exitVal=101
+          return 101  # causes a restart of qa-dkrz, because it was renewed
         fi
       fi
     fi
   fi
 
-  if ! mkdir -p ${QA_HOME}/tables  ; then
-    echo "could not mkdir -p ${QA_HOME}/tables"
-    exit 1
-  fi
-
-  # note that QA_HOME points to .qa-dkrz wherever it is located
-  rsync -auz --exclude '*~' $QA_SRC/tables ${QA_HOME} &> /dev/null
-
-  return
+  return 0
 }
 
 # ----- main ------
+
 zeroArg=$0
 allArgs=($*)
 
@@ -513,6 +388,8 @@ if [ $# -gt 0 ] ; then
   done
 fi
 
+prj=${defaultProject}
+
 while getopts BdhT:-: option ${sArgs[*]}
 do
   UOPTARG="${OPTARG}"
@@ -525,6 +402,8 @@ do
         if [ "${OPTNAME}" = HOME ] ; then
           export QA_HOME=${OPTVAL}
           break
+        elif [ "${OPTNAME}" = PROJECT_AS ] ; then
+          prj="${OPTVAL}"
         elif [ "${OPTNAME}" = QA_HOME ] ; then
           export QA_HOME=${OPTVAL}
           break
@@ -539,9 +418,6 @@ done
 
 mkdir -p ${HOME}/.qa-dkrz
 
-getSrcPath $zeroArg  # sets also CONDA_PATH
-getHomePath
-
 OPTIND=
 while getopts BdhT:-: option ${sArgs[*]}
 do
@@ -552,33 +428,36 @@ do
     B)  coll[${#coll[*]}]=-B ;;
     d)  coll[${#coll[*]}]=-d ;;
     h)  descript
-        exit 1 ;;
+        exit 41 ;;
     T)  TTY="${OPTARG}" ;;
     -)  OPTVAL=${OPTARG#*=}
         OPTNAME=${UOPTARG%%=*}
 
         if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
-          if [ "${OPTVAL:0:4}" = BIRD ] ; then
-            OPTNAME=${OPTVAL}
-            tr_option OPTNAME
-            OPTVAL=${OPTNAME#*=}
-            OPTNAME=${OPTNAME%%=*}
+          local OV
+          for OV in ${OPTVAL//,/ } ; do
+            if [ "${OV}" = CONDA_QA -o "${OV}" = CONDA_CMOR ] ; then
+              OPTNAME=${OV}
+              tr_option OPTNAME
+              OV=${OPTNAME#*=}
+              OPTNAME=${OPTNAME%%=*}
 
-            if [ ${OPTVAL:0:4} = BIRD -o ${OPTVAL:0:1} = E -o ${OPTVAL:0:1} = T ] ; then
-               OPTVAL=enable
-            elif [ ${OPTVAL:0:1} = D -o ${OPTVAL:0:1} = F -o -o ${OPTVAL:0:1} = S ] ; then
-               OPTVAL=disable
+              if [ ${OV:0:1} = D -o ${OV:0:1} = F -o -o ${OV:0:1} = S ] ; then
+                 OV=disable
+              else
+                OV=enable
+              fi
+              . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE_${OPTNAME}=${OV}
+            else
+              tr_option OV
+              if [ ${OV:0:1} = D -o ${OV:0:1} = F -o ${OV:0:1} = S ] ; then
+                OV=disable
+              else
+                OV=enable
+              fi
+              . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=${OV}
             fi
-            . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE_BIRDHOUSE=${OPTVAL}
-          else
-            tr_option OPTVAL
-            if [ ${OPTVAL} = AUTO_UP -o ${OPTVAL:0:1} = E -o ${OPTVAL:0:1} = T ] ; then
-               OPTVAL=enable
-            elif [ ${OPTVAL:0:1} = D -o ${OPTVAL:0:1} = F -o ${OPTVAL:0:1} = S ] ; then
-               OPTVAL=disable
-            fi
-            . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=${OPTVAL}
-          fi
+          done
           continue
         elif [ "${OPTNAME}" = BUILD ] ; then
           isBuild=t
@@ -587,7 +466,7 @@ do
           set -x
         elif [ "${OPTNAME}" = HELP ] ; then
           descript
-          exit 1
+          exit 41
         elif [ "${OPTNAME}" = HOME ] ; then
           continue
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
@@ -612,20 +491,21 @@ do
         elif [ "${OPTNAME}" = SRC ] ; then
           :  # for backward compatibilty
         elif [ "${OPTNAME}" = SET_DEFAULT_PROJECT ] ; then
-          . ${QA_SRC}/scripts/parseConfigFile DEFAULT_PROJECT=${OPTVAL}
+          default_prj=${OPTVAL}
           continue
         elif [ "${OPTNAME:0:2}" = UP ] ; then
           OPTVAL=$( echo "${OPTVAL#*=}" | tr "[:lower:]" "[:upper:]" )
-          if [ "${OPTVAL:0:4}" = BIRD ] ; then
-            isBirdhouseUp=t
+          if [ "${OPTVAL:0:9}" = conda ] ; then
+            isCondaUp=t
           elif [ "${OPTVAL:0:5}" = FORCE ] ; then
             isForceUpdate=t
           elif [ "${OPTVAL:0:1}" = N -o "${OPTVAL:0:1}" = F \
                     -o "${OPTVAL:0:1}" = D -o "${OPTVAL:0:1}" = S ] ; then
             isUpdate=f
-          else
-            isUpdate=t
+            continue
           fi
+
+          isUpdate=t
         elif [ "${OPTNAME}" = WORK ] ; then
           continue
         elif [ "${OPTNAME}" = HDF5 ] ; then
@@ -676,24 +556,43 @@ for pck in $* ; do
 #      exit 1
 #    fi
 
-    coll[${#coll[*]}]=$pck  # collect project names
-    project[${#project[*]}]=$pck
+    coll[${#coll[*]}]=$pck  # collect projects names
+    projects[${#projects[*]}]=$pck
   fi
 done
 
-. ${QA_SRC}/scripts/parseConfigFile DEFAULT_PROJECT
+THIS=${0%/*}
+cd ${THIS} &> /dev/null
+THIS=$(pwd)
+cd - &> /dev/null
 
-test ! "$project" && project=(${DEFAULT_PROJECT:-${defaultProject}})
+test ${THIS##*/} = scripts && THIS=${THIS%/*}
 
-test "${UPDATE}" = t && isUpdate=t
+# resolve symbolic links
+. ${THIS}/scripts/getSrcPath
 
-if . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE ; then
-  isUpdate=t
+# is it in a conda built?
+. ${QA_SRC}/scripts/getCondaPath
+
+. ${QA_SRC}/scripts/getHomePath
+
+. ${QA_SRC}/scripts/parseConfigFile DEFAULT_PROJECT${default_prj:+=${default_prj}}
+test ${#projects[*]} -eq 0 && projects=(${default_prj})
+
+# inquire from ~/.qa-dkrz/config.txt;
+# also ensures that all names in the config.files are defined in this program
+if [ ! ${isBuild} ] ; then
+  for prj in ${projects[*]} ;do
+    if ! . ${QA_SRC}/scripts/inqRunEnv ${projects[*]} ; then
+      if ! update $prj ; then
+        status=$?
+        test ! ${ignore_failed_update} && exit ${status}
+      fi
+    fi
+  done
 fi
 
-update
-
-test ${CONDA_PATH} && exit  # miniconda built executables
+test ${CONDA_QA_PATH} && exit  # miniconda built executables
 
 pcks="--zlib=$zlib --hdf5=$hdf5 --netcdf=$netcdf --udunits=$udunits"
 
@@ -706,11 +605,12 @@ else
   pcks=
 fi
 
-if [ "${project[0]}" = NONE ] ; then
+if [ "${projects[0]}" = NONE ] ; then
    echo "qa-dkrz requires PROJECT=name in the configuration or on the command-line"
    exit
 fi
 
 exec ${QA_SRC}/scripts/install.sh ${debug} --pack=${package} \
 ${isContinueLog:+--continue_log} ${pcks} \
-${PROJECT_AS:+--PROJECT_AS=${PROJECT_AS}} ${coll[*]}
+${PROJECT_AS:+--PROJECT_AS=${PROJECT_AS}} \
+--qa-src=${QA_SRC} ${coll[*]}

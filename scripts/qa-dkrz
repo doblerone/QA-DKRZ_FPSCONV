@@ -1511,52 +1511,6 @@ getFilenameBase()
   return
 }
 
-getHomePath()
-{
-  setKWL CONFIG_FILE=~/.qa-dkrz/config.txt
-
-  # path to the current user's home
-  export QA_HOME
-
-  if [ "${QA_HOME}" ] ; then
-    # if it is a new path, then adjust the config file
-    . $QA_SRC/scripts/parseConfigFile QA_HOME=${QA_HOME}
-  else
-    # take QA_HOME from the config file, if it exists.
-    if ! . $QA_SRC/scripts/parseConfigFile QA_HOME ; then
-      echo -e "\nPlease, specify QA_HOME [default: ${QA_SRC}/HOME], " > ${TTY}
-      read -p "the spot for external tables and programs: " QA_HOME 2> ${TTY}
-
-      test ! ${QA_HOME} && QA_HOME=${QA_SRC}/HOME
-
-      local i
-      for i in 1 2 3 ; do
-        if [ ${i} -eq 3 ] ; then
-          echo "Could not mkdir QA_HOME=${QA_HOME}."
-          exit 1
-        fi
-
-        if mkdir -p ${QA_HOME} &> /dev/null ; then
-          . $QA_SRC/scripts/parseConfigFile QA_HOME=${QA_HOME}
-          break
-        fi
-
-        echo "Could not mkdir QA_HOME=${QA_HOME}."
-        QA_HOME=${HOME}/.qa-dkrz
-        read -p "Do you want to try: ${QA_HOME} " QA_HOME 2> ${TTY}
-      done
-    fi
-
-    if [ ! -w $QA_HOME ] ; then
-      echo "directory $QA_HOME without write permissions,"
-      echo "please, restart with added option --qa-home=path"
-      exit 1
-    fi
-  fi
-
-  return
-}
-
 ##//! Get the name of a host ready for a start of the \a qaExecutor
 
 ##/*!
@@ -2530,109 +2484,6 @@ getSelectedPaths()
   return
 }
 
-getQA_SRC()
-{
-  # extract the path to the root of the QA package
-
-  # is it in a conda built?
-  local x_conda=${0%/qa-dkrz/scripts/qa-dkrz}
-  if [ ${x_conda##*/} = opt ] ; then
-    x_conda=${x_conda%/opt}
-    if [ -d $x_conda/opt/qa-dkrz ] ; then
-       setKWL CONDA_ENV=t
-       setKWL QA_SRC=$x_conda/opt/qa-dkrz
-       return
-    fi
-  fi
-
-  local target isInvalid
-
-  if [ ${1:0:1} = '/' ] ; then
-    target=$1
-  else
-    target=$(pwd)/$1
-  fi
-
-  if [ -h $target ] ; then
-
-    # get the link
-    local link=$(ls -l $target | awk  '{print $(NF)}')
-
-    # link is relative, so make it absolute
-    test ${link:0:1} != '/' && link=${target%/*}/${link}
-
-    getQA_SRC ${link}
-
-  elif [ -f $target ] ; then
-
-    # a real instance, at first resolve .. and .
-    # works also for . or .. in the middle of the path
-
-    local xname=${target##*/}
-    target=${target%/*}  # remove the name of the script
-
-    local arr=( ${target//\// } )
-
-    local i j sz
-    sz=${#arr[*]}
-
-    for(( i=1 ; i < sz ; ++i )) ; do
-
-      if [ "${arr[i]}" = '.' ] ; then
-        unset arr[i]
-      elif [ "${arr[i]}" = '..' ] ; then
-        j=$((i-1))
-
-        # this takes into account adjacent . and/or .. with any depth
-        while [ ! ${arr[j]} ] ; do
-          j=$((j-1))
-        done
-        unset arr[j]
-        unset arr[i]
-      fi
-    done
-
-    # get rid of empty items
-    arr=( ${arr[*]} )
-
-    sz=${#arr[*]}
-
-    local tmp
-    for(( i=0 ; i < sz ; ++i )) ; do
-      tmp=${tmp}/${arr[i]}
-
-      if [ -f ${tmp}/.install_configure ] ; then
-        QA_SRC=$tmp
-        break
-      fi
-    done
-
-    test $i -eq $sz && isInvalid=t
-  else
-    isInvalid=t
-  fi
-
-  if [ ${isInvalid:-f} = t ] ; then
-
-    local str=$(ls -l $target 2> /dev/null | awk  '{print $(NF)}')
-
-    if [ ${str} ] ; then
-      str="invalid path=$0"
-    else
-      str="broken path=$0"
-    fi
-
-    std_out "${0##*/}::getQA_SRC():"
-    std_out "$str"
-    std_out flush
-    exit 1
-  fi
-
-  setKWL QA_SRC=${QA_SRC}
-
-  return
-}
-
 has()
 {
   local c i j t
@@ -2701,16 +2552,14 @@ init()
   NO_STATUS=f
   isTPUT=f
 
-  # sets: CONDA_ENV, QA_SRC
-  getQA_SRC $0
-
   test ${QA_EXAMPLE:-f} = t && initExample
 
   # note: if not --example, then example_args is empty
   basic_args=( ${example_args[*]} -E_QA_SRC=${QA_SRC} )
 
   # sets: QA_HOME, CONFIG_FILE
-  getHomePath
+  . ${QA_SRC}/scripts/getHomePath
+
   basic_args=( ${basic_args[*]} -E_QA_HOME=${QA_HOME} )
 
   # configuration
@@ -2740,50 +2589,52 @@ init()
 
   # package update requested and required?
   if [ ! ${UPDATE} ] ; then
-    if . $QA_SRC/scripts/parseConfigFile \
-         AUTO_UPDATE${AUTO_UP:+=}${AUTO_UP} ; then
+    if . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE${AUTO_UP:+=}${AUTO_UP} ; then
       UPDATE=t
     fi
   fi
 
-  if [ ${UPDATE:-f} = t ] ; then
+  local prj=${PROJECT_AS:-${PROJECT}}
+
+  if [ ${UPDATE:-f} = t -o ${ONLY_INSTALL:-f} = t ] ; then
     # checksum of current qa-dkrz
     local md5_0
     md5_0=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
-#    if . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE ; then
-#    else
-#       local quest
-#       echo -e "\n Do you want to update external programs and/or tables? " > $TTY
-#       echo -n "Saying 'yes' would always automatically search updates. <yes, [no]: >"  > $TTY
+    if ${QA_SRC}/install ${TTY:+-T } ${TTY} ${INSTALL_ARGS//,/ } ${prj} ; then
 
-#       while : ; do
-#         read -p "<yes, [no], or auto-up>: " quest 2> $TTY
-
-#         case ${quest:0:4} in
-#           ( y | yes )  isInstall=t ; break ;;
-#           ( no | '' ) isInstall=f
-#                      . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE=disable
-#                      break ;;
-#                auto ) INSTALL_ARGS="--auto-up,${INSTALL_ARGS}" ; isInstall=t ; break  ;;
-#                    *) ;;
-#         esac
-#       done
-#    fi
-
-    if ${QA_SRC}/install ${TTY:+-T } ${TTY} ${INSTALL_ARGS//,/ } \
-                           PROJECT_AS=${PROJECT_AS} ${PROJECT} ; then
+        test ${ONLY_INSTALL:-f} = t && exit 0
 
         local md5_1
         md5_1=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
         test ${md5_0} != ${md5_1} && \
             exec ${QA_SRC}/scripts/qa-dkrz ${initial_params[*]}
+
     else
+       test $? -eq 41 & exit  # silently
+
        # could not make the executable for the given project
-       std_out flush "could not make: install ${PROJECT}"
+       std_out flush "could not install ${prj}"
        exit 1
     fi
+
+    test ${ONLY_INSTALL} && exit
+
+  elif ! . $QA_SRC/scripts/inqRunEnv --read-only ${prj} ; then
+      # get the state of the current installation: read config-file
+      if [ $? > 9 -a ${UPDATE:-f} = f ] ; then
+        local installArg="--install${prj:+=${prj}}"
+
+        if [ "${prj}" = CMIP6 ] ; then
+          echo -e "\nFile ~/.qa-dkrz/config.txt has no entry for CMIP6."
+        else
+          echo -e "\nThe state of file ~/.qa-dkrz/config.txt does not allow to run the task."
+        fi
+
+        echo "Please, run: $0 ${installArg} ${comLineArgs[*]}"
+        exit 1
+      fi
   fi
 
   # expand comma-sep-list to arrays
@@ -3172,8 +3023,6 @@ initTables()
   else
     initTcat CF_CHECK_LIST=${CF_CHECK_LIST}
   fi
-
-# get CF tables
 
   return
 }
@@ -5163,16 +5012,30 @@ wait_fnct()
 ##main()
 ##{
 ######## main ############
+
+comLineArgs=( $* )
+
 umask 002
+export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
+
+mkdir -p ${HOME}/.qa-dkrz
+
+THIS=${0%/*}
+cd ${THIS} &> /dev/null
+THIS=$(pwd)
+cd - &> /dev/null
+
+test ${THIS##*/} = scripts && THIS=${THIS%/*}
+# resolve symbolic links
+. ${THIS}/scripts/getSrcPath
+
+# is it in a conda built?
+. ${QA_SRC}/scripts/getCondaPath
 
 initial_params=( $* )
 
 # store the tty, if any
 if tty -s ; then TTY=$(tty) ; fi
-
-# test for nohup
-
-#sleep 10
 
 QA_CONFIG=qa-config
 QA_FILE_EXECUTER=qa-exec-check

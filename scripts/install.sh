@@ -71,7 +71,7 @@ compilerSetting()
   if diff -q install_configure .install_configure &> /dev/null ; then
     if [ ${isBuild:-f} = f -a ${isLink:-f} = f ] ; then
       echo "Please, edit file install_configure."
-      exit
+      exit 41
     fi
   fi
 
@@ -174,108 +174,6 @@ getRevNum()
   return
 }
 
-getSrcPath()
-{
-  # extract the path to the root of the QA package
-
-  # is it in a conda built?
-  local x_conda=${0%/qa-dkrz}
-  if [ ${x_conda##*/} = bin ] ; then
-    x_conda=${x_conda%/bin}
-    if [ -d $x_conda/opt/qa-dkrz ] ; then
-       CONDA_ENV=t
-       export QA_SRC=$x_conda/opt/qa-dkrz
-       return
-    fi
-  fi
-
-  local target isInvalid
-
-  if [ ${1:0:1} = '/' ] ; then
-    target=$1
-  else
-    target=$(pwd)/$1
-  fi
-
-  if [ -h $target ] ; then
-
-    # get the link
-    local link=$(ls -l $target | awk  '{print $(NF)}')
-
-    # link is relative, so make it absolute
-    test ${link:0:1} != '/' && link=${target%/*}/${link}
-
-    getSrcPath ${link}
-
-  elif [ -f $target ] ; then
-
-    # a real instance, at first resolve .. and .
-    # works also for . or .. in the middle of the path
-
-    local xname=${target##*/}
-    target=${target%/*}  # remove the name of the script
-
-    local arr=( ${target//\// } )
-
-    local i j sz
-    sz=${#arr[*]}
-
-    for(( i=1 ; i < sz ; ++i )) ; do
-
-      if [ "${arr[i]}" = '.' ] ; then
-        unset arr[i]
-      elif [ "${arr[i]}" = '..' ] ; then
-        j=$((i-1))
-
-        # this takes into account adjacent . and/or .. with any depth
-        while [ ${#arr[j]} -eq 0 ] ; do
-          j=$((j-1))
-        done
-        unset arr[j]
-        unset arr[i]
-      fi
-    done
-
-    # get rid of empty items
-    arr=( ${arr[*]} )
-
-    sz=${#arr[*]}
-
-    local tmp
-    for(( i=0 ; i < sz ; ++i )) ; do
-      tmp=${tmp}/${arr[i]}
-
-      if [ -f ${tmp}/.install_configure ] ; then
-        QA_SRC=$tmp
-        break
-      fi
-    done
-
-    test $i -eq $sz && isInvalid=t
-  else
-    isInvalid=t
-  fi
-
-  if [ ${isInvalid:-f} = t ] ; then
-
-    local str=$(ls -l $target 2> /dev/null | awk  '{print $(NF)}')
-
-    if [ ${#str} -gt 0 ] ; then
-      str="invalid path=$0"
-    else
-      str="broken path=$0"
-    fi
-
-    echo "${str}"
-
-    exit 1
-  fi
-
-  export QA_SRC=${QA_SRC}
-
-  return
-}
-
 libInclSetting()
 {
    export CC CXX CFLAGS CXXFLAGS FC F90
@@ -295,7 +193,7 @@ libInclSetting()
      else
       echo 'no path to at least one of netCDF, hdf, zlib, udunits2,'
       echo 'please, inspect files QA_SRC/local/source/INSTALL_*.log'
-      exit 1
+      exit 41
      fi
 
      compilerSetting
@@ -781,7 +679,7 @@ do
     B)  always=-B ;;                # unconditionally make all
     d)  mk_D=-d ;;                   # make with debugging info
     h)  descript
-        exit ;;
+        exit 41 ;;
     q)  QA_SRC=${OPTARG} ;;
     -)  if [ "${OPTNAME}" = CONTINUE_LOG ] ; then
            isContLog=t
@@ -801,6 +699,8 @@ do
            package=${OPTVAL}
         elif [ "${OPTNAME}" = PROJECT_AS ] ; then
           PROJECT_AS="${OPTVAL}"
+        elif [ "${OPTNAME}" = QA_SRC ] ; then
+          QA_SRC=${OPTVAL}
         elif [ "${OPTNAME}" = DEFAULT_PROJECT ] ; then
            defaultProject=${OPTVAL}
         elif [ "${OPTNAME}" = SHOW-INST ] ; then
@@ -812,15 +712,13 @@ do
         coll[${#coll[*]}]=--${OPTARG}
         ;;
    \?)  descript
-        echo $*
-        exit 1;;
+        echo -e "\nscripts/install.sh: undefined option ${option}"
+        exit 41;;
   esac
 done
 
 shift $(( $OPTIND - 1 ))
 
-# get path
-getSrcPath $0
 cd ${QA_SRC}
 
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QA_SRC}/local/lib64:${QA_SRC}/local/lib
@@ -842,7 +740,7 @@ test ! -d $BIN && mkdir bin
 
 if [ ${isShowInst:-f} = t ] ; then
   showInst
-  exit
+  exit 41
 fi
 
 # c/c++ stand-alone programs
@@ -904,7 +802,7 @@ done
 
 if [ "${undefPrj}" ] ; then
   echo "undefined project(s): ${undefPrj[*]}"
-  exit 1
+  exit 41
 fi
 
 exit 0

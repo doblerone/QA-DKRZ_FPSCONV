@@ -209,69 +209,6 @@ clearProcPool()
   fi
 }
 
-convertCMOR_out2QA()
-{
-  local i flag_txt n isFirst isTxt sz
-  isFirst=t
-  isTxt=f
-
-  for((i=0 ; i < ${#annot_CMOR_LLNL[*]} ; ++i )) ; do
-     flag_txt="FLAG-BEGL1-CMOR3_${#annot_CMOR_LLNL[i]}:CAPT-BEG"
-
-     # take into account that the last char may-be the '.'
-     # of the first and only sentence.
-     sz=$(( ${#annot_CMOR_LLNL[i]} -1 ))
-
-     for(( n=0 ; n < sz ; ++n )) ; do
-       # convert \n to blanks
-       if [ "${annot_CMOR_LLNL[i]:n:1}" = ';' ] ; then
-         flag_txt="${flag_txt},"
-         continue
-       elif [ "${annot_CMOR_LLNL[i]:n:2}" = '\n' ] ; then
-         n=$((n+1))
-         flag_txt="${flag_txt} "
-         continue
-       fi
-
-       # find the first sentence
-       if [ ${isFirst} = t ] ; then
-         if [ "${annot_CMOR_LLNL[i]:n:1}" = '.' ] ; then
-           if [ "${annot_CMOR_LLNL[i]:n:2}" = '. ' ] ; then
-              flag_txt="${flag_txt}CAPT-ENDTXT-BEG"
-              isTxt=t
-              isFirst=f
-              continue
-           fi
-         fi
-       else
-         if [ "${annot_CMOR_LLNL[i]:n:1}" = '.' ] ; then
-           if [ "${annot_CMOR_LLNL[i]:n:2}" = '. ' ] ; then
-              flag_txt="${flag_txt};"
-              continue
-           fi
-         fi
-       fi
-
-       flag_txt="${flag_txt}${annot_CMOR_LLNL[i]:n:1}"
-     done
-
-     flag_txt="${flag_txt}${annot_CMOR_LLNL[i]:sz:1}"
-
-     if [ ${isTxt} = t ] ; then
-       flag_txt="${flag_txt}TXT-END"
-     else
-       flag_txt="${flag_txt}CAPT-END"
-     fi
-
-#     flag_txt="${flag_txt}${annot_CMOR_LLNL[i]}"
-     flag_txt="${flag_txt}FLAG-END"
-
-     ans="${ans}${flag_txt}"
-  done
-
-  return 0
-}
-
 ##//! THE QA of a netCDF file
 
 runQA()
@@ -1100,12 +1037,13 @@ run()
   # read output of the run
   ans=$(<out_${name}.txt)
 
-  # run CMOR3 (D.Nadeau, LLNL)
+  # run CMOR (D.Nadeau, LLNL)
   if [ ${RUN_CMOR3_LLNL} ] ; then
     declare -a annot_CMOR_LLNL
 
-    run_CMOR3_LLNL
-    convertCMOR_out2QA
+
+    # streams into ans
+    run_CMOR_LLNL
   fi
 
 #trace \
@@ -1115,19 +1053,25 @@ run()
   test ${LOG_CPU_TIME:-f} = t && logTime $realTime $cpuTime $status
 }
 
-run_CMOR3_LLNL()
+run_CMOR_LLNL()
 {
-  if ! . $QA_SRC/scripts/parseConfigFile CONDA_FOR_CMOR3 ; then
-    return
-  elif ! . $QA_SRC/scripts/parseConfigFile PrePARE ; then
-    return
+  if ! . $QA_SRC/scripts/parseConfigFile PrePARE ; then
+    echo "PrePARE=${PrePARE}  not found"
+    signalParent TERM
+    exit 1
   fi
 
   export PATH=${PrePARE%/*}:${PATH}
 
-  source ${CONDA_FOR_CMOR3}/envs/cmor/bin/activate cmor &> /dev/null
+  source ${PrePARE%/*}/bin/activate cmor &> /dev/null
 
-  export UDUNITS2_XML_PATH=${CONDA_FOR_CMOR3}/envs/cmor/share/udunits/udunits2.xml
+  if . $QA_SRC/scripts/parseConfigFile UDUNITS2_XML_PATH ; then
+    export UDUNITS2_XML_PATH
+  else
+    echo "UDUNITS2_XML_PATH=${UDUNITS2_XML_PATH}  not found"
+    signalParent TERM
+    exit 1
+  fi
 
   local file table_path
 
@@ -1159,68 +1103,42 @@ run_CMOR3_LLNL()
     mip_table=${table_path}/CMIP6_${x_fname[1]}.json
 
     if ! ls ${mip_table} &> /dev/null ; then
-       if [ -c "$TTY" ] ; then
-         echo 'Invalid MIP Table in filename and attributes'
-         echo 'Cancel CMOR3_LLN run'
-         return 1
-       fi
+#       if [ -c "$TTY" ] ; then
+         echo 'Invalid MIP Table in filename and attributes' # > $TTY
+         echo 'Cancel CMOR_LLN run' # > $TTY
+#       else
+#       fi
+       return 1
     fi
   fi
 
-  local i j line lines out
-  out="$(python $PrePARE \
-                        ${mip_table} \
-                        ${file} \
-                        2>&1 | cat -E )"
+  local ans2
+  ans2="$( python $PrePARE \
+     ${mip_table} \
+     ${file} 2>&1 \
+     | python ${QA_SRC}/scripts/python/qa-dkrz/convertPipedCMOR_output.py )"
 
-  source ${CONDA_FOR_CMOR3}/envs/cmor/bin/deactivate &> /dev/null
+  source ${PrePARE%/*}/deactivate &> /dev/null
 
-  local blk_on=f
-
-  j=0
-  for(( i=0 ; i < ${#out} ; ++i )) ; do
-    if [ "${out:i:1}" = '$' ] ; then
-      j=$((j+1))
-    else
-      lines[j]="${lines[j]}${out:i:1}"
-    fi
-  done
-
-  j=0
-  blk_on=f
-
-  for(( i=0 ; i < ${#lines[*]} ; ++i )) ; do
-    line="${lines[i]//\"/}"
-    test "${line}" = '' && continue
-
-    if [ $(expr match "${line}" '[^!]*!\+') -gt 5 ] ; then
-      if [ ${blk_on} = f ] ; then
-        blk_on=t
+  local i
+  local on=f
+  for(( i=0 ; i < ${#ans2} ; ++i )) ; do
+    if [ "${ans2:i:1}" = '"' ] ; then
+      if [ $on = f ] ; then
+        on=t
+        ans="${ans}<"
       else
-        blk_on=f
-        j=$((j+1))
+         ans="${ans}>"
+        on=f
       fi
-
-      continue
-    fi
-
-    if [ ${blk_on} = t ] ; then
-      if [ $(expr match "${line}" '^[[:space:]]*![[:space:]]*$') -eq 0 ] ; then
-        # clear the beginning
-        for(( start=1 ; start < ${#line} ; ++start )) ; do
-          test "${line:start:1}" = '!' && continue
-          test "${line:start:1}" = ' ' && continue
-
-          break
-        done
-
-        annot_CMOR_LLNL[j]="${annot_CMOR_LLNL[j]} ${line:start}"
-      fi
+    else
+      ans="${ans}${ans2:i:1}"
     fi
   done
 
   return 0
 }
+
 ##//!Send annotations to the list of email recipients.
 
 sendEMail()
@@ -1434,7 +1352,7 @@ set_qa_par()
    par=${par}"${s}"aMDR=${APPLY_MAXIMUM_DATE_RANGE}
  fi
 
- if [ ${CHECK_MODE:-f} != f ] ; then
+ if [ ${CHECK_MODE:-f} != f -a ${CHECK_MODE:-f} != t ] ; then
    par=${par}"${s}"cM=${CHECK_MODE[0]}
    for(( i=1 ; i < ${#CHECK_MODE[*]} ; ++i )) ; do
      par=${par}",${CHECK_MODE[i]}"

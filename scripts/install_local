@@ -330,7 +330,7 @@ f_build()
       text="-l1 -N -np www.hdfgroup.org/ftp/HDF5/releases/${name}/src/${name}.tar.gz"
       wget ${text} &> INSTALL_hdf.log
     elif [ ${name:0:1} = 'z' ] ; then
-      text="-l1 -N -np www.zlib.net/${name}.tar.gz"
+      text="-l1 -N -np www.zlib.net/fossils/${name}.tar.gz"
       wget ${text} &> INSTALL_zlib.log
     elif [ ${name:0:1} = 'u' ] ; then
       text=""
@@ -340,9 +340,6 @@ f_build()
 
     if [ $? -eq 0 ] ; then
       log "download: $name" DONE
-    else
-      log "wget ${text}:" FAIL
-#      exit 1
     fi
   fi
 

@@ -108,10 +108,10 @@ updateConfFile()
    local param_name=${param%=*}
    local param_value=${param#*=}
 
-   if [ "${param_value:0:1}" = d -o "${param_value:0:1}" = f ] ; then
+   if [ "${param_value}" = disable -o "${param_value}" = f ] ; then
        param=${param_name}=disable
        param_value=disable
-   elif [ "${param_value:0:1}" = t ] ; then
+   elif [ "${param_value}" = t ] ; then
        param=${param_name}=enable
        param_value=enable
    elif [ "${param_value}" = ${param_name} ] ; then
@@ -178,7 +178,6 @@ updateConfFile()
 
 
 # main
-
 if [ "$1" = '--force_reading' ] ; then
   shift
 

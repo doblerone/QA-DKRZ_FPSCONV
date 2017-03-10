@@ -125,9 +125,13 @@ checkTools()
   fi
 
   if [ ! -x ${QA_SRC}/bin/qA-${PROJECT_AS}.x ] ; then
+    if [ qA-${PROJECT_AS}.x = qA-install.x ] ; then
+      std_out "PROJECT name not available. See qa-dkrz --help for option '--install'"
+#    else
+#      std_out "Executable ${QA_SRC}/bin/qA-${PROJECT_AS}.x not available."
+#      std_out "Please, run: ${QA_SRC}/install with ${PROJECT} or PROJECT_AS name"
     isExit=t ;
-    std_out "Executable ${QA_SRC}/bin/qa-${PROJECT_AS}.x not available."
-    std_out "Please, run: ${QA_SRC}/install ${PROJECT_AS}"
+    fi
   fi
 
   # all machines must share the same file system
@@ -359,13 +363,14 @@ Usage: qa-DKRZ options
              Note: files for -c and -f are arbitrarily convertible.
    -h/--help This description.
    -L        Locking of paths and variables
-   -m        Monitor variable name most recently qa'ed in status line.
+   -m        Display a status line below the command-line call.
    -P        Project name (usually PROJECT= in a config-file).
    -S        Selection of paths and variables (see config-file).
    -x        Equivalent to -E_DEBUG_C -E_DEBUG_E -E_DEBUG_M.
    --auto-up[=disable]
              Permanently enable/disable automatic updates [default: disable].
              Disable a previously enabled option: --auto-up=d[isable].
+   --conda-update  Update the qa-dkrz package by conda.
    --debug   Show bash execution commands of install, qa-config, qa-dkrz, qa-dkrz
    --example Run the example.
    --force-update
@@ -376,16 +381,20 @@ Usage: qa-DKRZ options
              location where external tables are copied and updated as well where
              users may define their permanent modification of tables.
              Equivalent to option QA_HOME.
-   --conda-update  Update the qa-dkrz package by conda.
+   --ignore_failed_update
+   --install[=PROJECT-name]
+             Use qa-dkrz call as a wrapper to the install script and then exit.
+             Project-name is only used for compiling the C++ programs; may be omitted
+             when a PROJECT or a PROJECT_AS name is specified.
    --no-internet   Usage in off-line mode.
    --pb[=filename[,step]]
-             Progress bar properties.
+             Progress bar properties. (obsolete)
              Output of number of processed data files and total number of data files;
              if a filename is not provided, then to stdout. Note that stdout should be
              redirected if option -m is also active. The step defines the stepping rate
              of the output in terms of percentage; 1% by default.
              Note that a filename must contain at least a single alpha char and
-             that the step must not (obsolete).
+             that the step must not ... .
    --project_as=string
              The current PROJECT is treated as PROJECT_AS=string, but with
              the name kept.
@@ -2024,8 +2033,8 @@ do
   OPTVAL=${OPTARG#*=}
 
   case $option in
-  e|E)  if [ ${OPTNAME} = 'CONDA_ENV' ] ; then
-          setKWL CONDA_ENV=${OPTVAL}
+  e|E)  if [ ${OPTNAME} = 'CONDA_QA_PATH' ] ; then
+          setKWL CONDA_QA_PATH=${OPTVAL}
         elif [ ${OPTNAME:0:7} = 'DEBUG_C' ] ; then
           DEBUG_CONF=t
           set -x
@@ -2132,7 +2141,9 @@ do
   tr_option UOPTARG
 
   OPTNAME=${UOPTARG%%=*}
-  OPTVAL=${OPTARG#*=}
+  if [ ${OPTVAL} ] ; then
+    test "${OPTVAL}" != "${OPTARG#*=}" && OPTVAL=${OPTARG#*=}
+  fi
 
   case $option in
     d|D) # disable previously enabled options
@@ -2173,15 +2184,46 @@ do
 
         elif [ "${OPTNAME:0:5}" = DEBUG ] ; then
           : # done before
-        elif [ "${OPTNAME:0:7}" = EXAMPLE ] ; then
-          : # done before
-        elif [ "${OPTNAME:0:4}" = HOME ] ; then
+
+        elif [ "${OPTNAME}" = EXAMPLE ] ; then
           : # done before
 
-        elif [ "${OPTNAME}" = CONDA_UPDATE ] ; then
+        elif [ "${OPTNAME:0:5}" = FORCE ] ; then
+            installArgs+="--force,"
+            setKWL FORCE_UPDATE=t
+
+        elif [ "${OPTNAME}" = HOME ] ; then
+          : # done before
+
+        elif [ "${OPTNAME:0:16}" = IGNORE_FAILED_UP ] ; then
           installArgs+="--${OPTARG},"
 
-        elif [ "${OPTNAME:0:3}" = NET ] ; then
+        elif [ "${OPTNAME}" = INSTALL ] ; then
+          for ov in ${OPTVAL//,/ } ; do
+             uon="${OPTVAL}"
+             tr_option uon
+
+             ov=
+             test "$uon" != ${uon#*=} && ov=${uon#*=}
+             uon=${uon%%=*}
+
+             for(( i=0 ; i < ${#definedProjects[*]} ; ++i )) ; do
+                if [ ${ov} = definedProjects[i] ] ; then
+                   setKWL PROJECT=${ov}
+                   continue 2
+                fi
+             done
+
+             if [ ${uon:0:2} = UP ] ; then
+               setKWL UPDATE=${ov}
+               installArgs+="--up=${ov},"
+             fi
+
+          done
+
+          setKWL ONLY_INSTALL=t
+
+        elif [ "${OPTNAME}" = NET ] ; then
           installArgs+="--${OPTARG},"
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
@@ -2191,7 +2233,7 @@ do
             setKWL PROGRESS_BAR=${OPTVAL}  # file to write to
           fi
 
-        elif [ "${OPTNAME%=*}" = PROJECT_AS ] ; then
+        elif [ "${OPTNAME}" = PROJECT_AS ] ; then
           setKWL PROJECT_AS=${OPTVAL}
 
         elif [ "${OPTNAME}" = SET_DEFAULT_PROJECT ] ; then
