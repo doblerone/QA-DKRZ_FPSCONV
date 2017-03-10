@@ -490,7 +490,8 @@ do
                    -o ${OPTVAL:0:1} = S ] ; then
              OPTVAL=f
           fi
-          . ${QA_SRC}/scripts/parseConfigFile INTERNET=${OPTVAL}
+          INTERNET=f
+#          . ${QA_SRC}/scripts/parseConfigFile INTERNET=${OPTVAL}
         elif [ "${OPTNAME:0:6}" = ONLY_Q ] ; then
           :  # for backward compatibilty
         elif [ "${OPTNAME}" = PROJECT_AS ] ; then
