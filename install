@@ -572,6 +572,7 @@ for pck in $* ; do
   fi
 done
 
+set -x
 # resolve symbolic links
 . ${THIS}/scripts/getSrcPath
 
