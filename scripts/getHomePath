@@ -1,0 +1,49 @@
+getHomePath()
+{
+  export CONFIG_FILE=~/.qa-dkrz/config.txt
+
+  # path to the current user's home
+  export QA_HOME
+
+  if [ ${QA_HOME} ] ; then
+    # if it is a new path, then adjust the config file
+    . $QA_SRC/scripts/parseConfigFile QA_HOME=${QA_HOME}
+  else
+    # take QA_HOME from the config file, if it exists.
+    if ! . $QA_SRC/scripts/parseConfigFile QA_HOME ; then
+      echo -e "\nPlease, specify variable QA_HOME [default: ${QA_SRC}/HOME], " > ${TTY}
+      read -p "the spot for external tables and programs: " QA_HOME 2> ${TTY}
+
+      test ! ${QA_HOME} && QA_HOME=${QA_SRC}/HOME
+
+      local i
+      for i in 1 2 3 ; do
+        if [ ${i} -eq 3 ] ; then
+          echo "Could not mkdir QA_HOME=${QA_HOME}."
+          exit 41
+        fi
+
+        if mkdir -p ${QA_HOME} &> /dev/null ; then
+          . $QA_SRC/scripts/parseConfigFile QA_HOME=${QA_HOME}
+          break
+        fi
+
+        echo "Could not mkdir QA_HOME=${QA_HOME}."
+        QA_HOME=${HOME}/.qa-dkrz
+        read -p "Do you want to try: ${QA_HOME} " QA_HOME 2> ${TTY}
+      done
+    fi
+
+    if [ ! -w $QA_HOME ] ; then
+      echo "directory $QA_HOME without write permissions,"
+      echo "please, restart with added option --qa-home=path"
+      exit 41
+    fi
+  fi
+
+  return
+}
+
+# main
+
+getHomePath
