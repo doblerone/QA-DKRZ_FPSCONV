@@ -116,7 +116,7 @@ iRE_inqState()
 
   iRE_RestoreApproval=t
 
-  return ${retVal} iRE_inqState ${iRE_CallParam[*]}
+  return iRE_inqState ${iRE_CallParam[*]}
 }
 
 iRE_readConfigFile()
