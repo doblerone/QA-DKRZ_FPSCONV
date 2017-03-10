@@ -352,6 +352,17 @@ update_QA_SRC()
 
 # ----- main ------
 
+THIS=${0%/*}
+if [ ${THIS} != $0 ] ; then
+  cd ${THIS} &> /dev/null
+  THIS=$(pwd)
+  cd - &> /dev/null
+else
+  THIS=$(pwd)
+fi
+
+test ${THIS##*/} = scripts && THIS=${THIS%/*}
+
 zeroArg=$0
 allArgs=($*)
 
@@ -479,7 +490,8 @@ do
                    -o ${OPTVAL:0:1} = S ] ; then
              OPTVAL=f
           fi
-          . ${QA_SRC}/scripts/parseConfigFile INTERNET=${OPTVAL}
+          INTERNET=f
+#          . ${QA_SRC}/scripts/parseConfigFile INTERNET=${OPTVAL}
         elif [ "${OPTNAME:0:6}" = ONLY_Q ] ; then
           :  # for backward compatibilty
         elif [ "${OPTNAME}" = PROJECT_AS ] ; then
@@ -560,13 +572,6 @@ for pck in $* ; do
     projects[${#projects[*]}]=$pck
   fi
 done
-
-THIS=${0%/*}
-cd ${THIS} &> /dev/null
-THIS=$(pwd)
-cd - &> /dev/null
-
-test ${THIS##*/} = scripts && THIS=${THIS%/*}
 
 # resolve symbolic links
 . ${THIS}/scripts/getSrcPath

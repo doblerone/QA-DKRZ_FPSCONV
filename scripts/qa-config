@@ -2208,7 +2208,7 @@ do
              uon=${uon%%=*}
 
              for(( i=0 ; i < ${#definedProjects[*]} ; ++i )) ; do
-                if [ ${ov} = definedProjects[i] ] ; then
+                if [ "${ov}" = definedProjects[i] ] ; then
                    setKWL PROJECT=${ov}
                    continue 2
                 fi
