@@ -47,10 +47,10 @@ for ix in range(len(blk)):
 annot=[]
 
 # remove the 'Ceterum censeo Karthaginem esse delendam' phrase
-cicero=blk[len(blk)-1]
-if cicero[0].find('The input file is not CMIP6 compliant'):
-    del blk[len(blk)-1]
-del cicero
+if len(blk) > 0:
+    cicero=blk[len(blk)-1]
+    if cicero[0].find('The input file is not CMIP6 compliant'):
+        del blk[len(blk)-1]
 
 for ix in range(len(blk)):
     annot.append([])
