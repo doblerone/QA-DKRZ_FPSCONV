@@ -267,11 +267,11 @@ ges_cmip6_conda()
        prompt_text=" <yes: in ${conda_path%/bin}, [no]>: "
      else
        echo -e "\nDifferent installation modes are available:" > ${TTY}
-       echo    " <a> environment of its own (original) " > ${TTY}
-       echo    " <b> environment of qa-dkrz " > ${TTY}
-       echo    " <c> a separate miniconda instantiated in the user-space" > ${TTY}
-       echo    " <no> exit"
-       prompt_text="    Select: <a, b, c: in [${QA_HOME}/miniconda], or user-defined-path, [no]>: "
+       echo    "    <a> environment of its own (original) " > ${TTY}
+       echo    "    <b> environment of qa-dkrz " > ${TTY}
+       echo    "    <c> a separate miniconda instantiated in the user-space" > ${TTY}
+       echo    "    <no> exit"
+       prompt_text="Select: <a, b, c: in [${QA_HOME}/miniconda], or user-defined-path, [no]>: "
      fi
 
      local quest
@@ -478,7 +478,7 @@ ges_xlsx2csv()
 
     # new or restored entry in the config file
    . $QA_SRC/scripts/parseConfigFile XLSX2CSV=$xc
-   XLSX2CSV=$XLSX2CSV
+   XLSX2CSV=$xc
 
    return 0
 }
