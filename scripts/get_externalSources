@@ -243,13 +243,19 @@ ges_cmip6_conda()
   if [ ${PrePARE} ] ; then
     action=update
     conda_path=${PrePARE%/*}
-  elif [ ${CONDA_QA_PATH} ] ; then
-    # existing miniconda for the cmor installation?
-    action=create
-    conda_path=${CONDA_QA_PATH}
-  elif conda_path=$(which conda 2> /dev/null) ; then
-    # existing miniconda for the cmor installation?
-    action=create
+  elif [ ${CONDA_QA_PATH} ] || conda_path=$(which conda 2> /dev/null) ; then
+    # look for existing miniconda with a cmor installation
+    inqRunEnv funct=iRE_scanCondaEnv PrePARE.py
+    inqRunEnv funct=iRE_scanCondaEnv udunits2.xml
+
+    if [ ${#PrePARE} -gt 0 -a ${UDUNITS2_XML_PATH} -gt 0 ] , then
+      action=update
+      conda_env=${CONDA_CMOR_ENV}
+      test ! ${conda_path} && conda_path=${CONDA_PATH}
+    else
+      action=create
+      conda_path=${CONDA_QA_PATH}
+    fi
   else
     # e.g. for a conda-less instantiation;
     # sets conda_path
