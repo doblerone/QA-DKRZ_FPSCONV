@@ -247,6 +247,9 @@ ges_cmip6_conda()
     # existing miniconda for the cmor installation?
     action=create
     conda_path=${CONDA_QA_PATH}
+  elif conda_path=$(which conda 2> /dev/null) ; then
+    # existing miniconda for the cmor installation?
+    action=create
   else
     # e.g. for a conda-less instantiation;
     # sets conda_path
