@@ -34,10 +34,12 @@ getHomePath()
       done
     fi
 
-    if [ ! -w $QA_HOME ] ; then
-      echo "directory $QA_HOME without write permissions,"
-      echo "please, restart with added option --qa-home=path"
-      exit 41
+    if [ -d $QA_HOME ] ; then
+      if [ ! -w $QA_HOME ] ; then
+        echo "directory $QA_HOME without write permissions,"
+        echo "please, restart with added option --qa-home=path"
+        exit 41
+      fi
     fi
   fi
 
