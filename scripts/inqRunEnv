@@ -250,7 +250,7 @@ iRE_scanCondaEnv()
       . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${CONDA_CMOR_ENV}
 
       PrePARE=$f
-      . ${QA_SRC}/scripts/parseConfigFile PrePARE=$f
+      . ${QA_SRC}/scripts/parseConfigFile PrePARE=${PrePARE}
 
     else
       . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=$f
@@ -260,8 +260,15 @@ iRE_scanCondaEnv()
   return
 }
 
-
 # main
+
+if [ ${1%%=*} = funct ] ; then
+  # run a function
+  shift 1
+
+  ${1#funct=} $*
+  return $?
+fi
 
 iRE_CallParam=( $* )
 
