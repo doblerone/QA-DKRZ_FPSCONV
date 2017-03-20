@@ -185,6 +185,12 @@ ges_cmip6()
      fi
    fi
 
+   if [ ! ${PrePARE} ] ; then
+     isForceUp=t
+   elif [ ! ${UDUNITS2_XML_PATH} ] ; then
+     isForceUp=t
+   fi
+
    if [ ! \( "${LAST_CMIP6_UPDATE}" = $today -a ${isForceUp:-f} = f \) ] ; then
      if ! ges_cmip6_mip ; then # non-cmor tables
        status=$?
