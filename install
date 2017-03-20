@@ -588,7 +588,7 @@ test ${#projects[*]} -eq 0 && projects=(${default_prj})
 # also ensures that all names in the config.files are defined in this program
 if [ ! ${isBuild} ] ; then
   for prj in ${projects[*]} ;do
-    if [ ! . ${QA_SRC}/scripts/inqRunEnv ${projects[*]} || [ ${isUpdate:-f} = t ] ; then
+    if ! . ${QA_SRC}/scripts/inqRunEnv ${projects[*]} || [ ${isUpdate:-f} = t ] ; then
       if ! update $prj ; then
         status=$?
         test ! ${ignore_failed_update} && exit ${status}
