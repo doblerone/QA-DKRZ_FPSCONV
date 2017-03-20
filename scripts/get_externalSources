@@ -179,7 +179,7 @@ ges_cmip6()
 {
    local status=0
 
-   if [ ! ${XLSX2CSV} ] ; then
+   if [ ! ${XLSX2CSV} ] || [ ! -f "${XLSX2CSV}" ] ; then
      if ! ges_xlsx2csv ; then
         status=$?
      fi
@@ -191,7 +191,7 @@ ges_cmip6()
      isForceUp=t
    fi
 
-   if [ ! \( "${LAST_CMIP6_UPDATE}" = $today -a ${isForceUp:-f} = f \) ] ; then
+   if [ "${LAST_CMIP6_UPDATE}" != $today -o ${isForceUp:-f} = t ] ; then
      if ! ges_cmip6_mip ; then # non-cmor tables
        status=$?
      fi
@@ -251,10 +251,10 @@ ges_cmip6_conda()
     conda_path=${PrePARE%/*}
   elif [ ${CONDA_QA_PATH} ] || conda_path=$(which conda 2> /dev/null) ; then
     # look for existing miniconda with a cmor installation
-    inqRunEnv funct=iRE_scanCondaEnv PrePARE.py
-    inqRunEnv funct=iRE_scanCondaEnv udunits2.xml
+    ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv PrePARE.py
+    ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv udunits2.xml
 
-    if [ ${#PrePARE} -gt 0 -a ${UDUNITS2_XML_PATH} -gt 0 ] ; then
+    if [ ${#PrePARE} -gt 0 -a ${#UDUNITS2_XML_PATH} -gt 0 ] ; then
       action=update
       conda_env=${CONDA_CMOR_ENV}
       test ! ${conda_path} && conda_path=${CONDA_QA_PATH}
