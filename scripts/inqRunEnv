@@ -73,7 +73,7 @@ iRE_inqState()
 
   # extend for current projects
   for(( i=0 ; i < ${#prj[*]} ; ++i )) ; do
-    rname[${#rname[*]}]=-LAST_${prj[i]}_UPDATE
+    rname[${#rname[*]}]=+LAST_${prj[i]}_UPDATE
 
     if [ ${prj[i]} = CMIP6 ] ; then
       isCMIP6=t
