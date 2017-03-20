@@ -248,10 +248,10 @@ ges_cmip6_conda()
     inqRunEnv funct=iRE_scanCondaEnv PrePARE.py
     inqRunEnv funct=iRE_scanCondaEnv udunits2.xml
 
-    if [ ${#PrePARE} -gt 0 -a ${UDUNITS2_XML_PATH} -gt 0 ] , then
+    if [ ${#PrePARE} -gt 0 -a ${UDUNITS2_XML_PATH} -gt 0 ] ; then
       action=update
       conda_env=${CONDA_CMOR_ENV}
-      test ! ${conda_path} && conda_path=${CONDA_PATH}
+      test ! ${conda_path} && conda_path=${CONDA_QA_PATH}
     else
       action=create
       conda_path=${CONDA_QA_PATH}
