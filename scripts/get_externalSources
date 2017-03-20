@@ -179,7 +179,7 @@ ges_cmip6()
 {
    local status=0
 
-   if [ ! ${XLSX2CSV} ] ; then
+   if [ ! ${XLSX2CSV} ] || [ ! -f "${XLSX2CSV}" ] ; then
      if ! ges_xlsx2csv ; then
         status=$?
      fi
