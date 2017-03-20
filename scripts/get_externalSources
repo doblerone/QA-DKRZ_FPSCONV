@@ -475,6 +475,7 @@ ges_xlsx2csv()
 
     # new or restored entry in the config file
    . $QA_SRC/scripts/parseConfigFile XLSX2CSV=$xc
+   XLSX2CSV=$XLSX2CSV
 
    return 0
 }
