@@ -2624,14 +2624,9 @@ init()
   elif ! . $QA_SRC/scripts/inqRunEnv --read-only ${prj} ; then
       # get the state of the current installation: read config-file
       if [ $? > 9 -a ${UPDATE:-f} = f ] ; then
-        local installArg="--install${prj:+=${prj}}"
+        local installArg="--install=force${prj:+,${prj}}"
 
-        if [ "${prj}" = CMIP6 ] ; then
-          echo -e "\nFile ~/.qa-dkrz/config.txt has no entry for CMIP6."
-        else
-          echo -e "\nThe state of file ~/.qa-dkrz/config.txt does not allow to run the task."
-        fi
-
+        echo -e "\nMissing external tables/executabels."
         echo "Please, run: $0 ${installArg} ${comLineArgs[*]}"
         exit 1
       fi

@@ -2177,6 +2177,7 @@ do
              OPTVAL=enable
              setKWL AUTO_UP=t
              setKWL UPDATE=t
+             installArgs+="--force-update,"
           elif [ ${OPTVAL:0:1} = D -o ${OPTVAL:0:1} = F ] ; then
              OPTVAL=disable
           fi
@@ -2189,8 +2190,8 @@ do
           : # done before
 
         elif [ "${OPTNAME:0:5}" = FORCE ] ; then
-            installArgs+="--force,"
-            setKWL FORCE_UPDATE=t
+            installArgs+="--force-update,"
+            setKWL UPDATE=t
 
         elif [ "${OPTNAME}" = HOME ] ; then
           : # done before
@@ -2219,6 +2220,10 @@ do
                installArgs+="--up=${ov},"
              fi
 
+             if [ ${uon:0:5} = FORCE ] ; then
+               setKWL UPDATE=t
+               installArgs+="--force-update,"
+             fi
           done
 
           setKWL ONLY_INSTALL=t

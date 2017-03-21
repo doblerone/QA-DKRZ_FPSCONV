@@ -32,6 +32,58 @@ iRE_checkForUpdate()
   return $isUp
 }
 
+iRE_checkTables()
+{
+  local prj=$1
+
+  if [ !${QA_HOME} ] ; then
+    return 1
+  elif [ ! -d ${QA_HOME}/tables/$prj ] ; then
+    return 1
+  else
+    local p=${QA_HOME}/tables
+
+    if [ ${#prj} -eq 0 -a ${#DEFAULT_PROJECT} -gt 0 ] ; then
+      prj=${DEFAULT_PROJECT}
+    fi
+
+    local reqItems
+    declare -a reqItems
+
+    if [ "${prj}" = CORDEX ] ; then
+      reqItems=( \
+        $p/${prj}/CORDEX_DRS_CV.csv \
+        $p/${prj}/CORDEX_GCMModelName.txt \
+        $p/${prj}/CORDEX_RCMs_ToU.txt \
+        $p/${prj}/CORDEX_variables_requirement_table.csv
+      )
+    elif [ "${prj}" = CMIP6 ] ; then
+      reqItems=( \
+        $p/${prj}/CMIP6_check-list.conf \
+        $p/${prj}/CMIP6_DRS_CV.csv \
+        $p/${prj}/CMIP6_CVs \
+        $p/${prj}/cmip6-cmor-tables \
+        $p/${prj}/CMIP6_MIP_tables
+      )
+    fi
+
+    # check always CF
+    reqItems=( ${reqItems[*]} \
+      $p/CF/CF_check-list.conf \
+      $p/CF/CF_area-type-table.txt \
+      $p/CF/CF_standardized-region-names.txt \
+      $p/CF/cf-standard-name-table.xml \
+      )
+
+    local rI
+    for rI in ${reqItems[*]} ; do
+      test ! -e ${rI} && return 1
+    done
+  fi
+
+  return 0
+}
+
 iRE_inqState()
 {
   local isRO
@@ -46,8 +98,8 @@ iRE_inqState()
     prj=($*)
   fi
 
-  local retVal  # no updates
-  declare -i retVal=0
+  local status  # no updates
+  declare -i status=0
 
   local i name rname reqCount value
   declare -a name rname value
@@ -96,12 +148,12 @@ iRE_inqState()
 
   # read configuration setting
   if ! iRE_checkForUpdate ; then
-    retVal+=1
+    status+=1
   fi
 
-  test ${isRO:-f} = t -o ${retVal} = 0 && return ${retVal}
+  test ${isRO:-f} = t -o ${status} = 0 && return ${status}
 
-  test ${iRE_RestoreApproval} && return ${retVal}
+  test ${iRE_RestoreApproval} && return ${status}
 
   # try to restore some lost config-file items
   iRE_scanCondaEnv qa-dkrz
@@ -117,9 +169,14 @@ iRE_inqState()
   iRE_RestoreApproval=t
 
   iRE_inqState ${iRE_CallParam[*]}
-  retVal=$?
+  status=$?
 
-  return ${retVal}
+  if [ ${status} -eq 0 ] ; then
+    iRE_checkTables $*
+    status=$?
+  fi
+
+  return ${status}
 }
 
 iRE_readConfigFile()
@@ -139,8 +196,8 @@ iRE_readConfigFile()
     fi
   done
 
-  # retVal > 9 indicates at least one missing required config-file entry
-  test ${count} -lt ${reqCount} && retVal=$(( retVal + 10 ))
+  # status > 9 indicates at least one missing required config-file entry
+  test ${count} -lt ${reqCount} && status=$(( status + 10 ))
 
   return
 }
