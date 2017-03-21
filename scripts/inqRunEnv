@@ -151,6 +151,11 @@ iRE_inqState()
     status+=1
   fi
 
+  if [ ${status} -eq 0 ] ; then
+    iRE_checkTables $*
+    status=$?
+  fi
+
   test ${isRO:-f} = t -o ${status} = 0 && return ${status}
 
   test ${iRE_RestoreApproval} && return ${status}
@@ -169,12 +174,6 @@ iRE_inqState()
   iRE_RestoreApproval=t
 
   iRE_inqState ${iRE_CallParam[*]}
-  status=$?
-
-  if [ ${status} -eq 0 ] ; then
-    iRE_checkTables $*
-    status=$?
-  fi
 
   return ${status}
 }
