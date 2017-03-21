@@ -98,8 +98,7 @@ iRE_inqState()
     prj=($*)
   fi
 
-  local status  # no updates
-  declare -i status=0
+  local status=0  # no updates
 
   local i name rname reqCount value
   declare -a name rname value
@@ -148,7 +147,7 @@ iRE_inqState()
 
   # read configuration setting
   if ! iRE_checkForUpdate ; then
-    status+=1
+    status=1
   fi
 
   if [ ${status} -eq 0 ] ; then
@@ -175,7 +174,7 @@ iRE_inqState()
 
   iRE_inqState ${iRE_CallParam[*]}
 
-  return ${status}
+  return
 }
 
 iRE_readConfigFile()
@@ -194,9 +193,6 @@ iRE_readConfigFile()
        fi
     fi
   done
-
-  # status > 9 indicates at least one missing required config-file entry
-  test ${count} -lt ${reqCount} && status=$(( status + 10 ))
 
   return
 }
