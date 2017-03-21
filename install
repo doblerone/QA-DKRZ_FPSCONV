@@ -476,7 +476,7 @@ do
           DEBUG='--debug'
           set -x
         elif [ "${OPTNAME:0:5}" = FORCE ] ; then
-          isForceUpdate=t
+          isForceUp=t
         elif [ "${OPTNAME}" = HELP ] ; then
           descript
           exit 41
