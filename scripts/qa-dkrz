@@ -2618,18 +2618,13 @@ init()
        std_out flush "could not install ${prj}"
        exit 1
     fi
-
-    test ${ONLY_INSTALL} && exit
-
   elif ! . $QA_SRC/scripts/inqRunEnv --read-only ${prj} ; then
       # get the state of the current installation: read config-file
-      if [ $? > 9 -a ${UPDATE:-f} = f ] ; then
         local installArg="--install=force${prj:+,${prj}}"
 
         echo -e "\nMissing external tables/executabels."
         echo "Please, run: $0 ${installArg} ${comLineArgs[*]}"
         exit 1
-      fi
   fi
 
   # expand comma-sep-list to arrays
