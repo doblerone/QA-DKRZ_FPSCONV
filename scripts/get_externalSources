@@ -559,7 +559,7 @@ if [ ! \( "${LAST_CF_UPDATE}" = $today -a ${isForceUp:-f} = f \) ] ; then
      if ges_cf ; then
        . $QA_SRC/scripts/parseConfigFile LAST_CF_UPDATE=$today
      else
-       cd ${oldPWD} &> /dev/null
+       cd ${currPWD} &> /dev/null
        return 41
      fi
   #fi
