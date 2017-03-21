@@ -1,8 +1,16 @@
 ges_cf()
 {
+   if ! mkdir -p $QA_HOME/tables/projects/CF ; then
+     mkdir -p $1
+     return 41
+   fi
+   cd $QA_HOME/tables/projects/CF
+
    local org=http://cfconventions.org
 
    ges_cf_html
+
+   local status=$?
 
    return $?
 }
@@ -185,6 +193,12 @@ ges_cmip6()
      fi
    fi
 
+   if ! mkdir -p $QA_HOME/tables/projects/$prj ; then
+     mkdir -p $1
+     return 41
+   fi
+   cd $QA_HOME/tables/projects/$prj &> /dev/null
+
    if [ ! ${PrePARE} ] ; then
      isForceUp=t
    elif [ ! ${UDUNITS2_XML_PATH} ] ; then
@@ -234,8 +248,6 @@ ges_cmip6_cmor()
    if [ $status -gt 0 ] ; then
      cat log_cmip6-cmor-tables.txt > ${TTY}
    fi
-
-   cd - &> /dev/null
 
    return $status
 }
@@ -331,8 +343,6 @@ ges_cmip6_conda()
 
 ges_cmip6_mip()
 {
-   local curPWD=$(pwd)
-
    mkdir -p ${QA_HOME}/tables/projects/CMIP6
    cd ${QA_HOME}/tables/projects/CMIP6 &> /dev/null
 
@@ -380,7 +390,7 @@ ges_cordex()
      return 41
    fi
 
-   cd $QA_HOME/tables/projects/$prj
+   cd $QA_HOME/tables/projects/$prj &> /dev/null
 
    if [ -d IS-ENES-Data.github.io ] ; then
      cd IS-ENES-Data.github.io
@@ -396,13 +406,17 @@ ges_cordex()
        && git reset --hard origin/master &>> log_cordex_tables.txt
        status=$?
      fi
+
+     cd - &> /dev/null
    else
      git clone https://github.com/IS-ENES-Data/IS-ENES-Data.github.io \
        &>> log_cordex_tables.txt
      status=$?
 
-     ln -sf IS-ENES-Data.github.io/CORDEX_RCMs_ToU.txt CORDEX_RCMs_ToU.txt
    fi
+
+   test ! -e CORDEX_RCMs_ToU.txt && \
+     ln -sf IS-ENES-Data.github.io/CORDEX_RCMs_ToU.txt CORDEX_RCMs_ToU.txt
 
    if [ $status -gt 0 ] ; then
      err[${#err[*]}]="git failed for IS-ENES-Data.github.io"
@@ -480,6 +494,12 @@ ges_xlsx2csv()
    local xc=$QA_HOME/xlsx2csv/xlsx2csv.py
 
    if [ ! -f $xc ] ; then
+      if ! mkdir -p $QA_HOME ; then
+        mkdir -p $1
+        return 41
+      fi
+      cd $QA_HOME &> /dev/null
+
       git clone http://github.com/dilshod/xlsx2csv &>> log_install_xlsx2csv.txt
 
       if [ $? -gt 0 ] ; then
@@ -526,6 +546,7 @@ if [ ! ${QA_HOME} ] ; then
   return 41
 fi
 
+currPWD=$(pwd)
 cd $QA_HOME &> /dev/null
 
 # search for updates only once a day
@@ -538,6 +559,7 @@ if [ ! \( "${LAST_CF_UPDATE}" = $today -a ${isForceUp:-f} = f \) ] ; then
      if ges_cf ; then
        . $QA_SRC/scripts/parseConfigFile LAST_CF_UPDATE=$today
      else
+       cd ${oldPWD} &> /dev/null
        return 41
      fi
   #fi
@@ -562,6 +584,8 @@ elif [ "$prj" = CMIP6 ] ; then
     status=$?
   fi
 fi
+
+cd ${currPWD} &> /dev/null
 
 if [ ${#err[*]} -gt 0 ] ; then
    for(( k=0 ; k < ${#err[*]} ; ++k )) ; do
