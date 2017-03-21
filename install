@@ -475,6 +475,8 @@ do
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
           DEBUG='--debug'
           set -x
+        elif [ "${OPTVAL:0:5}" = FORCE ] ; then
+          isForceUpdate=t
         elif [ "${OPTNAME}" = HELP ] ; then
           descript
           exit 41
