@@ -372,7 +372,7 @@ update_QA_SRC()
              | awk '{print $6}' 2> /dev/null ) ] ; then
           isRestart=1
         elif [ ${date_inq} != $( ls -l \
-               --time-style=+'%s' ${QA_SRC}/scripts/inq \
+               --time-style=+'%s' ${QA_SRC}/scripts/inqRunEnv \
                | awk '{print $6}' 2> /dev/null ) ] ; then
             isRestart=1
         fi
