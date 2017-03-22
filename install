@@ -315,7 +315,7 @@ update_external()
   local prj=$1
 
   local lastUpdate
-  eval lastUpdate=LAST_${prj}_UPDATE
+  eval lastUpdate=\$LAST_${prj}_UPDATE
 
   # check it here in order to prevent an update of the config-file in case
   # that the installation failed or war terminated.
