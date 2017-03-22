@@ -177,9 +177,9 @@ update()
   local prj isUp
 
   if . ${QA_SRC}/scripts/inqRunEnv ${prj} && [ ${isUpdate:-f} = f ] ; then
-    isUp=0
+    isUp=f
   else
-    isUp=1  # look for updates
+    isUp=t  # look for updates
   fi
 
   # search for updates only once a day
