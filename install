@@ -177,7 +177,9 @@ update()
   local prj
 
   if ! . ${QA_SRC}/scripts/inqRunEnv ${prj} ; then
-    isUpdate=t  # look for updates
+    # distinguish return 1 and 11: the latter was issued
+    # only when the date is not today
+    test $? -eq 1 && isUpdate=t  # look for updates
   fi
 
   # search for updates only once a day
