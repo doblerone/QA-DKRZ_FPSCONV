@@ -2596,14 +2596,12 @@ init()
 
   local prj=${PROJECT_AS:-${PROJECT}}
 
-  if [ ${UPDATE:-f} = t -o ${ONLY_INSTALL:-f} = t ] ; then
+  if [ ${UPDATE:-f} = t ] ; then
     # checksum of current qa-dkrz
     local md5_0
     md5_0=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
 
     if ${QA_SRC}/install ${TTY:+-T } ${TTY} ${INSTALL_ARGS//,/ } ${prj} ; then
-
-        test ${ONLY_INSTALL:-f} = t && exit 0
 
         local md5_1
         md5_1=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )

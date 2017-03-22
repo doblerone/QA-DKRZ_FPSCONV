@@ -174,7 +174,14 @@ tr_option()
 
 update()
 {
-  local project=$1
+  local prj isUp
+  isUp=0
+
+  if . ${QA_SRC}/scripts/inqRunEnv ${prj} || [ ${isUpdate:-f} = t ] ; then
+    isUp=0
+  else
+    isUp=1  # look for updates
+  fi
 
   # search for updates only once a day
   today=$( date '+%Y%m%d' )
@@ -198,7 +205,21 @@ update()
      fi
   fi
 
-  update_external
+  # revison num of the package
+  local packRec
+  getRevNum packRev
+  . ${QA_SRC}/scripts/parseConfigFile QA_REVISION${packRev:+=}${packRev}
+
+  # now for non-QA-DKRZ tables and programs
+  for prj in $* ; do
+    test "${PROJECT_AS}" && prj=${PROJECT_AS}
+
+    if ! update_external $prj ; then
+      return $?
+    fi
+
+    test "${PROJECT_AS}" && break
+  done
 
   if ! mkdir -p ${QA_HOME}/tables  ; then
     echo "could not mkdir -p ${QA_HOME}/tables"
@@ -207,12 +228,6 @@ update()
 
   # note that QA_HOME points to .qa-dkrz wherever it is located
   rsync -auz --exclude '*~' $QA_SRC/tables ${QA_HOME} &> /dev/null
-
-  # revison num of the package
-  local packRec
-  getRevNum packRev
-
-  . ${QA_SRC}/scripts/parseConfigFile QA_REVISION${packRev:+=}${packRev}
 
   return 0
 }
@@ -297,7 +312,7 @@ update_external()
 {
   test ${INTERNET:-t} = f && return 0
 
-  test "${PROJECT_AS}" && prj=${PROJECT_AS}
+  local prj=$1
 
   local lastUpdate
   eval lastUpdate=LAST_${prj}_UPDATE
@@ -326,9 +341,17 @@ update_QA_SRC()
       if [ ! -f ${QA_SRC}/.ignore_GitHub ] ; then
         cd ${QA_SRC}
 
+        local md5_0_inst
+        md5_0_inst=$( md5sum ${QA_SRC}/install | awk '{print $1}' )
+        local md5_0_inq
+        md5_0_inq=$( md5sum ${QA_SRC}/scripts/inqRunEnv | awk '{print $1}' )
+
         # is qa-dkrz going to change?
-        local qa_dkrzDate=$(ls -l \
-             --time-style=+'%s' ${QA_SRC}/scripts/qa_dkrz \
+        local date_i=$(ls -l \
+             --time-style=+'%s' ${QA_SRC}/install \
+             | awk '{print $6}' 2> /dev/null )
+        local date_inq=$(ls -l \
+             --time-style=+'%s' ${QA_SRC}/scripts/inqRunEnv \
              | awk '{print $6}' 2> /dev/null )
 
         test "$(getGitBranch)" != master && \
@@ -338,11 +361,23 @@ update_QA_SRC()
         git fetch && git reset --hard origin/$(getGitBranch) &> /dev/null
 #       git pull --no-edit -q origin master &> /dev/null
 
-        if [ ${qa_dkrzDate} != $( ls -l \
-             --time-style=+'%s' ${QA_SRC}/scripts/qa_dkrz \
-             | awk '{print $6}' 2> /dev/null ) ] ; then
-          return 101  # causes a restart of qa-dkrz, because it was renewed
+        if [ $? -t 0 ] ; then
+          echo "git-ting QA-DKRZ failed"
+          return 1
         fi
+
+        local isRestart=0
+        if [ ${date_i} != $( ls -l \
+             --time-style=+'%s' ${QA_SRC}/install \
+             | awk '{print $6}' 2> /dev/null ) ] ; then
+          isRestart=1
+        elif [ ${date_inq} != $( ls -l \
+               --time-style=+'%s' ${QA_SRC}/scripts/inq \
+               | awk '{print $6}' 2> /dev/null ) ] ; then
+            isRestart=1
+        fi
+
+        test ${isRestart} -eq 1 && exec ${QA_SRC}/install ${initialArgs[*]}
       fi
     fi
   fi
@@ -364,7 +399,7 @@ fi
 test ${THIS##*/} = scripts && THIS=${THIS%/*}
 
 zeroArg=$0
-allArgs=($*)
+initialArgs=($*)
 
 if [ $# -gt 0 ] ; then
   # safe arguments
@@ -589,14 +624,7 @@ test ${#projects[*]} -eq 0 && projects=(${default_prj})
 # inquire from ~/.qa-dkrz/config.txt;
 # also ensures that all names in the config.files are defined in this program
 if [ ! ${isBuild} ] ; then
-  for prj in ${projects[*]} ;do
-    if ! . ${QA_SRC}/scripts/inqRunEnv ${projects[*]} || [ ${isUpdate:-f} = t ] ; then
-      if ! update $prj ; then
-        status=$?
-        test ! ${ignore_failed_update} && exit ${status}
-      fi
-    fi
-  done
+    update ${projects[*]}
 fi
 
 test ${CONDA_QA_PATH} && exit  # miniconda built executables
@@ -607,7 +635,7 @@ if [ ${isBuild:-f} = t -a ${isLink:-f} = t ] ; then
   echo "scripts/install.sh: options --build and --link exclude each other"
   exit 1
 elif [ ${isBuild:-f} = t -o ${isLink:-f} = t ] ; then
-  log ${allArgs[*]}
+  log ${initialArgs[*]}
 else
   pcks=
 fi
