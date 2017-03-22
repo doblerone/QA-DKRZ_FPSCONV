@@ -4,7 +4,7 @@ iRE_checkForUpdate()
 {
   # 1st run on this day?
   local isUp=0 val
-  test !${today} && today=$( date '+%Y%m%d' )
+  test ! ${today} && today=$( date '+%Y%m%d' )
 
   for(( i=0 ; i < ${#name[*]} ; ++i )) ; do
     val=${value[i]}
@@ -36,7 +36,7 @@ iRE_checkTables()
 {
   local prj=$1
 
-  if [ !${QA_HOME} ] ; then
+  if [ ! ${QA_HOME} ] ; then
     return 1
   elif [ ! -d ${QA_HOME}/tables/$prj ] ; then
     return 1
