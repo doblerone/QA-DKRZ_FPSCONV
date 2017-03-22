@@ -191,7 +191,7 @@ update()
       . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
 
     . ${QA_SRC}/scripts/parseConfigFile LAST_CONDA_QA_UPDATE
-    if [ "${LAST_CONDA_QA_UPDATE}" != $today ] ; then
+    if [ "${LAST_CONDA_QA_UPDATE}" != $today || ${isUp:-f} = t ] ; then
       if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
                       "${CONDA_QA_PATH}" "${CONDA_QA_ENV}" ; then
 
@@ -319,11 +319,11 @@ update_external()
 
   # check it here in order to prevent an update of the config-file in case
   # that the installation failed or war terminated.
-  if [ "${lastUpdate}" != ${today} -o ${isUpdate:-f} = t ]; then
+  if [ "${lastUpdate}" != ${today} -o ${isUp:-f} = t ]; then
      . ${QA_SRC}/scripts/get_externalSources \
          -P $prj --qa-src=${QA_SRC} \
          --qa-home=${QA_HOME} --config_file=${CONFIG_FILE} \
-         ${isUpdate:+--force-update}
+         ${isUp:+--force-update}
 
      test $? -gt 0 && exit 41
 
@@ -337,7 +337,7 @@ update_QA_SRC()
 {
   if [ ${INTERNET:-t} = t ] ; then
     if ! . ${QA_SRC}/scripts/parseConfigFile LAST_QA_UPDATE=${today} \
-          || [ ${isUpdate:-f} = t ]; then
+          || [ ${isUp:-f} = t ]; then
       if [ ! -f ${QA_SRC}/.ignore_GitHub ] ; then
         cd ${QA_SRC}
 
