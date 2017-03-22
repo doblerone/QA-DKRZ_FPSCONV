@@ -361,7 +361,7 @@ update_QA_SRC()
         git fetch && git reset --hard origin/$(getGitBranch) &> /dev/null
 #       git pull --no-edit -q origin master &> /dev/null
 
-        if [ $? -t 0 ] ; then
+        if [ $? -gt 0 ] ; then
           echo "git-ting QA-DKRZ failed"
           return 1
         fi
