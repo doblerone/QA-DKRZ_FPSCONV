@@ -14,8 +14,8 @@ iRE_checkForUpdate()
          break
     elif [ ! ${isRO} ] ; then
       if [ "${val:0:2}" = '20' ] ; then
-         if [ ${val} -lt $today ] ; then
-            isUp=1
+         if [ ${val} -lt $today -a ${isUp:-0} -eq 0 ] ; then
+            isUp=11
             break
          fi
       fi
@@ -147,7 +147,7 @@ iRE_inqState()
 
   # read configuration setting
   if ! iRE_checkForUpdate ; then
-    status=1
+    status=$?
   fi
 
   if [ ${status} -eq 0 ] ; then
