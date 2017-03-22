@@ -319,7 +319,7 @@ update_external()
 
   # check it here in order to prevent an update of the config-file in case
   # that the installation failed or war terminated.
-  if [ "${lastUpdate}" != ${today} -o ${isForceUp:-f} = t ]; then
+  if [ "${lastUpdate}" != ${today} -o ${isUpdate:-f} = t ]; then
      . ${QA_SRC}/scripts/get_externalSources \
          -P $prj --qa-src=${QA_SRC} \
          --qa-home=${QA_HOME} --config_file=${CONFIG_FILE} \
@@ -511,7 +511,7 @@ do
           DEBUG='--debug'
           set -x
         elif [ "${OPTNAME:0:5}" = FORCE ] ; then
-          isForceUp=t
+          isUpdate=t
         elif [ "${OPTNAME}" = HELP ] ; then
           descript
           exit 41
@@ -547,7 +547,7 @@ do
           if [ "${OPTVAL:0:9}" = conda ] ; then
             isCondaUp=t
           elif [ "${OPTVAL:0:5}" = FORCE ] ; then
-            isForceUp=t
+            isUpdate=t
           elif [ "${OPTVAL:0:1}" = N -o "${OPTVAL:0:1}" = F \
                     -o "${OPTVAL:0:1}" = D -o "${OPTVAL:0:1}" = S ] ; then
             isUpdate=f
