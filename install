@@ -175,9 +175,8 @@ tr_option()
 update()
 {
   local prj isUp
-  isUp=0
 
-  if . ${QA_SRC}/scripts/inqRunEnv ${prj} || [ ${isUpdate:-f} = t ] ; then
+  if . ${QA_SRC}/scripts/inqRunEnv ${prj} && [ ${isUpdate:-f} = f ] ; then
     isUp=0
   else
     isUp=1  # look for updates
