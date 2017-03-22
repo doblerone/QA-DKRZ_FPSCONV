@@ -550,7 +550,7 @@ currPWD=$(pwd)
 cd $QA_HOME &> /dev/null
 
 # search for updates only once a day
-test !${today} && today=$( date '+%Y%m%d' )
+test ! ${today} && today=$( date '+%Y%m%d' )
 
 # Note that CF may-be stand-alone or together with another project
 if [ ! \( "${LAST_CF_UPDATE}" = $today -a ${isForceUp:-f} = f \) ] ; then
