@@ -38,10 +38,10 @@ iRE_checkTables()
 
   if [ ! ${QA_HOME} ] ; then
     return 1
-  elif [ ! -d ${QA_HOME}/tables/$prj ] ; then
+  elif [ ! -d ${QA_HOME}/tables/projects/$prj ] ; then
     return 1
   else
-    local p=${QA_HOME}/tables
+    local p=${QA_HOME}/tables/projects
 
     if [ ${#prj} -eq 0 -a ${#DEFAULT_PROJECT} -gt 0 ] ; then
       prj=${DEFAULT_PROJECT}
