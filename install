@@ -397,6 +397,12 @@ fi
 
 test ${THIS##*/} = scripts && THIS=${THIS%/*}
 
+# set QA_SRC and resolve symbolic links if any
+. ${THIS}/scripts/getSrcPath
+
+# is it in a conda built?
+. ${QA_SRC}/scripts/getCondaPath
+
 zeroArg=$0
 initialArgs=($*)
 
@@ -479,7 +485,6 @@ do
         OPTNAME=${UOPTARG%%=*}
 
         if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
-          local OV
           for OV in ${OPTVAL//,/ } ; do
             if [ "${OV}" = CONDA_QA -o "${OV}" = CONDA_CMOR ] ; then
               OPTNAME=${OV}
@@ -542,18 +547,8 @@ do
           default_prj=${OPTVAL}
           continue
         elif [ "${OPTNAME:0:2}" = UP ] ; then
-          OPTVAL=$( echo "${OPTVAL#*=}" | tr "[:lower:]" "[:upper:]" )
-          if [ "${OPTVAL:0:9}" = conda ] ; then
-            isCondaUp=t
-          elif [ "${OPTVAL:0:5}" = FORCE ] ; then
-            isUpdate=t
-          elif [ "${OPTVAL:0:1}" = N -o "${OPTVAL:0:1}" = F \
-                    -o "${OPTVAL:0:1}" = D -o "${OPTVAL:0:1}" = S ] ; then
-            isUpdate=f
-            continue
-          fi
-
           isUpdate=t
+          continue
         elif [ "${OPTNAME}" = WORK ] ; then
           continue
         elif [ "${OPTNAME}" = HDF5 ] ; then
@@ -609,12 +604,6 @@ for pck in $* ; do
   fi
 done
 
-# resolve symbolic links
-. ${THIS}/scripts/getSrcPath
-
-# is it in a conda built?
-. ${QA_SRC}/scripts/getCondaPath
-
 . ${QA_SRC}/scripts/getHomePath
 
 . ${QA_SRC}/scripts/parseConfigFile DEFAULT_PROJECT${default_prj:+=${default_prj}}
@@ -623,7 +612,7 @@ test ${#projects[*]} -eq 0 && projects=(${default_prj})
 # inquire from ~/.qa-dkrz/config.txt;
 # also ensures that all names in the config.files are defined in this program
 if [ ! ${isBuild} ] ; then
-    update ${projects[*]}
+  update ${projects[*]}
 fi
 
 test ${CONDA_QA_PATH} && exit  # miniconda built executables
