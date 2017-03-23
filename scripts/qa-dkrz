@@ -4307,7 +4307,7 @@ summary_task()
         fi
       fi
 
-      if [ ${PY_SUMMARY} = t ] ; then
+      if [ ${PY_SUMMARY:-f} = t ] ; then
          python ${QA_SRC}/scripts/python/qa-dkrz/qa_summary.py \
               ${qa_res}/${LOG_FNAMES[exp_ix]} &
       else
