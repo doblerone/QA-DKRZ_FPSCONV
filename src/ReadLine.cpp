@@ -319,7 +319,7 @@ ReadLine::readLine(bool isVoid)
 
   prevLine = line;
   line.erase();
-  bool isSkip;
+  bool isSkip=false;
   bool isLeading=false;
   if( vc_skipLeadingChar.size() )
     isLeading=true;
