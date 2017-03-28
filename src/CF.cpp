@@ -7445,6 +7445,7 @@ CF::chap72(void)
 
               if( (jx = var_af.getAttIndex("associated_files")) > -1 )
               {
+                // note that at present the existence of an associated file is not tested
                 for(size_t i=0 ; i < var_af.attValue[jx].size() ; ++i )
                 {
                   Split x_av(var_af.attValue[jx][i]);
@@ -7469,16 +7470,16 @@ CF::chap72(void)
 
             if(isCont)
               continue;
-          }
 
-          if( notes->inq(bKey + "72d", var.name) )
-          {
-            std::string capt(hdhC::tf_att(var.name, n_cell_measures));
-            capt += "names a non-existing " + n_variable ;
-            capt += " by" + hdhC::tf_val(cm) ;
+            if( notes->inq(bKey + "72d", var.name) )
+            {
+              std::string capt(hdhC::tf_att(var.name, n_cell_measures));
+              capt += "names a non-existing " + n_variable ;
+              capt += " by" + hdhC::tf_val(cm) ;
 
-            (void) notes->operate(capt) ;
-            notes->setCheckStatus( n_CF, fail );
+              (void) notes->operate(capt) ;
+              notes->setCheckStatus( n_CF, fail );
+            }
           }
 
           continue;
