@@ -42,6 +42,8 @@ descript()
   echo "  --auto-up=expr    Control automatic updates from the repository at the"
   echo "                    beginning of a run. Valid expressions for enabling:"
   echo "                    enable, e, t. Suspending: disable, d, suspend, s."
+  echo "  --auto-compile    automatic compilation, when things have changed."
+  echo "  --compile         No updates, but compile when things have changed."
   echo "  --build           Download and build required libraries."
   echo "  --debug[=scrienv pt]"
   echo "                    Display execution commands. If the name of a script"
@@ -508,6 +510,14 @@ do
               . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=${OV}
             fi
           done
+          continue
+        elif [ "${UOPTARG:0:9}" = AUTO_COMP ] ; then
+          if [ ${OPTVAL:0:1} = D -o ${OPTVAL:0:1} = F -o ${OPTVAL:0:1} = S ] ; then
+            OPTVAL=disable
+          else
+            OPTVAL=enable
+          fi
+          . ${QA_SRC}/scripts/parseConfigFile AUTO_COMPILE=${OPTVAL}
           continue
         elif [ "${OPTNAME}" = BUILD ] ; then
           isBuild=t

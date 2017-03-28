@@ -2591,6 +2591,8 @@ init()
   if [ ! ${UPDATE} ] ; then
     if . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE${AUTO_UP:+=}${AUTO_UP} ; then
       UPDATE=t
+    elif . $QA_SRC/scripts/parseConfigFile AUTO_COMPILE${AUTO_COMP:+=}${AUTO_COMP} ; then
+      UPDATE=t
     fi
   fi
 

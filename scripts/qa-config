@@ -2183,6 +2183,21 @@ do
           fi
           installArgs+="--auto-up=${OPTVAL},"
 
+        elif [ "${OPTNAME:0:9}" = AUTO_COMP ] ; then
+          tr_option OPTVAL
+
+          if [ ${OPTVAL:0:9} = AUTO_COMP -o ${OPTVAL:0:1} = E -o ${OPTVAL:0:1} = T ] ; then
+             OPTVAL=enable
+             setKWL AUTO_COMPILE=t
+             setKWL UPDATE=t
+          elif [ ${OPTVAL:0:1} = D -o ${OPTVAL:0:1} = F ] ; then
+             OPTVAL=disable
+          fi
+          installArgs+="--auto-compile=${OPTVAL},"
+
+        elif [ "${OPTNAME}" = COMPILE ] ; then
+          setKWL UPDATE=t  # no install arg
+
         elif [ "${OPTNAME:0:5}" = DEBUG ] ; then
           : # done before
 
@@ -2218,6 +2233,11 @@ do
                      continue 2
                   fi
                done
+
+               if [ ${uon:0:4} = COMP ] ; then
+                 setKWL UPDATE=${ov}
+                 installArgs+="--compile,"
+               fi
 
                if [ ${uon:0:2} = UP ] ; then
                  setKWL UPDATE=${ov}
