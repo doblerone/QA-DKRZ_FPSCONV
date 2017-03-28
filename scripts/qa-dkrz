@@ -3878,6 +3878,8 @@ rmBlock()
 {
   test $# -lt 2 && return
 
+  test ! -f $1 && return  # no log-file at all, yet
+
   local file=$1
   local pattern=$2
 
