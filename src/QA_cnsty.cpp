@@ -221,9 +221,9 @@ Consistency::check(Variable &dataVar, std::string entryID)
         if( y.size() == 1 )
         {
           if(i==1)
-            vvs_f_aName.back().push_back("frequency");
+            vvs_t_aName.back().push_back("frequency");
           else
-            vvs_f_aName.back().push_back("");
+            vvs_t_aName.back().push_back("");
           // mostly aux=aName, but for the first entry item: only vName
 
           vvs_t_aVal.back().push_back(y[0]);
@@ -483,7 +483,8 @@ Consistency::testAttributes( std::string& varName,
     // thus explicitly coded
     bool notName=true;
     bool notValue=false;
-    for( size_t j=start_ix ; j < vs_t_aName.size() ; ++j )
+    size_t j;
+    for( j=start_ix ; j < vs_t_aName.size() ; ++j )
     {
       if( vs_f_aName[i] == vs_t_aName[j] )
       {
