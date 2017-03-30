@@ -179,7 +179,8 @@ FileSplit::setFilename(std::string f)
 
 
 template<typename T>
-T clearLeastBits( T v, size_t shft)
+T
+clearLeastBits( T v, size_t shft)
 {
   switch( sizeof( T ) )
   {
@@ -446,7 +447,8 @@ double convertTime(std::string targetUnit, std::string time,
   return 0. ;
 }
 
-double deci2dgr(double grad, double min, double sec)
+double
+deci2dgr(double grad, double min, double sec)
 {
   double sign=1.;
 
@@ -460,7 +462,8 @@ double deci2dgr(double grad, double min, double sec)
   return sign * (fabs(grad) + fabs(min)/60. + fabs(sec)/3600.) ;
 }
 
-double dgr2deci(std::string s)
+double
+dgr2deci(std::string s)
 {
   double sign=1.;
   double konvFakt=0.;
@@ -518,7 +521,8 @@ double dgr2deci(std::string s)
 
 // ----------------------------------------------------
 
-std::string double2String( double z, int d, std::string flag)
+std::string
+double2String( double z, int d, std::string flag)
 {
   // Note: for downward compatibility.
 
@@ -854,7 +858,12 @@ uint32_t fletcher32_cmip5( std::string &str, bool *reset)
 
 uint32_t fletcher32_cmip5( double data, bool *reset)
 {
+//   std::string str = double2String(data) ;
+#if __cplusplus > 201100L
+   std::string str = std::to_string(data) ;
+#else
    std::string str = double2String(data) ;
+#endif
 
    return fletcher32_cmip5( str.c_str(), str.size(), reset) ;
 }
@@ -863,8 +872,13 @@ uint32_t fletcher32_cmip5( double *data, size_t sz, bool *reset)
 {
    std::string str ;
 
+#if __cplusplus > 201100L
+   for( size_t i=0 ; i < sz ; ++i )
+     str += std::to_string(data[i]) ;
+# else
    for( size_t i=0 ; i < sz ; ++i )
      str += double2String(data[i]) ;
+#endif
 
    return fletcher32_cmip5( str.c_str(), str.size(), reset) ;
 }
