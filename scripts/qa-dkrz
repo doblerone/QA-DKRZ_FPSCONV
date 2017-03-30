@@ -2692,22 +2692,6 @@ init()
     maxNumExecThreads=$(( maxNumExecThreads + nET ))
   done
 
-  # a file qa_fName.nc is only created, if check_mode includes 'time' or 'data'. Only
-  # then, the QA distinguishes files which have already been checked from those
-  # which have to be checked now.
-  if [ ${CLEAR:-f} != t -a "${CHECK_MODE:-f}" != f ] ; then
-     local chmo chmos isDT
-     chmos=( ${CHECK_MODE//,/ } )
-     isDT=t
-     for chmo in ${chmos[*]} ; do
-       if [ ${chmo} = TIME -o ${chmo} = DATA ] ; then
-          isDT=f
-          break
-       fi
-     done
-     test ${isDT} = t && CLEAR=t
-  fi
-
   if [ "${SHOW_CLEAR}" ] ; then
     # precedence of any CLEAR assignment
     test ${CLEAR:-f} = f -o "${CLEAR}" = t && CLEAR="${SHOW_CLEAR}"
