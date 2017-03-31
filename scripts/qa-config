@@ -371,6 +371,8 @@ Usage: qa-DKRZ options
              Permanently enable/disable automatic updates [default: disable].
              Disable a previously enabled option: --auto-up=d[isable].
    --conda-update  Update the qa-dkrz package by conda.
+   --config-file-location[=path]
+             The user's HOME directory by default; abbreviation --lcf.
    --debug   Show bash execution commands of install, qa-config, qa-dkrz, qa-dkrz
    --example Run the example.
    --force-update
@@ -386,6 +388,7 @@ Usage: qa-DKRZ options
              Use qa-dkrz call as a wrapper to the install script and then exit.
              Project-name is only used for compiling the C++ programs; may be omitted
              when a PROJECT or a PROJECT_AS name is specified.
+   --lcf     --config-file-location
    --no-internet   Usage in off-line mode.
    --pb[=filename[,step]]
              Progress bar properties. (obsolete)
@@ -2073,6 +2076,14 @@ do
         elif [ "${OPTNAME}" = EXAMPLE ] ; then
           setKWL QA_EXAMPLE=t
 
+        elif [ ${OPTNAME} = CONFIG_FILE_LOCATION -o ${OPTNAME} = LCF ] ; then
+          if [ ${OPTNAME} = ${UOPTARG#*=} ] ; then
+            isLCF=t
+            installArgs+="--lcf,"
+          else
+            installArgs+="--lcf=${OPTVAL},"
+          fi
+
         elif [ "${OPTNAME}" = HOME -o "${OPTNAME}" = QA_HOME ] ; then
            setKWL QA_HOME=${OPTVAL}
            installArgs+="--QA_HOME=${QA_HOME},"
@@ -2088,6 +2099,19 @@ done
 if [ ${isHelp:-f} = t ] ; then
   descript
   exit 1
+fi
+
+if [ ${isLCF} ] ; then
+  if [ ! "${CONFIG_FILE_LOCATION}" ] ; then
+    if [ ${QA_HOME} ] ; then
+      setKWL CONFIG_FILE=${QA_HOME}/.qa-dkrz/config.txt
+    else
+      echo "option --lcf requires provision of --qa-home"
+      exit 1
+    fi
+  fi
+else
+  setKWL CONFIG_FILE=${HOME}/.qa-dkrz/config.txt
 fi
 
 # may be overwritten by configuration file or command-line
