@@ -11,7 +11,7 @@ CXX="/usr/bin/g++"
 CFLAGS="-Wall"
 
 # C++ compiler options
-CXXFLAGS="-Wall -D NC4"
+CXXFLAGS="-Wall -std=c++11 -D NC4"
 
 # Path to libraries (netcdf4 and related, uuid, udunits).
 # Prefix of '-L' may be skipped.
