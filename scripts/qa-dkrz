@@ -4994,7 +4994,7 @@ comLineArgs=( $* )
 umask 002
 export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
 
-mkdir -p ${HOME}/.qa-dkrz
+#mkdir -p ${HOME}/.qa-dkrz
 
 THIS=${0%/*}
 cd ${THIS} &> /dev/null
@@ -5028,18 +5028,26 @@ for OPTARG in $* ; do
   for UOPTARG in ${optargs[*]} ; do
 
     tr_option UOPTARG $prev_opt
+    OPTNAME=${UOPTARG%%=*}
 
     if [ ${UOPTARG} = DEBUG -o ${UOPTARG} = DEBUG_M ] ; then
        set -x
     elif [ "${UOPTARG}" = EXAMPLE ] ; then
       QA_EXAMPLE=t
-    elif [ ${UOPTARG%%=*} = QA_CONFIG ] ; then
+
+    elif [ ${OPTNAME} = CONFIG_FILE_LOCATION -o ${OPTNAME} = LCF ] ; then
+      if [ ${OPTNAME} = ${UOPTARG#*=} ] ; then
+        isLCF=t
+      else
+        CONFIG_FILE_LOCATION=${OPTARG#*=}
+      fi
+    elif [ ${OPTNAME} = QA_CONFIG ] ; then
       QA_CONFIG==${OPTARG#*=}
-    elif [ ${UOPTARG%%=*} = QA_HOME ] ; then
+    elif [ ${OPTNAME} = QA_HOME ] ; then
       QA_HOME=${OPTARG#*=}
-    elif [ ${UOPTARG%%=*} = QA_SRC ] ; then
+    elif [ ${OPTNAME} = QA_SRC ] ; then
       QA_SRC=${OPTARG#*=}
-    elif [ ${UOPTARG%%=*} = WORK ] ; then
+    elif [ ${OPTNAME} = WORK ] ; then
       QA_HOME=${OPTARG#*=}
     fi
 
@@ -5047,6 +5055,19 @@ for OPTARG in $* ; do
     prev_opt=${UOPTARG}
   done
 done
+
+if [ ${isLCF} ] ; then
+  if [ ! "${CONFIG_FILE_LOCATION}" ] ; then
+    if [ ${QA_HOME} ] ; then
+      setKWL CONFIG_FILE=${QA_HOME}/.qa-dkrz/config.txt
+    else
+      echo "option --lcf requires provision of --qa-home"
+      exit 1
+    fi
+  fi
+else
+  setKWL CONFIG_FILE=${HOME}/.qa-dkrz/config.txt
+fi
 
 init $*
 

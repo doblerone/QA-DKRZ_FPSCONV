@@ -18,9 +18,6 @@ udunits=udunits-2.2.20
 
 default_prj=CORDEX
 
-export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
-test ! -f $HOME/.qa-dkrz/config.txt && touch $HOME/.qa-dkrz/config.txt
-
 # options with auto-update feature (option: --auto-up_feature)
 #   CMOR_LLNL:     the CMOR checker (D. Nadeau, LLNL)
 #   GIT_QA:         all QA updates touching write-protected locations
@@ -50,6 +47,7 @@ descript()
   echo "                    is assigned, then debug only this one."
   echo "  --help            Display usage and exit."
   echo "  --home=path       Same as QA_HOME."
+  echo "  --lcf=path        Location of .qa-dkrz/config.txt {QA_HOME}."
   echo "  --link=path       Hard links of external NetCDF installations from the"
   echo "                    directories in 'your-path/${package}/local'."
   echo "                    Shared by all hdf, netcdf, udunits  and zlib."
@@ -452,24 +450,43 @@ do
     -)  OPTVAL=${OPTARG#*=}
         OPTNAME=${UOPTARG%%=*}
 
-        if [ "${OPTNAME}" = HOME ] ; then
+        if [ "${OPTNAME}" = LCF ] ; then
+          isLCF=t
+          if [ ${UOPTARG%=*} != ${OPTNAME} ] ; then
+            locConfFile=${OPTVAL}
+          fi
+        elif [ "${OPTNAME}" = HOME ] ; then
           export QA_HOME=${OPTVAL}
-          break
         elif [ "${OPTNAME}" = PROJECT_AS ] ; then
           prj="${OPTVAL}"
         elif [ "${OPTNAME}" = QA_HOME ] ; then
           export QA_HOME=${OPTVAL}
-          break
         elif [ "${OPTNAME}" = WORK ] ; then
           export QA_HOME=${OPTVAL}
-          break
         fi
         ;;
    \?)  ;;
   esac
 done
 
-mkdir -p ${HOME}/.qa-dkrz
+if [ ${isLCF} ] ; then
+  if [ ! "${locConfFile}" ] ; then
+    if [ ${QA_HOME} ] ; then
+      locConfFile=${QA_HOME}
+    else
+      echo "option --lcf requires provision of --qa-home"
+      exit 1
+    fi
+  fi
+else
+  locConfFile=${HOME}
+fi
+
+export CONFIG_FILE=$locConfFile/.qa-dkrz/config.txt
+if [ ! -f $locConfFile/.qa-dkrz/config.txt ] ; then
+  mkdir -p ${locConfFile}/.qa-dkrz
+  touch $CONFIG_FILE}
+fi
 
 OPTIND=
 while getopts BdhT:-: option ${sArgs[*]}

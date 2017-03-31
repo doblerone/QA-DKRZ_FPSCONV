@@ -1,6 +1,7 @@
 getHomePath()
 {
-  export CONFIG_FILE=~/.qa-dkrz/config.txt
+  export CONFIG_FILE
+  test ! ${CONFIG_FILE} && CONFIG_FILE=~/.qa-dkrz/config.txt
 
   # path to the current user's home
   export QA_HOME

@@ -98,8 +98,6 @@ iRE_inqState()
     prj=($*)
   fi
 
-  local status=0  # no updates
-
   local i name rname reqCount value
   declare -a name rname value
   declare -i reqCount=0
@@ -145,14 +143,14 @@ iRE_inqState()
   # read configuration setting
   iRE_readConfigFile
 
-  # read configuration setting
-  if ! iRE_checkForUpdate ; then
-    status=$?
-  fi
+  local status=0  # no updates
 
-  if [ ${status} -eq 0 ] ; then
-    iRE_checkTables $*
-    status=$?
+  if iRE_checkForUpdate ; then
+    if ! iRE_checkTables $* ; then
+       status=1
+    fi
+  else
+    status=1
   fi
 
   test ${isRO:-f} = t -o ${status} = 0 && return ${status}
