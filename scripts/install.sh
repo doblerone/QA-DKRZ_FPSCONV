@@ -695,6 +695,8 @@ do
            continue
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
            isLink=t
+        elif [ "${UOPTARG:0:7}" = NO_COMP ] ; then
+          isCompilation=f
         elif [ "${OPTNAME}" = PACKAGE ] ; then
            package=${OPTVAL}
         elif [ "${OPTNAME}" = PROJECT_AS ] ; then
@@ -742,6 +744,8 @@ if [ ${isShowInst:-f} = t ] ; then
   showInst
   exit 41
 fi
+
+test ${isCompilation:-t} = f && exit 0
 
 # c/c++ stand-alone programs
 test ${#QA_LIBS} -eq 0 && \
