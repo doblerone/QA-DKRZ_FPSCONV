@@ -46,7 +46,7 @@ echo "branch=$(git branch | grep '*' | awk '{print $2}')" > ${QA_SRC}/install.lo
 echo "hexa=$(git log --pretty=format:'%h' -n 1)" >> ${QA_SRC}/install.log
 
 # install wrapper script in bin/ to call cfchecker and qa-dkrz
-cp $RECIPE_DIR/cfchecker-wrapper.sh $PREFIX/bin/dkrz-cf-checker
+cp $RECIPE_DIR/cfchecker-wrapper_env.sh $PREFIX/bin/dkrz-cf-checker
 cp $RECIPE_DIR/qa-wrapper_env.sh $PREFIX/bin/qa-dkrz
 
 chmod +x $PREFIX/bin
@@ -56,7 +56,7 @@ pref=${PREFIX%/*} # strip bin
 pref=${pref%/*}   # strip qa-dkrz
 
 if [ ${pref##*/} = conda-bld ] ; then
-  cp $RECIPE_DIR/cf-checker_rbin.sh ${pref%/*}/bin/dkrz-cf-checker
+  cp $RECIPE_DIR/cfchecker-wrapper_rbin.sh ${pref%/*}/bin/dkrz-cf-checker
   chmod +x ${pref%/*}/bin/dkrz-cf-checker
 
   cp $RECIPE_DIR/qa-wrapper_rbin.sh ${pref%/*}/bin/qa-dkrz

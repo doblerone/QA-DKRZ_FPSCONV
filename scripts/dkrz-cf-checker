@@ -26,110 +26,53 @@ descript()
   exit
 }
 
-getSrcPath()
+checkInstallation()
 {
-  # extract the path to the root of the QA package
-
-  # is it in a conda built?
-  local x_conda=${0%/qa-dkrz}
-  if [ ${x_conda##*/} = bin ] ; then
-    x_conda=${x_conda%/bin}
-    if [ -d $x_conda/opt/qa-dkrz ] ; then
-       CONDA_ENV=t
-       export QA_SRC=$x_conda/opt/qa-dkrz
-       return
-    fi
-  fi
-
-  local target isInvalid
-
-  if [ ${1:0:1} = '/' ] ; then
-    target=$1
-  else
-    target=$(pwd)/$1
-  fi
-
-  if [ -h $target ] ; then
-
-    # get the link
-    local link=$(ls -l $target | awk  '{print $(NF)}')
-
-    # link is relative, so make it absolute
-    test ${link:0:1} != '/' && link=${target%/*}/${link}
-
-    getSrcPath ${link}
-
-  elif [ -f $target ] ; then
-
-    # a real instance, at first resolve .. and .
-    # works also for . or .. in the middle of the path
-
-    local xname=${target##*/}
-    target=${target%/*}  # remove the name of the script
-
-    local arr=( ${target//\// } )
-
-    local i j sz
-    sz=${#arr[*]}
-
-    for(( i=1 ; i < sz ; ++i )) ; do
-
-      if [ "${arr[i]}" = '.' ] ; then
-        unset arr[i]
-      elif [ "${arr[i]}" = '..' ] ; then
-        j=$((i-1))
-
-        # this takes into account adjacent . and/or .. with any depth
-        while [ ${#arr[j]} -eq 0 ] ; do
-          j=$((j-1))
-        done
-        unset arr[j]
-        unset arr[i]
+  if [ ${isLCF} ] ; then
+    if [ ! "${locConfFile}" ] ; then
+      if [ ${QA_HOME} ] ; then
+        locConfFile=${QA_HOME}
+      else
+        echo "option --lcf requires provision of --qa-home"
+        exit 1
       fi
-    done
-
-    # get rid of empty items
-    arr=( ${arr[*]} )
-
-    sz=${#arr[*]}
-
-    local tmp
-    for(( i=0 ; i < sz ; ++i )) ; do
-      tmp=${tmp}/${arr[i]}
-
-      if [ -f ${tmp}/.install_configure ] ; then
-        QA_SRC=$tmp
-        break
-      fi
-    done
-
-    test $i -eq $sz && isInvalid=t
-  else
-    isInvalid=t
-  fi
-
-  if [ ${isInvalid:-f} = t ] ; then
-
-    local str=$(ls -l $target 2> /dev/null | awk  '{print $(NF)}')
-
-    if [ ${#str} -gt 0 ] ; then
-      str="invalid path=$0"
-    else
-      str="broken path=$0"
     fi
-
-    echo "${str}"
-
-    exit 1
+  else
+    locConfFile=${HOME}
   fi
 
-  export QA_SRC=${QA_SRC}
+  export CONFIG_FILE=$locConfFile/.qa-dkrz/config.txt
+  if [ ! -f $locConfFile/.qa-dkrz/config.txt ] ; then
+    mkdir -p ${locConfFile}/.qa-dkrz
+    touch $CONFIG_FILE
+  fi
+
+  if ! . $QA_SRC/scripts/inqRunEnv --read-only CF ; then
+      # get the state of the current installation: read config-file
+        local installArg="--install=force${prj:+,${prj}}"
+
+        echo -e "\nMissing external tables/executabels."
+        echo "Please, run: $0 ${installArg} ${comLineArgs[*]}"
+        exit 1
+  fi
 
   return
 }
 
 # -------  main -----
 test $# -eq 0 && descript
+
+THIS=${0%/*}
+cd ${THIS} &> /dev/null
+THIS=$(pwd)
+cd - &> /dev/null
+
+test ${THIS##*/} = scripts && THIS=${THIS%/*}
+# resolve symbolic links
+. ${THIS}/scripts/getSrcPath
+
+# is it in a conda built?
+. ${QA_SRC}/scripts/getCondaPath
 
 # get execution path of QA scripts
 RC=t
@@ -146,6 +89,17 @@ do
           descript
         elif [ "${OPTARG}" = "debug" ] ; then
           set -x
+        elif [ "${OPTARG%=*}" = LCF -o "${OPTARG%=*}" = lcf ] ; then
+          isLCF=t
+          if [ ${OPTARG%=*} != ${OPTARG} ] ; then
+            locConfFile=${OPTARG#*=}
+          fi
+        elif [ "${OPTARG%=*}" = CONFIG_FILE_LOCATION \
+                  -o "${OPTARG%=*}" = config-file-location ] ; then
+          isLCF=t
+          if [ ${OPTARG%=*} != ${OPTARG} ] ; then
+            locConfFile=${OPTARG#*=}
+          fi
         elif [ "${OPTARG}" = "no-reco" ] ; then
           RC=f
         elif [ "${OPTARG}" = "param" ] ; then
@@ -170,12 +124,8 @@ done
 
 shift $(( $OPTIND - 1 ))
 
-getSrcPath $0  # sets QA_SRC and if required CONDA_ENV
+checkInstallation
 
-test ! $CONDA_ENV &&
-  $QA_SRC/install CF &> /dev/null
-
-QA_WORK=$QA_SRC
 
 # files
 fs=( $* )
@@ -188,7 +138,7 @@ if [ ${isTestSuite:-f} = t ] ; then
   if [ ${count} -lt 25 ] ; then  # sufficient to outnumber protected nc-files
     if [ ! -f $QA_SRC/CF-TestSuite/Txt ] ; then
       if [ -f $QA_SRC/CF-TestSuite/Txt.tar.bz2 ] ; then
-        tar -C   ${QA_WORK}/CF-TestSuite \
+        tar -C   ${QA_SRC}/CF-TestSuite \
             -xjf ${QA_SRC}/CF-TestSuite/Txt.tar.bz2
       else
         echo "$QA_SRC/CF-TestSuite/Txt no such directory"
@@ -214,7 +164,24 @@ fi
 
 # not for the test suite
 if [ ${#startingDir} -gt 0 ] ; then
-  fs=( ${fs[*]} $( find ${startingDir} -name "*.nc" | sort ) )
+  fs_found=( $( find ${startingDir} -name "*.nc" | sort ) )
+
+  # if files given by parameter, then check whether these are among fs_found. If
+  # yes, then proceed only with them.
+  for(( i0=0 ; i <${#fs[*]} ; ++i )) ; do
+    for ff1 in ${fs_found[*]} ; do
+      if [ ${fs[i]##*/} = ${ff1##*/} ] ; then
+         fs_fnd2[${#fs_fnd2[*]}]=$ff1
+          unset fs[i0]
+      fi
+    done
+  done
+
+  if [ ${#fs_fnd2[*]} -gt 0 ] ; then
+    fs=( ${fs[*]} ${fs_fnd2[*]} )
+  else
+    fs=( ${fs[*]} ${fs_found[*]} )
+  fi
 elif [ ${#ts_fs[*]} -gt 0 ] ; then
   fs=(${ts_fs[*]})  # the test-suite files
 fi

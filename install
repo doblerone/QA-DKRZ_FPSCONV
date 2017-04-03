@@ -486,7 +486,7 @@ fi
 export CONFIG_FILE=$locConfFile/.qa-dkrz/config.txt
 if [ ! -f $locConfFile/.qa-dkrz/config.txt ] ; then
   mkdir -p ${locConfFile}/.qa-dkrz
-  touch $CONFIG_FILE}
+  touch $CONFIG_FILE
 fi
 
 OPTIND=
