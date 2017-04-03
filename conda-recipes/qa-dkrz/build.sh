@@ -28,7 +28,7 @@ touch ${QA_SRC}/.ignore_GitHub # avoids git update!
 # run build
 #export QA_PATH="$PWD"
 touch .ignore_GitHub # avoids git update!
-#export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg -lssl -lcrypto"
+export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg -lssl -lcrypto"
 QA_HOME=/hdh/hdh/Test/HOME
 ./install --net=f --lcf --qa-src=$QA_SRC --qa-home="$QA_HOME" CF CMIP5 CMIP6 CORDEX
 
