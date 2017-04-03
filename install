@@ -191,11 +191,11 @@ update()
       . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
 
     . ${QA_SRC}/scripts/parseConfigFile LAST_CONDA_QA_UPDATE
-    if [ "${LAST_CONDA_QA_UPDATE}" != $today || ${isUpdate:-f} = t ] ; then
+    if [ "${LAST_CONDA_QA_UPDATE}" != ${today:-0} -o ${isUpdate:-f} = t ] ; then
       if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
                       "${CONDA_QA_PATH}" "${CONDA_QA_ENV}" ; then
 
-        . ${QA_SRC}/scripts/parseConfigFile LAST_CONDA_QA_UPDATE=$today
+        . ${QA_SRC}/scripts/parseConfigFile LAST_CONDA_QA_UPDATE=${today:-0}
         . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
       fi
     fi
@@ -244,7 +244,7 @@ update_CONDA()
   test ${conda_env} = none && conda_env=cmor
   test ! ${action} && action=update
 
-  test "${LAST_CONDA_UPDATE}" = ${today} && return
+  test "${LAST_CONDA_UPDATE}" = ${today:-0} && return
   test ${INTERNET:-t} = f && return
   test "${conda_env}" = '-n ' && conda_env=
 
@@ -319,7 +319,7 @@ update_external()
 
   # check it here in order to prevent an update of the config-file in case
   # that the installation failed or war terminated.
-  if [ "${lastUpdate}" != ${today} -o ${isUpdate:-f} = t ]; then
+  if [ "${lastUpdate}" != ${today:-0} -o ${isUpdate:-f} = t ]; then
      . ${QA_SRC}/scripts/get_externalSources \
          -P $prj --qa-src=${QA_SRC} \
          --qa-home=${QA_HOME} --config_file=${CONFIG_FILE} \
@@ -327,7 +327,7 @@ update_external()
 
      test $? -gt 0 && exit 41
 
-     . ${QA_SRC}/scripts/parseConfigFile LAST_${prj}_UPDATE=${today}
+     . ${QA_SRC}/scripts/parseConfigFile LAST_${prj}_UPDATE=${today:-0}
   fi
 
   return 0
@@ -336,7 +336,7 @@ update_external()
 update_QA_SRC()
 {
   if [ ${INTERNET:-t} = t ] ; then
-    if ! . ${QA_SRC}/scripts/parseConfigFile LAST_QA_UPDATE=${today} \
+    if ! . ${QA_SRC}/scripts/parseConfigFile LAST_QA_UPDATE=${today:-0} \
           || [ ${isUpdate:-f} = t ]; then
       if [ ! -f ${QA_SRC}/.ignore_GitHub ] ; then
         cd ${QA_SRC}
