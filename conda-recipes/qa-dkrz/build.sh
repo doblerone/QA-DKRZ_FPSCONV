@@ -56,6 +56,9 @@ pref=${PREFIX%/*} # strip bin
 pref=${pref%/*}   # strip qa-dkrz
 
 if [ ${pref##*/} = conda-bld ] ; then
+  cp $RECIPE_DIR/cf-checker_rbin.sh ${pref%/*}/bin/dkrz-cf-checker
+  chmod +x ${pref%/*}/bin/dkrz-cf-checker
+
   cp $RECIPE_DIR/qa-wrapper_rbin.sh ${pref%/*}/bin/qa-dkrz
   chmod +x ${pref%/*}/bin/qa-dkrz
 fi
