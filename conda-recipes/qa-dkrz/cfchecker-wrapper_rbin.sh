@@ -28,8 +28,8 @@ for f in ${fs[*]} ; do
   done
 done
 
-if [ -f ${QA_SRC}/scripts/qa-dkrz ] ; then
-  exec ${QA_SRC}/scripts/qa-dkrz $@
+if [ -f ${QA_SRC}/scripts/dkrz-cf-checker ] ; then
+  exec ${QA_SRC}/scripts/dkrz-cf-checker $@
 else
-  echo "no such file ${QA_SRC}/scripts/qa-dkrz"
+  echo "no such file ${QA_SRC}/scripts/dkrz-cf-checker"
 fi
