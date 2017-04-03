@@ -3,7 +3,8 @@
 package=QA-DKRZ
 
 export CONDA_CMOR_CHANNELS='-c,conda-forge,-c,pcmdi,-c,uvcdat'
-export CONDA_QA_CHANNELS='-c,birdhouse,-c,conda-forge,--channel birdhouse/label/dev'
+export CONDA_QA_CHANNELS='-c,conda-forge,-c,hd-h'
+#export CONDA_QA_CHANNELS='-c,birdhouse,-c,conda-forge,--channel birdhouse/label/dev'
 
 export CONDA_QA_ENV
 export CONDA_CMOR_ENV
