@@ -4,4 +4,4 @@ SCRIPTPATH=`dirname ${SCRIPT}`
 
 export QA_PATH=`cd "${SCRIPTPATH}/../opt/qa-dkrz" && pwd -P`
 
-exec ${QA_PATH}/scripts/qa-dkrz --debug  $@ &> /hdh/hdh/Test/HOME/asdf
+exec ${QA_PATH}/scripts/qa-dkrz 

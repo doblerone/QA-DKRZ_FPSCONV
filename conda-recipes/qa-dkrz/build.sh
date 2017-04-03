@@ -6,7 +6,7 @@ LDFLAGS="-Wl,-rpath ${LIBPATH}"
 
 echo "CC=${CC}" > install_configure
 echo "CXX=${CXX}" >> install_configure
-echo "CFLAGS=\"-Wall\"" >> install_configure 
+echo "CFLAGS=\"-Wall\"" >> install_configure
 echo "CXXFLAGS=\"-Wall -std=c++11 -D NC4\"" >> install_configure
 echo "LIB=${LIBPATH}" >> install_configure
 echo "INCLUDE=\"${PREFIX}/include\"" >> install_configure
@@ -40,10 +40,20 @@ cp ./example/templates/qa-test.task ${QA_SRC}
 
 # write git version to install.log
 echo "branch=$(git branch | grep '*' | awk '{print $2}')" > ${QA_SRC}/install.log
-echo "hexa=$(git log --pretty=format:'%h' -n 1)" >> ${QA_SRC}/install.log 
+echo "hexa=$(git log --pretty=format:'%h' -n 1)" >> ${QA_SRC}/install.log
 
 # install wrapper script in bin/ to call cfchecker and qa-dkrz
 cp $RECIPE_DIR/cfchecker-wrapper.sh $PREFIX/bin/dkrz-cf-checker
-cp $RECIPE_DIR/qa-wrapper.sh $PREFIX/bin/qa-dkrz
-chmod +x $PREFIX/bin 
+cp $RECIPE_DIR/qa-wrapper_env.sh $PREFIX/bin/qa-dkrz
+
+chmod +x $PREFIX/bin
+
+# put into conda's root/bin
+pref=${PREFIX%/*} # strip bin
+pref=${pref%/*}   # strip qa-dkrz
+
+if [ ${pref##*/} = envs ] ; then
+  cp $RECIPE_DIR/qa-wrapper_rbin.sh ${pref%/*}/bin
+  chmod +x ${pref%/*}/bin
+fi
 
