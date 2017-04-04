@@ -28,6 +28,9 @@ descript()
 
 checkInstallation()
 {
+  # sets: QA_HOME, CONFIG_FILE
+  . ${QA_SRC}/scripts/getHomePath
+
   if [ ${isLCF} ] ; then
     if [ ! "${locConfFile}" ] ; then
       if [ ${QA_HOME} ] ; then
@@ -52,7 +55,9 @@ checkInstallation()
         local installArg="--install=force${prj:+,${prj}}"
 
         echo -e "\nMissing external tables/executabels."
-        echo "Please, run: $0 ${installArg} ${comLineArgs[*]}"
+        prg=${0%/*}
+        prg=${prg%/*}/install
+        echo "Please, run: $prg --up CF"
         exit 1
   fi
 
@@ -186,7 +191,7 @@ elif [ ${#ts_fs[*]} -gt 0 ] ; then
   fs=(${ts_fs[*]})  # the test-suite files
 fi
 
-param_T="\\n-t ${QA_SRC}/tables/projects/CF"
+param_T="\\n-t ${QA_HOME}/tables/projects/CF"
 
 param_IN="\\nIN::oCF"
 
