@@ -5016,7 +5016,9 @@ QA_FILE_EXECUTER=qa-exec-check
 
 rootPID=$$
 for OPTARG in $* ; do
-  if [ ${OPTARG:0:2} = '-E' -o ${OPTARG:0:2} = '-e' ] ; then
+  if [ ${OPTARG} = '-h' -o ${OPTARG} = '--help' ] ; then
+    . ${QA_SRC}/qa-help
+  elif [ ${OPTARG:0:2} = '-E' -o ${OPTARG:0:2} = '-e' ] ; then
      optargs=( ${OPTARG/_/ } )
   else
      optargs=( ${OPTARG} )
