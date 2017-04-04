@@ -191,6 +191,7 @@ update()
       . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
 
     . ${QA_SRC}/scripts/parseConfigFile LAST_CONDA_QA_UPDATE
+
     if [ "${LAST_CONDA_QA_UPDATE}" != ${today:-0} -o ${isUpdate:-f} = t ] ; then
       if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
                       "${CONDA_QA_PATH}" "${CONDA_QA_ENV}" ; then
@@ -245,6 +246,12 @@ update_CONDA()
   test ! ${action} && action=update
 
   test "${LAST_CONDA_UPDATE}" = ${today:-0} && return
+
+  # skip search for updates, if the package was installed today
+  local t0
+  t0=$( ls -ld --time-style='+%Y%m%d' ${QA_SRC} | awk '{print $6}')
+  test "$t0" = "$today" && return
+
   test ${INTERNET:-t} = f && return
   test "${conda_env}" = '-n ' && conda_env=
 

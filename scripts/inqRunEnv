@@ -250,7 +250,7 @@ iRE_scanCondaEnv()
   # not only for the envs, but also for PrePARE and udunits2 if any
 
   for x in $* ; do
-    fs=( $( find ${path}/envs -name $x 2> /dev/null ) )
+    fs=( $( find ${path}/envs -type d -name $x 2> /dev/null ) )
 
     if [ ${#fs[*]} -gt 0 ] ; then
       if [ $x = qa-dkrz ] ; then
@@ -260,7 +260,7 @@ iRE_scanCondaEnv()
       fi
     else
       # try for the root env
-      fs=( $( find ${path} -name $x ) )
+      fs=( $( find ${path} -type d -name $x ) )
     fi
 
     test ${#fs[*]} -eq 0 && continue

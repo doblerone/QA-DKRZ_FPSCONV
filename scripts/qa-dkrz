@@ -4994,8 +4994,6 @@ comLineArgs=( $* )
 umask 002
 export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
 
-#mkdir -p ${HOME}/.qa-dkrz
-
 THIS=${0%/*}
 cd ${THIS} &> /dev/null
 THIS=$(pwd)
@@ -5017,7 +5015,6 @@ QA_CONFIG=qa-config
 QA_FILE_EXECUTER=qa-exec-check
 
 rootPID=$$
-
 for OPTARG in $* ; do
   if [ ${OPTARG:0:2} = '-E' -o ${OPTARG:0:2} = '-e' ] ; then
      optargs=( ${OPTARG/_/ } )
@@ -5026,6 +5023,7 @@ for OPTARG in $* ; do
   fi
 
   for UOPTARG in ${optargs[*]} ; do
+    test ${UOPTARG} = '-h' -o ${UOPTARG} = '--help' && . $QA_SRC/scripts/qa-help
 
     tr_option UOPTARG $prev_opt
     OPTNAME=${UOPTARG%%=*}

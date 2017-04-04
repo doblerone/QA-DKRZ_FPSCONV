@@ -12,10 +12,17 @@ getHomePath()
   else
     # take QA_HOME from the config file, if it exists.
     if ! . $QA_SRC/scripts/parseConfigFile QA_HOME ; then
-      echo -e "\nPlease, specify variable QA_HOME [default: ${QA_SRC}/HOME], " > ${TTY}
+      local dpath
+      if [ ${CONDA_QA_PATH} ] ; then
+         dpath="~/.qa_home/QA_HOME"
+      else
+         dpath=${QA_SRC}/HOME
+      fi
+
+      echo -e "\nPlease, specify variable QA_HOME [default: ${dpath}], " > ${TTY}
       read -p "the spot for external tables and programs: " QA_HOME 2> ${TTY}
 
-      test ! ${QA_HOME} && QA_HOME=${QA_SRC}/HOME
+      test ! ${QA_HOME} && QA_HOME=${dpath}
 
       local i
       for i in 1 2 3 ; do
