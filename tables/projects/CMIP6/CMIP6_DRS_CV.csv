@@ -25,7 +25,7 @@ BEGIN: DRS
 #           /<variable name>
 
 # a ToDo for later: use >_< instead of /
-  CMIP6-FE:<variable_id>/<table_id>/<experiment_id>/<source_id>/<member_id>\
+  CMIP6-FE:<variable_id>/<table_id>/<source_id>/<experiment_id>/<member_id>\
            /<grid_label>.nc
 
 #  GRIDSPEC-FE:<gridspec>_<modeling realm>_<frequency>_<model>_<experiment>\
