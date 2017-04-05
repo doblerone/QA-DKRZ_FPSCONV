@@ -2017,41 +2017,26 @@ do
           installArgs+="--${OPTARG},"
 
         elif [ "${OPTNAME}" = INSTALL ] ; then
-          OPTVAL=( ${OPTVAL//,/ } )
-          if [ ${#OPTVAL[*]} -eq 0 ] ; then
-            setKWL UPDATE=t
-            installArgs+="--up,"
-          else
-            for uon in ${OPTVAL[*]} ; do
-               tr_option uon
+          opts=( ${OPTVAL//,/ } )
+          setKWL UPDATE=t
+          installArgs+="--up,"
 
-               ov=
-               test "$uon" != ${uon#*=} && ov=${uon#*=}
-               uon=${uon%%=*}
+          for opt in ${opts[*]} ; do
+             tr_option opt
 
-               for(( i=0 ; i < ${#definedProjects[*]} ; ++i )) ; do
-                  if [ "${ov}" = definedProjects[i] ] ; then
-                     setKWL PROJECT=${ov}
-                     continue 2
-                  fi
-               done
+             oVal=
+             test "$opt" != ${opt#*=} && oVal=${opt#*=}
 
-               if [ ${uon:0:4} = COMP ] ; then
-                 setKWL UPDATE=${ov}
-                 installArgs+="--compile,"
-               fi
+             for(( i=0 ; i < ${#definedProjects[*]} ; ++i )) ; do
+                if [ "${oVal}" = ${definedProjects[i]} ] ; then
+                   setKWL PROJECT=${oVal}
+                   continue 2
+                fi
+             done
 
-               if [ ${uon:0:2} = UP ] ; then
-                 setKWL UPDATE=${ov}
-                 installArgs+="--up=${ov},"
-               fi
-
-               if [ ${uon:0:5} = FORCE ] ; then
-                 setKWL UPDATE=t
-                 installArgs+="--force-update,"
-               fi
-            done
-          fi
+             test ${opt:0:2} != '--' && opt='--'"${opt}"
+             installArgs+="${opt},"
+          done
 
         elif [ "${OPTNAME}" = NET ] ; then
           installArgs+="--${OPTARG},"

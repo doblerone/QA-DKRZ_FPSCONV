@@ -984,7 +984,7 @@ parseKey()
           p0=$((p1+1))
         fi
       done
-      wrapLongLines ${sX:p0:$((p1-p0))}
+      wrapLongLines ${sX:p0:$((p1-p0+1))}
 
       for(( i=0 ; i < ${#wrappedLines[*]} ; ++i )) ; do
         sTxt[${#sTxt[*]}]='7 - '"${wrappedLines[i]}"

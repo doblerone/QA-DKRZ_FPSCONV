@@ -245,12 +245,12 @@ iRE_scanCondaEnv()
 
   test ! ${path} && return 0
 
-  local x xx f fs t0 t1
+  local x f ff fs
 
   # not only for the envs, but also for PrePARE and udunits2 if any
 
   for x in $* ; do
-    fs=( $( find ${path}/envs -type d -name $x 2> /dev/null ) )
+    fs=( $( find ${path}/envs -name $x 2> /dev/null ) )
 
     if [ ${#fs[*]} -gt 0 ] ; then
       if [ $x = qa-dkrz ] ; then
@@ -260,29 +260,16 @@ iRE_scanCondaEnv()
       fi
     else
       # try for the root env
-      fs=( $( find ${path} -type d -name $x ) )
+      fs=( $( find ${path} -name $x ) )
     fi
 
     test ${#fs[*]} -eq 0 && continue
 
-    f=${fs[0]}
-    t0=$( ls -l --time-style='+%s' ${fs[0]} | awk '{print $6}')
-
-    xx=${fs[0]}
-
-    for(( i=1 ; i < ${#fs[*]} ; ++i )) ; do
-      t1=$( ls -l --time-style='+%s' ${fs[0]} | awk '{print $6}')
-      if [ $t1 -gt $t0 ] ; then
-         t0=t1
-         xx=${fs[i]}
-      fi
-    done
-
     if [ $x = qa-dkrz ] ; then
       if [ ${CONDA_QA_ENV:-f} = t  ] ; then
-        t0=${f%%/envs/*}/envs/
-        t0=${f#${t0}}
-        CONDA_QA_ENV=${t0%%/*}
+        f=${fs[0]%%/envs/*}/envs/
+        f=${fs[0]#${f}}
+        CONDA_QA_ENV=${f%%/*}
       else
         CONDA_QA_ENV=none
       fi
@@ -290,9 +277,9 @@ iRE_scanCondaEnv()
       . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=${CONDA_QA_ENV}
     elif [ $x = PrePARE.py ] ; then
       if [ ${CONDA_CMOR_ENV:-f} = t  ] ; then
-        t0=${f%%/envs/*}/envs/
-        t0=${f#${t0}}
-        CONDA_CMOR_ENV=${t0%%/*}
+        f=${f%%/envs/*}/envs/
+        f=${fs[0]#${f}}
+        CONDA_CMOR_ENV=${f%%/*}
       else
         CONDA_CMOR_ENV=none
       fi
@@ -303,7 +290,13 @@ iRE_scanCondaEnv()
       . ${QA_SRC}/scripts/parseConfigFile PrePARE=${PrePARE}
 
     else
-      . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=$f
+      local i
+      for(( i=0 ; i <  ${#fs[*]} ; ++i )) do
+        test ${fs[i]} != ${fs[i]#*cmor} && break
+      done
+
+      test $i -lt ${#fs[*]} && \
+        . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=${fs[0]}
     fi
   done
 
