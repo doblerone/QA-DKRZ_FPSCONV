@@ -3,7 +3,7 @@
 package=QA-DKRZ
 
 export CONDA_CMOR_CHANNELS='-c,conda-forge,-c,pcmdi,-c,uvcdat'
-export CONDA_QA_CHANNELS='-c,conda-forge,-c,hd-h'
+export CONDA_QA_CHANNELS='-c,conda-forge,-c,h-dh'
 #export CONDA_QA_CHANNELS='-c,birdhouse,-c,conda-forge,--channel birdhouse/label/dev'
 
 export CONDA_QA_ENV
@@ -180,7 +180,7 @@ update()
   if ! . ${QA_SRC}/scripts/inqRunEnv ${prj} ; then
     # distinguish return 1 and 11: the latter was issued
     # only when the date is not today
-    test $? -eq 1 && isUpdate=t  # look for updates
+    test $? -eq 1 && isForceUpdate=t  # look for updates
   fi
 
   # search for updates only once a day
@@ -192,7 +192,7 @@ update()
 
     . ${QA_SRC}/scripts/parseConfigFile LAST_CONDA_QA_UPDATE
 
-    if [ "${LAST_CONDA_QA_UPDATE}" != ${today:-0} -o ${isUpdate:-f} = t ] ; then
+    if [ "${LAST_CONDA_QA_UPDATE}" != ${today:-0} -o ${isForceUpdate:-f} = t ] ; then
       if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
                       "${CONDA_QA_PATH}" "${CONDA_QA_ENV}" ; then
 
@@ -240,17 +240,11 @@ update_CONDA()
   local conda_path=$3      # is always defined
   local conda_env=$4       # could be empty
   local action=$5          # could be empty
-  local status=1
 
   test ${conda_env} = none && conda_env=cmor
   test ! ${action} && action=update
 
-  test "${LAST_CONDA_UPDATE}" = ${today:-0} && return
-
-  # skip search for updates, if the package was installed today
-  local t0
-  t0=$( ls -ld --time-style='+%Y%m%d' ${QA_SRC} | awk '{print $6}')
-  test "$t0" = "$today" && return
+  test "${LAST_CONDA_UPDATE}" = ${today:-0} -a ${isForceUpdate:-f} = f && return
 
   test ${INTERNET:-t} = f && return
   test "${conda_env}" = '-n ' && conda_env=
@@ -263,32 +257,9 @@ update_CONDA()
     echo "searching ${conda_name} updates" > ${TTY}
 
     set -f
-    local tmp
-    declare -a tmp
-    tmp=( $( ${conda_path}/bin/conda search ${conda_env:+-n ${conda_env}} \
-                      ${conda_channels//,/ } \
-                      ${conda_name} 2> /dev/null ) ) > ${TTY}
-
-    local i item sz
-    sz=${#tmp[*]}
-    for(( i=0 ; i < sz ; ++i )) ; do
-      if [ "${tmp[i]}" = '*' -o "${tmp[i]}" = '.' ] ; then
-        item=${tmp[++i]}
-        item=${item}-${tmp[++i]}
-        i=$((i+2))
-
-        if [ $i -lt $sz ] ; then
-          # there is a newer one
-          ${conda_path}/bin/conda ${action} ${conda_env:+-n ${conda_env}} \
+    ${conda_path}/bin/conda ${action} ${conda_env:+-n ${conda_env}} \
                        ${conda_channels//,/ } \
-                       ${conda_name} &> ${TTY}
-        fi
-
-        status=0
-        break
-      fi
-    done
-
+                       ${conda_name} &> /dev/null
     set +f
   else
     # only CMOR could here be created
@@ -307,12 +278,11 @@ update_CONDA()
       . $QA_SRC/scripts/parseConfigFile \
          PrePARE=${conda_path}/envs/cmor/bin/PrePARE.py
 
-      status=0
       echo "Please, note that activation/deactivation is not required in this place." > $TTY
     fi
   fi
 
-  return $status
+  return 0
 }
 
 update_external()
@@ -326,11 +296,11 @@ update_external()
 
   # check it here in order to prevent an update of the config-file in case
   # that the installation failed or war terminated.
-  if [ "${lastUpdate}" != ${today:-0} -o ${isUpdate:-f} = t ]; then
+  if [ "${lastUpdate}" != ${today:-0} -o ${isForceUpdate:-f} = t ]; then
      . ${QA_SRC}/scripts/get_externalSources \
          -P $prj --qa-src=${QA_SRC} \
          --qa-home=${QA_HOME} --config_file=${CONFIG_FILE} \
-         ${isUpdate:+--force-update}
+         ${isUpdate:+--update} ${isForceUpdate:+--force-update}
 
      test $? -gt 0 && exit 41
 
@@ -344,7 +314,7 @@ update_QA_SRC()
 {
   if [ ${INTERNET:-t} = t ] ; then
     if ! . ${QA_SRC}/scripts/parseConfigFile LAST_QA_UPDATE=${today:-0} \
-          || [ ${isUpdate:-f} = t ]; then
+          || [ ${isForceUpdate:-f} = t ]; then
       if [ ! -f ${QA_SRC}/.ignore_GitHub ] ; then
         cd ${QA_SRC}
 
@@ -550,6 +520,7 @@ do
           DEBUG='--debug'
           set -x
         elif [ "${OPTNAME:0:5}" = FORCE ] ; then
+          isForceUpdate=t
           isUpdate=t
         elif [ "${OPTNAME}" = HELP ] ; then
           descript

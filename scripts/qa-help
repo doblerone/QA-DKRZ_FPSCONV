@@ -113,7 +113,8 @@ Usage: qa-DKRZ options
    -E_OPT[=val]    Enable where OPT indicates a configuration directive.
              A key-word without assignments is a boolean switches set True.
              E_OPT is case-insensitiv. Detailed description is given in file
-             QA-DKRZ/example/CORDEX_qa.conf .
+             QA-DKRZ/example/CORDEX_qa.conf; '_' may be replaced by a blank
+             or omitted at all.
    -f name   Read configuration.
              Note: one configuration file may contain frequently
              modified assignments while the other hold all time
@@ -181,7 +182,8 @@ displayComLineOptions()
 {
       enableOptText="\
 
-      Additional options usually enabled on the command-line:
+      Additional options usually enabled on the command-line. Detailed description
+      in the configuration file PROJECT_QA.conf:
       CHECK_TOOLS           Check and show availability of tools and exit.
       CLEAR[=arg]           Clear previous annotations
       DEBUG_C[ONFIGURATOR]  Log qaConfiguration processing to stderr.

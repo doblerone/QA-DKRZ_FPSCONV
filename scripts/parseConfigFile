@@ -75,7 +75,15 @@ readCF()
 #      echo DEFAULT_PROJECT=$defaultProject  >> $CONFIG_FILE
 #      uCF_lines[${#uCF_lines[*]}]=DEFAULT_PROJECT="${defaultProject}"
 
-      uCF_blkBeg=$((sz+2))
+       local n=2
+       if [ ${CONDA_QA_PATH} ] ; then
+         local today=$( date '+%Y%m%d' )
+         echo LAST_CONDA_QA_UPDATE=${today} >> $CONFIG_FILE
+         uCF_lines[${#uCF_lines[*]}]=LAST_CONDA_QA_UPDATE="${today}"
+         n=$((n+1))
+       fi
+
+      uCF_blkBeg=$((sz+n))
       uCF_blkEnd=$uCF_blkBeg
    fi
 
