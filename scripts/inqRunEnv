@@ -213,63 +213,45 @@ iRE_scanCondaEnv()
     fi
   fi
 
+  local x f ff fs
   local path fs
   declare -a fs
 
   # find installation path
   if [ "$1" = qa-dkrz ] ; then
-    path=${CONDA_QA_PATH%%/miniconda*}/miniconda
+    fs=( $( find ${CONDA_QA_PATH} -type f -name $1 2> /dev/null ) )
+    f=${fs[0]}
+  elif [ $1 = PrePARE.py ] ; then
+    fs=( $( find ${CONDA_QA_PATH} -type f -name $1 2> /dev/null ) )
+    f=${fs[0]}
   else
-    if [ ${PrePARE} ] ; then
-      path=${PrePARE%/miniconda*}/miniconda
-    else
-      # try possible known locations for the existance of PrePARE.x
-      if [ ${CONDA_QA_PATH} ] ; then
-        # in the QA-DKRZ sources installed by conda
-        fs=( $( find ${CONDA_QA_PATH%%/miniconda*}/miniconda -type f -name $1 2> /dev/null ) )
-      else
-        # in already specified QA_HOME
-        fs=( $( find ${QA_HOME%%/miniconda*}/miniconda -type f -name $1 2> /dev/null ) )
-        if [ ${#fs[*]} -eq 0 ] ; then
-          # in QA-DKRZ installed from GitHub
-          fs=( $( find ${QA_SRC%%/miniconda*}/miniconda -type f -name $1 2> /dev/null ) )
-        fi
-      fi
-
-      # bad luck when there would be more than a single one if any.
-      if [ ${#fs[*]} -gt 0 ] ; then
-        path=${fs[0]%%/miniconda*}/miniconda
-      fi
-    fi
+    fs=( $( find ${PrePARE%/bin/PrePARE.py} -type f -name $1 2> /dev/null ) )
+    f=${fs[0]}
   fi
 
-  test ! ${path} && return 0
-
-  local x f ff fs
+  test ! ${f} && return 0
 
   # not only for the envs, but also for PrePARE and udunits2 if any
+  path=$f
 
   for x in $* ; do
-    fs=( $( find ${path}/envs -name $x 2> /dev/null ) )
+    while [ "${f##*/}" != envs ] ; do
+      test ! ${f} && break
+      ff=${f##*/}
+      f=${f%/*}
+    done
 
-    if [ ${#fs[*]} -gt 0 ] ; then
+    if [ "${f}" ] ; then
       if [ $x = qa-dkrz ] ; then
         CONDA_QA_ENV=t
       elif [ $x = PrePARE.py ] ; then
         CONDA_CMOR_ENV=t
       fi
-    else
-      # try for the root env
-      fs=( $( find ${path} -name $x ) )
     fi
-
-    test ${#fs[*]} -eq 0 && continue
 
     if [ $x = qa-dkrz ] ; then
       if [ ${CONDA_QA_ENV:-f} = t  ] ; then
-        f=${fs[0]%%/envs/*}/envs/
-        f=${fs[0]#${f}}
-        CONDA_QA_ENV=${f%%/*}
+        CONDA_QA_ENV=${ff}
       else
         CONDA_QA_ENV=none
       fi
@@ -277,26 +259,24 @@ iRE_scanCondaEnv()
       . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=${CONDA_QA_ENV}
     elif [ $x = PrePARE.py ] ; then
       if [ ${CONDA_CMOR_ENV:-f} = t  ] ; then
-        f=${f%%/envs/*}/envs/
-        f=${fs[0]#${f}}
-        CONDA_CMOR_ENV=${f%%/*}
+        CONDA_CMOR_ENV=${ff}
       else
         CONDA_CMOR_ENV=none
       fi
 
       . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${CONDA_CMOR_ENV}
 
-      PrePARE=$f
+      PrePARE=$path
       . ${QA_SRC}/scripts/parseConfigFile PrePARE=${PrePARE}
 
     else
       local i
-      for(( i=0 ; i <  ${#fs[*]} ; ++i )) do
-        test ${fs[i]} != ${fs[i]#*cmor} && break
-      done
+#      for(( i=0 ; i <  ${#fs[*]} ; ++i )) do
+#        test ${fs[i]} != ${fs[i]#*cmor} && break
+#      done
 
-      test $i -lt ${#fs[*]} && \
-        . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=${fs[0]}
+#      test $i -lt ${#fs[*]} && \
+        . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=${path}
     fi
   done
 

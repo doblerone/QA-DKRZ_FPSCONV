@@ -2707,7 +2707,7 @@ init()
 
   if [ "${SHOW_CLEAR}" ] ; then
     # precedence of any CLEAR assignment
-    test ${CLEAR:-f} = f -o "${CLEAR}" = t && CLEAR="${SHOW_CLEAR}"
+#     test ${CLEAR:-f} = f -o "${CLEAR}" = t && CLEAR="${SHOW_CLQA_HOMEEAR}"
     SHOW_CLEAR=t
   fi
 

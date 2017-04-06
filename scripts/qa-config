@@ -36,6 +36,8 @@
 
 setDefaults()
 {
+  definedProjects=( CORDEX CMIP5 CMIP6 )
+
   # the comment 'export' denotes keywords which must be submitted
   # to the calling qaDirector
 
@@ -245,8 +247,8 @@ findProject()
 
   # find valid project names used in table
   if [ ${#definedProjects[*]} -eq 0 ] ; then
-    definedProjects=( $( ls ${QA_HOME}/tables/projects) )
-    definedProjects=( ${definedProjects[*]} $( ls ${QA_HOME}/tables) )
+    definedProjects=( $( ls ${QA_SRC}/tables/projects) )
+    definedProjects=( ${definedProjects[*]} $( ls ${QA_SRC}/tables) )
 
     local i
     for(( i=0 ; i < ${#definedProjects[*]} ; ++i )) ; do
@@ -2018,18 +2020,13 @@ do
 
         elif [ "${OPTNAME}" = INSTALL ] ; then
           opts=( ${OPTVAL//,/ } )
-          setKWL UPDATE=t
-          installArgs+="--up,"
 
           for opt in ${opts[*]} ; do
              tr_option opt
 
-             oVal=
-             test "$opt" != ${opt#*=} && oVal=${opt#*=}
-
              for(( i=0 ; i < ${#definedProjects[*]} ; ++i )) ; do
-                if [ "${oVal}" = ${definedProjects[i]} ] ; then
-                   setKWL PROJECT=${oVal}
+                if [ "${opt}" = ${definedProjects[i]} ] ; then
+                   setKWL PROJECT=${opt}
                    continue 2
                 fi
              done
@@ -2037,6 +2034,8 @@ do
              test ${opt:0:2} != '--' && opt='--'"${opt}"
              installArgs+="${opt},"
           done
+
+          test ${installArgs//--up/} = ${installArgs} && installArgs+="--up,"
 
         elif [ "${OPTNAME}" = NET ] ; then
           installArgs+="--${OPTARG},"
