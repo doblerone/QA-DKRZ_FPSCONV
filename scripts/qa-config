@@ -2036,6 +2036,7 @@ do
           done
 
           test ${installArgs//--up/} = ${installArgs} && installArgs+="--up,"
+          setKWL UPDATE=t
 
         elif [ "${OPTNAME}" = NET ] ; then
           installArgs+="--${OPTARG},"
