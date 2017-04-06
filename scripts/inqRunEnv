@@ -220,16 +220,22 @@ iRE_scanCondaEnv()
   # find installation path
   if [ "$1" = qa-dkrz ] ; then
     fs=( $( find ${CONDA_QA_PATH} -type f -name $1 2> /dev/null ) )
-    f=${fs[0]}
   elif [ $1 = PrePARE.py ] ; then
     fs=( $( find ${CONDA_QA_PATH} -type f -name $1 2> /dev/null ) )
-    f=${fs[0]}
   else
     fs=( $( find ${PrePARE%/bin/PrePARE.py} -type f -name $1 2> /dev/null ) )
-    f=${fs[0]}
   fi
 
-  test ! ${f} && return 0
+  local isCont=t
+
+  for f in ${fs[*]} ; do
+    if [ ${f//\/envs\//} != ${f} ] ; then
+       isCont=f
+       break
+    fi
+  done
+
+  test ! ${f} && f=${fs[0]}
 
   # not only for the envs, but also for PrePARE and udunits2 if any
   path=$f
