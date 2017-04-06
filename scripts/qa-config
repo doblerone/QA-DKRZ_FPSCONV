@@ -1979,7 +1979,7 @@ do
              OPTVAL=enable
              setKWL AUTO_UP=t
              setKWL UPDATE=t
-             installArgs+="--force-update,"
+             installArgs+="--up,"
           elif [ ${OPTVAL:0:1} = D -o ${OPTVAL:0:1} = F ] ; then
              OPTVAL=disable
           fi

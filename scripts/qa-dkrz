@@ -2597,6 +2597,17 @@ init()
   fi
 
   local prj=${PROJECT_AS:-${PROJECT}}
+  if [ ${#prj} -eq 0 -a ${#installArgs} -gt 0 ] ; then
+    local iA_args=(${installArgs//,/ })
+    local iA_Arg
+    for iA_arg in ${iA_args[*]} ; do
+      if [ ${iA_arg:0:2} != '--' ] ; then
+        setKWL PROJECT=${iA_arg}
+        prj=${iA_arg}
+        break
+      fi
+    done
+  fi
 
   if [ ${UPDATE:-f} = t ] ; then
     # checksum of current qa-dkrz
@@ -2620,12 +2631,14 @@ init()
     fi
   elif ! . $QA_SRC/scripts/inqRunEnv --read-only ${prj} ; then
       # get the state of the current installation: read config-file
-        local installArg="--install=force${prj:+,${prj}}"
+        local installArg="--install=up${prj:+,${prj}}"
 
         echo -e "\nMissing external tables/executabels."
         echo "Please, run: $0 ${installArg} ${comLineArgs[*]}"
         exit 1
   fi
+
+  test ${STOP_AFTER_INSTALL} && exit 0
 
   # expand comma-sep-list to arrays
   EMAIL_SUMMARY=( ${EMAIL_SUMMARY//,/ } )
@@ -4991,6 +5004,7 @@ wait_fnct()
 
 comLineArgs=( $* )
 
+test $# -eq 1 -a "${1:0:9}" = '--install' && STOP_AFTER_INSTALL=t
 umask 002
 export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
 
