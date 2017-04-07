@@ -253,7 +253,7 @@ Consistency::check(Variable &dataVar, std::string entryID)
     {
        if( vvs_f_aVal[i][0] == vvs_t_aVal[j][0] )
        {
-         testAttributes(vvs_f_aVal[0][0],
+         testAttributes(vvs_f_aVal[i][0],  // name of the attribute
                         vvs_f_aName[i], vvs_f_aVal[i],
                         vvs_t_aName[j], vvs_t_aVal[j]);
          break;
@@ -504,7 +504,12 @@ Consistency::testAttributes( std::string& varName,
       if(  notes->inq( key, varName ) )
       {
         std::string capt(hdhC::tf_att(varName, vs_f_aName[i])) ;
-        capt += "is new across experiments or sub-temporal files";
+        capt += "is new across ";
+
+        if( pQA->fileSequenceState == 's' || pQA->fileSequenceState == 'l' )
+            capt += "sub-temporal files" ;
+        else
+            capt += "experiments" ;
 
         (void) notes->operate(capt) ;
         notes->setCheckStatus("Consistency","FAIL" );
@@ -517,9 +522,14 @@ Consistency::testAttributes( std::string& varName,
         if( notes->inq(key, varName) )
         {
           std::string capt(hdhC::tf_att(varName, vs_f_aName[i])) ;
-          capt += "has changed across experiment or sub-temporal files, found";
+          capt += "has changed across ";
+          if( pQA->fileSequenceState == 's' || pQA->fileSequenceState == 'l' )
+              capt += "sub-temporal files, now" ;
+          else
+              capt += "experiments, now" ;
+
           capt += hdhC::tf_val(vs_f_aVal[i]) ;
-          capt += ", expected ";
+          capt += ", previously ";
           capt += hdhC::tf_val(vs_t_aVal[i]) ;
 
           (void) notes->operate(capt) ;
@@ -550,7 +560,11 @@ Consistency::testAttributes( std::string& varName,
       if(  notes->inq( key, varName ) )
       {
         std::string capt(hdhC::tf_att(varName, vs_f_aName[i])) ;
-        capt += "is missing across experiments or sub-temporal files";
+        capt += "is missing across ";
+        if( pQA->fileSequenceState == 's' || pQA->fileSequenceState == 'l' )
+            capt += "sub-temporal files" ;
+        else
+            capt += "experiments" ;
 
         (void) notes->operate(capt) ;
         notes->setCheckStatus("Consistency","FAIL" );
@@ -592,7 +606,11 @@ Consistency::testAux(std::string mode,
         {
           std::string capt("auxiliary ");
           capt += hdhC::tf_var(vvs_1st_aVal[i][0]) ;
-          capt += "is missing across experiments or sub-temporal files";
+          capt += "is missing across ";
+          if( pQA->fileSequenceState == 's' || pQA->fileSequenceState == 'l' )
+              capt += "sub-temporal files" ;
+          else
+              capt += "experiments" ;
 
           (void) notes->operate(capt) ;
           notes->setCheckStatus("Consistency","FAIL" );
@@ -605,7 +623,11 @@ Consistency::testAux(std::string mode,
         {
           std::string capt("new auxiliary ");
           capt += hdhC::tf_var(vvs_1st_aVal[i][0]) ;
-          capt += "across experiments or sub-temporal files";
+          capt += "across ";
+          if( pQA->fileSequenceState == 's' || pQA->fileSequenceState == 'l' )
+              capt += "sub-temporal files" ;
+          else
+              capt += "experiments" ;
 
           (void) notes->operate(capt) ;
           notes->setCheckStatus("Consistency","FAIL" );

@@ -2274,7 +2274,7 @@ QA_Exp::checkPressureCoord(InFile &in)
        if( notes->inq( key, in.variable[ix].name ) )
        {
          std::string capt(hdhC::tf_var("plev", hdhC::colon));
-         capt += "Data value does not match Pa units." ;
+         capt += "Data value does not match Pa units" ;
          capt += ", found " + hdhC::tf_assign("p", pData);
          capt += ", expected " + hdhC::tf_assign("p", pVarname);
 
