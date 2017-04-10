@@ -287,7 +287,7 @@ Consistency::getAtts(Variable &var, std::string &s)
        continue;
 
      s += ',';
-     s += var.attName[j] ;
+     s += aN ;
      s += '=';
 
      if( var.attValue[j].size() )
@@ -380,7 +380,7 @@ Consistency::getValues(Variable &var, std::string &s)
       }
    }
 
-   s += ",values=";
+   s += ",values_2=";  // after the change of checksum calculation on 2017-03-30
    s += hdhC::double2String(ck, "p=|adj,float") ;
 
    return;
@@ -473,37 +473,30 @@ Consistency::testAttributes( std::string& varName,
     std::vector<std::string>& vs_t_aName,
     std::vector<std::string>& vs_t_aVal)
 {
-  // this method is called only, when then first item matches between
+  // this method is called only, when then first item matched between
   // both the file and the table
-  size_t start_ix = 1;
+  size_t f_ix, t_ix;
 
-  for( size_t i=start_ix ; i < vs_f_aName.size() ; ++i )
+  for( f_ix=1 ; f_ix < vs_f_aName.size() ; ++f_ix )
   {
-    // hdhC::isAmong() is not appropriate ('across' the vectors),
-    // thus explicitly coded
-    bool notName=true;
     bool notValue=false;
-    size_t j;
-    for( j=start_ix ; j < vs_t_aName.size() ; ++j )
+    if( hdhC::isAmong(vs_f_aName[f_ix], vs_t_aName, t_ix) )
     {
-      if( vs_f_aName[i] == vs_t_aName[j] )
-      {
-        notName = false;
-
-        if( vs_f_aVal[i] != vs_t_aVal[j] )
+        if( vs_f_aVal[f_ix] != vs_t_aVal[t_ix] )
           notValue=true;
-
-        break;
-      }
     }
 
-    if(notName)
+    else if( vs_f_aName[f_ix] != "values_2" )
     {
+      // note that "values" is the name for checksums calculated
+      // by the obsolete method; the current one is "values_2"
+      // values and values2 are not compared.
+
       // aditional attribute in the current sub-temp file
       std::string key("8_6");
       if(  notes->inq( key, varName ) )
       {
-        std::string capt(hdhC::tf_att(varName, vs_f_aName[i])) ;
+        std::string capt(hdhC::tf_att(varName, vs_f_aName[f_ix])) ;
         capt += "is new across ";
 
         if( pQA->fileSequenceState == 's' || pQA->fileSequenceState == 'l' )
@@ -521,16 +514,16 @@ Consistency::testAttributes( std::string& varName,
         std::string key("8_8");
         if( notes->inq(key, varName) )
         {
-          std::string capt(hdhC::tf_att(varName, vs_f_aName[i])) ;
+          std::string capt(hdhC::tf_att(varName, vs_f_aName[f_ix])) ;
           capt += "has changed across ";
           if( pQA->fileSequenceState == 's' || pQA->fileSequenceState == 'l' )
               capt += "sub-temporal files, now" ;
           else
               capt += "experiments, now" ;
 
-          capt += hdhC::tf_val(vs_f_aVal[i]) ;
+          capt += hdhC::tf_val(vs_f_aVal[f_ix]) ;
           capt += ", previously ";
-          capt += hdhC::tf_val(vs_t_aVal[i]) ;
+          capt += hdhC::tf_val(vs_t_aVal[t_ix]) ;
 
           (void) notes->operate(capt) ;
           notes->setCheckStatus("Consistency","FAIL" );
@@ -539,27 +532,16 @@ Consistency::testAttributes( std::string& varName,
   }
 
   // test for missing attributes compared to the previous ones
-  for( size_t i=start_ix ; i < vs_t_aName.size() ; ++i )
+  for( t_ix=1 ; t_ix < vs_t_aName.size() ; ++t_ix )
   {
-    // hdhC::isAmong() is not appropriate ('across' the vectors),
-    // thus explicitly coded
-    bool notName=true;
-    for( size_t j=start_ix ; j < vs_f_aName.size() ; ++j )
-    {
-      if( vs_f_aName[j] == vs_t_aName[i] )
-      {
-        notName = false;
-        break;
-      }
-    }
-
-    if(notName)
+    if( ! hdhC::isAmong(vs_t_aName[t_ix], vs_f_aName)
+            &&  vs_t_aName[t_ix] != "values")
     {
       // aditional attribute in the current sub-temp file
       std::string key("8_7");
       if(  notes->inq( key, varName ) )
       {
-        std::string capt(hdhC::tf_att(varName, vs_f_aName[i])) ;
+        std::string capt(hdhC::tf_att(varName, vs_t_aName[t_ix])) ;
         capt += "is missing across ";
         if( pQA->fileSequenceState == 's' || pQA->fileSequenceState == 'l' )
             capt += "sub-temporal files" ;
