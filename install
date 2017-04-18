@@ -190,12 +190,13 @@ update()
     test ! ${CONDA_QA_ENV} && \
       . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
 
-    if ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire \
-           -o [ ${isForceUpdate:-f} = t ] ; then
+    if [ ${isForceUpdate:-f} = t ] || \
+         ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire
+    then
       if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
                       "${CONDA_QA_PATH}" "${CONDA_QA_ENV}" ; then
 
-        . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE
+        . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
         . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
       fi
     fi
@@ -256,7 +257,10 @@ update_CONDA()
     set -f
     ${conda_path}/bin/conda ${action} ${conda_env:+-n ${conda_env}} \
                        ${conda_channels//,/ } \
-                       ${conda_name} &> /dev/null
+                       ${conda_name} &> /dev/null << EOF
+y
+EOF
+
     set +f
   else
     # only CMOR could here be created
@@ -291,8 +295,9 @@ update_external()
   # check it here in order to prevent an update of the config-file in case
   # that the installation failed or was terminated.
 
-  if ! . ${QA_SRC}/scripts/parseConfigFile NEXT_${prj}_UPDATE --inquire  \
-           || [ ${isForceUpdate:-f} = t ]; then
+  if [ ${isForceUpdate:-f} = t ] || \
+         ! . ${QA_SRC}/scripts/parseConfigFile NEXT_${prj}_UPDATE --inquire
+  then
      . ${QA_SRC}/scripts/get_externalSources \
          -P $prj --qa-src=${QA_SRC} \
          --qa-home=${QA_HOME} --config_file=${CONFIG_FILE} \
@@ -303,7 +308,7 @@ update_external()
      local nextUpdate
      eval nextUpdate=\$NEXT_${prj}_UPDATE
 
-  . ${QA_SRC}/scripts/parseConfigFile NEXT_${prj}_UPDATE
+  . ${QA_SRC}/scripts/parseConfigFile NEXT_${prj}_UPDATE ${isForceUpdate:+--force}
   fi
 
   return 0
@@ -312,8 +317,9 @@ update_external()
 update_QA_SRC()
 {
   if [ ${INTERNET:-t} = t ] ; then
-    if ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire \
-          || [ ${isForceUpdate:-f} = t ]; then
+    if [ ${isForceUpdate:-f} = t ] || \
+           ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire
+    then
       if [ ! -f ${QA_SRC}/.ignore_GitHub ] ; then
         cd ${QA_SRC}
 
@@ -355,7 +361,7 @@ update_QA_SRC()
 
         test ${isRestart} -eq 1 && exec ${QA_SRC}/install ${initialArgs[*]}
 
-        . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE
+        . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
       fi
     fi
   fi

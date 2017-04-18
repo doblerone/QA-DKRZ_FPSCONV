@@ -14,7 +14,7 @@ isNextDate()
    local t_conf_day t_conf_date
    declare -a t_config_date
 
-   if [ $# -eq 0 ] ; then
+   if [ $# -eq 0 -o ${pC_force} = t ] ; then
      t_config_day=( $(( $(date -d ${pC_todate} '+%s') / 3600 / 24 - 1 )) )
    else
      t_config_date=( ${1//+/ } )
@@ -261,6 +261,7 @@ declare -a pC_Args
 pC_Args=()
 pC_freq=
 pC_inquire=f
+pC_force=f
 
 for arg in $* ; do
   if [ "${arg:0:9}" = '--inquire' ] ; then
@@ -268,6 +269,8 @@ for arg in $* ; do
   elif [ "${arg}" = '--force_reading' ] ; then
     unset uCF_lines
     unset uCF_blkBeg
+  elif [ "${arg}" = '--force' ] ; then
+    pC_force=t
   elif [ "${arg:0:15}" = '--set_frequency' ] ; then
     test ${arg#*=} != ${arg} && pC_freq=${arg#*=}
   else
