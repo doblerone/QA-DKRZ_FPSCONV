@@ -3,19 +3,20 @@
 iRE_checkForUpdate()
 {
   # 1st run on this day?
-  local isUp=0 val
+  local val
   test ! ${today} && today=$( date '+%Y%m%d' )
 
   for(( i=0 ; i < ${#name[*]} ; ++i )) ; do
     val=${value[i]}
 
     if [ ${val:-f} = f -a ${rname[i]} = '+' ] ; then
-         isUp=1
+         iRE_isUp=$(( iRE_isUp + 1 ))
          break
     elif [ ! ${isRO} ] ; then
       if [ "${val:0:2}" = '20' ] ; then
-         if [ ${val} -lt $today -a ${isUp:-0} -eq 0 ] ; then
-            isUp=11
+         if . ${QA_SRC}/scripts/parseConfigFile ${name[i]} --inquire \
+                && [ ${iRE_isUp:-0} -eq 0 ] ; then
+            iRE_isUp=$(( iRE_isUp + 11 ))
             break
          fi
       fi
@@ -25,11 +26,11 @@ iRE_checkForUpdate()
   if [ ${isCMIP6} ] ; then
     if [ ${PrePARE:-f} = f -o ${XLSX2CSV:-f} = f  \
                     -o ${UDUNITS2_XML_PATH:-f} = f ] ; then
-       isUp=1
+       iRE_isUp=$(( iRE_isUp + 1 ))
     fi
   fi
 
-  return $isUp
+  return
 }
 
 iRE_checkTables()
@@ -37,9 +38,11 @@ iRE_checkTables()
   local prj=$1
 
   if [ ! ${QA_HOME} ] ; then
-    return 1
+    iRE_isUp=$(( iRE_isUp + 1 ))
+    return
   elif [ ! -d ${QA_HOME}/tables/projects/$prj ] ; then
-    return 1
+    iRE_isUp=$(( iRE_isUp + 1 ))
+    return
   else
     local p=${QA_HOME}/tables/projects
 
@@ -77,11 +80,14 @@ iRE_checkTables()
 
     local rI
     for rI in ${reqItems[*]} ; do
-      test ! -e ${rI} && return 1
+      if [ ! -e ${rI} ] ; then
+        iRE_isUp=$(( iRE_isUp + 1 ))
+        break
+      fi
     done
   fi
 
-  return 0
+  return
 }
 
 iRE_inqState()
@@ -108,7 +114,7 @@ iRE_inqState()
          -AUTO_UPDATE \
          -DEFAULT_PROJECT \
          -INTERNET \
-         -LAST_QA_UPDATE \
+         -NEXT_QA_UPDATE \
          +QA_HOME \
          +QA_REVISION \
        )
@@ -116,13 +122,12 @@ iRE_inqState()
   # extend for CONDA installation
   if [ ${CONDA_QA_PATH} ] ; then
     rname[${#rname[*]}]=-CONDA_QA_PATH
-    rname[${#rname[*]}]=-LAST_CONDA_QA_UPDATE
     rname[${#rname[*]}]=+CONDA_QA_ENV
   fi
 
   # extend for current projects
   for(( i=0 ; i < ${#prj[*]} ; ++i )) ; do
-    rname[${#rname[*]}]=+LAST_${prj[i]}_UPDATE
+    rname[${#rname[*]}]=+NEXT_${prj[i]}_UPDATE
 
     if [ ${prj[i]} = CMIP6 ] ; then
       isCMIP6=t
@@ -143,21 +148,29 @@ iRE_inqState()
   # read configuration setting
   iRE_readConfigFile
 
-  local status=0  # no updates
+  iRE_checkForUpdate
 
-  if iRE_checkForUpdate ; then
-    if ! iRE_checkTables $* ; then
-       status=1
-    fi
-  else
-    status=1
-  fi
+  test ${iRE_isUp} -eq 0 && iRE_checkTables $*
 
-  test ${isRO:-f} = t -o ${status} = 0 && return ${status}
+  test ${isRO:-f} = t -o ${iRE_isUp} = 0 && return ${iRE_isUp}
 
-  test ${iRE_RestoreApproval} && return ${status}
+  test ${iRE_RestoreApproval} && return ${iRE_isUp}
 
   # try to restore some lost config-file items
+  local iRE_conda_envs
+  declare -a iRE_conda_envs
+
+  iRE_conda_envs=( $(conda info --envs | awk '{print $(NF)}') )
+
+  for(( i=0 ;  i < ${#iRE_conda_envs[*]} ; ++i )) ; do
+    # some baroque entries are cleared
+    if [ ! -d ${iRE_conda_envs[i]} ] ; then
+       unset iRE_conda_envs[i]
+       i=$((i-1))
+    fi
+  done
+  iRE_conda_envs=( ${iRE_conda_envs[*]} )
+
   iRE_scanCondaEnv qa-dkrz
   iRE_scanCondaEnv PrePARE.py
   iRE_scanCondaEnv udunits2.xml
@@ -177,11 +190,17 @@ iRE_inqState()
 
 iRE_readConfigFile()
 {
-  local count i
+  local count i inq_date
   declare -i count=0
 
   for(( i=0 ; i < ${#name[*]} ; ++i )) ; do
-    if . ${QA_SRC}/scripts/parseConfigFile ${name[i]} ; then
+    if [ ${name[i]:0:5} = NEXT_ ] ; then
+       inq_date='--inquire'
+    else
+       inq_date=
+    fi
+
+    if . ${QA_SRC}/scripts/parseConfigFile ${name[i]} ${inq_date} ; then
        value[i]=${!name[i]}
 
        if [ ${rname[i]} = '+' -a ${#value[i]} -eq 0 ] ; then
@@ -197,94 +216,82 @@ iRE_readConfigFile()
 
 iRE_scanCondaEnv()
 {
-  if [ $1 = qa-dkrz ] ; then
-    test ! ${CONDA_QA_PATH} && return  # not installed by conda
-    test ${CONDA_QA_ENV} && return
-  else
-    test ! ${isCMIP6} && return
+  local f ix env ix_custom ix_env ix_root
+  local path path_env path_custom path_root env_custom env_env env_root
+  declare -a path
 
-    if [ $1 = PrePARE.py ] ; then
-      if [ ! \( ${CONDA_CMOR_ENV:-f} = f -o ${XLSX2CSV:-f} = f \
-                   -o ${PrePARE:-f} = f \) ] ; then
-        return
-      fi
-    else
-      test ${UDUNITS2_XML_PATH} && return
-    fi
-  fi
+  if [ $1 = qa-dkrz -o $1 = PrePARE.py ] ; then
+    test $1 = qa-dkrz -a ${CONDA_QA_PATH:-f} = f && return  # not installed by conda
+#    test ! \( ${isCMIP6:-f} = t -a $1 = PrePARE.py \)  && return
 
-  local x f ff fs
-  local path fs
-  declare -a fs
+    # priority: custom, env, root
+    local cnd_pth
+    cnd_pth=( $( which conda 2> /dev/null) )
+    cnd_pth=${cnd_pth[0]%/bin/conda}
 
-  # find installation path
-  if [ "$1" = qa-dkrz ] ; then
-    fs=( $( find ${CONDA_QA_PATH} -type f -name $1 2> /dev/null ) )
-  elif [ $1 = PrePARE.py ] ; then
-    fs=( $( find ${CONDA_QA_PATH} -type f -name $1 2> /dev/null ) )
-  else
-    fs=( $( find ${PrePARE%/bin/PrePARE.py} -type f -name $1 2> /dev/null ) )
-  fi
+    for(( i=0 ; i < ${#iRE_conda_envs[*]} ; ++i )) ; do
+       env=${iRE_conda_envs[i]##*/}   # only for internal envs
+       f=${iRE_conda_envs[i]%/*}
 
-  local isCont=t
+       path=( $(find ${iRE_conda_envs[i]} -type f -name "$1") )
 
-  for f in ${fs[*]} ; do
-    if [ ${f//\/envs\//} != ${f} ] ; then
-       isCont=f
-       break
-    fi
-  done
-
-  test ! ${f} && f=${fs[0]}
-
-  # not only for the envs, but also for PrePARE and udunits2 if any
-  path=$f
-
-  for x in $* ; do
-    while [ "${f##*/}" != envs ] ; do
-      test ! ${f} && break
-      ff=${f##*/}
-      f=${f%/*}
+       if [ ${#path[*]} -gt 0 ] ; then
+         if [ "${cnd_pth}" = ${iRE_conda_envs[i]} ] ; then
+            path_root=${path[0]}
+            ix_root=i
+         elif [ ${f##*/} = envs ] ; then
+            # if more than a single one, then the first
+            if [ ${#env_env} -eq 0 ] ; then
+               path_env=${path[0]}
+               ix_env=i
+               env_env=${env}
+            fi
+         else
+            # custom
+            # if more than a single one, then the first
+            if [ ${#custom_env} -eq 0 ] ; then
+              path_custom=${path[0]}
+              ix_custom=i
+              env_custom=${env}
+            fi
+         fi
+       fi
     done
 
-    if [ "${f}" ] ; then
-      if [ $x = qa-dkrz ] ; then
-        CONDA_QA_ENV=t
-      elif [ $x = PrePARE.py ] ; then
-        CONDA_CMOR_ENV=t
-      fi
-    fi
-
-    if [ $x = qa-dkrz ] ; then
-      if [ ${CONDA_QA_ENV:-f} = t  ] ; then
-        CONDA_QA_ENV=${ff}
-      else
-        CONDA_QA_ENV=none
-      fi
-
-      . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=${CONDA_QA_ENV}
-    elif [ $x = PrePARE.py ] ; then
-      if [ ${CONDA_CMOR_ENV:-f} = t  ] ; then
-        CONDA_CMOR_ENV=${ff}
-      else
-        CONDA_CMOR_ENV=none
-      fi
-
-      . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${CONDA_CMOR_ENV}
-
-      PrePARE=$path
-      . ${QA_SRC}/scripts/parseConfigFile PrePARE=${PrePARE}
-
+    if [ ${custom_env} ] ; then
+       path=${path_custom}
+       ix=ix_custom
+       env=$env_custom
+    elif [ ${env_env} ] ; then
+       path=${path_env}
+       ix=${ix_env}
+       env=${env_env}
+    elif [ ${root_env} ] ; then
+       path=${path_root}
+       ix=${ix_root}
+       env=none
     else
-      local i
-#      for(( i=0 ; i <  ${#fs[*]} ; ++i )) do
-#        test ${fs[i]} != ${fs[i]#*cmor} && break
-#      done
-
-#      test $i -lt ${#fs[*]} && \
-        . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=${path}
+      return
     fi
-  done
+
+  elif [ ${isCMIP6:-f} = t -a ${#PrePARE} -gt 0 ] ; then
+    path=( $( find ${PrePARE%/bin/PrePARE.py} -name "udunits2.xml" ) )
+    . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=${path[0]}
+    return
+  else
+    return
+  fi
+
+  if [ $1 = qa-dkrz ] ; then
+     CONDA_QA_ENV=${env}
+     . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=${CONDA_QA_ENV}
+  elif [ $1 = PrePARE.py ] ; then
+     CONDA_CMOR_ENV=${env}
+     . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${CONDA_CMOR_ENV}
+
+     PrePARE=$path
+     . ${QA_SRC}/scripts/parseConfigFile PrePARE=${PrePARE}
+  fi
 
   return
 }
@@ -298,6 +305,8 @@ if [ ${1%%=*} = funct ] ; then
   ${1#funct=} $*
   return $?
 fi
+
+iRE_isUp=0
 
 iRE_CallParam=( $* )
 

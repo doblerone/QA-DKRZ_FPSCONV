@@ -2633,8 +2633,8 @@ init()
       # get the state of the current installation: read config-file
         local installArg="--install=up${prj:+,${prj}}"
 
-        echo -e "\nMissing external tables/executabels."
-        echo "Please, run: $0 ${installArg} ${comLineArgs[*]}"
+        echo -e "\nMissing external tables/executabels."  > $TTY
+        echo "Please, run: $0 ${installArg} ${comLineArgs[*]}"  > $TTY
         exit 1
   fi
 

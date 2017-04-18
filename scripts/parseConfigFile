@@ -4,9 +4,47 @@
 # by those which are passed. If none are passed, then the positional parameters
 # of the calling instance are used.
 
-# return 0 for a match between provided parameter=value and config file
-#          or an enabled one.
-# return 1 for a new/updated parameter, a mismatch, disable, a set variable, or not defined.
+# return 0 for a match between provided parameter=value and config file,
+#          a enabled one.
+# return 1 for a new/updated parameter, a mismatch, disable, a set variable, not defined,
+#          or when today is older than the scheduled next time
+
+isNextDate()
+{
+   local t_conf_day t_conf_date
+   declare -a t_config_date
+
+   if [ $# -eq 0 ] ; then
+     t_config_day=( $(( $(date -d ${pC_todate} '+%s') / 3600 / 24 - 1 )) )
+   else
+     t_config_date=( ${1//+/ } )
+
+     # convert date to 'days since 1970 '
+     t_config_day=$(( $(date -d ${t_config_date[0]} '+%s') / 3600 / 24 ))
+     t_config_day=$(( ${t_config_day} + ${t_config_date[1]:-1} ))
+   fi
+
+   local status
+
+   if [ ${pC_freq} ] ; then
+      # just adjust to the new frequency
+      param_value="${t_config_date[0]}+${pC_freq}"
+      param="${param_name}=${param_value}"
+      status=0
+   else
+     if [ ${pC_today} -lt ${t_config_day} ] ; then
+        status=0  # means a match
+     elif [ ${pC_inquire} = t ] ; then
+        status=1
+     else
+        param_value="${pC_todate}+${t_config_date[1]:-1}"
+        param="${param_name}=${param_value}"
+        status=1
+     fi
+   fi
+
+   return ${status}
+}
 
 readCF()
 {
@@ -39,9 +77,13 @@ readCF()
    uCF_blkBeg=0
    sz=0 # number in the file, not in the block
    local uCF_is=f
+   local noSection=t
 
    while read line ; do
-       test "${uCF_is}" = t -a ! "${line}" && break
+       if [ "${uCF_is}" = t -a ! "${line}" ] ; then
+          noSection=f
+          break
+       fi
 
        sz=$((sz + 1))
 
@@ -66,8 +108,13 @@ readCF()
    test ${sz} -gt 0 && uCF_blkEnd=${sz}
 
    # append a new section and a particular default for auto-update
+   local n=1
    if [ ${uCF_blkBeg} -eq 0 ] ; then
-       echo -e "\n${QA_SRC}:"                >> $CONFIG_FILE
+       if [ ${#line} -eq 0 -o ${noSection} = t ] ; then
+          echo ''                            >> $CONFIG_FILE
+          n=2
+       fi
+       echo "${QA_SRC}:"                     >> $CONFIG_FILE
 
 #      echo AUTO_UPDATE=enabled              >> $CONFIG_FILE
 #      uCF_lines[${#uCF_lines[*]}]="AUTO_UPDATE=enabled"
@@ -76,12 +123,13 @@ readCF()
 #      uCF_lines[${#uCF_lines[*]}]=DEFAULT_PROJECT="${defaultProject}"
 
        local n=2
-       if [ ${CONDA_QA_PATH} ] ; then
-         local today=$( date '+%Y%m%d' )
-         echo LAST_CONDA_QA_UPDATE=${today} >> $CONFIG_FILE
-         uCF_lines[${#uCF_lines[*]}]=LAST_CONDA_QA_UPDATE="${today}"
-         n=$((n+1))
-       fi
+#       if [ ${CONDA_QA_PATH} ] ; then
+#         local today=$( date '+%Y%m%d' )
+#         echo NEXT_QA_UPDATE=${today} >> $CONFIG_FILE
+#         last=$(( $(date -d ${today} '+%s') - 1 ))
+#         uCF_lines[${#uCF_lines[*]}]=NEXT_QA_UPDATE="${today}"
+#         n=$((n+1))
+#       fi
 
       uCF_blkBeg=$((sz+n))
       uCF_blkEnd=$uCF_blkBeg
@@ -126,73 +174,106 @@ updateConfFile()
        param_value=
    fi
 
-   local i retVal
+   if [ ! ${pC_todate} ] ; then
+     pC_todate=$(date '+%Y%m%d')
+     pC_today=$(( $(date -d ${pC_todate} '+%s') / 3600 / 24 ))
+   fi
+
+   local i
+   local nextDate
+   local status=0
+
+   # find a match between config.txt lines and current param_name
    for(( i=0 ; i < ${#uCF_lines[*]} ; ++i )) ; do
-       if [ ${uCF_lines[i]%=*} = ${param_name} ] ; then
-
-         if [ "${param}" = "${param_name}" ] ; then
-           # request
-           if [ "${uCF_lines[i]#*=}" = disable ] ; then
-             eval ${param_name}=f
-             retVal=1
-           elif [ "${uCF_lines[i]#*=}" = enable ] ; then
-             eval ${param_name}=t
-             retVal=0
-           else
-             # read value from the config file and set variable
-             eval ${uCF_lines[i]}
-             retVal=0
-           fi
-         elif [ ${uCF_lines[i]} = ${param} ] ; then
-           # comparison
-           if [ ${param_value} = disable ] ; then
-             # disable
-             eval ${param_name}=f
-             retVal=1
-           elif [ ${param_value} = enable ] ; then
-             # enable or unchanged (matched).
-             eval ${param_name}=t
-             retVal=0
-           else
-             # match
-             retVal=0
-           fi
-         elif [ "${param_value}" ] ; then
-           lineNum=$((uCF_blkBeg+i+1))
-           sed -i "${lineNum} c${param}" $CONFIG_FILE &> /dev/null
-           uCF_lines[i]="${param_name}=${param_value}"
-           retVal=1
-         fi
-
-         return $retVal
-       fi
+       test ${uCF_lines[i]%=*} = ${param_name} && break
    done
 
-   # not defined
-   test ! "${param_value}" && return 1
+   if [ $i -lt ${#uCF_lines[*]} ] ; then
+     if [ ${param_name:0:5} = NEXT_ ] ; then
+        # entries with time comparison in a destinct work-flow
 
-   # new
-   sed -i "${uCF_blkEnd} a${param}" $CONFIG_FILE &> /dev/null
+        # now >= limit: param_value is set
+        local line=${uCF_lines[i]}
+        if [ "${line}" = "${line#*=}" ] ; then
+          line=${pC_todate}
+        fi
 
-   local sz=${#uCF_lines[*]}
+        if ! isNextDate ${line#*=} ; then
+          status=1
+        fi
+     fi
 
-   uCF_lines[sz]="${param}"
-   export uCF_line_${i}="${uCF_lines[sz]}"
+     if [ "${param}" = "${param_name}" ] ; then
+       # request
+       if [ "${uCF_lines[i]#*=}" = disable ] ; then
+         eval ${param_name}=f
+         status=1
+       elif [ "${uCF_lines[i]#*=}" = enable ] ; then
+         eval ${param_name}=t
+       else
+         # read value from the config file and set variable
+         eval ${uCF_lines[i]}
+       fi
+     elif [ ${uCF_lines[i]} = ${param} ] ; then
+       # comparison
+       if [ ${param_value} = disable ] ; then
+         # disable
+         eval ${param_name}=f
+         status=1
+       elif [ ${param_value} = enable ] ; then
+         # enable or unchanged (matched).
+         eval ${param_name}=t
+       fi
+       # else: match
+     elif [ "${param_value}" ] ; then
+       lineNum=$((uCF_blkBeg+i+1))
+       sed -i "${lineNum} c${param}" $CONFIG_FILE &> /dev/null
+       uCF_lines[i]="${param_name}=${param_value}"
+       status=1
+     fi
 
-   uCF_blkEnd=$(( uCF_blkEnd + 1 ))
+     test ${status:-0} -eq 1 && status=1
+   else
+     # current param not found in config.txt, yet
+     status=1
 
-   return 1
+     test ${param_name:0:5} = NEXT_ -a ${pC_inquire} = f && isNextDate
+
+     if [ "${param_value}" ] ; then
+       # new
+       sed -i "${uCF_blkEnd} a${param}" $CONFIG_FILE &> /dev/null
+
+       local sz=${#uCF_lines[*]}
+
+       uCF_lines[sz]="${param}"
+       export uCF_line_${i}="${uCF_lines[sz]}"
+
+       uCF_blkEnd=$(( uCF_blkEnd + 1 ))
+     fi
+   fi
+
+   return $status
 }
 
 
 # main
-if [ "$1" = '--force_reading' ] ; then
-  shift
+declare -a pC_Args
+pC_Args=()
+pC_freq=
+pC_inquire=f
 
-  unset uCF_line_0
-  unset uCF_lines
-  unset uCF_blkBeg
-fi
+for arg in $* ; do
+  if [ "${arg:0:9}" = '--inquire' ] ; then
+    pC_inquire=t
+  elif [ "${arg}" = '--force_reading' ] ; then
+    unset uCF_lines
+    unset uCF_blkBeg
+  elif [ "${arg:0:15}" = '--set_frequency' ] ; then
+    test ${arg#*=} != ${arg} && pC_freq=${arg#*=}
+  else
+    pC_Args[${#pC_Args[*]}]="$arg"
+  fi
+done
 
 #if [ "$1" = --show_lines ] ; then
 #  show_lines
@@ -204,8 +285,12 @@ if [ ! -f ${CONFIG_FILE}  ] ; then
   touch ${CONFIG_FILE}
 fi
 
-test ${#uCF_lines[*]} -eq 0 && readCF
+if [ ${#uCF_lines[*]} -eq 0 ] ; then
+  unset uCF_line_0
+  unset uCF_blkBeg
+  readCF
+fi
 
-updateConfFile $*
+updateConfFile ${pC_Args[*]}
 
 return $?

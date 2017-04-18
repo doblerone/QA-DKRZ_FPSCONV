@@ -52,13 +52,13 @@ cp $RECIPE_DIR/qa-wrapper_env.sh $PREFIX/bin/qa-dkrz
 chmod +x $PREFIX/bin
 
 # put into conda's root/bin
-pref=${PREFIX%/*} # strip bin
-pref=${pref%/*}   # strip qa-dkrz
+#pref=${PREFIX%/*} # strip bin
+#pref=${pref%/*}   # strip qa-dkrz
 
-if [ ${pref##*/} = conda-bld ] ; then
-  cp $RECIPE_DIR/cfchecker-wrapper_rbin.sh ${pref%/*}/bin/dkrz-cf-checker
-  chmod +x ${pref%/*}/bin/dkrz-cf-checker
+#if [ ${pref##*/} = conda-bld ] ; then
+#  cp $RECIPE_DIR/cfchecker-wrapper_rbin.sh ${pref%/*}/bin/dkrz-cf-checker
+#  chmod +x ${pref%/*}/bin/dkrz-cf-checker
 
-  cp $RECIPE_DIR/qa-wrapper_rbin.sh ${pref%/*}/bin/qa-dkrz
-  chmod +x ${pref%/*}/bin/qa-dkrz
-fi
+#  cp $RECIPE_DIR/qa-wrapper_rbin.sh ${pref%/*}/bin/qa-dkrz
+#  chmod +x ${pref%/*}/bin/qa-dkrz
+#fi

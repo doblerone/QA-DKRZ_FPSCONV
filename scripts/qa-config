@@ -1945,9 +1945,9 @@ do
   tr_option UOPTARG
 
   OPTNAME=${UOPTARG%%=*}
-  if [ ${OPTVAL} ] ; then
-    test "${OPTVAL}" != "${OPTARG#*=}" && OPTVAL=${OPTARG#*=}
-  fi
+
+  OPTVAL=
+  test "${OPTNAME}" != "${UOPTARG}" && OPTVAL=${OPTARG#*=}
 
   case $option in
     d|D) # disable previously enabled options
@@ -1977,14 +1977,17 @@ do
     -)  if [ "${OPTNAME:0:7}" = AUTO_UP ] ; then
           tr_option OPTVAL
 
-          if [ ${OPTVAL} = AUTO_UP -o ${OPTVAL:0:1} = E -o ${OPTVAL:0:1} = T ] ; then
+          if [ "${OPTVAL}" = '' -o "${OPTVAL:0:1}" = E -o "${OPTVAL:0:1}" = T ] ; then
              OPTVAL=enable
              setKWL AUTO_UP=t
              setKWL UPDATE=t
              installArgs+="--up,"
-          elif [ ${OPTVAL:0:1} = D -o ${OPTVAL:0:1} = F ] ; then
+#          elif [ "${OPTVAL:0:1}" = M -o "${OPTVAL:0:1}" = W -o "${OPTVAL:0:3}" = DAY ] ; then
+#             :  # required because of DAY
+          elif [ "${OPTVAL:0:1}" = D -o "${OPTVAL:0:1}" = F ] ; then
              OPTVAL=disable
           fi
+
           installArgs+="--auto-up=${OPTVAL},"
 
         elif [ "${OPTNAME:0:9}" = AUTO_COMP ] ; then
@@ -2055,7 +2058,7 @@ do
           installArgs+="--set_default_project=${OPTVAL},"
 
         elif [ "${OPTNAME:0:2}" = UP ] ; then
-          OPTVAL=$( echo "${OPTVAL}" | tr "[:lower:]" "[:upper:]" )
+          tr_option OPTVAL
           if [ "${OPTVAL}" = NO -o "${OPTVAL:0:1}" = F -o "${OPTVAL:0:1}" = D ] ; then
             OPTVAL=f
           else

@@ -180,23 +180,22 @@ update()
   if ! . ${QA_SRC}/scripts/inqRunEnv ${prj} ; then
     # distinguish return 1 and 11: the latter was issued
     # only when the date is not today
-    test $? -eq 1 && isForceUpdate=t  # look for updates
+    test $? -gt 0 && isForceUpdate=t  # look for updates
   fi
 
-  # search for updates only once a day
-  today=$( date '+%Y%m%d' )
+  # for searching updates after some days; default: once a day
+  # set variable today [ days since 1970 ]
 
   if [ ${CONDA_QA_PATH} ] ; then
     test ! ${CONDA_QA_ENV} && \
       . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
 
-    . ${QA_SRC}/scripts/parseConfigFile LAST_CONDA_QA_UPDATE
-
-    if [ "${LAST_CONDA_QA_UPDATE}" != ${today:-0} -o ${isForceUpdate:-f} = t ] ; then
+    if ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire \
+           -o [ ${isForceUpdate:-f} = t ] ; then
       if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
                       "${CONDA_QA_PATH}" "${CONDA_QA_ENV}" ; then
 
-        . ${QA_SRC}/scripts/parseConfigFile LAST_CONDA_QA_UPDATE=${today:-0}
+        . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE
         . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
       fi
     fi
@@ -207,7 +206,7 @@ update()
   fi
 
   # revison num of the package
-  local packRec
+  local packRev
   getRevNum packRev
   . ${QA_SRC}/scripts/parseConfigFile QA_REVISION${packRev:+=}${packRev}
 
@@ -241,10 +240,8 @@ update_CONDA()
   local conda_env=$4       # could be empty
   local action=$5          # could be empty
 
-  test ${conda_env} = none && conda_env=cmor
+  test ${conda_env:-none} = none && conda_env=cmor
   test ! ${action} && action=update
-
-  test "${LAST_CONDA_UPDATE}" = ${today:-0} -a ${isForceUpdate:-f} = f && return
 
   test ${INTERNET:-t} = f && return
   test "${conda_env}" = '-n ' && conda_env=
@@ -291,12 +288,11 @@ update_external()
 
   local prj=$1
 
-  local lastUpdate
-  eval lastUpdate=\$LAST_${prj}_UPDATE
-
   # check it here in order to prevent an update of the config-file in case
-  # that the installation failed or war terminated.
-  if [ "${lastUpdate}" != ${today:-0} -o ${isForceUpdate:-f} = t ]; then
+  # that the installation failed or was terminated.
+
+  if ! . ${QA_SRC}/scripts/parseConfigFile NEXT_${prj}_UPDATE --inquire  \
+           || [ ${isForceUpdate:-f} = t ]; then
      . ${QA_SRC}/scripts/get_externalSources \
          -P $prj --qa-src=${QA_SRC} \
          --qa-home=${QA_HOME} --config_file=${CONFIG_FILE} \
@@ -304,7 +300,10 @@ update_external()
 
      test $? -gt 0 && exit 41
 
-     . ${QA_SRC}/scripts/parseConfigFile LAST_${prj}_UPDATE=${today:-0}
+     local nextUpdate
+     eval nextUpdate=\$NEXT_${prj}_UPDATE
+
+  . ${QA_SRC}/scripts/parseConfigFile NEXT_${prj}_UPDATE
   fi
 
   return 0
@@ -313,7 +312,7 @@ update_external()
 update_QA_SRC()
 {
   if [ ${INTERNET:-t} = t ] ; then
-    if ! . ${QA_SRC}/scripts/parseConfigFile LAST_QA_UPDATE=${today:-0} \
+    if ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire \
           || [ ${isForceUpdate:-f} = t ]; then
       if [ ! -f ${QA_SRC}/.ignore_GitHub ] ; then
         cd ${QA_SRC}
@@ -355,6 +354,8 @@ update_QA_SRC()
         fi
 
         test ${isRestart} -eq 1 && exec ${QA_SRC}/install ${initialArgs[*]}
+
+        . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE
       fi
     fi
   fi
@@ -489,8 +490,10 @@ do
               OV=${OPTNAME#*=}
               OPTNAME=${OPTNAME%%=*}
 
-              if [ ${OV:0:1} = D -o ${OV:0:1} = F -o -o ${OV:0:1} = S ] ; then
+              if [ "${OV:0:1}" = D -o "${OV:0:1}" = F -o "${OV:0:1}" = S ] ; then
                  OV=disable
+#              elif [ "${OV:0:1}" = M -o "${OV:0:1}" = W -o "${OV:0:3}" = DAY ] ; then
+#                :  # required because of DAY
               else
                 OV=enable
               fi
@@ -555,6 +558,15 @@ do
         elif [ "${OPTNAME:0:2}" = UP ] ; then
           isUpdate=t
           continue
+        elif [ "${OPTNAME:0:1}" = U ] ; then
+          name_0=${OPTNAME%%_*}
+          name_1=${OPTNAME#*_}
+
+          if [ "${OPTNAME:0:2}" = UF \
+               -o \( "${name_0:0:1}" = U -a "${name_1:0:1}" = F \) ] ; then
+            next_period=( ${next_period[*]} ${OPTVAL//,/ } )
+            continue
+          fi
         elif [ "${OPTNAME}" = WORK ] ; then
           continue
         elif [ "${OPTNAME}" = HDF5 ] ; then
@@ -580,6 +592,13 @@ shift $(( $OPTIND - 1 ))
 
 if [ ! "${TTY}" ] ; then
   if tty -s ; then TTY=$(tty) ; fi
+fi
+
+if ! which git &> /dev/null ; then
+  if [ ${INTERNET:-t} = t ; then
+    echo "Note that either git is not installed. Running off-line requires --net=no"   > ${TTY}
+    exit 1
+  fi
 fi
 
 for pck in $* ; do
@@ -619,6 +638,29 @@ test ${#projects[*]} -eq 0 && projects=(${default_prj})
 # also ensures that all names in the config.files are defined in this program
 if [ ! ${isBuild} ] ; then
   update ${projects[*]}
+fi
+
+if [ ${#next_period[*]} -gt 0 ] ; then
+  NEXT_VARIABLES=(QA CONDA_CMOR)
+  for(( i=0 ; i < ${#projects[*]} ; ++i )) ; do
+    NEXT_VARIABLES[${#NEXT_VARIABLES[*]}]=${projects[i]}
+  done
+
+  if [ ${#next_period[*]} = 1 -a ${next_period[0]} = ${next_period[0]//=/} ] ; then
+     for nv in ${NEXT_VARIABLES[*]} ; do
+       # apply to all
+       . ${QA_SRC}/scripts/parseConfigFile NEXT_${nv}_UPDATE --set_frequency=${next_period[0]}
+     done
+  else
+    # individual settings
+    for dn in ${next_period[*]} ; do
+      for nv in ${NEXT_VARIABLES[*]} ; do
+        if [ ${dn%=*} = ${nv} ] ; then
+          . ${QA_SRC}/scripts/parseConfigFile NEXT_${nv}_UPDATE --set_frequency=${dn#*=}
+        fi
+      done
+    done
+  fi
 fi
 
 test ${CONDA_QA_PATH} && exit  # miniconda built executables

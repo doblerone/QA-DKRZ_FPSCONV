@@ -205,20 +205,16 @@ ges_cmip6()
      forceUpdate=t
    fi
 
-   test ${forceUpdate:-f} = t && LAST_CMIP6_UPDATE=$(( LAST_CMIP6_UPDATE-1 ))
+   if ! ges_cmip6_mip ; then # non-cmor tables
+      status=$?
+   fi
 
-   if [ "${LAST_CMIP6_UPDATE}" != $today ] ; then
-     if ! ges_cmip6_mip ; then # non-cmor tables
-       status=$?
-     fi
+   if ! ges_cmip6_conda ; then
+      status=$?
+   fi
 
-     if ! ges_cmip6_conda ; then
-          status=$?
-     fi
-
-     if ! ges_cmip6_cmor ; then
-        status=$?
-     fi
+   if ! ges_cmip6_cmor ; then
+      status=$?
    fi
 
    return $status
@@ -334,7 +330,6 @@ ges_cmip6_conda()
     if update_CONDA "${CONDA_CMOR_NAME}" "${CONDA_CMOR_CHANNELS}" \
                     "${conda_path}" ${conda_env:-cmor} ${action} ; then
 
-      . ${QA_SRC}/scripts/parseConfigFile LAST_CONDA_CMOR_UPDATE=$today
       . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${conda_env:-cmor}
       return 0
     fi
@@ -553,24 +548,21 @@ fi
 currPWD=$(pwd)
 cd $QA_HOME &> /dev/null
 
-# search for updates only once a day
-test ! ${today} && today=$( date '+%Y%m%d' )
-
 # Note that CF may-be stand-alone or together with another project
-if [ "${LAST_CF_UPDATE}" != $today -o ${forceUpdate:-f} = t ] ; then
-  #. $QA_SRC/scripts/parseConfigFile LAST_CF_UPDATE
-  #if [ ! \( "${LAST_CF_UPDATE}" = $today -a ${forceUpdate:-f} = f \) ] ; then
-     if ges_cf ; then
-       . $QA_SRC/scripts/parseConfigFile LAST_CF_UPDATE=$today
-     else
-       cd ${currPWD} &> /dev/null
-       return 41
-     fi
-  #fi
+if ! . $QA_SRC/scripts/parseConfigFile NEXT_CF_UPDATE --inquire \
+        || [ ${forceUpdate:-f} = t ] ; then
+   if ges_cf ; then
+     . $QA_SRC/scripts/parseConfigFile NEXT_CF_UPDATE
+   else
+     cd ${currPWD} &> /dev/null
+     return 41
+   fi
 fi
 
-ges_pLU=LAST_${prj}_UPDATE
-test "${!ges_pLU}" = $today -a ${forceUpdate:-f} = f && return 0
+if . $QA_SRC/scripts/parseConfigFile NEXT_${prj}_UPDATE --inquire \
+       && [ ${forceUpdate:-f} = f ] ; then
+  return 0
+fi
 
 status=0
 
@@ -584,17 +576,17 @@ elif [ "$prj" = CMIP6 ] ; then
   fi
 fi
 
-cd ${currPWD} &> /dev/null
-
 if [ ${#err[*]} -gt 0 ] ; then
    for(( k=0 ; k < ${#err[*]} ; ++k )) ; do
       echo -e "${err[k]}"
    done
 
-   return 41
+   status=41
 fi
 
 test ${status} -eq 0 && \
-   . $QA_SRC/scripts/parseConfigFile LAST_${prj}_UPDATE=${today}
+   . $QA_SRC/scripts/parseConfigFile NEXT_${prj}_UPDATE
 
-return 0
+cd ${currPWD} &> /dev/null
+
+return ${status}
