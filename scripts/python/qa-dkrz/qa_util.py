@@ -481,8 +481,8 @@ def f_time_range(f):
                     return re_obj.groups()
                 else:
                     return ( re_obj.group(1), re_obj.group(2), re_obj.group(2) )
-    else:
-        return (f, '', '')  # no date at all
+
+    return (f, '', '')  # no date at all
 
 
 def f_str_replace(rFile, items, repls):
@@ -928,6 +928,20 @@ def rmR(*args):
                 pass
 
     return
+
+
+def split(s,ssep):
+    sep=[]
+    for x in ssep:
+        sep.extend(x)
+
+    splts0=s.split(sep[0])
+
+    splts=[]
+    for x in splts0:
+        splts.extend(x.split(sep[1]))
+
+    return splts
 
 
 def s_lstrip(s, sep='/', pat='', max=1):
