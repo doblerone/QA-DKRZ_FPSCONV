@@ -3,7 +3,7 @@ package:
   version: '0.6.5'
 
 build:
-  number: 27
+  number: 28
 
 source:
   git_url: https://github.com/IS-ENES-Data/QA-DKRZ.git

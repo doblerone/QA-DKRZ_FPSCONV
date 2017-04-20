@@ -3,14 +3,20 @@ getCondaPath()
   test ${CONDA_QA_PATH} && return
 
   # was this script launched from qa-dkrz of a conda installation?
-  local path=${0%/*}
 
-  export QA_SRC
+  if [ ! ${QA_SRC} ] ; then
+    cd ${0%/*} 2> /dev/null
 
-  if [ ${path##*/} = scripts ] ; then
-    QA_SRC=${path%/*}
-  else
-    QA_SRC=${path}
+    export QA_SRC
+    local path=$(pwd)
+
+    cd - 2> /dev/null
+
+    if [ ${path##*/} = scripts ] ; then
+      QA_SRC=${path%/*}
+    else
+      QA_SRC=${path}
+    fi
   fi
 
   local i c_p pc sz
