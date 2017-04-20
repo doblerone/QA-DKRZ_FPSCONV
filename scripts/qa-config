@@ -1373,6 +1373,8 @@ setKWL()
     key=DRS_PATH_BASE
   elif [ "${key}"     = EXP_PATH_INDEX             ] ; then
     key=LOG_PATH_INDEX
+  elif [ "${key}"     = PT_PATH_INDEX             ] ; then
+    key=CT_PATH_INDEX
   elif [ "${key}"     = HIDDEN_DIRECTORY_DESCENT   ] ; then
     key=HIDDEN_DIRECTORIES
   elif [ "${key}"     = NEXT -a "${value}" = t       ] ; then

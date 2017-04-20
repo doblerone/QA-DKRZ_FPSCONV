@@ -2244,11 +2244,11 @@ getProjectTableName()
   done
 
   local ix
-  for(( ix=0 ; ix < ${#PT_PATH_INDEX[*]} ; ++ix )) ; do
-    ptPathIndex[ix]=$(( base_ix + ${PT_PATH_INDEX[ix]} ))
+  for(( ix=0 ; ix < ${#CT_PATH_INDEX[*]} ; ++ix )) ; do
+    ptPathIndex[ix]=$(( base_ix + ${CT_PATH_INDEX[ix]} ))
   done
 
-  test ${#ptPathIndex[*]} -eq 0 && ptPathIndex=( ${PT_PATH_INDEX[*]} )
+  test ${#ptPathIndex[*]} -eq 0 && ptPathIndex=( ${CT_PATH_INDEX[*]} )
 
   # compose the name
   PROJECT_TABLE=$PRJCT_BASENAME
@@ -2930,7 +2930,7 @@ initProjectTableName()
     # generate default name
     test ! ${PROJECT_TABLE_PREFIX} && PROJECT_TABLE_PREFIX=pt_
 
-    test ! ${PT_PATH_INDEX} && PROJECT_TABLE=${PROJECT}
+    test ! ${CT_PATH_INDEX} && PROJECT_TABLE=${PROJECT}
   fi
 
   PRJCT_BASENAME=${PROJECT_TABLE_PREFIX}${PROJECT_TABLE}
@@ -2944,18 +2944,18 @@ initTables()
   # Explanation: look for LOG_PATH_INDEX in a configuration file
 
   # we need a real array
-  PT_PATH_INDEX=( ${PT_PATH_INDEX//,/ } )
+  CT_PATH_INDEX=( ${CT_PATH_INDEX//,/ } )
 
-  PT_PATH_INDEX_MAX=100  # exceeds any number of path components
+  CT_PATH_INDEX_MAX=100  # exceeds any number of path components
 
-  if [ ${PT_PATH_INDEX[0]} ] ; then
+  if [ ${CT_PATH_INDEX[0]} ] ; then
     # note: the highest number points to the most left-side
     # path component
-    PT_PATH_INDEX_MAX=0
+    CT_PATH_INDEX_MAX=0
 
     local t
-    for t in ${PT_PATH_INDEX[*]} ; do
-      test ${t} -gt ${PT_PATH_INDEX_MAX} && PT_PATH_INDEX_MAX=${t}
+    for t in ${CT_PATH_INDEX[*]} ; do
+      test ${t} -gt ${CT_PATH_INDEX_MAX} && CT_PATH_INDEX_MAX=${t}
     done
   fi
 
