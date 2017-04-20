@@ -189,7 +189,7 @@ updateConfFile()
    done
 
    if [ $i -lt ${#uCF_lines[*]} ] ; then
-     if [ ${param_name:0:5} = NEXT_ ] ; then
+     if [ ${param_name:0:5} = NEXT_ -a ${pC_inquire} = f ] ; then
         # entries with time comparison in a destinct work-flow
 
         # now >= limit: param_value is set

@@ -5,33 +5,26 @@ getCondaPath()
   # was this script launched from qa-dkrz of a conda installation?
   local path=${0%/*}
 
-  local i
-  if [ "${path/miniconda/}" = "${path}" ] ; then
-    return 1 # not by conda installed
+  export QA_SRC
+
+  if [ ${path##*/} = scripts ] ; then
+    QA_SRC=${path%/*}
   else
-    export QA_SRC
-
-    if [ ${path##*/} = scripts ] ; then
-      QA_SRC=${path%/*}
-    else
-      QA_SRC=${path}
-    fi
-
-    local i j pc
-    declare -a pc
-    pc=( ${path//\// } )
-
-    for(( i=${#pc[*]}-1 ; i > -1 ; --i )) ; do
-      if [ ${pc[i]} = miniconda ] ; then
-        for(( j=0 ; j <= i ; ++j )) ; do
-          CONDA_QA_PATH=${CONDA_QA_PATH}/${pc[j]}
-        done
-
-        export CONDA_QA_PATH
-        break
-      fi
-    done
+    QA_SRC=${path}
   fi
+
+  local i c_p pc sz
+  declare -a pc
+  pc=( ${path//\// } )
+  sz=${#pc[*]}
+
+  for(( i=0; i < sz ; ++i )) ; do
+    c_p="${c_p}/${pc[i]}"
+    if [ -x ${c_p}/bin/conda ] ; then
+        export CONDA_QA_PATH="${c_p}"
+        return
+    fi
+  done
 
   return
 }

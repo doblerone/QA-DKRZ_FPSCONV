@@ -222,6 +222,7 @@ for(( i=0 ; i < ${#fs[*]} ; ++i )) ; do
 
   fPath=${f%/*}
   f=${f##*/}
+  test "${fPath}" = "${f}" && fPath=$(pwd)
 
   # only selected ones from the set of test files
   if [ ${#ts_cmd_fs[*]} -gt 0 ] ; then

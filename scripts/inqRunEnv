@@ -156,20 +156,13 @@ iRE_inqState()
 
   test ${iRE_RestoreApproval} && return ${iRE_isUp}
 
-  # try to restore some lost config-file items
-  local iRE_conda_envs
-  declare -a iRE_conda_envs
+  if [ ${CONDA_QA_PATH} ] ; then
+    # try to restore some lost config-file items
+    local iRE_conda_envs
+    declare -a iRE_conda_envs
 
-  iRE_conda_envs=( $(conda info --envs | awk '{print $(NF)}') )
-
-  for(( i=0 ;  i < ${#iRE_conda_envs[*]} ; ++i )) ; do
-    # some baroque entries are cleared
-    if [ ! -d ${iRE_conda_envs[i]} ] ; then
-       unset iRE_conda_envs[i]
-       i=$((i-1))
-    fi
-  done
-  iRE_conda_envs=( ${iRE_conda_envs[*]} )
+    iRE_conda_envs=( $( ${CONDA_QA_PATH}/bin/conda info --envs | awk '{print $(NF)}') )
+  fi
 
   iRE_scanCondaEnv qa-dkrz
   iRE_scanCondaEnv PrePARE.py
@@ -190,17 +183,11 @@ iRE_inqState()
 
 iRE_readConfigFile()
 {
-  local count i inq_date
+  local count i
   declare -i count=0
 
   for(( i=0 ; i < ${#name[*]} ; ++i )) ; do
-    if [ ${name[i]:0:5} = NEXT_ ] ; then
-       inq_date='--inquire'
-    else
-       inq_date=
-    fi
-
-    if . ${QA_SRC}/scripts/parseConfigFile ${name[i]} ${inq_date} ; then
+    if . ${QA_SRC}/scripts/parseConfigFile ${name[i]} --inquire ; then
        value[i]=${!name[i]}
 
        if [ ${rname[i]} = '+' -a ${#value[i]} -eq 0 ] ; then
@@ -226,8 +213,9 @@ iRE_scanCondaEnv()
 
     # priority: custom, env, root
     local cnd_pth
-    cnd_pth=( $( which conda 2> /dev/null) )
-    cnd_pth=${cnd_pth[0]%/bin/conda}
+#    cnd_pth=( $( which conda 2> /dev/null) )
+#    cnd_pth=${cnd_pth[0]%/bin/conda}
+    cnd_pth=${CONDA_QA_PATH}
 
     for(( i=0 ; i < ${#iRE_conda_envs[*]} ; ++i )) ; do
        env=${iRE_conda_envs[i]##*/}   # only for internal envs

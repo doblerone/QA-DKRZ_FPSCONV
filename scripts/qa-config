@@ -1852,7 +1852,7 @@ do
           set -x
           installArgs+="--debug,"
           setKWL DEBUG_MANAGER
-        DEBUG_CONF=t
+          DEBUG_CONF=t
 
         elif [ "${OPTNAME}" = EXAMPLE ] ; then
           setKWL QA_EXAMPLE=t
@@ -1974,46 +1974,11 @@ do
     x)  setKWL DEBUG_MANAGER=t
         setKWL DEBUG_EXECUTOR=t
         ;;  # already done for this script
-    -)  if [ "${OPTNAME:0:7}" = AUTO_UP ] ; then
-          tr_option OPTVAL
-
-          if [ "${OPTVAL}" = '' -o "${OPTVAL:0:1}" = E -o "${OPTVAL:0:1}" = T ] ; then
-             OPTVAL=enable
-             setKWL AUTO_UP=t
-             setKWL UPDATE=t
-             installArgs+="--up,"
-#          elif [ "${OPTVAL:0:1}" = M -o "${OPTVAL:0:1}" = W -o "${OPTVAL:0:3}" = DAY ] ; then
-#             :  # required because of DAY
-          elif [ "${OPTVAL:0:1}" = D -o "${OPTVAL:0:1}" = F ] ; then
-             OPTVAL=disable
-          fi
-
-          installArgs+="--auto-up=${OPTVAL},"
-
-        elif [ "${OPTNAME:0:9}" = AUTO_COMP ] ; then
-          tr_option OPTVAL
-
-          if [ ${OPTVAL:0:9} = AUTO_COMP -o ${OPTVAL:0:1} = E -o ${OPTVAL:0:1} = T ] ; then
-             OPTVAL=enable
-             setKWL AUTO_COMPILE=t
-             setKWL UPDATE=t
-          elif [ ${OPTVAL:0:1} = D -o ${OPTVAL:0:1} = F ] ; then
-             OPTVAL=disable
-          fi
-          installArgs+="--auto-compile=${OPTVAL},"
-
-        elif [ "${OPTNAME}" = COMPILE ] ; then
-          setKWL UPDATE=t  # no install arg
-
-        elif [ "${OPTNAME:0:5}" = DEBUG ] ; then
+    -)  if [ "${OPTNAME:0:5}" = DEBUG ] ; then
           : # done before
 
         elif [ "${OPTNAME}" = EXAMPLE ] ; then
           : # done before
-
-        elif [ "${OPTNAME:0:5}" = FORCE ] ; then
-            installArgs+="--force-update,"
-            setKWL UPDATE=t
 
         elif [ "${OPTNAME}" = HOME ] ; then
           : # done before
