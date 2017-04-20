@@ -6,16 +6,20 @@
 
 Installation
 ============
-* Fast and easy: conda install -c birdhouse -c conda-forge qa-dkrz
-* Full sources: git clone https://github.com/IS-ENES-Data/QA-DKRZ
-* Use access to locally provided libraries via the ``install_configure`` file
+
+* Fast and easy: ``conda create -n qa-dkrz -c conda-forge -c h-dh qa-dkrz``
+* Full sources: ``git clone https://github.com/IS-ENES-Data/QA-DKRZ``
+
+  * Use access to locally provided libraries via the ``install_configure`` file
+
+* CMIP6 with PrePARE.py: ``conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor``
 * Verify the success of the installation by running ``qa-dkrz --example[=path]``,
   see :ref:`results`.
 
 Before a Run
 ============
 
-* Apply default settings of the project tables
+* There is a default for almost every option in the project tables
 * Gather frequently changed options in a file and provided on the command-line (-f);
   this file could also contain QA_CONF=with-user-defined-name.
 * Options on the command-line (but -f) only for testing or rechecking small data sets.
@@ -25,11 +29,12 @@ Before a Run
   would check the data of every model available for the specified domain.
   On the other hand, ``SELECT .*/historical=orog`` would find any orography
   file in all historical in the given ``PROJECT_DATA=sub-dir-tree``.
-* Similarly to ``EXP_PATH_INDEX``, option ``PT_PATH_INDEX`` defines the name of
+* Option ``CT_PATH_INDEX`` defines the name of
   a consistency table, which is created and utilised to check consistency across
-  sub-atomic files and across the parent experiment, if available,
+  sub-atomic files and across parent experiments, if available,
   of a given variable. This kind of table is consulted for
   experiments and versions matching the same name.
+* Similarly for logfile names by ``LOG_PATH_INDEX``
 
 Operational Mode
 ================
@@ -43,9 +48,9 @@ Operational Mode
 * If the script is run in the foreground, then command-line option '-m' may
   be helpful by showing the current file name and the number
   of variables (done/selected) on a status line .
-* Have a look at the human readable QA results in directory
-  ``QA_RESULTS/check_logs/Summary/experiment-name.``
+* Have a look at the QA results in directory
+  ``QA_RESULTS/check_logs/Annotationi/experiment-name.json`` .
 * Manual termination of a session: if an immediate break is required,
   please inquire the process-id (pid), e.g. by ps -ef, and execute the
   command 'kill -TERM pid'. This will close the current session neatly
-  leaving no remnants and ready for resumption.
+  leaving no remnants and being ready for resumption.

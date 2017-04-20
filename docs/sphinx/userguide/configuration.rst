@@ -8,8 +8,7 @@ The QA would run basically on the command-line only with the specification of
 the target(s) to be checked. However, using options and gathering these
 in conf-files facilitates checks.
 
-Configuration options follow a specific syntax with case-insensitive
-option names (e.g. kEy-WorD).
+Configuration options follow a specific syntax with option names.
 
 .. code-block:: bash
 
@@ -37,12 +36,12 @@ which follow special rules.
 
 Some options act on other options:
 
-- Options on the command-line have to be prefixed by '-E\_'.
+- Option names on the command-line are case-insensitive they have to be prefixed
+  by '-e' '-E' (a blank or _ may follow).
 
 - Highest precedence is for options on the command-line.
 
-- If path has no leading '/', then the search is relative to the path specified
-  by option PROJECT_DATA.
+- If path has no leading '/', then the search is relative to the path specified by option PROJECT_DATA.
 
 - Special for options ``-S arg`` or an appended plain string on the command-line:
   cancellation of previous SELECTions by any configuration file.
@@ -67,6 +66,7 @@ Some options act on other options:
   Note that every file name begins with ``variable_...`` for CMIP5/CORDEX, thus,
   use ``tas_`` for this alone.
 
+- Former option names are valid, if they have changed in the meantime.
 
 Configuration Files
 ===================
@@ -79,7 +79,7 @@ A description of the configuration options is given in the repository.
     /package-path/tables/projects/"project-name"/"project-name"_qa.conf
 
 Configuration files and options may be specified multiply following a given
-precedence. This facilitates to have a file with short-term options (in a
+precedence. This facilitates having a file with short-term options (in a
 file attached to the -f option on the command-line), another one with settings
 to site-specific demands, which are robust against changes in the repository,
 and long-term default settings from the repository. All options may be specified
@@ -107,13 +107,16 @@ unique for a specific scope. Albeit most projects have defined a term
 of data files. Note that having everything identical, but the model for instance,
 could cause annotations, i.e. differences for some variables, in the QA results.
 
-For CMIP5 and CORDEX, an unambiguous scope is defined by the properties of
+For CMIP5/6 and CORDEX, an unambiguous scope is defined by the properties of
 the so-called Data Reference System (DRS), i.e. the components of the path to
-the variables. The options ``LOG_PATH_INDEX`` and ``LOG_PATH_BASE``
+the variables. The options ``LOG_PATH_INDEX`` and ``DRS_PATH_BASE``
 define a unique experiment-name, where the former contains a comma-separated list
 of indices of the path components and the latter the starting component with
-index=0, e.g. ``LOG_PATH_BASE=output`` and ``LOG_PATH_INDEX=1,2,3,4,6``.
+index=0, e.g. ``DRS_PATH_BASE=output`` and ``LOG_PATH_INDEX=1,2,3,4,6``.
 An example is commented in :ref:`results`.
 
-.. note:: If ``EXP_PATH_INDEX`` is not set, then consistency checks are disabled.
+Similar is for building the name of a consistency table, which is used to check consistency
+between a parent and a child experiment.
+
+.. note:: If ``CT_PATH_INDEX`` is not set, then consistency checks are disabled.
 

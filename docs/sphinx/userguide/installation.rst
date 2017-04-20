@@ -4,13 +4,25 @@
 Installation
 ============
 
-`QA-DKRZ` may be installed  either via the conda package manager or from source.
+`QA-DKRZ` may be installed  either via the `conda` package manager or from a GitHub repository.
 
-The conda package manager installs a ready-to-use package, however without any
-sources. Also, 64-bit machines are required.
+Recommended is the conda package manager installing
+a ready-to-use package. At present, a 64-bit processor is required.
 
-If you want to have sources or use a different machine architecture, then the
-installation from source should be first choice.
+If you want to work with sources or use a different machine architecture, then the
+installation from source should be the first choice.
+
+For CMIP6, `QA-DKRZ` binds the CMOR validator `PrePARE.py` (D. Nadeau, LLNL,
+https://cmor.llnl.gov). This is conducted only by `conda`, e.g.
+
+.. code-block:: bash
+
+  $ conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor
+
+Details in section Work-flow below.
+
+No matter what the preference is `conda` or from `GitHub`,
+you are asked for a location of tables and programs during the installation.
 
 
 .. _conda-install:
@@ -19,41 +31,40 @@ By Conda Package Manager
 ========================
 
 Make sure that you have
-`conda <http://conda.pydata.org/docs/install/quick.html#linux-miniconda-install>`_ installed. The quick steps to install `miniconda` on Linux 64-bit are:
+`conda <http://conda.pydata.org/docs/install/quick.html#linux-miniconda-install>`_ installed.
+The quick steps to install `miniconda` on Linux 64-bit are:
 
 .. code-block:: bash
 
    $ wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
    $ bash Miniconda-latest-Linux-x86_64.sh
 
-.. note:: The installation is tested on 64-bit Centos 6 and
-          Ubuntu/Debian 14.04 LTS.
+.. note:: The installation is tested on various 64-bit machines.
 
-Please check that the ``conda`` package manager is on your ``PATH``.
+Please check that the ``conda`` package manager is in your ``PATH``.
 For example you may set the ``PATH`` environment variable as following:
 
 .. code-block:: bash
 
-    $ export PATH=~/miniconda/bin:$PATH
+    $ export PATH=$PATH:your-path/your-miniconda/bin
     $ conda -h
 
-The QA-DKRZ package is available on the
-`birdhouse anaconda channel <https://anaconda.org/birdhouse/qa-dkrz>`_, which
-is installed by running the following command (all dependencies are included):
+`conda` provides the QA-DKRZ package with all dependencies included.
+You may install it to the root environment or to any other with a name of your choice, e.g.
 
 .. code-block:: bash
 
-   $ conda install -c birdhouse -c conda-forge qa-dkrz
+   $ conda create -n qa-dkrz -c conda-forge -c h-dh qa-dkrz
 
 
-From Source
-===========
+From GitHUB repository
+======================
 
 
 Requirements
 ------------
 
-The tool requires the BASH shell and a C/C++ compiler (AIX works, too).
+The tool requires the BASH shell and a C/C++ compiler (works for AIX, too).
 
 
 Building the QA tool
@@ -66,17 +77,23 @@ The sources are downloaded from GitHub by
    $ git clone  https://github.com/IS-ENES-Data/QA-DKRZ
 
 Any installation is done with the script ``install`` ( a prefix './' could
-be helpful in some cases).
+be helpful in some cases) within the ``QA-DKRZ`` root directory. Please, have also a look
+at the Work-flow section.
 
-- By default, a config.txt file and tables of various projects are
-  copied to .qa-dkrz in the users home-directory.
-- The script stops by asking for editing a file ``install_configure``, which
-  will be protected against any update.
+- A file ``install_configure`` in ``QA-DKRZ`` binds
+  necessary ``lib`` and ``include`` directories. A template ``.install_configure``
+  is provided. If not copied to ``install_configure`` and edited before the first launch,
+  then it is created and the user is asked to edit the file.
 - Environmental variables CC, CXX, CFLAGS, and CXXFLAGS are accepted.
-- ``install`` establishes access to libraries, which may be linked or built,
-  as well as updating sources and executables.
-- Option ``--build`` triggers building of libraries.
+- ``install`` establishes access to libraries, which may be linked (recommended) or built
+  (triggered by option ``--build``).
 - Proceedings are logged in file ``install.log``.
+- The executables are compiled for projects named on the command-line.
+- When ``install`` is started the first time for a given project, then corresponding
+  external tables and programs are downloaded to a ``QA_HOME`` directory;
+  the user is asked for the path.
+- The user's home directory contains a config.txt file in directory .qa-dkrz
+  created and updated by user defined control statements.
 
 The full set of options is described by:
 
@@ -106,27 +123,83 @@ The libraries are built in sub-directory ``local/source``.
 If libraries had been built previously, then the sources are updated and
 the libraries are rebuilt.
 
-.. _updates:
 
-=======
-Updates
-=======
+.. _work-flow:
 
-Updating the QA sources from the repository and re-compilation of executables
-is done automatically by default for both kinds of installation. This may be
-switched off by
+=========
+Work-flow
+=========
+
+Please note that the work-flow has changed. By now, operational mode is
+generally distinct from installation or updating.
+
+Operation is conducted (with some reasonable options) by e.g.
 
 .. code-block:: bash
 
-  $ /package-path/install --auto-up=disable
+  $ qa-dkrz -f task-file
 
-and reversed by ``--auto-up``. In particular for the installation from sources,
-i.e. using the ``git`` tool, the creation of an empty file ``.ignore_GitHub``
-in the QA-DKRZ path disables updating of the sources, too.
+with task-file containing frequently or task-specific options like
+``PROJECT_DATA``, ``QA_RESULTS``, ``SELECT``, ``EMAIL_SUMMARY``, ``NUM_EXEC_THREADS``,
+``CHECK_MODE`` and ``PROJECT`` or ``QA_CONF``.
+The full set of options used by default is given in file
+`QA_HOME/tables/projects/PROJECT/PROJECT_qa.conf`
+with ``QA_HOME`` chosen during the installation. Additionally, every valid option
+may be provided on the command-line by prefixing ``-e``.
 
-Analogous for tables of projects: ``--auto-table-up``.
+Note that option ``RUN_CMOR3_LLNL`` must be given for running `PrePARE.py`.
 
-.. note:: If enabled, then every qa-dkrz run triggers the install-tool
-          for a search of updates of QA-DKRZ itself,
-          while updating of project tables is done only once a day.
+Installation and update tasks are indicated by option ``--install=...``, which
+is additionally provided to the `qa-dkrz` call. Then, all options of `install`
+have to be given by a comma-separated list; the usual ``--`` prefix of options
+may be omitted, e.g.
+
+.. code-block:: bash
+
+  $ qa-dkrz --install=help
+
+would display all install options.
+The ``--install`` option may be merged with operational options conducted afterwards.
+
+The separation of operation and install/updating is broken by option ``--auto-up`` for
+backward-compatibility. Additionally, when working with the GitHub based package,
+the ``--install`` option may be replaced by the `QA-DKRZ/install` command
+(then options with ``--`` prefix).
+Note that `conda` does not know the path to `install`.
+
+Operation/installation/update with conda requires `activating` and `deactivating` the
+corresponding environment. Provided that `conda` is within the path or aliased:
+
+.. code-block:: bash
+
+  $ source activate your-chosen-environment-name
+  $ qa-dkrz options
+  $ source deactivate.
+
+Command `which qa-dkrz` while the environment is activated reveals the path to qa-dkrz.
+Given to `PATH` or as `alias` would make activate/deactivate redundant.
+
+There are three stages for updating:
+
+*install [PROJECT]* without any additional option.
+  Compilation of executables for PROJECT. Only for GitHub based installation; no
+  effect for a conda installed `qa-dkrz`.
+
+*install --up*
+  Updating once every other number of days, while num has been given by option ``--uf=num``
+  or one day be default.
+
+*install --force*
+  Unconditional update
+
+Information is kept in a configuration file located in `~/.qa-dkrz/config.txt` by default.
+User may not edit it, but could. If missing, it is restored during the next `qa-dkrz` call.
+
+A corrupt or incomplete installation becoming apparent during an operational run would issue
+a message for resolving the conflict.
+
+For those who want to have full access to the sources, but do not like to grapple with
+library dependencies, a hybrid operation of conda and GitHub based sources QA_DKRZ is possible.
+Just bind the conda installed libs to the file `QA-DKRZ/install_configure` and operate/update
+from the GitHub based QA-DKRZ.
 
