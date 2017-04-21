@@ -8,8 +8,9 @@ QA-DKRZ - Quality Assurance Tool for Climate Data
 
 The Quality Assurance tool QA-DKRZ developed at DKRZ checks conformance
 of meta-data of climate simulations given in `NetCDF` format with conventions
-and rules of projects. At present, checking of CF Conventions, CMIP5, and CORDEX
-is supported.
+and rules of projects. At present, checking of CF Conventions, CORDEX, CMIP5, and
+CMIP6, the latter with the option to run PrePARE.py (D. Nadeau, LLNL,
+https://cmor.llnl.gov) is supported. The check results are summarised in json-formatted files.
 
 .. note:: The QA tool is still in a testing stage.
 
@@ -20,7 +21,7 @@ The recommendated way to install QA-DKRZ is to use the conda package manager.
 
 .. code-block:: bash
 
-   $ conda install -c birdhouse -c conda-forge qa-dkrz
+   $ conda create -n qa-dkrz -c conda-forge -c h-dh qa-dkrz
 
 If a machine is not suited for Linux-64Bits or you would like to work
 with the sources, then see :ref:`installation`
@@ -78,7 +79,7 @@ You are highly encouraged to participate in the development.
 License
 =======
 
-Please see the *Disclaimer of Warranty* (`DoW.txt`) file in the top distribution
+Please notice the *Disclaimer of Warranty* (`DoW.txt`) file in the top distribution
 directory.
 
 .. |build-status| image:: https://travis-ci.org/IS-ENES-Data/QA-DKRZ.svg?branch=master
