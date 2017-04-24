@@ -17,7 +17,7 @@ See :ref:`installation` on how to install this tool. See the available options:
     Purpose: Check for CF Conventions Compliance (http://cfconventions.org).
     The checker is part of the QA-DKRZ package (https://github.com/IS-ENES-DATA)
     Compilation: '/your-path-to-QA-DKRZ/install CF' unless
-    the package was downloaded via 'conda install -c birdhouse qa-dkrz'.
+    the package was downloaded via 'conda create -n qa-dkrz  -c conda-forge -c h-dh qa-dkrz'.
       -C str     CF Convention string; taken from global attributes by default.
       -F path    Find recursively all nc-files from starting point 'path'.
       -p str     Path to one or more NetCDF files.
