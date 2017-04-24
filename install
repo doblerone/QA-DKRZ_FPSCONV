@@ -435,10 +435,17 @@ do
     -)  OPTVAL=${OPTARG#*=}
         OPTNAME=${UOPTARG%%=*}
 
-        if [ "${OPTNAME}" = LCF ] ; then
-          isLCF=t
-          if [ ${UOPTARG%=*} != ${OPTNAME} ] ; then
-            locConfFile=${OPTVAL}
+        if [ "${OPTNAME:0:1}" = C ] ; then
+          name_0=${OPTNAME%%_*}
+          name_1=${OPTNAME#*_}
+
+          if [ "${OPTNAME}" = CF \
+               -o \( "${name_0:0:1}" = C -a "${name_1:0:1}" = F \) ]
+          then
+            isDisplacedConfigFile=t
+            if [ ${UOPTARG%=*} != ${OPTNAME} ] ; then
+              displacedConfigFile=${OPTVAL}
+            fi
           fi
         elif [ "${OPTNAME}" = HOME ] ; then
           export QA_HOME=${OPTVAL}
@@ -454,22 +461,22 @@ do
   esac
 done
 
-if [ ${isLCF} ] ; then
-  if [ ! "${locConfFile}" ] ; then
+if [ ${isDisplacedConfigFile} ] ; then
+  if [ ! "${displacedConfigFile}" ] ; then
     if [ ${QA_HOME} ] ; then
-      locConfFile=${QA_HOME}
+      displacedConfigFile=${QA_HOME}
     else
       echo "option --lcf requires provision of --qa-home"
       exit 1
     fi
   fi
 else
-  locConfFile=${HOME}
+  displacedConfigFile=${HOME}
 fi
 
-export CONFIG_FILE=$locConfFile/.qa-dkrz/config.txt
-if [ ! -f $locConfFile/.qa-dkrz/config.txt ] ; then
-  mkdir -p ${locConfFile}/.qa-dkrz
+export CONFIG_FILE=$displacedConfigFile/.qa-dkrz/config.txt
+if [ ! -f $displacedConfigFile/.qa-dkrz/config.txt ] ; then
+  mkdir -p ${displacedConfigFile}/.qa-dkrz
   touch $CONFIG_FILE
 fi
 

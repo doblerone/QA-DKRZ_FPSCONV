@@ -1859,13 +1859,8 @@ do
         elif [ "${OPTNAME}" = EXAMPLE ] ; then
           setKWL QA_EXAMPLE=t
 
-        elif [ ${OPTNAME} = CONFIG_FILE_LOCATION -o ${OPTNAME} = LCF ] ; then
-          if [ ${OPTNAME} = ${UOPTARG#*=} ] ; then
-            isLCF=t
-            installArgs+="--lcf,"
-          else
-            installArgs+="--lcf=${OPTVAL},"
-          fi
+        elif [ ${OPTNAME} = CONFIG_FILE -o ${OPTNAME} = CF ] ; then
+          installArgs+="--cf=${OPTVAL},"
 
         elif [ "${OPTNAME}" = HOME -o "${OPTNAME}" = QA_HOME ] ; then
            setKWL QA_HOME=${OPTVAL}
@@ -1883,7 +1878,7 @@ if [ ${isHelp:-f} = t ] ; then
   . $QA_SRC/scripts/qa-help
 fi
 
-if [ ${isLCF} ] ; then
+if [ ${isConfigFile} ] ; then
   if [ ! "${CONFIG_FILE_LOCATION}" ] ; then
     if [ ${QA_HOME} ] ; then
       setKWL CONFIG_FILE=${QA_HOME}/.qa-dkrz/config.txt

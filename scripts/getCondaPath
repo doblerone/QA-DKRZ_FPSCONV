@@ -3,34 +3,38 @@ getCondaPath()
   test ${CONDA_QA_PATH} && return
 
   # was this script launched from qa-dkrz of a conda installation?
+  local path
 
-  if [ ! ${QA_SRC} ] ; then
-    cd ${0%/*} 2> /dev/null
-
-    export QA_SRC
-    local path=$(pwd)
-
-    cd - 2> /dev/null
-
-    if [ ${path##*/} = scripts ] ; then
-      QA_SRC=${path%/*}
+  if [ ${QA_SRC} ] ; then
+    path=${QA_SRC}
+  else
+    if [ ${0%/*} = ${0} -o ${0%/*} = '.' ] ; then
+      # this script was called by bash name
+      path=$(pwd)
     else
-      QA_SRC=${path}
+      cd ${0%/*} 2> /dev/null
+      path=$(pwd)
+      cd - 2> /dev/null
     fi
   fi
 
-  local i c_p pc sz
+  local i j pth pc sz
   declare -a pc
   pc=( ${path//\// } )
   sz=${#pc[*]}
 
   for(( i=0; i < sz ; ++i )) ; do
-    c_p="${c_p}/${pc[i]}"
-    if [ -x ${c_p}/bin/conda ] ; then
-        export CONDA_QA_PATH="${c_p}"
-        return
+    pth="${pth}/${pc[i]}"
+    if [ "${pc[i]}" = opt -a $i -lt $sz ] ; then
+      local j=$((i+1))
+      if [ "${pc[j]}" = qa-dkrz -a $j -lt $sz ] ; then
+        pth="${pth}/${pc[j]}"
+        break
+      fi
     fi
   done
+
+  test ${i} -lt ${sz} && export CONDA_QA_PATH="${pth}"
 
   return
 }
