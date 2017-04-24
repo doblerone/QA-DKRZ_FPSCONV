@@ -1,7 +1,16 @@
 getHomePath()
 {
   export CONFIG_FILE
-  test ! ${CONFIG_FILE} && CONFIG_FILE=~/.qa-dkrz/config.txt
+
+  if [ ! ${CONFIG_FILE} ] ; then
+     if [ -w ~/.qa-dkrz/config.txt ] ; then
+        CONFIG_FILE=~/.qa-dkrz/config.txt
+     elif [ -w ${QA_HOME}/.qa-dkrz/config.txt ] ; then
+        CONFIG_FILE=QA_HOME/.qa-dkrz/config.txt
+     else
+        CONFIG_FILE=~/.qa-dkrz/config.txt
+     fi
+  fi
 
   # path to the current user's home
   export QA_HOME
