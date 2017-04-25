@@ -252,14 +252,17 @@ ges_cmip6_cmor()
 
 ges_cmip6_conda()
 {
-  local conda_path
   local conda_env
   local action isNewConda
 
-  if [ ${PrePARE} ] ; then
-    action=update
-    conda_path=${PrePARE%/*}
-  elif [ ${CONDA_QA_PATH} ] || conda_path=$(which conda 2> /dev/null) ; then
+  if . $QA_SRC/scripts/parseConfigFile CONDA_CMOR_PATH
+    if [ ${PrePARE} ] ; then
+       action=update
+    else
+       action=create
+    fi
+
+  elif [ ${CONDA_PATH:-f} != f -a ${CONDA_CMOR_PATH:-f} = f ] ; then
     # look for existing miniconda with a cmor installation
     . ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv PrePARE.py
     . ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv udunits2.xml
@@ -267,26 +270,29 @@ ges_cmip6_conda()
     if [ ${#PrePARE} -gt 0 -a ${#UDUNITS2_XML_PATH} -gt 0 ] ; then
       action=update
       conda_env=${CONDA_CMOR_ENV}
-      test ! ${conda_path} && conda_path=${CONDA_QA_PATH}
     else
       action=create
-      conda_path=${CONDA_QA_PATH}
     fi
-  else
-    # e.g. for a conda-less instantiation;
-    # sets conda_path
-    action=create
-#    ges_make_miniconda
 
-    conda_path=${QA_HOME}/miniconda
-    isNewConda=t
+    CONDA_CMOR_PATH=${CONDA_PATH}
+
+  else
+    test ! ${CONDA_CMOR_PATH} \
+        && CONDA_CMOR_PATH=${QA_HOME}/miniconda/bin/conda
+
+    # e.g. for a conda-less instantiation;
+    # sets CONDA_CMOR_PATH
+    action=create
+#    ges_make_miniconda ${QA_HOME}/miniconda
+
+#    isNewConda=t
   fi
 
   if [ ${action} = create ] ; then
      local prompt_text
      echo -e "\nCMIP6 requires conda for running CMOR." > ${TTY}
      if [ ${isNewConda} ] ; then
-       prompt_text=" <yes: in ${conda_path%/bin}, [no]>: "
+       prompt_text=" <yes: in ${CONDA_CMOR_PATH%/bin/*}, [no]>: "
      else
        echo -e "\nDifferent installation modes are available:" > ${TTY}
        echo    "    <a> environment of its own (original) " > ${TTY}
@@ -305,15 +311,13 @@ ges_cmip6_conda()
          ( n |  '') exit 41  ;;
          (       a) conda_env=cmor  ;;
          (       b) conda_env=qa-dkrz  ;;
-         (       c) conda_path=${QA_HOME}/miniconda
+         (       c) CONDA_CMOR_PATH=${QA_HOME}/miniconda
+                    conda_env=cmor
                     isNewConda=t
                     ;;
          *) if [ ${quest:0:1} != '/' ] ; then
               echo "Please, provide absolute path (in case of no typo)" > ${TTY}
               continue
-            else
-              conda_path=${quest}
-              isNewConda=t
             fi
             ;;
        esac
@@ -322,13 +326,16 @@ ges_cmip6_conda()
      done
   fi
 
-  conda_path=${conda_path%/miniconda*}/miniconda
+  if [ ${isNewConda} ] ; then
+    if ges_make_miniconda ${CONDA_CMOR_PATH} ; then
+      CONDA_CMOR_PATH=${CONDA_CMOR_PATH}/bin/conda
+      . $QA_SRC/scripts/parseConfigFile ${CONDA_CMOR_PATH}
+    fi
+  fi
 
-  test ${isNewConda} && ges_make_miniconda ${conda_path}
-
-  if [ ${conda_path} ] ; then
+  if [ ${CONDA_CMOR_PATH} ] ; then
     if update_CONDA "${CONDA_CMOR_NAME}" "${CONDA_CMOR_CHANNELS}" \
-                    "${conda_path}" ${conda_env:-cmor} ${action} ; then
+                    "${CONDA_CMOR_PATH}" ${conda_env:-cmor} ${action} ; then
 
       . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${conda_env:-cmor}
       return 0
@@ -430,11 +437,8 @@ ges_getGitBranch()
 
 ges_make_miniconda()
 {
-   test ${PrePARE} && return 0
-
    local path quest
-   path=${1%/bin}
-   path=${path%/miniconda}
+   path=${1}
 
    # look for a conda installation. Is conda in PATH?
    echo    "miniconda: 'yes' would approve the '3-clause BSD License'!" > ${TTY}
@@ -471,14 +475,12 @@ EOF
        continue
      fi
 
-     if ! bash Miniconda-latest-Linux-x86_64.sh -b -p ${conda_path} \
+     if ! bash Miniconda-latest-Linux-x86_64.sh -b -p ${path} \
            &> /dev/null ; then
 
-        if [ ! -w ${conda_path/miniconda} ] ; then
-           err[${#err[*]}]="failed bash Miniconda-latest-Linux-x86_64.sh -b -p ${conda_path}/miniconda"
-           return 41
-        fi
-        fi
+         err[${#err[*]}]="failed bash Miniconda-latest-Linux-x86_64.sh -b -p ${CONDA_CMOR_PATH}/miniconda"
+         return 41
+     fi
 
      break
    done

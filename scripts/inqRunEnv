@@ -120,9 +120,9 @@ iRE_inqState()
        )
 
   # extend for CONDA installation
-  if [ ${CONDA_QA_PATH} ] ; then
-    rname[${#rname[*]}]=-CONDA_QA_PATH
-    rname[${#rname[*]}]=+CONDA_QA_ENV
+  if [ ${CONDA_PATH} ] ; then
+    rname[${#rname[*]}]=-CONDA_PATH
+    rname[${#rname[*]}]=+CONDA_ENV
   fi
 
   # extend for current projects
@@ -156,15 +156,24 @@ iRE_inqState()
 
   test ${iRE_RestoreApproval} && return ${iRE_isUp}
 
-  if [ ${CONDA_QA_PATH} ] ; then
+  if [ ${CONDA_PATH} ] ; then
     # try to restore some lost config-file items
     local iRE_conda_envs
     declare -a iRE_conda_envs
 
-    iRE_conda_envs=( $( ${CONDA_QA_PATH}/bin/conda info --envs | awk '{print $(NF)}') )
+    iRE_conda_envs=( $( ${CONDA_PATH}/bin/conda info --envs | awk '{print $(NF)}') )
   fi
 
   iRE_scanCondaEnv qa-dkrz
+
+  if [ ${CONDA_CMOR_PATH} ] ; then
+    # try to restore some lost config-file items
+    local iRE_conda_envs
+    declare -a iRE_conda_envs
+
+    iRE_conda_envs=( $( ${CONDA_CMOR_PATH}/bin/conda info --envs | awk '{print $(NF)}') )
+  fi
+
   iRE_scanCondaEnv PrePARE.py
   iRE_scanCondaEnv udunits2.xml
 
@@ -208,14 +217,15 @@ iRE_scanCondaEnv()
   declare -a path
 
   if [ $1 = qa-dkrz -o $1 = PrePARE.py ] ; then
-    test $1 = qa-dkrz -a ${CONDA_QA_PATH:-f} = f && return  # not installed by conda
+    test $1 = qa-dkrz -a ${CONDA_PATH:-f} = f && return  # not installed by conda
 #    test ! \( ${isCMIP6:-f} = t -a $1 = PrePARE.py \)  && return
 
     # priority: custom, env, root
-    local cnd_pth
-#    cnd_pth=( $( which conda 2> /dev/null) )
-#    cnd_pth=${cnd_pth[0]%/bin/conda}
-    cnd_pth=${CONDA_QA_PATH}
+    if [ $1 = qa-dkrz -a ${CONDA_PATH:-f} = f ] ; then
+       CONDA_PATH=$(. ${QA_SRC}/scripts/which.sh conda)
+    elif [ $1 = PrePARE.py -a  ${CONDA_CMOR_PATH:-f} = f ] ; then
+       CONDA_CMOR_PATH=${CONDA_PATH}
+    fi
 
     for(( i=0 ; i < ${#iRE_conda_envs[*]} ; ++i )) ; do
        env=${iRE_conda_envs[i]##*/}   # only for internal envs
@@ -224,7 +234,12 @@ iRE_scanCondaEnv()
        path=( $(find ${iRE_conda_envs[i]} -type f -name "$1") )
 
        if [ ${#path[*]} -gt 0 ] ; then
-         if [ "${cnd_pth}" = ${iRE_conda_envs[i]} ] ; then
+         if [ $1 = qa-dkrz -a  \
+                "${CONDA_PATH}" = ${iRE_conda_envs[i]} ] ; then
+            path_root=${path[0]}
+            ix_root=i
+         elif [ $1 != qa-dkrz -a \
+                "${CONDA_CMOR_PATH}" = ${iRE_conda_envs[i]} ] ; then
             path_root=${path[0]}
             ix_root=i
          elif [ ${f##*/} = envs ] ; then

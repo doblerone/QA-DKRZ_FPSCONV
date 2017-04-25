@@ -7,7 +7,7 @@
 Installation
 ============
 
-* Fast and easy: ``conda create -n qa-dkrz -c conda-forge -c h-dh qa-dkrz``
+* Quick and easy: ``conda create -n qa-dkrz -c conda-forge -c h-dh qa-dkrz``
 * Full sources: ``git clone https://github.com/IS-ENES-Data/QA-DKRZ``
 
   * Use access to locally provided libraries via the ``install_configure`` file
@@ -15,6 +15,8 @@ Installation
 * CMIP6 with PrePARE.py: ``conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor``
 * Verify the success of the installation by running ``qa-dkrz --example[=path]``,
   see :ref:`results`.
+* Automatic updating is enabled by option ``--auto-up`` until ``--auto-up=d[isable]`` is provided;
+  works for both ``qa-dkrz`` and ``install``.
 
 Before a Run
 ============
@@ -51,6 +53,6 @@ Operational Mode
 * Have a look at the QA results in directory
   ``QA_RESULTS/check_logs/Annotationi/experiment-name.json`` .
 * Manual termination of a session: if an immediate break is required,
-  please inquire the process-id (pid), e.g. by ps -ef, and execute the
+  please inquire the process-id (pid), e.g. by ``ps -ef`` , and execute the
   command 'kill -TERM pid'. This will close the current session neatly
   leaving no remnants and being ready for resumption.

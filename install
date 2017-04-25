@@ -41,6 +41,8 @@ descript()
   echo "                    beginning of a run. Valid expressions for enabling:"
   echo "                    enable, e, t. Suspending: disable, d, suspend, s."
   echo "  --build           Download and build required libraries."
+  echo "  --conda-cmor-path=path Alias: --ccp=path"
+  echo "                    If a separate conda is neither in PATH nor aliased."
   echo "  --debug[=script]  Display execution commands. If the name of a script"
   echo "                    is assigned, then debug only this one."
   echo "  --force           Force update of the given project."
@@ -78,7 +80,7 @@ getRevNum()
   local branch currIdent
   declare -a branch
 
-  if [ $CONDA_QA_PATH ] ; then
+  if [ $QA_SRC ] ; then
     declare -a branch
     if branch=( $(cat ${QA_SRC}/install.log 2> /dev/null) ) ; then
       branch[0]=${branch[0]#*=}
@@ -186,7 +188,7 @@ update()
   # for searching updates after some days; default: once a day
   # set variable today [ days since 1970 ]
 
-  if [ ${CONDA_QA_PATH} ] ; then
+  if [ ${CONDA_PATH} ] ; then
     test ! ${CONDA_QA_ENV} && \
       . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
 
@@ -194,13 +196,13 @@ update()
          ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire
     then
       if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
-                      "${CONDA_QA_PATH}" "${CONDA_QA_ENV}" ; then
+                      "${CONDA_PATH}"    "${CONDA_QA_ENV}" ; then
 
         . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
         . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
       fi
     fi
-  else
+  elif [ -d ${QA_SRC}/.git ] ; then
      if ! update_QA_SRC ; then
        return $?
      fi
@@ -255,7 +257,7 @@ update_CONDA()
     echo "searching ${conda_name} updates" > ${TTY}
 
     set -f
-    ${conda_path}/bin/conda ${action} ${conda_env:+-n ${conda_env}} \
+    ${conda_path} ${action} ${conda_env:+-n ${conda_env}} \
                        ${conda_channels//,/ } \
                        ${conda_name} &> /dev/null << EOF
 y
@@ -264,7 +266,7 @@ EOF
     set +f
   else
     # only CMOR could here be created
-    ${conda_path}/bin/conda ${action} ${conda_env:+-n ${conda_env}} \
+    ${conda_path} ${action} ${conda_env:+-n ${conda_env}} \
             ${CONDA_CMOR_CHANNELS//,/ } ${CONDA_CMOR_NAME} > ${TTY}
 
     if [ $? -eq 0 ] ; then
@@ -382,8 +384,8 @@ fi
 
 test ${THIS##*/} = scripts && THIS=${THIS%/*}
 
-# set QA_SRC and resolve symbolic links if any
-. ${THIS}/scripts/getSrcPath
+# resolve symbolic links if any
+. ${THIS}/scripts/getSrcPath $THIS
 
 # is it in a conda built?
 . ${QA_SRC}/scripts/getCondaPath
@@ -497,33 +499,22 @@ do
 
         if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
           for OV in ${OPTVAL//,/ } ; do
-            if [ "${OV}" = CONDA_QA -o "${OV}" = CONDA_CMOR ] ; then
-              OPTNAME=${OV}
-              tr_option OPTNAME
-              OV=${OPTNAME#*=}
-              OPTNAME=${OPTNAME%%=*}
-
-              if [ "${OV:0:1}" = D -o "${OV:0:1}" = F -o "${OV:0:1}" = S ] ; then
-                 OV=disable
-#              elif [ "${OV:0:1}" = M -o "${OV:0:1}" = W -o "${OV:0:3}" = DAY ] ; then
-#                :  # required because of DAY
-              else
-                OV=enable
-              fi
-              . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE_${OPTNAME}=${OV}
+            tr_option OV
+            if [ ${OV:0:1} = D -o ${OV:0:1} = F -o ${OV:0:1} = S ] ; then
+              OV=disable
             else
-              tr_option OV
-              if [ ${OV:0:1} = D -o ${OV:0:1} = F -o ${OV:0:1} = S ] ; then
-                OV=disable
-              else
-                OV=enable
-              fi
-              . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=${OV}
+              OV=enable
             fi
+            . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=${OV}
           done
           continue
         elif [ "${OPTNAME}" = BUILD ] ; then
           isBuild=t
+        elif [ "${OPTNAME}" = CONDA_CMOR_PATH \
+                    -o "${OPTNAME}" = CCP ] ; then
+          export CONDA_CMOR_PATH)=${OPTVAL}
+            . ${QA_SRC}/scripts/parseConfigFile \
+                                CONDA_CMOR_PATH=${OPTVAL}
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
           DEBUG='--debug'
           set -x
@@ -599,7 +590,7 @@ if [ ! "${TTY}" ] ; then
   if tty -s ; then TTY=$(tty) ; fi
 fi
 
-if ! which git &> /dev/null ; then
+if ! . ${QA_SRC}/scripts/which.sh git &> /dev/null ; then
   if [ ${INTERNET:-t} = t ; then
     echo "Note that either git is not installed. Running off-line requires --net=no"   > ${TTY}
     exit 1
@@ -668,7 +659,7 @@ if [ ${#next_period[*]} -gt 0 ] ; then
   fi
 fi
 
-test ${CONDA_QA_PATH} && exit  # miniconda built executables
+test ${CONDA_PATH} && exit  # miniconda built executables
 
 pcks="--zlib=$zlib --hdf5=$hdf5 --netcdf=$netcdf --udunits=$udunits"
 

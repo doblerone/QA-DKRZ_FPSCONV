@@ -123,7 +123,7 @@ readCF()
 #      uCF_lines[${#uCF_lines[*]}]=DEFAULT_PROJECT="${defaultProject}"
 
        local n=2
-#       if [ ${CONDA_QA_PATH} ] ; then
+#       if [ ${CONDA_PATH} ] ; then
 #         local today=$( date '+%Y%m%d' )
 #         echo NEXT_QA_UPDATE=${today} >> $CONFIG_FILE
 #         last=$(( $(date -d ${today} '+%s') - 1 ))

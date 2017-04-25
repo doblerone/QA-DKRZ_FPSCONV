@@ -1819,8 +1819,8 @@ do
   OPTVAL=${OPTARG#*=}
 
   case $option in
-  e|E)  if [ ${OPTNAME} = 'CONDA_QA_PATH' ] ; then
-          setKWL CONDA_QA_PATH=${OPTVAL}
+  e|E)  if [ ${OPTNAME} = 'CONDA_PATH' ] ; then
+          setKWL CONDA_PATH=${OPTVAL}
         elif [ ${OPTNAME:0:7} = 'DEBUG_C' ] ; then
           DEBUG_CONF=t
           set -x
@@ -1971,7 +1971,10 @@ do
     x)  setKWL DEBUG_MANAGER=t
         setKWL DEBUG_EXECUTOR=t
         ;;  # already done for this script
-    -)  if [ "${OPTNAME:0:5}" = DEBUG ] ; then
+    -)  if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
+          . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=${OPTVAL}
+
+        elif [ "${OPTNAME:0:5}" = DEBUG ] ; then
           : # done before
 
         elif [ "${OPTNAME}" = EXAMPLE ] ; then

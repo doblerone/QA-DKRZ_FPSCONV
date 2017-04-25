@@ -1,22 +1,21 @@
 getCondaPath()
 {
-  test ${CONDA_QA_PATH} && return
-
-  # was this script launched from qa-dkrz of a conda installation?
-  local path
-
-  if [ ${QA_SRC} ] ; then
-    path=${QA_SRC}
+  if [ ${CONDA_PATH} ] ; then
+    return
   else
-    if [ ${0%/*} = ${0} -o ${0%/*} = '.' ] ; then
-      # this script was called by bash name
-      path=$(pwd)
-    else
-      cd ${0%/*} 2> /dev/null
-      path=$(pwd)
-      cd - 2> /dev/null
+    if ! . $QA_SRC/scripts/parseConfigFile CONDA_PATH ] ; then
+      if ! CONDA_PATH=$(. ${QA_SRC}/scripts/which.sh conda) ; then
+        return
+      fi
     fi
+
+    export CONDA_PATH
+    return
   fi
+
+  # no conda in PATH;
+  # was this script launched from qa-dkrz of a conda installation?
+  local path=$QA_SRC
 
   local i j pth pc sz
   declare -a pc
@@ -34,7 +33,13 @@ getCondaPath()
     fi
   done
 
-  test ${i} -lt ${sz} && export CONDA_QA_PATH="${pth}"
+  if [ ${i} -lt ${sz} ] ; then
+     export CONDA_PATH="${pth}"
+     . $QA_SRC/scripts/parseConfigFile CONDA_PATH=${CONDA_PATH}
+  fi
+
+  # CONDA_PATH could be empty, if conda is neither referenced
+  # by PATH nor by alias.
 
   return
 }
@@ -43,3 +48,4 @@ getCondaPath()
 # main
 
 getCondaPath
+
