@@ -179,7 +179,7 @@ iRE_inqState()
 
   # revison num of the package
   local packRec
-  getRevNum packRev
+  ${QA_SRC}/scripts/getVersion packRev
 
   . ${QA_SRC}/scripts/parseConfigFile QA_REVISION${packRev:+=}${packRev}
 

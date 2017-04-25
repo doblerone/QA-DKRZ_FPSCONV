@@ -255,7 +255,7 @@ ges_cmip6_conda()
   local conda_env
   local action isNewConda
 
-  if . $QA_SRC/scripts/parseConfigFile CONDA_CMOR_PATH
+  if . $QA_SRC/scripts/parseConfigFile CONDA_CMOR_PATH ; then
     if [ ${PrePARE} ] ; then
        action=update
     else

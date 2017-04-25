@@ -10,14 +10,14 @@ getVersion()
 {
   # get current revision number; this determines whether it is
   # before a change of defaults happened.
-  local branch currIdent tag tmp
+  local branch currIdent tag tmp tmp2
   declare -a tmp
 
   if [ $CONDA_PATH ] ; then
     if tmp=( $(cat ${QA_SRC}/install.log 2> /dev/null) ) ; then
       branch=${tmp[0]#*=}
       currIdent=${tmp[1]#*=}
-      tag=${tmp[2]#*=}
+      test ${#tmp[*]} -gt 2 && tag=${tmp[2]#*=}
     fi
   else
     local f=${QA_SRC}/conda-recipes/qa-dkrz/meta.yaml
@@ -26,11 +26,11 @@ getVersion()
     currIdent=$(git -C ${QA_SRC} log --pretty=format:'%h' -n 1)
 
     tag=$( grep 'name:' $f | awk '{print $(NF)}' )
-    tmp=$( grep 'version:' $f | awk '{print $(NF)}' )
-    tmp=${tmp:1}
-    tag=${tag}-${tmp:0:$((${#tmp}-1))}
-    tmp=$( grep 'number:' $f | awk '{print $(NF)}' )
-    tag=${tag}-${tmp}
+    tmp2=$( grep 'version:' $f | awk '{print $(NF)}' )
+    tmp2=${tmp2:1}
+    tag2=${tag}-${tmp2:0:$((${#tmp}-1))}
+    tmp2=$( grep 'number:' $f | awk '{print $(NF)}' )
+    tag=${tag}-${tmp2}
   fi
 
   if [ $# -eq 0 ] ; then
@@ -41,7 +41,7 @@ getVersion()
     echo "   tag: ${tag}"
     exit
   else
-    eval ${1}=${branch}-${currIdent},${tag}
+    eval ${1}="${branch}-${currIdent},${tag}"
   fi
 
   return
