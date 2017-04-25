@@ -1,6 +1,6 @@
 getSrcPath()
 {
-  # extract the path to the root of the QA package
+  # resolve sym-links: path to the root of the QA package
    local src=$0
    local isSL=f
 
@@ -29,4 +29,4 @@ getSrcPath()
 }
 
 # main
-getSrcPath
+getSrcPath $*

@@ -283,7 +283,7 @@ done
 #  return
 #fi
 
-if [ ! -f ${CONFIG_FILE}  ] ; then
+if [ ! -f "${CONFIG_FILE}" ] ; then
   mkdir -p ${CONFIG_FILE%/*}
   touch ${CONFIG_FILE}
 fi

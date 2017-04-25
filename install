@@ -373,23 +373,6 @@ update_QA_SRC()
 
 # ----- main ------
 
-THIS=${0%/*}
-if [ ${THIS} != $0 ] ; then
-  cd ${THIS} &> /dev/null
-  THIS=$(pwd)
-  cd - &> /dev/null
-else
-  THIS=$(pwd)
-fi
-
-test ${THIS##*/} = scripts && THIS=${THIS%/*}
-
-# resolve symbolic links if any
-. ${THIS}/scripts/getSrcPath $THIS
-
-# is it in a conda built?
-. ${QA_SRC}/scripts/getCondaPath
-
 zeroArg=$0
 initialArgs=($*)
 
@@ -481,6 +464,21 @@ if [ ! -f $displacedConfigFile/.qa-dkrz/config.txt ] ; then
   mkdir -p ${displacedConfigFile}/.qa-dkrz
   touch $CONFIG_FILE
 fi
+
+THIS=${0%/*}
+if [ ${THIS} != $0 -a "${THIS}" != '.' ] ; then
+  THIS=$(pwd)
+else
+  THIS=$(pwd)
+fi
+
+test ${THIS##*/} = scripts && THIS=${THIS%/*}
+
+# resolve symbolic links if any
+. ${THIS}/scripts/getSrcPath $THIS
+
+# is it in a conda built?
+. ${QA_SRC}/scripts/getCondaPath
 
 OPTIND=
 while getopts BdhT:-: option ${sArgs[*]}

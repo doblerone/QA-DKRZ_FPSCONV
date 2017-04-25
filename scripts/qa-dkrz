@@ -5009,7 +5009,7 @@ umask 002
 export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
 
 THIS=${0%/*}
-if [ ${THIS} != $0 ] ; then
+if [ ${THIS} != $0 -a "${THIS}" != '.' ] ; then
   cd ${THIS} &> /dev/null
   THIS=$(pwd)
   cd - &> /dev/null
