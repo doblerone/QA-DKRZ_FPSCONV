@@ -468,7 +468,7 @@ if [ ${isDisplacedConfigFile} ] ; then
     if [ ${QA_HOME} ] ; then
       displacedConfigFile=${QA_HOME}
     else
-      echo "option --lcf requires provision of --qa-home"
+      echo "option --cf requires provision of --qa-home"
       exit 1
     fi
   fi
@@ -512,7 +512,7 @@ do
           isBuild=t
         elif [ "${OPTNAME}" = CONDA_CMOR_PATH \
                     -o "${OPTNAME}" = CCP ] ; then
-          export CONDA_CMOR_PATH)=${OPTVAL}
+          export CONDA_CMOR_PATH=${OPTVAL}
             . ${QA_SRC}/scripts/parseConfigFile \
                                 CONDA_CMOR_PATH=${OPTVAL}
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then

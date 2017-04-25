@@ -1,22 +1,29 @@
 getSrcPath()
 {
-  test ${CONDA_QA_PATH} && return
-
   # extract the path to the root of the QA package
-   export QA_SRC=$0
+   local src=$0
+   local isSL=f
 
-   if [ -h $QA_SRC ] ; then
-     while [ "$( ls -l $QA_SRC | awk '{print $(NF-1)}')" = '->' ] ; do
-       QA_SRC=$( ls -l $QA_SRC | awk '{print $(NF)}' )
+   if [ -h $src ] ; then
+     isSl=t
+     while [ "$( ls -l $src | awk '{print $(NF-1)}')" = '->' ] ; do
+       src=$( ls -l $src | awk '{print $(NF)}' )
      done
    fi
 
-   QA_SRC=${QA_SRC%/*} # ignore the filename
-   cd ${QA_SRC} &> /dev/null
-   QA_SRC=$(pwd)
-   cd - &> /dev/null
+   if [ ${isSL} = t ] ; then
+     src=${src%/*} # ignore the filename
+     cd ${src} &> /dev/null
+     src=$(pwd)
+     cd - &> /dev/null
 
-   test ${QA_SRC##*/} = scripts && QA_SRC=${QA_SRC%/*}
+     test ${src##*/} = scripts && src=${src%/*}
+     QA_SRC=$src
+   else
+     QA_SRC=$1
+   fi
+
+   export QA_SRC
 
    return
 }
