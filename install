@@ -308,7 +308,7 @@ update_QA_SRC()
              | awk '{print $6}' 2> /dev/null )
 
         # always from master
-        local branch=$(. ${QA_SRC}/scripts/getVersion func=getGitBranch) )
+        local branch=$(. ${QA_SRC}/scripts/getVersion func=getGitBranch)
         # test "${branch}" != master &&  git checkout master &> /dev/null
 
         git fetch && git reset --hard origin/${branch} &> /dev/null
