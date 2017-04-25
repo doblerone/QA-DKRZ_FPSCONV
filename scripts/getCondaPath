@@ -15,18 +15,18 @@ getCondaPath()
   # look for bin/conda in QA_SRC
   local path=$QA_SRC
 
-  local i j pth pc sz
-  declare -a pc
+  local i pth pc sz dirs dir
+  declare -a pc dirs
+
   pc=( ${path//\// } )
-  sz=$(( ${#pc[*]} -1 ))
+  sz=$(( ${#pc[*]} -2 ))
 
   for(( i=0; i < sz ; ++i )) ; do
-    j=$((i+1))
     pth="${pth}/${pc[i]}"
 
-    if [ "${pc[i]}" = bin -a "${pc[j]}" = conda ] ; then
-        pth="${pth}/bin/conda"
-        break
+    if [ -f ${pth}/bin/conda ] ; then
+       pth="${pth}/bin/conda"
+       break
     fi
   done
 

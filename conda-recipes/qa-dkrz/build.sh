@@ -51,7 +51,8 @@ for(( i=0 ; i < ${#last_log[*]} ; ++i )) ; do
     echo "hexa=${last_log[i]}" >> ${QA_SRC}/install.log
   elif [ ${last_log[i]} = 'tag:' ] ; then
     tag=${last_log[$((++i))]}
-    echo "tag=${tag:0:$((${#tag}-1))}" >> ${QA_SRC}/install.log
+    last=$(( ${#tag} -1 ))
+    echo "tag=${tag:0:${last}}" >> ${QA_SRC}/install.log
   fi
 done
 
