@@ -28,7 +28,7 @@ getVersion()
     tag=$( grep 'name:' $f | awk '{print $(NF)}' )
     tmp2=$( grep 'version:' $f | awk '{print $(NF)}' )
     tmp2=${tmp2:1}
-    tag2=${tag}-${tmp2:0:$((${#tmp2}-1))}
+    tag=${tag}-${tmp2:0:$((${#tmp2}-1))}
     tmp2=$( grep 'number:' $f | awk '{print $(NF)}' )
     tag=${tag}-${tmp2}
   fi
