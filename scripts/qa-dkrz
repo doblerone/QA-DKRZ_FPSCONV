@@ -4925,7 +4925,7 @@ wait_fnct()
 ##main()
 ##{
 ######## main ############
-
+set -x
 comLineArgs=( $* )
 
 test $# -eq 1 -a "${1:0:9}" = '--install' && STOP_AFTER_INSTALL=t

@@ -1,9 +1,10 @@
+#! /bin/bash
+
 getGitBranch()
 {
    git -C $QA_SRC branch | grep '*' | awk '{print $2}'
    return
 }
-
 
 getVersion()
 {
@@ -19,21 +20,23 @@ getVersion()
       tag=${tmp[2]#*=}
     fi
   else
-    branch[0]=$(getGitBranch)
+    local f=${QA_SRC}/conda-recipes/qa-dkrz/meta.yaml
+
+    branch=$(getGitBranch)
     currIdent=$(git -C ${QA_SRC} log --pretty=format:'%h' -n 1)
 
-    tag=$( grep 'name:' ${QA_SRC}/conda-recipes/meta.yaml | awk '{print $(NF)}' )
-    tmp=$( grep 'version:' ${QA_SRC}/conda-recipes/meta.yaml | awk '{print $(NF)}' )
+    tag=$( grep 'name:' $f | awk '{print $(NF)}' )
+    tmp=$( grep 'version:' $f | awk '{print $(NF)}' )
     tmp=${tmp:1}
     tag=${tag}-${tmp:0:$((${#tmp}-1))}
-    tmp=$( grep 'number:' ${QA_SRC}/conda-recipes/meta.yaml | awk '{print $(NF)}' )
+    tmp=$( grep 'number:' $f | awk '{print $(NF)}' )
     tag=${tag}-${tmp}
   fi
 
   if [ $# -eq 0 ] ; then
     echo "QA version:"
     echo "   GitHub: https://github.com/IS-ENES-Data/QA-DKRZ.git"
-    echo "   branch: ${branch[0]}"
+    echo "   branch: ${branch}"
     echo "   commit-SHA: ${currIdent}"
     echo "   tag: ${tag}"
     exit
@@ -50,4 +53,4 @@ else
   getVersion $*
 fi
 
-return
+exit 0

@@ -3,33 +3,30 @@ getCondaPath()
   if [ ${CONDA_PATH} ] ; then
     return
   else
-    if ! . $QA_SRC/scripts/parseConfigFile CONDA_PATH ] ; then
-      if ! CONDA_PATH=$(. ${QA_SRC}/scripts/which.sh conda) ; then
-        return
-      fi
+    if . $QA_SRC/scripts/parseConfigFile CONDA_PATH ] ; then
+      export CONDA_PATH
+      return
     fi
 
-    export CONDA_PATH
-    return
   fi
 
   # no conda in PATH;
   # was this script launched from qa-dkrz of a conda installation?
+  # look for bin/conda in QA_SRC
   local path=$QA_SRC
 
   local i j pth pc sz
   declare -a pc
   pc=( ${path//\// } )
-  sz=${#pc[*]}
+  sz=$(( ${#pc[*]} -1 ))
 
   for(( i=0; i < sz ; ++i )) ; do
+    j=$((i+1))
     pth="${pth}/${pc[i]}"
-    if [ "${pc[i]}" = opt -a $i -lt $sz ] ; then
-      local j=$((i+1))
-      if [ "${pc[j]}" = qa-dkrz -a $j -lt $sz ] ; then
-        pth="${pth}/${pc[j]}"
+
+    if [ "${pc[i]}" = bin -a "${pc[j]}" = conda ] ; then
+        pth="${pth}/bin/conda"
         break
-      fi
     fi
   done
 
