@@ -43,8 +43,10 @@ cp ./example/templates/qa-test.task ${QA_SRC}
 
 # write git version to install.log
 echo "branch=$(git branch | grep '*' | awk '{print $2}')" > ${QA_SRC}/install.log
+
+declare -a last_log
 last_log=( $(git log --oneline --decorate | grep -m 1 .) )
-for(( i=0 ; i < ${#last_log} ; ++i )) ; do
+for(( i=0 ; i < ${#last_log[*]} ; ++i )) ; do
   if [ $i -eq 0 ] ; then
     echo "hexa=${last_log[i]}" >> ${QA_SRC}/install.log
   elif [ ${last_log[i]} = 'tag:' ] ; then

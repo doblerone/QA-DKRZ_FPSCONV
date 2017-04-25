@@ -4969,8 +4969,10 @@ for OPTARG in $* ; do
     test ${arg} = '-h' -o ${arg} = '--help' \
         && . $QA_SRC/scripts/qa-help
 
-    test ${arg} = '-v' -o ${arg} = '--version' \
-        && . ${QA_SRC}/scripts/getVersion
+    if [ ${arg} = '-v' -o ${arg} = '--version' ] ; then
+       ${QA_SRC}/scripts/getVersion
+       exit 0
+    fi
 
     tr_option arg $prev_opt
     OPTNAME=${arg%%=*}

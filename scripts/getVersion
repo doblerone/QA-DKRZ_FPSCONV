@@ -14,7 +14,7 @@ getVersion()
 
   if [ $CONDA_PATH ] ; then
     if tmp=( $(cat ${QA_SRC}/install.log 2> /dev/null) ) ; then
-      branch[0]=${tmp[0]#*=}
+      branch=${tmp[0]#*=}
       currIdent=${tmp[1]#*=}
       tag=${tmp[2]#*=}
     fi
