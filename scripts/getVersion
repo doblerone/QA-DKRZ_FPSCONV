@@ -1,0 +1,53 @@
+getGitBranch()
+{
+   git -C $QA_SRC branch | grep '*' | awk '{print $2}'
+   return
+}
+
+
+getVersion()
+{
+  # get current revision number; this determines whether it is
+  # before a change of defaults happened.
+  local branch currIdent tag tmp
+  declare -a tmp
+
+  if [ $CONDA_PATH ] ; then
+    if tmp=( $(cat ${QA_SRC}/install.log 2> /dev/null) ) ; then
+      branch[0]=${tmp[0]#*=}
+      currIdent=${tmp[1]#*=}
+      tag=${tmp[2]#*=}
+    fi
+  else
+    branch[0]=$(getGitBranch)
+    currIdent=$(git -C ${QA_SRC} log --pretty=format:'%h' -n 1)
+
+    tag=$( grep 'name:' ${QA_SRC}/conda-recipes/meta.yaml | awk '{print $(NF)}' )
+    tmp=$( grep 'version:' ${QA_SRC}/conda-recipes/meta.yaml | awk '{print $(NF)}' )
+    tmp=${tmp:1}
+    tag=${tag}-${tmp:0:$((${#tmp}-1))}
+    tmp=$( grep 'number:' ${QA_SRC}/conda-recipes/meta.yaml | awk '{print $(NF)}' )
+    tag=${tag}-${tmp}
+  fi
+
+  if [ $# -eq 0 ] ; then
+    echo "QA version:"
+    echo "   GitHub: https://github.com/IS-ENES-Data/QA-DKRZ.git"
+    echo "   branch: ${branch[0]}"
+    echo "   commit-SHA: ${currIdent}"
+    echo "   tag: ${tag}"
+    exit
+  else
+    eval ${1}=${branch}-${currIdent},${tag}
+  fi
+
+  return
+}
+
+if [ "$1" = "func=getGitBranch" ] ; then
+  getGitBranch
+else
+  getVersion $*
+fi
+
+return

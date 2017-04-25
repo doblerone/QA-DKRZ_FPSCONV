@@ -43,22 +43,18 @@ cp ./example/templates/qa-test.task ${QA_SRC}
 
 # write git version to install.log
 echo "branch=$(git branch | grep '*' | awk '{print $2}')" > ${QA_SRC}/install.log
-echo "hexa=$(git log --pretty=format:'%h' -n 1)" >> ${QA_SRC}/install.log
+last_log=( $(git log --oneline --decorate | grep -m 1 .) )
+for(( i=0 ; i < ${#last_log} ; ++i )) ; do
+  if [ $i -eq 0 ] ; then
+    echo "hexa=${last_log[i]}" >> ${QA_SRC}/install.log
+  elif [ ${last_log[i]} = 'tag:' ] ; then
+    tag=${last_log[$((++i))]}
+    echo "tag=${tag:0:$((${#tag}-1))}" >> ${QA_SRC}/install.log
+  fi
+done
 
 # install wrapper script in bin/ to call cfchecker and qa-dkrz
 cp $RECIPE_DIR/cfchecker-wrapper_env.sh $PREFIX/bin/dkrz-cf-checker
 cp $RECIPE_DIR/qa-wrapper_env.sh $PREFIX/bin/qa-dkrz
 
 chmod +x $PREFIX/bin
-
-# put into conda's root/bin
-#pref=${PREFIX%/*} # strip bin
-#pref=${pref%/*}   # strip qa-dkrz
-
-#if [ ${pref##*/} = conda-bld ] ; then
-#  cp $RECIPE_DIR/cfchecker-wrapper_rbin.sh ${pref%/*}/bin/dkrz-cf-checker
-#  chmod +x ${pref%/*}/bin/dkrz-cf-checker
-
-#  cp $RECIPE_DIR/qa-wrapper_rbin.sh ${pref%/*}/bin/qa-dkrz
-#  chmod +x ${pref%/*}/bin/qa-dkrz
-#fi

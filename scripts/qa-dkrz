@@ -1003,58 +1003,9 @@ copyPreamble()
 
   test ${isShow:-f} = t && return
 
-  if [ -e $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log ] ; then
-:
-#    # a new qa svn revision number?
-#    local rev_0 rev_1
-
-#    # i) grep revision num save in
-#    rev_0=( $(grep 'qa_svn_revision' $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log 2> /dev/null \
-#         | awk -F: '{print $2}') )
-
-#    if [ ! ${rev_0[0]} ] ; then
-#      rev_0=0
-#    else
-#      rev_0=${rev_0[$(( ${#rev_0[*]} - 1 ))]}
-#    fi
-
-#    # ii) svn revision number saved in .conf
-#     getRevNum rev_1
-
-#    # is it newer
-#    if [ ${rev_0[0]} -lt ${rev_1} ] ; then
-#      if [ ${sTxt[0]} ] ; then
-#        for(( i=0 ; i < ${#sTxt[*]} ; ++i )) ; do
-#          zsTxt[i]="${sTxt[i]}"
-#        done
-#        unset sTxt
-#      fi
-
-#      sTxt[0]="3qa_svn_revision: ${rev_1}"
-#      log
-#    fi
-  elif [ -f ${SESSION_LOGDIR}/session.prmbl ] ; then
-       cp ${SESSION_LOGDIR}/session.prmbl $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log
-#       local rev_1
-#       getRevNum rev_1
-
-#      if [ ${sTxt[0]} ] ; then
-#        for(( i=0 ; i < ${#sTxt[*]} ; ++i )) ; do
-#          zsTxt[i]="${sTxt[i]}"
-#        done
-#        unset sTxt
-#      fi
-
-#      sTxt[0]="3qa_svn_revision: ${rev_1}"
-#      log
-#    fi
- fi
-
-# if [ ${zsTxt[0]} ] ; then
-#   for(( i=0 ; i < ${#zsTxt[*]} ; ++i )) ; do
-#     sTxt[i]="${zsTxt[i]}"
-#   done
-# fi
+  if [ -f ${SESSION_LOGDIR}/session.prmbl ] ; then
+    cp ${SESSION_LOGDIR}/session.prmbl $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log
+  fi
 
   return
 }
@@ -2268,30 +2219,6 @@ getProjectTableName()
   return
 }
 
-getRevNum()
-{
-  # get the number saved in QA_SRC/.conf as revision=num
-  local rev revs
-  revs=( $( grep 'revision=' ${QA_SRC}/.conf 2> /dev/null \
-       | awk -F= '{print $2}' ) )
-
-  if [ ! ${revs[0]} ] ; then
-    rev=-1
-  elif [ ${#revs[*]} -eq 1 ] ; then
-    rev=${revs[0]}
-  else
-    // several numbers are available by mistake; get the highest one
-    rev=0
-    local r
-    for r in ${revs[*]} ; do
-      test $r -gt $rev && rev=$r
-    done
-  fi
-
-  eval $1=${rev}
-  return
-}
-
 getSelectedPaths()
 {
   # descent recursively into dirs and write all sub-paths,
@@ -3292,9 +3219,6 @@ logConfiguration()
   done
 
   # start: and corresponding date:
-#  local rev_0
-#  getRevNum rev_0
-
   log --start
 
   # make a link between session logdir and task name
@@ -5044,6 +4968,9 @@ for OPTARG in $* ; do
   for arg in ${optargs[*]} ; do
     test ${arg} = '-h' -o ${arg} = '--help' \
         && . $QA_SRC/scripts/qa-help
+
+    test ${arg} = '-v' -o ${arg} = '--version' \
+        && . ${QA_SRC}/scripts/getVersion
 
     tr_option arg $prev_opt
     OPTNAME=${arg%%=*}
