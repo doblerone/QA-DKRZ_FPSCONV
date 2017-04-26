@@ -14,7 +14,7 @@ descript()
   echo " -p str     Path to one or more netCDF Files; this is prefixed"
   echo "            only to netCDF-files without any path component."
   echo " --debug    Show execution commands."
-  echo " --help"
+  echo " -h, --help"
   echo " --no-reco  No recommendations given by CF conventions."
   echo " --param    Only for program development."
   echo " --ts[=arg] Run the files provided in the Test-Suite for CF conventions"
@@ -77,10 +77,7 @@ cd - &> /dev/null
 
 test ${THIS##*/} = scripts && THIS=${THIS%/*}
 # resolve symbolic links
-. ${THIS}/scripts/getSrcPath
-
-# is it in a conda built?
-. ${QA_SRC}/scripts/getCondaPath
+. ${THIS}/scripts/getSrcPath $THIS
 
 # get execution path of QA scripts
 RC=t

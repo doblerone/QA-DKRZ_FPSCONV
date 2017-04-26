@@ -5,7 +5,7 @@ getSrcPath()
    local isSL=f
 
    if [ -h $src ] ; then
-     isSl=t
+     isSL=t
      while [ "$( ls -l $src | awk '{print $(NF-1)}')" = '->' ] ; do
        src=$( ls -l $src | awk '{print $(NF)}' )
      done
