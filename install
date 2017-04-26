@@ -477,6 +477,8 @@ do
           continue
         elif [ "${OPTNAME}" = BUILD ] ; then
           isBuild=t
+        elif [ "${OPTNAME}" = CONDA_BUILD ] ; then
+          isCondaBuild=t
         elif [ "${OPTNAME}" = CONDA_CMOR_PATH \
                     -o "${OPTNAME}" = CCP ] ; then
           export CONDA_CMOR_PATH=${OPTVAL}
@@ -599,34 +601,36 @@ test ${#projects[*]} -eq 0 && projects=(${default_prj})
 
 # inquire from ~/.qa-dkrz/config.txt;
 # also ensures that all names in the config.files are defined in this program
-if [ ! ${isBuild} ] ; then
-  update ${projects[*]}
-fi
-
-if [ ${#next_period[*]} -gt 0 ] ; then
-  NEXT_VARIABLES=(QA CONDA_CMOR)
-  for(( i=0 ; i < ${#projects[*]} ; ++i )) ; do
-    NEXT_VARIABLES[${#NEXT_VARIABLES[*]}]=${projects[i]}
-  done
-
-  if [ ${#next_period[*]} = 1 -a ${next_period[0]} = ${next_period[0]//=/} ] ; then
-     for nv in ${NEXT_VARIABLES[*]} ; do
-       # apply to all
-       . ${QA_SRC}/scripts/parseConfigFile NEXT_${nv}_UPDATE --set_frequency=${next_period[0]}
-     done
-  else
-    # individual settings
-    for dn in ${next_period[*]} ; do
-      for nv in ${NEXT_VARIABLES[*]} ; do
-        if [ ${dn%=*} = ${nv} ] ; then
-          . ${QA_SRC}/scripts/parseConfigFile NEXT_${nv}_UPDATE --set_frequency=${dn#*=}
-        fi
-      done
-    done
+if [ ! ${isCondaBuild} ] ; then
+  if [ ! ${isBuild} ] ; then
+    update ${projects[*]}
   fi
-fi
 
-test ${CONDA_PATH} && exit  # miniconda built executables
+  if [ ${#next_period[*]} -gt 0 ] ; then
+    NEXT_VARIABLES=(QA CONDA_CMOR)
+    for(( i=0 ; i < ${#projects[*]} ; ++i )) ; do
+      NEXT_VARIABLES[${#NEXT_VARIABLES[*]}]=${projects[i]}
+    done
+
+    if [ ${#next_period[*]} = 1 -a ${next_period[0]} = ${next_period[0]//=/} ] ; then
+       for nv in ${NEXT_VARIABLES[*]} ; do
+         # apply to all
+         . ${QA_SRC}/scripts/parseConfigFile NEXT_${nv}_UPDATE --set_frequency=${next_period[0]}
+       done
+    else
+      # individual settings
+      for dn in ${next_period[*]} ; do
+        for nv in ${NEXT_VARIABLES[*]} ; do
+          if [ ${dn%=*} = ${nv} ] ; then
+        . ${QA_SRC}/scripts/parseConfigFile NEXT_${nv}_UPDATE --set_frequency=${dn#*=}
+          fi
+        done
+      done
+    fi
+  fi
+
+  test ${CONDA_PATH} && exit  # miniconda built executables
+fi
 
 pcks="--zlib=$zlib --hdf5=$hdf5 --netcdf=$netcdf --udunits=$udunits"
 

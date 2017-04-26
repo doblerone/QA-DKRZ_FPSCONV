@@ -2558,7 +2558,12 @@ init()
     fi
   elif ! . $QA_SRC/scripts/inqRunEnv --read-only ${prj} ; then
       # get the state of the current installation: read config-file
-        local installArg="--install=up${prj:+,${prj}}"
+        local installArg
+        if [ ${INSTALL_ARGS} ] ; then
+           installArg="${INSTALL_ARGS}up${prj:+,${prj}}"
+        else
+           installArg="--install=up${prj:+,${prj}}"
+        fi
 
         echo -e "\nMissing external tables/executabels."  > $TTY
         echo "Please, run: $0 ${installArg} ${comLineArgs[*]}"  > $TTY
@@ -4977,9 +4982,9 @@ for OPTARG in $* ; do
     tr_option arg $prev_opt
     OPTNAME=${arg%%=*}
 
-    if [ ${arg} = DEBUG -o ${arg} = DEBUG_M ] ; then
+    if [ ${OPTNAME} = DEBUG -o ${OPTNAME} = DEBUG_M ] ; then
        set -x
-    elif [ "${arg}" = EXAMPLE ] ; then
+    elif [ "${OPTNAME}" = EXAMPLE ] ; then
       QA_EXAMPLE=t
 
     elif [ ${OPTNAME} = CONFIG_FILE_LOCATION -o ${OPTNAME} = LCF ] ; then

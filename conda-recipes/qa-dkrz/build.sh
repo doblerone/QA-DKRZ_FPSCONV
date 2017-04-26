@@ -33,7 +33,7 @@ touch ${QA_SRC}/.ignore_GitHub # avoids git update!
 #touch .ignore_GitHub # avoids git update!
 export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg -lssl -lcrypto"
 QA_HOME=/hdh/hdh/Test/HOME
-./install --net=no --cf --qa-src=$QA_SRC --qa-home="$QA_HOME" CF CMIP5 CMIP6 CORDEX
+./install --debug --conda-build --net=no --cf --qa-src=$QA_SRC --qa-home="$QA_HOME" CF CMIP5 CMIP6 CORDEX
 
 # copy generated files to opt/qa-dkrz
 #cp -r ./bin ${QA_SRC}

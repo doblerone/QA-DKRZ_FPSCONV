@@ -1138,9 +1138,6 @@ parseOPTARG()
         return
       fi
     done
-
-  elif [ "${key}" = QA_HOME ] ; then
-    installArgs+="--QA_HOME=${OPTARG#*=},"
   fi
 
   # no more syntax checks; invoke all
@@ -1846,8 +1843,11 @@ do
     T)  TTY=${OPTARG} ;;
     x)  set -x
         DEBUG_CONF=t
+        installArgs+="--debug,"
+        setKWL DEBUG_MANAGER
+        DEBUG_CONF=t
         ;;
-    -)  if [ "$OPTARG" = help ] ; then
+    -)  if [ "$OPTNAME" = HELP ] ; then
            isHelp=t
 
         elif [ "${OPTNAME}" = DEBUG ] ; then
@@ -1864,7 +1864,6 @@ do
 
         elif [ "${OPTNAME}" = HOME -o "${OPTNAME}" = QA_HOME ] ; then
            setKWL QA_HOME=${OPTVAL}
-           installArgs+="--QA_HOME=${QA_HOME},"
 
         elif [ "${OPTNAME}" = WORK ] ; then
            setKWL QA_RESULTS=${OPTVAL}
@@ -1983,9 +1982,6 @@ do
         elif [ "${OPTNAME}" = HOME ] ; then
           : # done before
 
-        elif [ "${OPTNAME:0:16}" = IGNORE_FAILED_UP ] ; then
-          installArgs+="--${OPTARG},"
-
         elif [ "${OPTNAME}" = INSTALL ] ; then
           opts=( ${OPTVAL//,/ } )
 
@@ -2043,7 +2039,7 @@ do
   esac
 done
 
-test ${installArgs} && setKWL INSTALL_ARGS=${installArgs}
+test ${installArgs} && setKWL INSTALL_ARGS="--install=${installArgs}"
 
 shift $(( $OPTIND - 1 ))
 
