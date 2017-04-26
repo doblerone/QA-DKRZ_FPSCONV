@@ -2490,7 +2490,7 @@ init()
   basic_args=( ${basic_args[*]} -E_QA_HOME=${QA_HOME} )
 
   # configuration
-  test ${CONDA_ENV} && basic_args=( ${basic_args[*]} -E_CONDA_ENV=${CONDA_ENV} )
+  test ${CONDA_QA_ENV} && basic_args=( ${basic_args[*]} -E_CONDA_QA_ENV=${CONDA_QA_ENV} )
 
   # check whether tables have been initaially copied fomr QA_SRC to QA_HOME;
   # if not, then do it.
@@ -4938,11 +4938,9 @@ umask 002
 export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
 
 THIS=${0%/*}
-if [ ${THIS} != $0 -a "${THIS}" != '.' ] ; then
-  cd ${THIS} &> /dev/null
+if [ ${THIS} = $0 ] ; then
   THIS=$(pwd)
-  cd - &> /dev/null
-else
+elif [ "${THIS//\./}" != "${THIS}" ] ; then
   THIS=$(pwd)
 fi
 

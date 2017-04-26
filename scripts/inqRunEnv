@@ -9,26 +9,25 @@ iRE_checkForUpdate()
   for(( i=0 ; i < ${#name[*]} ; ++i )) ; do
     val=${value[i]}
 
-    if [ ${val:-f} = f -a ${rname[i]} = '+' ] ; then
-         iRE_isUp=$(( iRE_isUp + 1 ))
+    if [ ${#rname[i]} -eq 2 -a "${rname[i]:1:1}" = '+' ] ; then
+      # must exist
+      if [ ! \( -f "${val}" -o -d "${val}" \) ] ; then
+         iRE_isUp=1
+         eval ${name[i]}=
+         break
+      fi
+    elif [ ${val:-f} = f -a ${rname[i]:0:1} = '+' ] ; then
+         iRE_isUp=1
          break
     elif [ ! ${isRO} ] ; then
       if [ "${val:0:2}" = '20' ] ; then
-         if . ${QA_SRC}/scripts/parseConfigFile ${name[i]} --inquire \
-                && [ ${iRE_isUp:-0} -eq 0 ] ; then
-            iRE_isUp=$(( iRE_isUp + 11 ))
+         if ! . ${QA_SRC}/scripts/parseConfigFile ${name[i]} --inquire ; then
+            iRE_isUp=1
             break
          fi
       fi
     fi
   done
-
-  if [ ${isCMIP6} ] ; then
-    if [ ${PrePARE:-f} = f -o ${XLSX2CSV:-f} = f  \
-                    -o ${UDUNITS2_XML_PATH:-f} = f ] ; then
-       iRE_isUp=$(( iRE_isUp + 1 ))
-    fi
-  fi
 
   return
 }
@@ -38,10 +37,10 @@ iRE_checkTables()
   local prj=$1
 
   if [ ! ${QA_HOME} ] ; then
-    iRE_isUp=$(( iRE_isUp + 1 ))
+    iRE_isUp=1
     return
   elif [ ! -d ${QA_HOME}/tables/projects/$prj ] ; then
-    iRE_isUp=$(( iRE_isUp + 1 ))
+    iRE_isUp=1
     return
   else
     local p=${QA_HOME}/tables/projects
@@ -81,7 +80,7 @@ iRE_checkTables()
     local rI
     for rI in ${reqItems[*]} ; do
       if [ ! -e ${rI} ] ; then
-        iRE_isUp=$(( iRE_isUp + 1 ))
+        iRE_isUp=1
         break
       fi
     done
@@ -92,6 +91,8 @@ iRE_checkTables()
 
 iRE_inqState()
 {
+  iRE_isUp=0
+
   local isRO
   if [ "${1}" = '--read-only' ] ; then
     isRO=t
@@ -108,21 +109,22 @@ iRE_inqState()
   declare -a name rname value
   declare -i reqCount=0
 
-  # First char of names indicate whether optional (-) or required (+)
+  # First char of names indicate whether optional (-) or required (+),
+  # second by + indicates required and must exist;
   # as to must-have names working also in case of a non-update option (default)
   rname=(
          -AUTO_UPDATE \
          -DEFAULT_PROJECT \
          -INTERNET \
          -NEXT_QA_UPDATE \
-         +QA_HOME \
-         +QA_REVISION \
+         ++QA_HOME \
+         -QA_REVISION \
        )
 
   # extend for CONDA installation
   if [ ${CONDA_PATH} ] ; then
-    rname[${#rname[*]}]=-CONDA_PATH
-    rname[${#rname[*]}]=+CONDA_ENV
+    rname[${#rname[*]}]=-+CONDA_PATH
+    rname[${#rname[*]}]=+CONDA_QA_ENV
   fi
 
   # extend for current projects
@@ -131,18 +133,22 @@ iRE_inqState()
 
     if [ ${prj[i]} = CMIP6 ] ; then
       isCMIP6=t
-      rname[${#name[*]}]=+PrePARE
-      rname[${#rname[*]}]=+UDUNITS2_XML_PATH
-      rname[${#rname[*]}]=+XLSX2CSV
+      rname[${#name[*]}]=++PrePARE
+      rname[${#rname[*]}]=++UDUNITS2_XML_PATH
+      rname[${#rname[*]}]=++XLSX2CSV
       rname[${#rname[*]}]=+CONDA_CMOR_ENV
+      rname[${#rname[*]}]=++CONDA_CMOR_PATH
     fi
   done
 
   # count mandatory names and convert to plain requirements and names, respectively
+  local pos
   for(( i=0 ; i < ${#rname[*]} ; ++i )) ; do
     test ${rname[i]:0:1} = '+' && reqCount+=1
-    name[i]=${rname[i]:1}
-    rname[i]=${rname[i]:0:1}
+    pos=1
+    test ${rname[i]:1:1} = '+' && pos=2
+    name[i]=${rname[i]:pos}
+    rname[i]=${rname[i]:0:pos}
   done
 
   # read configuration setting
@@ -161,7 +167,7 @@ iRE_inqState()
     local iRE_conda_envs
     declare -a iRE_conda_envs
 
-    iRE_conda_envs=( $( ${CONDA_PATH}/bin/conda info --envs | awk '{print $(NF)}') )
+    iRE_conda_envs=( $( ${CONDA_PATH} info --envs | awk '{print $(NF)}') )
   fi
 
   iRE_scanCondaEnv qa-dkrz
@@ -171,10 +177,10 @@ iRE_inqState()
     local iRE_conda_envs
     declare -a iRE_conda_envs
 
-    iRE_conda_envs=( $( ${CONDA_CMOR_PATH}/bin/conda info --envs | awk '{print $(NF)}') )
+    iRE_conda_envs=( $( ${CONDA_CMOR_PATH} info --envs | awk '{print $(NF)}') )
   fi
 
-  iRE_scanCondaEnv PrePARE.py
+  iRE_scanCondaEnv PrePARE
   iRE_scanCondaEnv udunits2.xml
 
   # revison num of the package
@@ -199,7 +205,7 @@ iRE_readConfigFile()
     if . ${QA_SRC}/scripts/parseConfigFile ${name[i]} --inquire ; then
        value[i]=${!name[i]}
 
-       if [ ${rname[i]} = '+' -a ${#value[i]} -eq 0 ] ; then
+       if [ ${rname[i]:0:1} = '+' -a ${#value[i]} -eq 0 ] ; then
           echo "missing feature: ${name[i]}"
        else
           count+=1
@@ -216,26 +222,30 @@ iRE_scanCondaEnv()
   local path path_env path_custom path_root env_custom env_env env_root
   declare -a path
 
-  if [ $1 = qa-dkrz -o $1 = PrePARE.py ] ; then
+  if [ $1 = qa-dkrz -o $1 = PrePARE ] ; then
     test $1 = qa-dkrz -a ${CONDA_PATH:-f} = f && return  # not installed by conda
-#    test ! \( ${isCMIP6:-f} = t -a $1 = PrePARE.py \)  && return
+#    test ! \( ${isCMIP6:-f} = t -a $1 = PrePARE \)  && return
 
     # priority: custom, env, root
     if [ $1 = qa-dkrz -a ${CONDA_PATH:-f} = f ] ; then
        CONDA_PATH=$(. ${QA_SRC}/scripts/which.sh conda)
-    elif [ $1 = PrePARE.py -a  ${CONDA_CMOR_PATH:-f} = f ] ; then
+    elif [ $1 = PrePARE -a  ${CONDA_CMOR_PATH:-f} = f ] ; then
        CONDA_CMOR_PATH=${CONDA_PATH}
     fi
 
     for(( i=0 ; i < ${#iRE_conda_envs[*]} ; ++i )) ; do
+       test ${iRE_conda_envs[i]:0:1} = '#'         && continue
+       test ${iRE_conda_envs[i]} = 'environments:' && continue
+
        env=${iRE_conda_envs[i]##*/}   # only for internal envs
        f=${iRE_conda_envs[i]%/*}
 
-       path=( $(find ${iRE_conda_envs[i]} -type f -name "$1") )
+       path=( $(find ${iRE_conda_envs[i]} -type f -name "$1" 2> /dev/null) )
+       test $? -gt 0 && continue
 
        if [ ${#path[*]} -gt 0 ] ; then
          if [ $1 = qa-dkrz -a  \
-                "${CONDA_PATH}" = ${iRE_conda_envs[i]} ] ; then
+                "${CONDA_PATH%/bin/conda}" = ${iRE_conda_envs[i]} ] ; then
             path_root=${path[0]}
             ix_root=i
          elif [ $1 != qa-dkrz -a \
@@ -278,7 +288,7 @@ iRE_scanCondaEnv()
     fi
 
   elif [ ${isCMIP6:-f} = t -a ${#PrePARE} -gt 0 ] ; then
-    path=( $( find ${PrePARE%/bin/PrePARE.py} -name "udunits2.xml" ) )
+    path=( $( find ${PrePARE%/bin/PrePARE} -name "udunits2.xml" ) )
     . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=${path[0]}
     return
   else
@@ -288,9 +298,15 @@ iRE_scanCondaEnv()
   if [ $1 = qa-dkrz ] ; then
      CONDA_QA_ENV=${env}
      . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=${CONDA_QA_ENV}
-  elif [ $1 = PrePARE.py ] ; then
+
+     test ${CONDA_PATH} && \
+        . ${QA_SRC}/scripts/parseConfigFile CONDA_PATH=${CONDA_PATH}
+  elif [ $1 = PrePARE ] ; then
      CONDA_CMOR_ENV=${env}
      . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${CONDA_CMOR_ENV}
+
+     test ${CONDA_CMOR_PATH} && \
+     . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_PATH=${CONDA_CMOR_PATH}
 
      PrePARE=$path
      . ${QA_SRC}/scripts/parseConfigFile PrePARE=${PrePARE}
@@ -309,10 +325,8 @@ if [ ${1%%=*} = funct ] ; then
   return $?
 fi
 
-iRE_isUp=0
-
 iRE_CallParam=( $* )
 
 iRE_inqState $*
 
-return $?
+return $iRE_isUp

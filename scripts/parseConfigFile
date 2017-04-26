@@ -14,7 +14,7 @@ isNextDate()
    local t_conf_day t_conf_date
    declare -a t_config_date
 
-   if [ $# -eq 0 -o ${pC_force} = t ] ; then
+   if [ $# -eq 0 ] ; then
      t_config_day=( $(( $(date -d ${pC_todate} '+%s') / 3600 / 24 - 1 )) )
    else
      t_config_date=( ${1//+/ } )
@@ -189,7 +189,7 @@ updateConfFile()
    done
 
    if [ $i -lt ${#uCF_lines[*]} ] ; then
-     if [ ${param_name:0:5} = NEXT_ -a ${pC_inquire} = f ] ; then
+     if [ ${param_name:0:5} = NEXT_ ] ; then
         # entries with time comparison in a destinct work-flow
 
         # now >= limit: param_value is set
@@ -237,9 +237,9 @@ updateConfFile()
      # current param not found in config.txt, yet
      status=1
 
-     test ${param_name:0:5} = NEXT_ -a ${pC_inquire} = f && isNextDate
+     test ${param_name:0:5} = NEXT_ && isNextDate
 
-     if [ "${param_value}" ] ; then
+     if [ ${param_value} ] ; then
        # new
        sed -i "${uCF_blkEnd} a${param}" $CONFIG_FILE &> /dev/null
 
@@ -261,7 +261,6 @@ declare -a pC_Args
 pC_Args=()
 pC_freq=
 pC_inquire=f
-pC_force=f
 
 for arg in $* ; do
   if [ "${arg:0:9}" = '--inquire' ] ; then
@@ -269,8 +268,6 @@ for arg in $* ; do
   elif [ "${arg}" = '--force_reading' ] ; then
     unset uCF_lines
     unset uCF_blkBeg
-  elif [ "${arg}" = '--force' ] ; then
-    pC_force=t
   elif [ "${arg:0:15}" = '--set_frequency' ] ; then
     test ${arg#*=} != ${arg} && pC_freq=${arg#*=}
   else

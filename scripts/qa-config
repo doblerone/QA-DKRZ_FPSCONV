@@ -1843,7 +1843,7 @@ do
     T)  TTY=${OPTARG} ;;
     x)  set -x
         DEBUG_CONF=t
-        installArgs+="--debug,"
+        installArgs+="debug,"
         setKWL DEBUG_MANAGER
         DEBUG_CONF=t
         ;;
@@ -1852,7 +1852,7 @@ do
 
         elif [ "${OPTNAME}" = DEBUG ] ; then
           set -x
-          installArgs+="--debug,"
+          installArgs+="debug,"
           setKWL DEBUG_MANAGER
           DEBUG_CONF=t
 
@@ -1999,11 +1999,11 @@ do
              installArgs+="${opt},"
           done
 
-          test ${installArgs//--up/} = ${installArgs} && installArgs+="--up,"
+          test ${installArgs//--up/} = ${installArgs} && installArgs+="up,"
           setKWL UPDATE=t
 
         elif [ "${OPTNAME}" = NET ] ; then
-          installArgs+="--${OPTARG},"
+          installArgs+="${OPTARG},"
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
           if [ ${OPTARG} = ${OPTVAL} ] ; then
@@ -2016,7 +2016,7 @@ do
           setKWL PROJECT_AS=${OPTVAL}
 
         elif [ "${OPTNAME}" = SET_DEFAULT_PROJECT ] ; then
-          installArgs+="--set_default_project=${OPTVAL},"
+          installArgs+="set_default_project=${OPTVAL},"
 
         elif [ "${OPTNAME:0:2}" = UP ] ; then
           tr_option OPTVAL
@@ -2027,7 +2027,7 @@ do
           fi
 
           setKWL UPDATE=${OPTVAL}
-          installArgs+="--up=${OPTVAL},"
+          installArgs+="up=${OPTVAL},"
 
         elif [ "${OPTNAME:0:4}" = WORK ] ; then
           : # done before

@@ -264,7 +264,7 @@ ges_cmip6_conda()
 
   elif [ ${CONDA_PATH:-f} != f -a ${CONDA_CMOR_PATH:-f} = f ] ; then
     # look for existing miniconda with a cmor installation
-    . ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv PrePARE.py
+    . ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv PrePARE
     . ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv udunits2.xml
 
     if [ ${#PrePARE} -gt 0 -a ${#UDUNITS2_XML_PATH} -gt 0 ] ; then

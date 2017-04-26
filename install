@@ -149,8 +149,6 @@ update()
   local prj
 
   if ! . ${QA_SRC}/scripts/inqRunEnv ${prj} ; then
-    # distinguish return 1 and 11: the latter was issued
-    # only when the date is not today
     test $? -gt 0 && isForceUpdate=t  # look for updates
   fi
 
@@ -177,11 +175,6 @@ update()
      fi
   fi
 
-  # revison num of the package
-  local currVersion
-  ${QA_SRC}/scripts/getVersion currVersion
-  . ${QA_SRC}/scripts/parseConfigFile QA_REVISION${currVersion:+=}${currVersion}
-
   # now for non-QA-DKRZ tables and programs
   for prj in $* ; do
     test "${PROJECT_AS}" && prj=${PROJECT_AS}
@@ -192,6 +185,11 @@ update()
 
     test "${PROJECT_AS}" && break
   done
+
+  # revison num of the package
+  local currVersion
+  ${QA_SRC}/scripts/getVersion currVersion
+  . ${QA_SRC}/scripts/parseConfigFile QA_REVISION${currVersion:+=}${currVersion}
 
   if ! mkdir -p ${QA_HOME}/tables  ; then
     echo "could not mkdir -p ${QA_HOME}/tables"
@@ -240,15 +238,15 @@ EOF
 
     if [ $? -eq 0 ] ; then
       if [ ${CONDA_CMOR_ENV} ] ; then
-        PrePARE=${conda_path}/envs/${CONDA_CMOR_ENV}/bin/PrePARE.py
+        PrePARE=${conda_path}/envs/${CONDA_CMOR_ENV}/bin/PrePARE
         . $QA_SRC/scripts/parseConfigFile CONDA_CMOR_ENV=${conda_env}
       else
-        PrePARE=${conda_path}/bin/PrePARE.py
+        PrePARE=${conda_path}/bin/PrePARE
         . $QA_SRC/scripts/parseConfigFile CONDA_CMOR_ENV=none
       fi
 
       . $QA_SRC/scripts/parseConfigFile \
-         PrePARE=${conda_path}/envs/cmor/bin/PrePARE.py
+         PrePARE=${conda_path}/envs/cmor/bin/PrePARE
 
       echo "Please, note that activation/deactivation is not required in this place." > $TTY
     fi
@@ -435,9 +433,7 @@ if [ ! -f $displacedConfigFile/.qa-dkrz/config.txt ] ; then
 fi
 
 THIS=${0%/*}
-if [ ${THIS} != $0 -a "${THIS}" != '.' ] ; then
-  THIS=$(pwd)
-else
+if [ ${THIS} = $0 -o "${THIS:0:1}" = '.' ] ; then
   THIS=$(pwd)
 fi
 
