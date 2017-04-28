@@ -6,28 +6,41 @@ iRE_checkForUpdate()
   local val
   test ! ${today} && today=$( date '+%Y%m%d' )
 
+  local failedItems
+  declare -a failedItems
+
   for(( i=0 ; i < ${#name[*]} ; ++i )) ; do
     val=${value[i]}
 
-    if [ ${#rname[i]} -eq 2 -a "${rname[i]:1:1}" = '+' ] ; then
-      # must exist
-      if [ ! \( -f "${val}" -o -d "${val}" \) ] ; then
-         iRE_isUp=1
-         eval ${name[i]}=
-         break
-      fi
-    elif [ ${val:-f} = f -a ${rname[i]:0:1} = '+' ] ; then
-         iRE_isUp=1
+    if [ ${rname[i]:0:1} = '+' -a ${val:-f} = f  ] ; then
+         upCount=$(( upCount + 1 ))
+         failedItems[${#failedItems[*]}]=${name[i]}
+
          break
     elif [ ! ${isRO} ] ; then
-      if [ "${val:0:2}" = '20' ] ; then
+      if [ "${val:0:2}" = '20' -a ${rname[i]:0:1} = '-' ] ; then
          if ! . ${QA_SRC}/scripts/parseConfigFile ${name[i]} --inquire ; then
-            iRE_isUp=1
+            upCount=$(( upCount + 1 ))
             break
          fi
       fi
     fi
   done
+
+  if [ ${#failedItems[*]} -gt 0 -a "${QA_HOME}" ] ; then
+    # try to restore missing items in config.txt from QA_HOME
+    local item
+    for item in ${failedItems[*]} ; do
+       if [ ${item} = XLSX2CSV ] ; then
+          item=$( find ${QA_HOME} -name xlsx2csv.py )
+          if [ ${item} ] ; then
+             . ${QA_SRC}/scripts/parseConfigFile XLSX2CSV=$item
+             XLSX2CSV=$item
+             upCount=$(( upCount -1 ))
+          fi
+       fi
+    done
+  fi
 
   return
 }
@@ -37,10 +50,10 @@ iRE_checkTables()
   local prj=$1
 
   if [ ! ${QA_HOME} ] ; then
-    iRE_isUp=1
+    upCount=$(( upCount + 1 ))
     return
   elif [ ! -d ${QA_HOME}/tables/projects/$prj ] ; then
-    iRE_isUp=1
+    upCount=$(( upCount + 1 ))
     return
   else
     local p=${QA_HOME}/tables/projects
@@ -80,7 +93,7 @@ iRE_checkTables()
     local rI
     for rI in ${reqItems[*]} ; do
       if [ ! -e ${rI} ] ; then
-        iRE_isUp=1
+        upCount=$(( upCount + 1 ))
         break
       fi
     done
@@ -91,13 +104,7 @@ iRE_checkTables()
 
 iRE_inqState()
 {
-  iRE_isUp=0
-
-  local isRO
-  if [ "${1}" = '--read-only' ] ; then
-    isRO=t
-    shift 1
-  fi
+  upCount=0
 
   local prj
   declare -a prj
@@ -117,27 +124,32 @@ iRE_inqState()
          -DEFAULT_PROJECT \
          -INTERNET \
          -NEXT_QA_UPDATE \
-         ++QA_HOME \
+         +QA_HOME \
          -QA_REVISION \
        )
 
+if [ ! ${NO_CONDA_INSTALL} ] ; then
   # extend for CONDA installation
-  if [ ${CONDA_PATH} ] ; then
-    rname[${#rname[*]}]=-+CONDA_PATH
-    rname[${#rname[*]}]=+CONDA_QA_ENV
+  if [ ${CONDA_QA_PATH} ] ; then
+    rname[${#rname[*]}]=-CONDA_QA_PATH
+    #rname[${#rname[*]}]=+CONDA_QA_ENV
   fi
+fi
 
   # extend for current projects
   for(( i=0 ; i < ${#prj[*]} ; ++i )) ; do
-    rname[${#rname[*]}]=+NEXT_${prj[i]}_UPDATE
+    rname[${#rname[*]}]=-NEXT_${prj[i]}_UPDATE
+    rname[${#rname[*]}]=+XLSX2CSV
 
     if [ ${prj[i]} = CMIP6 ] ; then
       isCMIP6=t
-      rname[${#name[*]}]=++PrePARE
-      rname[${#rname[*]}]=++UDUNITS2_XML_PATH
-      rname[${#rname[*]}]=++XLSX2CSV
+
+if [ ! ${NO_CONDA_INSTALL} ] ; then
+      rname[${#name[*]}]=+PrePARE
+#      rname[${#rname[*]}]=+UDUNITS2_XML_PATH
       rname[${#rname[*]}]=+CONDA_CMOR_ENV
-      rname[${#rname[*]}]=++CONDA_CMOR_PATH
+      rname[${#rname[*]}]=+CONDA_CMOR_PATH
+fi
     fi
   done
 
@@ -156,42 +168,21 @@ iRE_inqState()
 
   iRE_checkForUpdate
 
-  test ${iRE_isUp} -eq 0 && iRE_checkTables $*
+  test ${upCount} -eq 0 && iRE_checkTables $*
 
-  test ${isRO:-f} = t -o ${iRE_isUp} = 0 && return ${iRE_isUp}
+  test ${isRO:-f} = t -o ${upCount} = 0 && return ${upCount}
 
-  test ${iRE_RestoreApproval} && return ${iRE_isUp}
-
-  if [ ${CONDA_PATH} ] ; then
-    # try to restore some lost config-file items
-    local iRE_conda_envs
-    declare -a iRE_conda_envs
-
-    iRE_conda_envs=( $( ${CONDA_PATH} info --envs | awk '{print $(NF)}') )
-  fi
-
+if [ ! ${NO_CONDA_INSTALL} ] ; then
   iRE_scanCondaEnv qa-dkrz
-
-  if [ ${CONDA_CMOR_PATH} ] ; then
-    # try to restore some lost config-file items
-    local iRE_conda_envs
-    declare -a iRE_conda_envs
-
-    iRE_conda_envs=( $( ${CONDA_CMOR_PATH} info --envs | awk '{print $(NF)}') )
-  fi
-
   iRE_scanCondaEnv PrePARE
-  iRE_scanCondaEnv udunits2.xml
+#  iRE_scanCondaEnv udunits2.xml
+fi
 
   # revison num of the package
   local packRec
   ${QA_SRC}/scripts/getVersion packRev
 
   . ${QA_SRC}/scripts/parseConfigFile QA_REVISION${packRev:+=}${packRev}
-
-  iRE_RestoreApproval=t
-
-  iRE_inqState ${iRE_CallParam[*]}
 
   return
 }
@@ -218,89 +209,72 @@ iRE_readConfigFile()
 
 iRE_scanCondaEnv()
 {
-  local f ix env ix_custom ix_env ix_root
-  local path path_env path_custom path_root env_custom env_env env_root
-  declare -a path
+  local f ix env envs ix_custom ix_env ix_root
+  local path paths path_env path_custom path_root env_custom env_env env_root
+  local conda_path # could be different for cmor
+  declare -a envs paths
 
-  if [ $1 = qa-dkrz -o $1 = PrePARE ] ; then
-    test $1 = qa-dkrz -a ${CONDA_PATH:-f} = f && return  # not installed by conda
-#    test ! \( ${isCMIP6:-f} = t -a $1 = PrePARE \)  && return
+  if [ $1 = qa-dkrz ] ; then
+    test ! ${CONDA_QA_PATH} && return  # not installed by conda
+    test "${CONDA_QA_PATH}" -a "${CONDA_QA_ENV}" && return
 
-    # priority: custom, env, root
-    if [ $1 = qa-dkrz -a ${CONDA_PATH:-f} = f ] ; then
-       CONDA_PATH=$(. ${QA_SRC}/scripts/which.sh conda)
-    elif [ $1 = PrePARE -a  ${CONDA_CMOR_PATH:-f} = f ] ; then
-       CONDA_CMOR_PATH=${CONDA_PATH}
+    # try to restore some lost config-file items
+    if conda_path=$(. ${QA_SRC}/scripts/which.sh conda) ; then
+       CONDA_QA_PATH=${conda_path}
     fi
+  fi
 
-    for(( i=0 ; i < ${#iRE_conda_envs[*]} ; ++i )) ; do
-       test ${iRE_conda_envs[i]:0:1} = '#'         && continue
-       test ${iRE_conda_envs[i]} = 'environments:' && continue
+  if [ $1 = PrePARE ] ; then
+    test ! ${CMIP6} && return
+    test "${CONDA_CMOR_PATH}" -a "${CONDA_CMOR_ENV}" && return
 
-       env=${iRE_conda_envs[i]##*/}   # only for internal envs
-       f=${iRE_conda_envs[i]%/*}
+    # try to restore some lost config-file items
+    if [ ! ${PrePARE} ] ; then
+      if conda_path=$(. ${QA_SRC}/scripts/which.sh PrePARE) ; then
+         PrePARE=${conda_path}
+      else
+         paths=( $( which conda 2> /dev/null) )
 
-       path=( $(find ${iRE_conda_envs[i]} -type f -name "$1" 2> /dev/null) )
-       test $? -gt 0 && continue
+         if [ ${#paths[*]} -gt 0 ] ; then
+            # PrePARE is not necessarily in the path;
+            # there could be more than a single conda
 
-       if [ ${#path[*]} -gt 0 ] ; then
-         if [ $1 = qa-dkrz -a  \
-                "${CONDA_PATH%/bin/conda}" = ${iRE_conda_envs[i]} ] ; then
-            path_root=${path[0]}
-            ix_root=i
-         elif [ $1 != qa-dkrz -a \
-                "${CONDA_CMOR_PATH}" = ${iRE_conda_envs[i]} ] ; then
-            path_root=${path[0]}
-            ix_root=i
-         elif [ ${f##*/} = envs ] ; then
-            # if more than a single one, then the first
-            if [ ${#env_env} -eq 0 ] ; then
-               path_env=${path[0]}
-               ix_env=i
-               env_env=${env}
-            fi
-         else
-            # custom
-            # if more than a single one, then the first
-            if [ ${#custom_env} -eq 0 ] ; then
-              path_custom=${path[0]}
-              ix_custom=i
-              env_custom=${env}
-            fi
+            for(( f=0 ; f < ${#paths[*]} ; ++f )) ; do
+               path=$( find ${paths[f]%/bin/conda} -type f -name "PrePARE" )
+               if [ ${path} ] ; then
+                 CONDA_CMOR_PATH=${paths[f]}
+                 PrePARE=$path
+                break
+               fi
+            done
+         elif [ ${CONDA_QA_PATH} ] ; then
+            # try a conda path within the qa-dkrz package
+            path=$( find ${CONDA_QA_PATH%/bin/conda} -type f -name "PrePARE" )
+            test ${path} && PrePARE=$path
          fi
-       fi
-    done
+      fi
 
-    if [ ${custom_env} ] ; then
-       path=${path_custom}
-       ix=ix_custom
-       env=$env_custom
-    elif [ ${env_env} ] ; then
-       path=${path_env}
-       ix=${ix_env}
-       env=${env_env}
-    elif [ ${root_env} ] ; then
-       path=${path_root}
-       ix=${ix_root}
-       env=none
+      test ${conda_path} && CONDA_QA_PATH=${conda_path}
+      test CONDA_QA_PATH=$(. ${QA_SRC}/scripts/which.sh conda)
+    fi
+  fi
+
+  if [ $1 = udunits2.xml ] ; then
+    if [ ! ${CMIP6} -o "${UDUNITS2_XML_PATH}" ] ; then
+       return
     else
+      paths=( $( find ${PrePARE%/bin/PrePARE} -type f -name "udunits2.xml" ) )
+      . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=${paths[0]}
       return
     fi
-
-  elif [ ${isCMIP6:-f} = t -a ${#PrePARE} -gt 0 ] ; then
-    path=( $( find ${PrePARE%/bin/PrePARE} -name "udunits2.xml" ) )
-    . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=${path[0]}
-    return
-  else
-    return
   fi
 
   if [ $1 = qa-dkrz ] ; then
      CONDA_QA_ENV=${env}
      . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=${CONDA_QA_ENV}
 
-     test ${CONDA_PATH} && \
-        . ${QA_SRC}/scripts/parseConfigFile CONDA_PATH=${CONDA_PATH}
+     test ${CONDA_QA_PATH} && \
+        . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_PATH=${CONDA_QA_PATH}
   elif [ $1 = PrePARE ] ; then
      CONDA_CMOR_ENV=${env}
      . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${CONDA_CMOR_ENV}
@@ -315,6 +289,85 @@ iRE_scanCondaEnv()
   return
 }
 
+iRE_inqRunEnv()
+{
+  local isRO
+  local isUp
+
+  local callParam
+  declare -a callParam
+
+  local arg
+  for arg in $* ; do
+    if [ ${arg} = '--read-only' ] ; then
+      isRO=t
+    else
+      callParam[${#callParam[*]}]=$arg
+    fi
+  done
+
+  iRE_inqState ${callParam[*]}
+
+  if [ ${NO_CONDA_INSTALL} ] ; then
+    # check required paths or ENV
+    if ! . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV ; then
+      while : ; do
+         read -p "Provide your environment for CMOR: [STOP], string: " \
+                CONDA_CMOR_ENV 2> ${TTY}
+
+         case ${CONDA_CMOR_ENV:0:1} in
+          '') exit 0  ;;
+           *) test ${CONDA_CMOR_ENV} = STOP && exit 0
+              CONDA_CMOR_ENV=${CONDA_CMOR_ENV#*=}
+              ;;
+         esac
+
+         test ${upCount} -gt 0 && upCount=$(( upCount - 1 ))
+         break
+      done
+
+      if ! . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_PATH ; then
+        while : ; do
+           echo "Provide your path to (CMOR) conda" > ${TTY}
+           read -p "<a> CONDA_PATH in use, <[], STOP>, <CONDA_CMOR_PATH>: " \
+              CONDA_CMOR_PATH 2> ${TTY}
+
+           case ${CONDA_CMOR_PATH:0:1} in
+             '') exit 0  ;;
+             a) CONDA_CMOR_PATH=${CONDA_QA_PATH}  ;;
+             *) test ${CONDA_CMOR_PATH} = STOP && exit 0
+                CONDA_CMOR_PATH=${CONDA_CMOR_PATH#*=}
+
+                if [ ! -f ${CONDA_CMOR_PATH} ] ; then
+                   echo "no such directory ${CONDA_CMOR_PATH}"
+                   continue
+                fi
+                ;;
+           esac
+
+           test ${upCount} -gt 0 && upCount=$(( upCount - 1 ))
+           break
+        done
+      fi
+
+      if [ -f ${CONDA_CMOR_PATH} ] ; then
+        # try the environment
+        if ! . ${CONDA_CMOR_PATH%/conda}/activate ${CONDA_CMOR_ENV} ; then
+           echo "could not activate your cmor environment; Exit"
+           exit 1
+        fi
+
+        . ${CONDA_CMOR_PATH%/conda}/deactivate
+      fi
+
+      . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_PATH=$CONDA_CMOR_PATH
+      . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=$CONDA_CMOR_ENV
+    fi
+  fi
+
+  return $upCount
+}
+
 # main
 
 if [ ${1%%=*} = funct ] ; then
@@ -325,8 +378,6 @@ if [ ${1%%=*} = funct ] ; then
   return $?
 fi
 
-iRE_CallParam=( $* )
+iRE_inqRunEnv $*
 
-iRE_inqState $*
-
-return $iRE_isUp
+return $?

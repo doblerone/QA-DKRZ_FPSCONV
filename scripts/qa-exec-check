@@ -1091,23 +1091,32 @@ run()
 
 run_CMOR_LLNL()
 {
-  if ! . $QA_SRC/scripts/parseConfigFile PrePARE ; then
-    echo "PrePARE=${PrePARE}  not found"
-    signalParent TERM
-    exit 1
-  fi
 
+NO_CONDA_INSTALL=t
+
+if [ ${NO_CONDA_INSTALL} ] ; then
+  source activate ${CONDA_CMOR_ENV} &> /dev/null
+
+  if which PrePARE &> /dev/null ; then
+    PrePARE=PrePARE
+  fi
+else
+  . $QA_SRC/scripts/parseConfigFile PrePARE
+  if ! source ${PrePARE%/*}/bin/activate ${CONDA_CMOR_ENV:-place_holder} &> /dev/null ; then
+     PrePARE=
+  fi
   export PATH=${PrePARE%/*}:${PATH}
+fi
 
-  source ${PrePARE%/*}/bin/activate cmor &> /dev/null
-
-  if . $QA_SRC/scripts/parseConfigFile UDUNITS2_XML_PATH ; then
-    export UDUNITS2_XML_PATH
-  else
-    echo "UDUNITS2_XML_PATH=${UDUNITS2_XML_PATH}  not found"
+  if [ ${PREPARE} ] ; then
+    echo "could not activate/find PrePARE"
     signalParent TERM
     exit 1
   fi
+
+#  if . $QA_SRC/scripts/parseConfigFile UDUNITS2_XML_PATH ; then
+#    export UDUNITS2_XML_PATH
+#  fi
 
   local file table_path
 
@@ -1149,12 +1158,16 @@ run_CMOR_LLNL()
   fi
 
   local ans2
-  ans2="$( python $PrePARE \
+  ans2="$( ${PrePARE} \
      ${mip_table} \
      ${file} 2>&1 \
      | python ${QA_SRC}/scripts/python/qa-dkrz/convertPipedCMOR_output.py )"
 
+if [ ${NO_CONDA_INSTALL} ] ; then
   source ${PrePARE%/*}/deactivate &> /dev/null
+else
+  source deactivate
+fi
 
   local i
   local on=f

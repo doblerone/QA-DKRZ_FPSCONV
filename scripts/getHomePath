@@ -22,7 +22,7 @@ getHomePath()
     # take QA_HOME from the config file, if it exists.
     if ! . $QA_SRC/scripts/parseConfigFile QA_HOME ; then
       local dpath
-      if [ ${CONDA_PATH} ] ; then
+      if [ ${CONDA_QA_PATH} ] ; then
          dpath="~/.qa_home/QA_HOME"
       else
          dpath=${QA_SRC}/HOME

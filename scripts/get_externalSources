@@ -209,9 +209,11 @@ ges_cmip6()
       status=$?
    fi
 
+if [ ! ${NO_CONDA_INSTALL} ] ; then
    if ! ges_cmip6_conda ; then
       status=$?
    fi
+fi
 
    if ! ges_cmip6_cmor ; then
       status=$?
@@ -262,7 +264,7 @@ ges_cmip6_conda()
        action=create
     fi
 
-  elif [ ${CONDA_PATH:-f} != f -a ${CONDA_CMOR_PATH:-f} = f ] ; then
+  elif [ ${CONDA_QA_PATH:-f} != f -a ${CONDA_CMOR_PATH:-f} = f ] ; then
     # look for existing miniconda with a cmor installation
     . ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv PrePARE
     . ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv udunits2.xml
@@ -274,7 +276,7 @@ ges_cmip6_conda()
       action=create
     fi
 
-    CONDA_CMOR_PATH=${CONDA_PATH}
+    CONDA_CMOR_PATH=${CONDA_QA_PATH}
 
   else
     test ! ${CONDA_CMOR_PATH} \

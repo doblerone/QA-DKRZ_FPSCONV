@@ -155,7 +155,8 @@ update()
   # for searching updates after some days; default: once a day
   # set variable today [ days since 1970 ]
 
-  if [ ${CONDA_PATH} ] ; then
+if [ ! ${NO_CONDA_INSTALL} ] ; then
+  if [ ${CONDA_QA_PATH} ] ; then
     test ! ${CONDA_QA_ENV} && \
       . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
 
@@ -163,7 +164,7 @@ update()
          ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire
     then
       if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
-                      "${CONDA_PATH}"    "${CONDA_QA_ENV}" ; then
+                      "${CONDA_QA_PATH}"    "${CONDA_QA_ENV}" ; then
 
         . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
         . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
@@ -174,6 +175,7 @@ update()
        return $?
      fi
   fi
+fi
 
   # now for non-QA-DKRZ tables and programs
   for prj in $* ; do
@@ -433,11 +435,9 @@ if [ ! -f $displacedConfigFile/.qa-dkrz/config.txt ] ; then
 fi
 
 THIS=${0%/*}
-if [ ${THIS} = $0 -o "${THIS:0:1}" = '.' ] ; then
-  THIS=$(pwd)
-fi
+#test ${THIS##*/} = scripts && THIS=${THIS%/*}
 
-test ${THIS##*/} = scripts && THIS=${THIS%/*}
+NO_CONDA_INSTALL=t
 
 # resolve symbolic links if any
 . ${THIS}/scripts/getSrcPath $THIS
@@ -475,11 +475,22 @@ do
           isBuild=t
         elif [ "${OPTNAME}" = CONDA_BUILD ] ; then
           isCondaBuild=t
-        elif [ "${OPTNAME}" = CONDA_CMOR_PATH \
-                    -o "${OPTNAME}" = CCP ] ; then
+        elif [ "${OPTNAME}" = CONDA_CMOR_ENV -o "${OPTNAME}" = CCE ] ; then
+          export CONDA_CMOR_ENV=${OPTVAL}
+          . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${OPTVAL}
+
+        elif [ "${OPTNAME}" = CONDA_CMOR_PATH -o "${OPTNAME}" = CCP ] ; then
           export CONDA_CMOR_PATH=${OPTVAL}
-            . ${QA_SRC}/scripts/parseConfigFile \
-                                CONDA_CMOR_PATH=${OPTVAL}
+          . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_PATH=${OPTVAL}
+
+        elif [ "${OPTNAME}" = CONDA_QA_ENV -o "${OPTNAME}" = CQE ] ; then
+          export CONDA_QA_ENV=${OPTVAL}
+          . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=${OPTVAL}
+
+        elif [ "${OPTNAME}" = CONDA_QA_PATH -o "${OPTNAME}" = CQP ] ; then
+          export CONDA_QA_PATH=${OPTVAL}
+          . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_PATH=${OPTVAL}
+
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
           DEBUG='--debug'
           set -x
@@ -555,12 +566,6 @@ if [ ! "${TTY}" ] ; then
   if tty -s ; then TTY=$(tty) ; fi
 fi
 
-if ! . ${QA_SRC}/scripts/which.sh git &> /dev/null ; then
-  if [ ${INTERNET:-t} = t ; then
-    echo "Note that either git is not installed. Running off-line requires --net=no"   > ${TTY}
-    exit 1
-  fi
-fi
 
 for pck in $* ; do
   PCK="${pck}"
@@ -625,7 +630,7 @@ if [ ! ${isCondaBuild} ] ; then
     fi
   fi
 
-  test ${CONDA_PATH} && exit  # miniconda built executables
+  test ${CONDA_QA_PATH} && exit  # miniconda built executables
 fi
 
 pcks="--zlib=$zlib --hdf5=$hdf5 --netcdf=$netcdf --udunits=$udunits"

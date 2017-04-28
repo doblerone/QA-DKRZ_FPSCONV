@@ -303,6 +303,12 @@ callQaConfig()
     fi
   fi
 
+  if [ ${DISPLAY_VERSION} ] ; then
+       ${QA_SRC}/scripts/getVersion PRJ=${PROJECT_AS}
+       exit 0
+    fi
+
+
   test ${RESUME_SESSION:-f} = t && log_sessMessage "session resumed."
 
   test ${LOG_PATH_INDEX:-f} = f && DISABLE_CONSISTENCY_CHECK=t
@@ -2490,7 +2496,11 @@ init()
   basic_args=( ${basic_args[*]} -E_QA_HOME=${QA_HOME} )
 
   # configuration
+  export NO_CONDA_INSTALL=t
+
+if [ ! ${NO_CONDA_INSTALL} ] ; then
   test ${CONDA_QA_ENV} && basic_args=( ${basic_args[*]} -E_CONDA_QA_ENV=${CONDA_QA_ENV} )
+fi
 
   # check whether tables have been initaially copied fomr QA_SRC to QA_HOME;
   # if not, then do it.
@@ -2518,8 +2528,6 @@ init()
   if [ ! ${UPDATE} ] ; then
     if . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE${AUTO_UP:+=}${AUTO_UP} ; then
       UPDATE=t
-    elif . $QA_SRC/scripts/parseConfigFile AUTO_COMPILE${AUTO_COMP:+=}${AUTO_COMP} ; then
-      UPDATE=t
     fi
   fi
 
@@ -2536,7 +2544,7 @@ init()
     done
   fi
 
-  if [ ${UPDATE:-f} = t ] ; then
+  if [ ${UPDATE} ] ; then
     # checksum of current qa-dkrz
     local md5_0
     md5_0=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
@@ -2628,8 +2636,14 @@ init()
   local i
 
 #  set -f
+  # revison num of the package
+  local currVersion
+  currVersion=( $(. ${QA_SRC}/scripts/getVersion func=one-line ) )
+
   # read ~/.qa-dkrz/conf-.txt for the current revision of tha package
-  . $QA_SRC/scripts/parseConfigFile --force_reading QA_REVISION
+  test ${currVersion} && \
+     . $QA_SRC/scripts/parseConfigFile --force_reading \
+          QA_REVISION${currVersion:+=${currVersion}}
 
   maxNumExecThreads=0
   local nET
@@ -4938,12 +4952,6 @@ umask 002
 export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
 
 THIS=${0%/*}
-if [ ${THIS} = $0 ] ; then
-  THIS=$(pwd)
-elif [ "${THIS//\./}" != "${THIS}" ] ; then
-  THIS=$(pwd)
-fi
-
 test ${THIS##*/} = scripts && THIS=${THIS%/*}
 
 # resolve symbolic links
@@ -4971,11 +4979,6 @@ for OPTARG in $* ; do
   for arg in ${optargs[*]} ; do
     test ${arg} = '-h' -o ${arg} = '--help' \
         && . $QA_SRC/scripts/qa-help
-
-    if [ ${arg} = '-v' -o ${arg} = '--version' ] ; then
-       ${QA_SRC}/scripts/getVersion
-       exit 0
-    fi
 
     tr_option arg $prev_opt
     OPTNAME=${arg%%=*}

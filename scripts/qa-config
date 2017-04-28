@@ -1816,8 +1816,8 @@ do
   OPTVAL=${OPTARG#*=}
 
   case $option in
-  e|E)  if [ ${OPTNAME} = 'CONDA_PATH' ] ; then
-          setKWL CONDA_PATH=${OPTVAL}
+  e|E)  if [ ${OPTNAME} = 'CONDA_QA_PATH' ] ; then
+          setKWL CONDA_QA_PATH=${OPTVAL}
         elif [ ${OPTNAME:0:7} = 'DEBUG_C' ] ; then
           DEBUG_CONF=t
           set -x
@@ -1935,7 +1935,7 @@ set -f
 
 # stage1
 unset OPTIND
-while getopts d:D:e:E:f:hmP:QqL:S:s:T:x-: option
+while getopts d:D:e:E:f:hmP:QqL:S:s:T:vx-: option
 do
   UOPTARG="${OPTARG}"
   tr_option UOPTARG
@@ -1965,13 +1965,14 @@ do
     S)  sl_args=( ${OPTARG//,/} )
         ;;
     s)  setKWL SESSION_DATE=${OPTARG} ;;
-    T)  # already caught
-        ;;
+    T)  ;; # already caught
+    v)  setKWL DISPLAY_VERSION ;;
     x)  setKWL DEBUG_MANAGER=t
         setKWL DEBUG_EXECUTOR=t
         ;;  # already done for this script
     -)  if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
-          . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=${OPTVAL}
+          . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE${OPTVAL:-=t}
+          setKWL UPDATE=t
 
         elif [ "${OPTNAME:0:5}" = DEBUG ] ; then
           : # done before
@@ -2028,6 +2029,9 @@ do
 
           setKWL UPDATE=${OPTVAL}
           installArgs+="up=${OPTVAL},"
+
+        elif [ "${OPTNAME}" = VERSION ] ; then
+          setKWL DISPLAY_VERSION
 
         elif [ "${OPTNAME:0:4}" = WORK ] ; then
           : # done before

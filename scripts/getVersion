@@ -2,28 +2,33 @@
 
 getGitBranch()
 {
-   git -C $QA_SRC branch | grep '*' | awk '{print $2}'
+   git -C $thisQA_SRC branch | grep '*' | awk '{print $2}'
    return
 }
 
-getVersion()
+getFromConda()
+{
+   if tmp=( $(cat ${thisQA_SRC}/install.log 2> /dev/null) ) ; then
+     branch=${tmp[0]#*=}
+     currIdent=${tmp[1]#*=}
+     test ${#tmp[*]} -gt 2 && tag=${tmp[2]#*=}
+   fi
+
+   return
+}
+
+getQA_Version()
 {
   # get current revision number; this determines whether it is
   # before a change of defaults happened.
-  local branch currIdent tag tmp tmp2
-  declare -a tmp
 
   if [ $CONDA_PATH ] ; then
-    if tmp=( $(cat ${QA_SRC}/install.log 2> /dev/null) ) ; then
-      branch=${tmp[0]#*=}
-      currIdent=${tmp[1]#*=}
-      test ${#tmp[*]} -gt 2 && tag=${tmp[2]#*=}
-    fi
+    getFromConda
   else
-    local f=${QA_SRC}/conda-recipes/qa-dkrz/meta.yaml
+    local f=${thisQA_SRC}/conda-recipes/qa-dkrz/meta.yaml
 
     branch=$(getGitBranch)
-    currIdent=$(git -C ${QA_SRC} log --pretty=format:'%h' -n 1)
+    currIdent=$(git -C ${thisQA_SRC} log --pretty=format:'%h' -n 1)
 
     tag=$( grep 'name:' $f | awk '{print $(NF)}' )
     tmp2=$( grep 'version:' $f | awk '{print $(NF)}' )
@@ -47,10 +52,59 @@ getVersion()
   return
 }
 
-if [ "$1" = "func=getGitBranch" ] ; then
-  getGitBranch
-else
-  getVersion $*
-fi
+getTable_Version()
+{
+  return
+}
 
-exit 0
+one-line()
+{
+  if [ $CONDA_QA_PATH ] ; then
+    echo $(getFromConda)
+  else
+    :
+  fi
+
+  return
+}
+
+getVersion()
+{
+  local branch currIdent tag tmp tmp2
+  declare -a tmp
+
+  local thisQA_SRC
+  if [ ${QA_SRC} ] ; then
+    thisQA_SRC=${QA_SRC}
+  else
+    thisQA_SRC=${0%/getVersion}
+  fi
+
+  local arg
+
+  if [ $# -eq 0 ] ; then
+    getQA_Version
+    exit 0
+  fi
+
+  for arg in $* ; do
+    if [ "${arg}" = "func=one-line" ] ; then
+      if [ ${CONDA_QA_PATH} ] ; then
+         getFromConda
+         echo "${branch}-${currIdent}${tag:+,${tag}}"
+      else
+         getGitBranch
+      fi
+    elif [ "${arg%=*}" = "PRJ" ] ; then
+      getQA_Version
+      getTable_Version ${arg#PRJ=}
+
+      exit 0
+    fi
+  done
+
+  return
+}
+
+getVersion $*
+
