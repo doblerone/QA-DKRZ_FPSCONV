@@ -30,7 +30,7 @@ requirements:
     - curl
     - libgcc
 #test:
-#  commands:
+#  commands: 
 #    - dkrz-cf-checker -h
 #    - qa-dkrz -h
 
