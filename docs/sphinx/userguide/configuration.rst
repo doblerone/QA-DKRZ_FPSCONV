@@ -6,7 +6,7 @@
 
 The QA would run basically on the command-line only with the specification of
 the target(s) to be checked. However, using options and gathering these
-in conf-files facilitates checks.
+in configure files facilitates checks.
 
 Configuration options follow a specific syntax with option names.
 
@@ -37,7 +37,7 @@ which follow special rules.
 Some options act on other options:
 
 - Option names on the command-line are case-insensitive they have to be prefixed
-  by '-e' '-E' (a blank or _ may follow).
+  by '-e' or '-E' (a blank or _ may follow).
 
 - Highest precedence is for options on the command-line.
 
@@ -80,11 +80,9 @@ A description of the configuration options is given in the repository.
 
 Configuration files and options may be specified multiply following a given
 precedence. This facilitates having a file with short-term options (in a
-file attached to the -f option on the command-line), another one with settings
+file provided by the -f option on the command-line), another one with settings
 to site-specific demands, which are robust against changes in the repository,
-and long-term default settings from the repository. All options may be specified
-on the command-line plus some more (
-``/package-path/QA-DKRZ/scripts/qa_DKRZ --help``).
+and long-term default settings from the repository.
 A sequence of configuration files is defined by ``QA_CONF=conf-file``
 assignments embedded in the configuration files.
 The precedence of configuration files/options is given below from highest to
@@ -97,6 +95,9 @@ lowest:
    ``/package-path/tables``.
 -  defaults for the entire project:
 
+All options may also be provided
+on the command-line plus some more for testing, see
+``/package-path/QA-DKRZ/scripts/qa_DKRZ --help``.
 
 Experiment Names
 ================
@@ -104,8 +105,7 @@ Experiment Names
 QA-DKRZ checks files individually, the results are gathered in containers
 unique for a specific scope. Albeit most projects have defined a term
 'experiment', this is not suitable to provide a realm common to a sub-set
-of data files. Note that having everything identical, but the model for instance,
-could cause annotations, i.e. differences for some variables, in the QA results.
+of data files.
 
 For CMIP5/6 and CORDEX, an unambiguous scope is defined by the properties of
 the so-called Data Reference System (DRS), i.e. the components of the path to
@@ -113,10 +113,11 @@ the variables. The options ``LOG_PATH_INDEX`` and ``DRS_PATH_BASE``
 define a unique experiment-name, where the former contains a comma-separated list
 of indices of the path components and the latter the starting component with
 index=0, e.g. ``DRS_PATH_BASE=output`` and ``LOG_PATH_INDEX=1,2,3,4,6``.
-An example is commented in :ref:`results`.
+An example is given in :ref:`results`.
 
-Similar is for building the name of a consistency table, which is used to check consistency
-between a parent and a child experiment.
+Similar is for building the name of a consistency table, which is used to check
+consistency a parent and its child experiment as well as between the temporal
+sequence within an atomic variable.
 
 .. note:: If ``CT_PATH_INDEX`` is not set, then consistency checks are disabled.
 

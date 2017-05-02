@@ -12,9 +12,9 @@ Installation
 
   * Use access to locally provided libraries via the ``install_configure`` file
 
-* CMIP6 with PrePARE.py: ``conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor``
 * Verify the success of the installation by running ``qa-dkrz --example[=path]``,
   see :ref:`results`.
+* CMIP6 with PrePARE.py: ``conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor``
 * Automatic updating is enabled by option ``--auto-up`` until ``--auto-up=d[isable]`` is provided;
   works for both ``qa-dkrz`` and ``install``.
 
@@ -27,32 +27,38 @@ Before a Run
 * Options on the command-line (but -f) only for testing or rechecking small data sets.
 * Use the SELECT option to partition the entire data set, e.g. for CORDEX,
   ``SELECT AFR-44=`` (note that in this case '=' is required;
-  may-be with prefixed '.*/' depending on PROJECT_DATA)
-  would check the data of every model available for the specified domain.
-  On the other hand, ``SELECT .*/historical=orog`` would find any orography
-  file in all historical in the given ``PROJECT_DATA=sub-dir-tree``.
-* Option ``CT_PATH_INDEX`` defines the name of
-  a consistency table, which is created and utilised to check consistency across
-  sub-atomic files and across parent experiments, if available,
-  of a given variable. This kind of table is consulted for
-  experiments and versions matching the same name.
-* Similarly for logfile names by ``LOG_PATH_INDEX``
+  Without regExp '.*/' as prefix, the first path component must follow the last one
+  of option ``PROJECT_DATA``, i.e. the base-path to project data.)
+  Example: ``SELECT .*/historical=orog`` would find any orography
+  file in all historical sub-directories starting at ``PROJECT_DATA``.
+* Option  provides a comma-separated list of indices defining
+
+
+* The following two names are defined by a comma-separated list of indices
+  pointing to the DRS path components. Counting begins with ``0`` at the positions
+  indicated by options ``DRS_PATH_BASE=path-component``.
+
+  * ``LOG_PATH_INDEX`` for the names of log-files
+  * ``CT_PATH_INDEX`` for the names of so-called consistency tables
+    created and utilised to check consistency across sub-atomic files and
+    across parent experiments of a given variable. This kind of table is consulted
+    for experiments and versions matching the same name.
 
 Operational Mode
 ================
 
 * Before starting to check data, please make sure that the configuration was set
-  as desired by ``qa-dkrz [opts] -e_show_conf``.
+  as desired by running ``qa-dkrz [opts] -e_show_conf``.
 * Check the selected experiments: ``qa_DKRZ [opts] -e_show_exp``.
 * Try for a single file first and inspect the log-file, i.e. run
-  ``qa-dkrz [opts] -e_next``, then resume without -e_next.
+  ``qa-dkrz [opts] -e_next``. If all right, then resume without -e_next.
 * Use ``nohup`` for long-term execution in the background.
 * If the script is run in the foreground, then command-line option '-m' may
   be helpful by showing the current file name and the number
   of variables (done/selected) on a status line .
-* Have a look at the QA results in directory
-  ``QA_RESULTS/check_logs/Annotationi/experiment-name.json`` .
+* Have a look at the QA results in directory ``QA_RESULTS/check_logs``; annotations
+  are summarised in sub-directory ``Annotationi/experiment-name.json`` .
 * Manual termination of a session: if an immediate break is required,
-  please inquire the process-id (pid), e.g. by ``ps -ef`` , and execute the
-  command 'kill -TERM pid'. This will close the current session neatly
-  leaving no remnants and being ready for resumption.
+  please inquire the process-id (pid), e.g. by ``ps -ef | grep qa-dkrz``,
+  and execute the command 'kill -TERM pid'. This will close the current session
+  neatly leaving no remnants and being ready for resumption.

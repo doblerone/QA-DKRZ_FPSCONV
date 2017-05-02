@@ -18,6 +18,8 @@ Getting Started
 ===============
 
 The recommendated way to install QA-DKRZ is to use the conda package manager.
+External tables and programs are downloaded at run-time, when needed for
+dedicated projects.
 
 .. code-block:: bash
 
@@ -40,6 +42,7 @@ or by operating the stand-alone-checker with a NetCDF file of your choice.
 .. code-block:: bash
 
    $ dkrz-cf-checker your-choice.nc
+
 
 
 Documentation
