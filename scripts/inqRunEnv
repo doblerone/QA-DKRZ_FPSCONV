@@ -106,12 +106,6 @@ iRE_inqState()
 {
   upCount=0
 
-  local prj
-  declare -a prj
-  if [ $# -gt 0 ] ; then
-    prj=($*)
-  fi
-
   local i name rname reqCount value
   declare -a name rname value
   declare -i reqCount=0
@@ -139,7 +133,6 @@ fi
   # extend for current projects
   for(( i=0 ; i < ${#prj[*]} ; ++i )) ; do
     rname[${#rname[*]}]=-NEXT_${prj[i]}_UPDATE
-    rname[${#rname[*]}]=+XLSX2CSV
 
     if [ ${prj[i]} = CMIP6 ] ; then
       isCMIP6=t
@@ -149,6 +142,7 @@ if [ ! ${NO_CONDA_INSTALL} ] ; then
 #      rname[${#rname[*]}]=+UDUNITS2_XML_PATH
       rname[${#rname[*]}]=+CONDA_CMOR_ENV
       rname[${#rname[*]}]=+CONDA_CMOR_PATH
+      rname[${#rname[*]}]=+XLSX2CSV
 fi
     fi
   done
@@ -294,29 +288,37 @@ iRE_inqRunEnv()
   local isRO
   local isUp
 
-  local callParam
-  declare -a callParam
+  local prj
+  declare -a prj
 
   local arg
   for arg in $* ; do
     if [ ${arg} = '--read-only' ] ; then
       isRO=t
     else
-      callParam[${#callParam[*]}]=$arg
+      prj[${#prj[*]}]=$arg
     fi
   done
 
-  iRE_inqState ${callParam[*]}
+  iRE_inqState ${prj[*]}
 
-  if [ ${NO_CONDA_INSTALL} ] ; then
+#  if [ ! ${NO_CONDA_INSTALL} ] ; then
+  for pprj in ${prj[*]} ; do
+    if [ ${pprj} != CMIP6 ] ; then
+      continue
+    fi
+
     # check required paths or ENV
     if ! . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV ; then
       while : ; do
-         read -p "Provide your environment for CMOR: [STOP], string: " \
+         echo -e "\nCMIP6 requires the cmor package of conda; installation e.g. by:" > ${TTY}
+         echo "conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor ." > ${TTY}
+         echo "If cmor isn't installed, yet, please quit." > ${TTY}
+         read -p "Provide your environment name for cmor: [STOP], string: " \
                 CONDA_CMOR_ENV 2> ${TTY}
 
          case ${CONDA_CMOR_ENV:0:1} in
-          '') exit 0  ;;
+          '') exit 1  ;;
            *) test ${CONDA_CMOR_ENV} = STOP && exit 0
               CONDA_CMOR_ENV=${CONDA_CMOR_ENV#*=}
               ;;
@@ -363,7 +365,8 @@ iRE_inqRunEnv()
       . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_PATH=$CONDA_CMOR_PATH
       . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=$CONDA_CMOR_ENV
     fi
-  fi
+#  fi
+  done
 
   return $upCount
 }

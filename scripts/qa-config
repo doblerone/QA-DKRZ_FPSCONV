@@ -2000,7 +2000,7 @@ do
              installArgs+="${opt},"
           done
 
-          test ${installArgs//--up/} = ${installArgs} && installArgs+="up,"
+#          test ${installArgs//--up/} = ${installArgs} && installArgs+="up,"
           setKWL UPDATE=t
 
         elif [ "${OPTNAME}" = NET ] ; then
@@ -2043,7 +2043,7 @@ do
   esac
 done
 
-test ${installArgs} && setKWL INSTALL_ARGS="--install=${installArgs}"
+test ${installArgs} && setKWL INSTALL_ARGS="${installArgs}"
 
 shift $(( $OPTIND - 1 ))
 

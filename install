@@ -344,6 +344,7 @@ update_QA_SRC()
 
 zeroArg=$0
 initialArgs=($*)
+export NO_CONDA_INSTALL=t
 
 if [ $# -gt 0 ] ; then
   # safe arguments
