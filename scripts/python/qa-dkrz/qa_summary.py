@@ -244,12 +244,14 @@ class LogSummary(object):
         # maximal length of path vectors within annotations
         sz_jx_max = len(pItems[0])
 
+        '''
         for ix in range(1, annot_sz):
             w0 = qa_util.split(self.annot_capt[ix0], "<>")
             sz = len(self.annot_path_id[ix])
             if sz > sz_jx_max:
                 sz_jx_max = sz
-
+        '''
+        
         # some pItems member have no '*', i.e. they represent a single path.
         # Make them also variable, but only if there is any variable pItems object.
         for jx in range(sz_jx_max):
