@@ -1132,30 +1132,31 @@ fi
     fi
   done < param_file_$$.txt
 
-  # find the right table depends on data which has to be checked,
-  # thus it could be nonconforming
+  # find the right MIP table
   table_path=$QA_HOME/tables/projects/CMIP6/cmip6-cmor-tables/Tables
 
-  local table_id=$( ${QA_SRC}/bin/getNC_att.x $file --only-value table_id)
+#  local table_id=$( ${QA_SRC}/bin/getNC_att.x $file --only-value table_id)
 
   # check whether at leat one of the two name an existing json-table
-  local mip_table=${table_path}/CMIP6_${table_id}.json
-  if ! ls ${mip_table} &> /dev/null ; then
+#  local mip_table=${table_path}/CMIP6_${table_id}.json
+#  if ! ls ${mip_table} &> /dev/null ; then
     # still contains the filename without path
-    local x_fname
-    declare -a x_fname
-    x_fname=( ${words[1]//_/ } )
-    mip_table=${table_path}/CMIP6_${x_fname[1]}.json
+#    local x_fname
+#    declare -a x_fname
+#    x_fname=( ${words[1]//_/ } )
+#    mip_table=${table_path}/CMIP6_${x_fname[1]}.json
 
-    if ! ls ${mip_table} &> /dev/null ; then
+#    if ! ls ${mip_table} &> /dev/null ; then
 #       if [ -c "$TTY" ] ; then
-         echo 'Invalid MIP Table in filename and attributes' # > $TTY
-         echo 'Cancel CMOR_LLN run' # > $TTY
+#         echo 'Invalid MIP Table in filename and attributes' # > $TTY
+#         echo 'Cancel CMOR_LLN run' # > $TTY
 #       else
 #       fi
-       return 1
-    fi
-  fi
+#       return 1
+#    fi
+#  fi
+
+  mip_table=${table_path}/CMIP6_CV.json
 
   local ans2
   ans2="$( ${PrePARE} \

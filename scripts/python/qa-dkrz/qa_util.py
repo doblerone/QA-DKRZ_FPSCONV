@@ -878,6 +878,11 @@ def isValid_var_name(name):
 
     return True
 
+def isAmong(lst0, lst1):
+    for l0 in lst0:
+        if not l0 in lst1:
+            return False
+    return True
 
 def mkdirP(path):
 

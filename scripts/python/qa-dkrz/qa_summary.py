@@ -121,13 +121,117 @@ class LogSummary(object):
         if annot_sz == 0:
             return
 
+        # put the tag to the caption
+        for ix in range(annot_sz):
+            if self.annot_tag[ix][0:4] == 'CMOR':
+                self.annot_capt[ix]='CMOR: ' + self.annot_capt[ix]
+
         for ix in range(annot_sz):
             # get scope
-            a, c = self.annotation_getItems(ix)
+            a, b = self.annotation_getItems(ix)
             pItems.append(a)
-            pMutables.append(c)
+            pMutables.append(b)
 
             # a, c = self.annotation_getItems(ix, sep='_')
+
+        # across annotations: combine almost identical ones whith a <sub-string>
+        # appearing also in the path
+        list_simil_ix=[]   # index of similar annotation
+        list_simil_jx=[]   # index of path to above
+        list_simil_w=[]   # index of path to above
+
+        for ix0 in range(6,annot_sz-1):
+            #split at <>
+            w0 = qa_util.split(self.annot_capt[ix0], "<>")
+
+            for jx0 in range( len(pItems[ix0]) ):
+                simil_ix=[]
+                simil_jx=[]
+                simil_w=[]
+                sz_pI0=len(pItems[ix0][jx0])
+
+                for ix1 in range(ix0+1,annot_sz):
+                    #split at <>
+                    w1 = qa_util.split(self.annot_capt[ix1], "<>")
+
+                    if len(w0) != len(w1):
+                        continue # annotations are not similar
+
+                    for jx1 in range( len(pItems[ix1]) ):
+                        isFamily=True
+                        sz_pI1=len(pItems[ix1][jx1])
+
+                        # number of paths is identical?
+                        if sz_pI0 != sz_pI1:
+                            continue
+
+                        for i in range(len(w0)):
+                            if w0[i] != w1[i]:
+                                for m in range(sz_pI0):
+                                    if pItems[ix0][jx0][m] == w0[i] \
+                                        and pItems[ix1][jx1][m] == w1[i]:
+
+                                        if len(simil_ix) == 0:
+                                            simil_ix.append(ix0)
+                                            simil_jx.append(jx0)
+                                            simil_w.append(w0[i])
+                                        simil_ix.append(ix1)
+                                        simil_jx.append(jx1)
+                                        simil_w.append(w1[i])
+                                        break
+                                else:
+                                    isFamily=False
+                                    break
+
+                    if isFamily and len(simil_ix) > 0:
+                        for lst in list_simil_ix:
+                            if qa_util.isAmong(simil_ix, lst):
+                                break
+                        else:
+                            list_simil_ix.append(simil_ix)
+                            list_simil_jx.append(simil_jx)
+                            list_simil_w.append(simil_w)
+
+        for lx in range( len(list_simil_w) ):
+            ix0=list_simil_ix[lx][0]
+
+            for ly in range( len(list_simil_w[lx]) ):
+                if ly == 0:
+                    w_ny=[ list_simil_w[lx][ly] ]
+                else:
+                    if not list_simil_w[lx][ly] in w_ny:
+                        w_ny.append(list_simil_w[lx][ly])
+
+            if len(w_ny):
+                s=''
+                for w in w_ny:
+                    if len(s):
+                        s += ','
+                    s += w
+
+                # replace <var> by <var,var2,var3,..>
+                self.annot_capt[ix0] = self.annot_capt[ix0].replace(\
+                    '<'+list_simil_w[lx][0]+'>',\
+                    '<' + s + '>')
+
+        lst=[]
+        for l in range( len(list_simil_ix) ):
+            lst.extend(list_simil_ix[l][1:])
+
+        lst.sort()
+        lst.reverse()
+
+        for i in range( len(lst) ):
+            ix1=lst[i]
+            del self.annot_capt[ix1]
+            del self.annot_fName_dt_id[ix1]
+            del self.annot_fName_id[ix1]
+            del self.annot_impact[ix1]
+            del self.annot_path_id[ix1]
+            del self.annot_tag[ix1]
+            del pItems[ix1]
+            del pMutables[ix1]
+
 
         # maximal length of path vectors
         sz_kx_max = len(pItems[0][0])
@@ -141,6 +245,7 @@ class LogSummary(object):
         sz_jx_max = len(pItems[0])
 
         for ix in range(1, annot_sz):
+            w0 = qa_util.split(self.annot_capt[ix0], "<>")
             sz = len(self.annot_path_id[ix])
             if sz > sz_jx_max:
                 sz_jx_max = sz
@@ -188,37 +293,6 @@ class LogSummary(object):
                 uniquePaths[ix].append(pItems[ix][p])
                 #uniqueMutables[ix].append(pMutables[ix][p])
 
-        # compress annotations almost identical, but <sub-strings>,
-        # which appear also in the path
-        '''
-        uniquePaths2=[]
-        for ix in range(annot_sz):
-            uniquePaths2.append([])
-
-            #split at <>
-            wi = qa_util.split(self.annot_capt[ix], "<>")
-
-            # collect non-identical words
-            for jx in range(ix+1, annot_sz):
-                wj = qa_util.split(self.annot_capt[ix], "<>")
-
-                if len(wi) == len(wj):
-                    count_eq=0
-                    for i in range(len(wi)):
-                        if wi[i] == wj[i]:
-                            count_eq += 1
-                        else:
-                            j=i
-
-                    #if len(wi) == count_eq + 1:
-                    #    # found a single pair of non-equal items;
-                    #    # is it also in the respective path?
-                    #    if wi[j] in uniquePaths[ix][  ## not the solution
-
-            #for kx in range(sz_kx_max):
-            #    uniquePaths[ix].append([])
-        '''
-
         # compress identical paths; remember original annotation index in a list
         uniquePaths2=[]
         uniquePaths_ix=[]
@@ -238,6 +312,8 @@ class LogSummary(object):
             uniquePaths=uniquePaths2
             #uniqueMutables=uniqueMut
 
+        # ------
+        # begin of writing the JSON files
         for jx in range(len(uniquePaths)):
             #f0_ix=uniquePaths_ix[jx][px]
 
