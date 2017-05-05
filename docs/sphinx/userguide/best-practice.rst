@@ -14,7 +14,7 @@ Installation
 
 * Verify the success of the installation by running ``qa-dkrz --example[=path]``,
   see :ref:`results`.
-* CMIP6 with PrePARE.py: ``conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor``
+* CMIP6 with PrePARE.py, e.g.: ``conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor``
 * Automatic updating is enabled by option ``--auto-up`` until ``--auto-up=d[isable]`` is provided;
   works for both ``qa-dkrz`` and ``install``.
 
