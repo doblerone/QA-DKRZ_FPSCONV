@@ -2020,15 +2020,8 @@ do
           installArgs+="set_default_project=${OPTVAL},"
 
         elif [ "${OPTNAME:0:2}" = UP ] ; then
-          tr_option OPTVAL
-          if [ "${OPTVAL}" = NO -o "${OPTVAL:0:1}" = F -o "${OPTVAL:0:1}" = D ] ; then
-            OPTVAL=f
-          else
-            OPTVAL=t
-          fi
-
-          setKWL UPDATE=${OPTVAL}
-          installArgs+="up=${OPTVAL},"
+          setKWL UPDATE=t
+          installArgs+="up,"
 
         elif [ "${OPTNAME}" = VERSION ] ; then
           setKWL DISPLAY_VERSION
