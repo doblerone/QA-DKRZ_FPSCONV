@@ -93,10 +93,10 @@ for ix in range(len(blk)):
         annot[ix].append(phrase)
 
 for ix in range(len(annot)):
-    # the first annot of each annotatiopn group is a caption
+    # the first annot of each annotation group is a caption
     # the tag equals the length of the caption
     flag = ' FLAG-BEGL1-CMOR_' + str(len(annot[ix][0])) + ':CAPT-BEG'
-    flag += annot[ix][0] + 'CAPT-END'
+    flag += 'CMOR: ' + annot[ix][0] + 'CAPT-END'
 
     annot[ix][0] = flag
 

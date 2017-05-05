@@ -121,11 +121,6 @@ class LogSummary(object):
         if annot_sz == 0:
             return
 
-        # put the tag to the caption
-        for ix in range(annot_sz):
-            if self.annot_tag[ix][0:4] == 'CMOR':
-                self.annot_capt[ix]='CMOR: ' + self.annot_capt[ix]
-
         for ix in range(annot_sz):
             # get scope
             a, b = self.annotation_getItems(ix)
@@ -251,7 +246,7 @@ class LogSummary(object):
             if sz > sz_jx_max:
                 sz_jx_max = sz
         '''
-        
+
         # some pItems member have no '*', i.e. they represent a single path.
         # Make them also variable, but only if there is any variable pItems object.
         for jx in range(sz_jx_max):
