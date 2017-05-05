@@ -1292,7 +1292,7 @@ getExperimentName()
   # find and set CURR_LOG_FNAME
 
   if [ ${LOG_FNAME} ] ; then
-    CURR_LOG_FNAME=${LOG_FNAME:-all-scope}
+    CURR_LOG_FNAME=${LOG_FNAME:-undefined-scope}
   elif [ ${LOG_FNAME_PATTERN} ] ; then
     getExperimentNameFromFile $1
   elif [ ${LOG_PATH_INDEX} ] ; then
@@ -1307,6 +1307,8 @@ getExperimentName()
   done
 
   # a new entry
+  test ! "${CURR_LOG_FNAME}" && CURR_LOG_FNAME=${undefined-scope}
+
   LOG_FNAMES[${#LOG_FNAMES[*]}]=${CURR_LOG_FNAME}
 
   copyPreamble
@@ -1342,7 +1344,7 @@ getExperimentNameFromFile()
   done
   CURR_LOG_FNAME=${CURR_LOG_FNAME%_}
 
-  test ! ${CURR_LOG_FNAME} && CURR_LOG_FNAME=no-exp-name-found
+  test ! ${CURR_LOG_FNAME} && CURR_LOG_FNAME=undefined-scope
   return
 }
 
@@ -2810,7 +2812,7 @@ initExperimentName()
     done
 
   else
-    LOG_FNAME='all-scope'
+    LOG_FNAME='undefined-scope'
   fi
 
   return
