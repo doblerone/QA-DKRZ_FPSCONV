@@ -3391,13 +3391,16 @@ CF::timeUnitsFormat_TZ(std::string item, std::vector<std::string>& text)
 
   std::string t0( hdhC::Lower()(item) );
 
-  if( t0 == "utc" )
+  if( hdhC::isAlpha(t0) && t0.size() > 1 )
   {
-    text.push_back("invalid time-zone indicator, found") ;
-    text.back() += hdhC::tf_val(item);
-    text.back() += " instead of Z or omission in";
+    if( ! (t0 == "utc" || t0 == "gmt") )
+    {
+      text.push_back("invalid time-zone indicator, found") ;
+      text.back() += hdhC::tf_val(item);
+      text.back() += " instead of Z, UTC, GMT, or omission";
 
-    return true;
+      return true;
+    }
   }
 
   Split x_item(item, hdhC::colon);
