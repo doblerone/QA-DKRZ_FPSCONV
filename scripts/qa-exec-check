@@ -1094,6 +1094,8 @@ run_CMOR_LLNL()
 
 NO_CONDA_INSTALL=t
 
+export UVCDAT_ANONYMOUS_LOG=no
+
 if [ ${NO_CONDA_INSTALL} ] ; then
   source activate ${CONDA_CMOR_ENV} &> /dev/null
 
