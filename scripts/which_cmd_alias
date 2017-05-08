@@ -1,9 +1,10 @@
+#!/bin/bash
 
 # which for path and alias, even if non-interactive
 
 this_which()
 {
-  local isAdd cm cmd f found i j k last lines
+  local cm cmd f found i j k last lines
   declare -a cmd f found lines
 
   # try which
@@ -23,7 +24,6 @@ this_which()
 
       unset f[i]
       f=( ${f[*]} )
-      isAdd=t
 
       for(( k=0 ; k < ${#lines[*]} ; ++k )) ; do
         cmd=( ${lines[k]} )
@@ -36,20 +36,23 @@ this_which()
               cm=${cmd[j]//\~/${HOME}}
               if [ -f ${cm} ] ; then
                 f[${#f[*]}]=${cm}
-                isAdd=f
+                continue 2
               fi
            fi
         done
 
-        for(( j=0 ; j < ${#cmd[*]} ; ++j )) ; do
+        for(( j=1 ; j < ${#cmd[*]} ; ++j )) ; do
            # search alias
-           if [ ${cmd[j]//$1/} != ${1} ] ; then
+           test ${cmd[0]} != 'alias' && break
+
+           cm=${cmd[j]#*=}
+           last=$((${#cm} - 1 ))
+           test ${cm:last} = \' -o ${cm:last} = '"' && cm=${cm:0:last}
+
+           if [ ${cm##*/} == ${1} ] ; then
               # found an alias containing the command in question
-              cm=${cmd[j]#*=}
               test ${cm:0:1} = \' -o ${cm:0:1} = '"' && cm=${cm:1}
 
-              last=$((${#cm} - 1 ))
-              test ${cm:last} = \' -o ${cm:last} = '"' && cm=${cm:0:last}
 
               found[${#found[*]}]=${cm}
               break
@@ -69,6 +72,7 @@ this_which()
   return 0
 }
 
-this_which $1
+this_which $*
 
-return $?
+exit $?
+
