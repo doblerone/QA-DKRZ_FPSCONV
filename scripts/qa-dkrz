@@ -184,9 +184,11 @@ bind_checksum()
   fi
 
   if [ ${#LOG_PATH_INDEX[*]} -gt 0 ] ; then
-    getExperimentName ${subPath}
+    if ! getExperimentName P ${subPath} ; then
+      getExperimentName F ${fs[0]}
+    fi
   else
-    getExperimentName ${fs[0]}
+    getExperimentName F ${fs[0]}
   fi
 
   # calculate the checksum(s)
@@ -1224,10 +1226,13 @@ getAllExps()
 
       # generate an experiment name; CURR_LOG_FNAME gets a 'return value'
       if [ ${#LOG_PATH_INDEX[*]} -gt 0 ] ; then
-        getExperimentName ${subPath}
+        if ! getExperimentName P ${subPath} ; then
+          local fs=( $( ls ${PROJECT_DATA}/${subPath}/*.nc 2> /dev/null) )
+          getExperimentName F ${fs[0]##*/}
+        fi
       else
         local fs=( $( ls ${PROJECT_DATA}/${subPath}/*.nc 2> /dev/null) )
-        getExperimentName ${fs[0]##*/}
+        getExperimentName F ${fs[0]##*/}
       fi
 
       if [ ${SHOW_LOG_FNAME:-f} = t ] ; then
@@ -1290,62 +1295,68 @@ getDateRange()
 getExperimentName()
 {
   # find and set CURR_LOG_FNAME
+  local mode=$1
+  shift
 
   if [ ${LOG_FNAME} ] ; then
-    CURR_LOG_FNAME=${LOG_FNAME:-undefined-scope}
-  elif [ ${LOG_FNAME_PATTERN} ] ; then
+    CURR_LOG_FNAME=${LOG_FNAME:-'undefined-scope'}
+  elif [ ${mode} = P ] ; then
+    if ! getExperimentNameFromPath $1 ; then
+      return 1
+    fi
+  elif [ ${mode} = F ] ; then
     getExperimentNameFromFile $1
-  elif [ ${LOG_PATH_INDEX} ] ; then
-    getExperimentNameFromPath $1
   fi
 
   local iex
   for(( iex=0 ; iex < ${#LOG_FNAMES[*]} ; ++iex )) ; do
     if [ ${LOG_FNAMES[iex]} = ${CURR_LOG_FNAME} ] ; then
-      return
+      return 0
     fi
   done
 
   # a new entry
-  test ! "${CURR_LOG_FNAME}" && CURR_LOG_FNAME=${undefined-scope}
+  test ! "${CURR_LOG_FNAME}" && CURR_LOG_FNAME='undefined-scope'
 
   LOG_FNAMES[${#LOG_FNAMES[*]}]=${CURR_LOG_FNAME}
 
   copyPreamble
 
-  return
+  return 0
 }
 
 getExperimentNameFromFile()
 {
+  # extract the name of the experiment from subPath
   # see function initExperimentName()
 
   # LOG_FNAME was defined in initExperimentName() and will never be
   # changed again
 
-  # decompose the path
-  local pc=${1%.nc}
-  local pcs=( ${pc//${LOG_PAT_SEP}/ } )
-
-  local i
+  # decompose the filename
   CURR_LOG_FNAME=
-  for(( i=LOG_PAT_BEG ; i < ${LOG_PAT_END:-${#pcs[*]}} ; ++i )) ; do
-    if expr match ${pcs[i]} 'v[[:digit:]]' &> /dev/null
-    then
-      continue
-    fi
 
-    if expr match ${pcs[i]} '[[:digit:]]*-[[:digit:]]*' &> /dev/null
-    then
-      continue
-    fi
+  if [ ${#LOG_FILE_INDEX[*]} -gt 0 ] ; then
+    local c f_items
+    declare -a f_items
 
-    CURR_LOG_FNAME=${CURR_LOG_FNAME}${pcs[i]}_
-  done
-  CURR_LOG_FNAME=${CURR_LOG_FNAME%_}
+    local lfs=${LOG_FILE_SEPARATOR:-_}
 
-  test ! ${CURR_LOG_FNAME} && CURR_LOG_FNAME=undefined-scope
-  return
+    f_items=( ${1//${lfs}/ } )
+    local N=${#f_items[*]}
+
+    # compose the name
+    for c in ${LOG_FILE_INDEX[*]} ; do
+        # this allows filenames with less items than prescribed by LOG_FILE_INDEX
+        test $c -lt $N && \
+          CURR_LOG_FNAME=${CURR_LOG_FNAME}${CURR_LOG_FNAME:+_}${f_items[c]}
+    done
+  fi
+
+  #CURR_LOG_FNAME=undefined-scope
+  test ! ${CURR_LOG_FNAME} && return 1
+
+  return 0
 }
 
 getExperimentNameFromPath()
@@ -1361,40 +1372,37 @@ getExperimentNameFromPath()
   pcs=${PROJECT_DATA}/$1
   pcs=( ${pcs//\// } )
 
-  # check for path component 'output'
-  test ! ${DRS_PATH_BASE} && DRS_PATH_BASE=${pcs[0]}
+  local c lpi
+  declare -a lpi
 
-  local countEPB=0
-  local c expPathIndex M N
-  N=${#pcs[*]}
-
-  # for multiple occurrences
-  local base_ix=0
-  for(( c=0 ; c < N ; ++c )) ; do
-    test "${pcs[c]}" = ${DRS_PATH_BASE} && base_ix=$c
-  done
-
-  local ix
-  for(( ix=0 ; ix < ${#LOG_PATH_INDEX[*]} ; ++ix )) ; do
-    expPathIndex[ix]=$(( base_ix + ${LOG_PATH_INDEX[ix]} ))
-  done
-
-  # compose the name
+  local N=${#pcs[*]}
   CURR_LOG_FNAME=
-  if [ ${#expPathIndex[*]} -gt 0 ] ; then
-    for c in ${expPathIndex[*]} ; do
-      if [ $c -lt $N ] ; then
-        # subtract the reversed positional index from array size
-        CURR_LOG_FNAME=${CURR_LOG_FNAME}${pcs[c]}_
-      fi
+
+  if [ ${DRS_PATH_BASE} ] ; then
+    # for multiple occurrences of the base are possible
+    local base_ix
+    for(( c=0 ; c < N ; ++c )) ; do
+      test "${pcs[c]}" = ${DRS_PATH_BASE} && base_ix=$c
     done
-  else
-    CURR_LOG_FNAME=unknownExp
+
+    # no anchour found
+    test ! ${base_ix} && return 1
+
+    for(( c=0 ; c < ${#LOG_PATH_INDEX[*]} ; ++c )) ; do
+      lpi[c]=$(( base_ix + ${LOG_PATH_INDEX[c]} ))
+    done
+
+    # compose the name
+    for c in ${lpi[*]} ; do
+        # this allows paths with less items than prescribed by LOG_FILE_INDEX
+        test $c -lt $N && \
+          CURR_LOG_FNAME=${CURR_LOG_FNAME}${CURR_LOG_FNAME:+_}${pcs[c]}
+    done
   fi
 
-  CURR_LOG_FNAME=${CURR_LOG_FNAME%_}
+  test ! ${CURR_LOG_FNAME} && return 1
 
-  return
+  return 0
 }
 
 getFilenameBase()
@@ -2774,44 +2782,26 @@ initExperimentName()
   if [ ${LOG_FNAME} ] ; then
     unset LOG_FNAME_PATTERN
     unset LOG_PATH_INDEX
+    return
+  fi
 
-  elif [ ${LOG_FNAME_PATTERN} ] ; then
-    local items=( ${LOG_FNAME_PATTERN//\// } )
-    local item
-    LOG_PAT_BEG=0
-    LOG_PAT_SEP=_
-
-    for item in ${items[*]} ; do
-      if [ ${item:0:1} = b ] ; then
-        LOG_PAT_BEG=${item:1}
-      elif [ ${item:0:1} = e ] ; then
-        LOG_PAT_END=${item:1}
-      elif [ ${item:0:1} = s ] ; then
-        LOG_PAT_SEP=${item:1}
-      fi
-    done
-
-    unset LOG_PATH_INDEX
-
-  elif [ ${LOG_PATH_INDEX} ] ; then
+  if [ ${LOG_PATH_INDEX} ] ; then
     # extract the name of the experiment from subPath
     # Explanation: look for LOG_PATH_INDEX in a configuration file
 
     # we need a real array
     LOG_PATH_INDEX=( ${LOG_PATH_INDEX//,/ } )
-    LOG_PATH_INDEX_MAX=100  # exceeds any number of path components
+  fi
 
-    # note: the highest number points to the most left-side
-    # path component
+  if [ ${LOG_FILE_INDEX} ] ; then
+    # extract the name of the experiment from subPath
+    # Explanation: look for LOG_PATH_INDEX in a configuration file
 
-    LOG_PATH_INDEX_MAX=0
+    # we need a real array
+    LOG_FILE_INDEX=( ${LOG_FILE_INDEX//,/ } )
+  fi
 
-    local t
-    for t in ${LOG_PATH_INDEX[*]} ; do
-      test ${t} -gt ${LOG_PATH_INDEX_MAX} && LOG_PATH_INDEX_MAX=${t}
-    done
-
-  else
+  if [ ! \( "${LOG_PATH_INDEX}" -o "${LOG_FILE_INDEX}" \) ] ; then
     LOG_FNAME='undefined-scope'
   fi
 
@@ -3214,6 +3204,11 @@ logConfiguration()
   # a preamble will be copied to all log-files
   local preamble=${SESSION_LOGDIR}/session.prmbl
 
+  if [ ${preamble} = '/session.prmbl' ] ; then
+    echo "Did you provide a '-f task-file' or at least a PROJECT=name?"
+    exit 1
+  fi
+
   # this file is prepended to all exp-log-files
   tryCom \
   echo    '---'                 > $preamble
@@ -3285,9 +3280,11 @@ log()
 
   local out
   if [ ${LOG_PATH_INDEX[0]} ] ; then
-    getExperimentName ${subPath}
+    if ! getExperimentName P ${subPath} ; then
+      getExperimentName F ${netxFile[0]}
+    fi
   else
-    getExperimentName ${netxFile[0]}
+    getExperimentName F ${netxFile[0]}
   fi
   out=$LOG_FNAME_DIR/${CURR_LOG_FNAME}.log
 
@@ -3595,9 +3592,11 @@ operatePipes()
 
 #trace \
     if [ ${LOG_PATH_INDEX[0]} ] ; then
-      getExperimentName ${subPath}
+      if ! getExperimentName P ${subPath} ; then
+        getExperimentName F ${nextFile[0]}
+      fi
     else
-      getExperimentName ${nextFile[0]}
+      getExperimentName F ${nextFile[0]}
     fi
 
 #trace \
@@ -4393,9 +4392,11 @@ testLocks()
   if [ ${CLEAR} ] ; then
 #trace \
     if [ ${LOG_PATH_INDEX[0]} ] ; then
-      getExperimentName ${subPath}
+      if ! getExperimentName P ${subPath} ; then
+        getExperimentName F $1
+      fi
     else
-      getExperimentName $1
+      getExperimentName F $1
     fi
 
     # if CLEAR=only or SHOW_CLEAR was set, then try another variable
