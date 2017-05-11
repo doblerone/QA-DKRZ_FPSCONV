@@ -12,12 +12,19 @@ iRE_checkForUpdate()
   for(( i=0 ; i < ${#name[*]} ; ++i )) ; do
     val=${value[i]}
 
-    if [ ${rname[i]:0:1} = '+' -a ${val:-f} = f  ] ; then
-         upCount=$(( upCount + 1 ))
-         failedItems[${#failedItems[*]}]=${name[i]}
+    if [ ${rname[i]:0:1} = '+' ] ; then
+       if [ ! ${val} ] ; then
+          upCount=$(( upCount + 1 ))
+          failedItems[${#failedItems[*]}]=${name[i]}
 
-         break
-    elif [ ! ${isRO} ] ; then
+          break
+       elif [ ${val:0:1} = '/' -a ! -e ${val} ] ; then
+          upCount=$(( upCount + 1 ))
+          break
+       fi
+    fi
+
+    if [ ! ${isRO} ] ; then
       if [ "${val:0:2}" = '20' -a ${rname[i]:0:1} = '-' ] ; then
          if ! . ${QA_SRC}/scripts/parseConfigFile ${name[i]} --inquire ; then
             upCount=$(( upCount + 1 ))
@@ -368,19 +375,21 @@ iRE_inqRunEnv()
     fi
 
     # check required paths or ENV
-    if ! . ${QA_SRC}/scripts/parseConfigFile PrePARE ; then
+    . ${QA_SRC}/scripts/parseConfigFile PrePARE
+
+    if [ ! -f "${PrePARE}" ] ; then
       iRE_findLatestPrePARE
-      test ${PrePARE} && . ${QA_SRC}/scripts/parseConfigFile PrePARE=$PrePARE
+      test -f ${PrePARE} && . ${QA_SRC}/scripts/parseConfigFile PrePARE=$PrePARE
     fi
 
-    if [ ! ${PrePARE} ] ; then
+    if [ ! -f "${PrePARE}" ] ; then
         askStr="STOP: <ENTER>, <your-path>: "
 
         while : ; do
            echo -e "\nCMIP6 requires the cmor package of conda; installation e.g. by:" > ${TTY}
            echo "   conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor ." > ${TTY}
-           echo "If cmor isn't installed, yet, please quit and do so." > ${TTY}
-           echo "Provide your path to conda containing the CMOR package" > ${TTY}
+           echo "If cmor isn't installed, yet, please quit and do so, otherwise provide" > ${TTY}
+           echo "the path to the conda environment containing the CMOR package" > ${TTY}
            read -p "$askStr" answ 2> ${TTY}
 
            case ${answ:0:1} in
@@ -388,16 +397,23 @@ iRE_inqRunEnv()
                y) ;;
                *) CONDA_CMOR_PATH=${answ#*=}
 
-                  if [ ! -f ${CONDA_CMOR_PATH} ] ; then
+                  if [ ! -d ${CONDA_CMOR_PATH} ] ; then
                      echo "no such directory ${CONDA_CMOR_PATH}"
                      continue
                   fi
                   ;;
            esac
 
-           . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_PATH=$CONDA_CMOR_PATH
-           test ${upCount} -gt 0 && upCount=$(( upCount - 1 ))
-           break
+           local fs
+           declare -a fs
+           fs=( $( find ${CONDA_CMOR_PATH} -type f -name "PrePARE" ) )
+           iRE_findLatestFile PrePARE ${fs[*]}
+
+           if [ -f ${PrePARE} ] ; then
+              . ${QA_SRC}/scripts/parseConfigFile PrePARE=$PrePARE
+              test ${upCount} -gt 0 && upCount=$(( upCount - 1 ))
+              break
+           fi
         done
 
         while : ; do

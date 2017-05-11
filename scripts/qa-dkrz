@@ -2580,11 +2580,11 @@ fi
         if [ ${INSTALL_ARGS} ] ; then
            installArg="${INSTALL_ARGS}up${prj:+,${prj}}"
         else
-           installArg="--install=up${prj:+,${prj}}"
+           installArg="up${prj:+,${prj}}"
         fi
 
         echo -e "\nMissing external tables/executabels."  > $TTY
-        echo "Please, run: $0 ${installArg} ${comLineArgs[*]}"  > $TTY
+        echo "Please, run: $0 --install=${installArg} ${comLineArgs[*]}"  > $TTY
         exit 1
   fi
 

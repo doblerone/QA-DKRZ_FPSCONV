@@ -149,7 +149,7 @@ update()
   local prj
 
   if ! . ${QA_SRC}/scripts/inqRunEnv ${prj} ; then
-    test $? -gt 0 && isForceUpdate=t  # look for updates
+    isForceUpdate=t  # look for updates
   fi
 
   # for searching updates after some days; default: once a day
