@@ -2515,7 +2515,7 @@ fi
   # check whether tables have been initaially copied fomr QA_SRC to QA_HOME;
   # if not, then do it.
   if [ ! -d $QA_HOME/tables ] ; then
-    # note that QA_HOME points to .qa-dkrz wherever it is located
+    # note that QA_HOME is user-defined
     rsync -auz --exclude '*~' $QA_SRC/tables $QA_HOME &> /dev/null
   fi
 

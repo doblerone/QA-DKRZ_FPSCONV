@@ -102,6 +102,91 @@ iRE_checkTables()
   return
 }
 
+iRE_findLatestFile()
+{
+  local back=$1
+  shift
+
+  local pp tt
+  pp=($*)
+  # find the latest command
+  for(( i=0 ; i < ${#pp[*]} ; ++i )) ; do
+    tt[${#tt[*]}]=$(ls -l --time-style=+'%FT%T' ${pp[i]} | awk '{print $(NF-1)}')
+  done
+
+  # sort
+  local j tmp_t tmp_p
+  for(( i=0 ; i < ${#pp[*]} - 1 ; ++i )) ; do
+    for(( j=i+1 ; i < ${#pp[*]} ; ++i )) ; do
+      if [[ ${tt[i]} < ${tt[j]} ]] ; then
+        tmp_t=${tt[i]}
+        tmp_p=${pp[i]}
+        tt[i]=${tt[j]}
+        pp[i]=${pp[j]}
+        tt[j]=${tmp_t}
+        pp[j]=${tmp_p}
+      fi
+    done
+  done
+
+  eval ${back}=${pp[0]}
+
+  return 0
+}
+
+iRE_findLatestPrePARE()
+{
+  local i cc pp pp_all pp_no_pkgs latest_conda
+  declare -a cc pp pp_no_pkgs
+  pp_all=( $(. ${QA_SRC}/scripts/which_cmd_alias PrePARE ) )
+
+  if [ ${#pp_all[*]} -eq 0 ] ; then
+    # try with existing conda(s)
+    cc=( $(. ${QA_SRC}/scripts/which_cmd_alias conda ) )
+    if [ ${#cc[*]} -gt 1 ] ; then
+       iRE_findLatestFile latest_conda ${cc[*]}
+    else
+       latest_conda=${cc[0]}
+    fi
+
+    test ! ${latest_conda} && return
+
+    for(( i=0 ; i < ${#cc[*]} ; ++i )) ; do
+      pp_all=( ${pp_all[*]} $( find ${latest_conda%/bin/conda} -name "PrePARE" ) )
+    done
+  fi
+
+  for(( i=0 ; i < ${#pp_all[*]} ; ++i )) ; do
+    if [ ${pp_all[i]} = ${pp_all[i]/\/pkgs\//} -a \
+           ${pp_all[i]} = ${pp_all[i]/\/lib\//} ] ; then
+       pp_no_pkgs[${#pp_no_pkgs[*]}]=${pp_all[i]}
+    fi
+  done
+
+  if [ ${#pp_no_pkgs[*]} -gt 0 ] ; then
+    pp=(${pp_no_pkgs[*]})
+  else
+    #pp=(${pp_all_pkgs[*]})
+    return
+  fi
+
+  if [ ${#pp[*]} -gt 1 ] ; then
+     iRE_findLatestFile PrePARE ${pp[*]}
+  else
+     PrePARE=${pp[0]}
+  fi
+
+  # does PrePARE work?
+  $PrePARE -h &> /dev/null
+
+  if [ $? -gt 1 ] ; then
+    # no
+    PrePARE=
+  fi
+
+  return
+}
+
 iRE_inqState()
 {
   upCount=0
@@ -213,9 +298,7 @@ iRE_scanCondaEnv()
     test "${CONDA_QA_PATH}" -a "${CONDA_QA_ENV}" && return
 
     # try to restore some lost config-file items
-    if conda_path=$(. ${QA_SRC}/scripts/which.sh conda) ; then
-       CONDA_QA_PATH=${conda_path}
-    fi
+    conda_path=${CONDA_QA_PATH}
   fi
 
   if [ $1 = PrePARE ] ; then
@@ -224,44 +307,19 @@ iRE_scanCondaEnv()
 
     # try to restore some lost config-file items
     if [ ! ${PrePARE} ] ; then
-      if conda_path=$(. ${QA_SRC}/scripts/which.sh PrePARE) ; then
-         PrePARE=${conda_path}
-      else
-         paths=( $( which conda 2> /dev/null) )
-
-         if [ ${#paths[*]} -gt 0 ] ; then
-            # PrePARE is not necessarily in the path;
-            # there could be more than a single conda
-
-            for(( f=0 ; f < ${#paths[*]} ; ++f )) ; do
-               path=$( find ${paths[f]%/bin/conda} -type f -name "PrePARE" )
-               if [ ${path} ] ; then
-                 CONDA_CMOR_PATH=${paths[f]}
-                 PrePARE=$path
-                break
-               fi
-            done
-         elif [ ${CONDA_QA_PATH} ] ; then
-            # try a conda path within the qa-dkrz package
-            path=$( find ${CONDA_QA_PATH%/bin/conda} -type f -name "PrePARE" )
-            test ${path} && PrePARE=$path
-         fi
-      fi
-
-      test ${conda_path} && CONDA_QA_PATH=${conda_path}
-      test CONDA_QA_PATH=$(. ${QA_SRC}/scripts/which.sh conda)
+      iRE_findLatestPrePARE
     fi
   fi
 
-  if [ $1 = udunits2.xml ] ; then
-    if [ ! ${CMIP6} -o "${UDUNITS2_XML_PATH}" ] ; then
-       return
-    else
-      paths=( $( find ${PrePARE%/bin/PrePARE} -type f -name "udunits2.xml" ) )
-      . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=${paths[0]}
-      return
-    fi
-  fi
+#  if [ $1 = udunits2.xml ] ; then
+#    if [ ! ${CMIP6} -o "${UDUNITS2_XML_PATH}" ] ; then
+#       return
+#    else
+#      paths=( $( find ${PrePARE%/bin/PrePARE} -type f -name "udunits2.xml" ) )
+#      . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=${paths[0]}
+#      return
+#    fi
+#  fi
 
   if [ $1 = qa-dkrz ] ; then
      CONDA_QA_ENV=${env}
@@ -310,38 +368,18 @@ iRE_inqRunEnv()
     fi
 
     # check required paths or ENV
-    local pp_path
-    declare -a pp_path
-    pp_path=$( which PrePARE 2> /dev/null )
-    if [ ${pp_path} ] ; then
-        . ${QA_SRC}/scripts/parseConfigFile PrePARE=${pp_path}
-       continue
+    if ! . ${QA_SRC}/scripts/parseConfigFile PrePARE ; then
+      iRE_findLatestPrePARE
+      test ${PrePARE} && . ${QA_SRC}/scripts/parseConfigFile PrePARE=$PrePARE
     fi
 
-    if ! . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_PATH  ; then
-
-        local cpath
-        cpath=$( which conda 2> /dev/null)
-
-        local askStr
-        if [ "${cpath}" ] ; then
-           CONDA_CMOR_PATH=$cpath
-           # try this for finding PrePare
-           pp_path=( $( find ${cpath%/bin/conda} -type f -name "PrePARE" ) )
-           if [ "${pp_path[0]}" ] ; then
-             . ${QA_SRC}/scripts/parseConfigFile PrePARE=${pp_path[0]}
-             continue
-           fi
-
-           askStr="STOP: <ENTER>, $CONDA_CMOR_PATH: <y>: "
-        else
-           askStr="STOP: <ENTER>, <your-path>: "
-        fi
+    if [ ! ${PrePARE} ] ; then
+        askStr="STOP: <ENTER>, <your-path>: "
 
         while : ; do
            echo -e "\nCMIP6 requires the cmor package of conda; installation e.g. by:" > ${TTY}
            echo "   conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor ." > ${TTY}
-           echo "If cmor isn't installed, yet, please quit and do it now." > ${TTY}
+           echo "If cmor isn't installed, yet, please quit and do so." > ${TTY}
            echo "Provide your path to conda containing the CMOR package" > ${TTY}
            read -p "$askStr" answ 2> ${TTY}
 

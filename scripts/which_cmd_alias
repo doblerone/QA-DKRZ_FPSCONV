@@ -68,6 +68,15 @@ this_which()
       i=${#f[*]}
     done
 
+    for(( k=0 ; k < ${#found[*]}-1 ; ++k )) ; do
+      for(( i=k+1 ; i < ${#found[*]} ; ++i )) ; do
+        if [ ${found[k]} = ${found[i]} ] ; then
+           unset found[k]
+           break
+        fi
+      done
+    done
+
   echo ${found[*]}
   return 0
 }
