@@ -17,10 +17,14 @@ ges_cf()
 
 ges_cf_html()
 {
+  local last now
   local status=0
 
   # htmnl page containing access to cf related tables
   local html=standard-names.html
+
+  ges_checkDate init ${html}
+
   wget -q -N $org/$html
 
   if [ ! -f ${file} ] ; then
@@ -28,16 +32,22 @@ ges_cf_html()
     return 41
   fi
 
-  if ! ges_parse_html "Standard Name Table" xml ; then
-    return $?
-  fi
+  if ges_checkDate ${html} ; then
+    echo "CF - last update: $( date +'%F %T' )" > README.txt
 
-  if ! ges_parse_html "Area Type Table" xml ; then
-    return $?
-  fi
+    if ! ges_parse_html "Standard Name Table" xml ; then
+      return $?
+    fi
 
-  if ! ges_parse_html "Standardized Region List" html ; then
-    return $?
+    if ! ges_parse_html "Area Type Table" xml ; then
+      return $?
+    fi
+
+    if ! ges_parse_html "Standardized Region List" html ; then
+      return $?
+    fi
+
+     . $QA_SRC/scripts/parseConfigFile NEXT_CF_UPDATE=${NEXT_CF_UPDATE}
   fi
 
   return 0
@@ -181,6 +191,33 @@ ges_parse_html()
   fi
 
   return $?
+}
+
+ges_checkDate()
+{
+   if [ $1 = init ] ; then
+     ges_version=
+     ges_currFile[${#ges_currFile[*]}]=$2
+     ges_last[${#ges_last[*]}]=0
+
+     if [ -f $2 ] ; then
+       ges_last=$( ls -l --time-style='+%s' $2 | awk '{print $6}' )
+     fi
+
+     return 0
+   fi
+
+   # find index of currFile for $1, i.e. the filename
+   local i
+   for(( i=0 ; i < ${#ges_currFile[*]} ; ++i )) ; do
+     test $1 = ${ges_currFile[i]} && break
+   done
+
+   local now
+   now=$( ls -l --time-style='+%s' ${ges_currFile[i]} | awk '{print $6}' )
+   test ${now} -gt ${ges_last[i]}  && return 0
+
+   return 1
 }
 
 ges_cmip6()
@@ -331,7 +368,7 @@ ges_cmip6_conda()
   if [ ${isNewConda} ] ; then
     if ges_make_miniconda ${CONDA_CMOR_PATH} ; then
       CONDA_CMOR_PATH=${CONDA_CMOR_PATH}/bin/conda
-      . $QA_SRC/scripts/parseConfigFile ${CONDA_CMOR_PATH}
+      . $QA_SRC/scripts/parseConfigFile CONDA_CMOR_PATH=${CONDA_CMOR_PATH}
     fi
   fi
 
@@ -340,6 +377,7 @@ ges_cmip6_conda()
                     "${CONDA_CMOR_PATH}" ${conda_env:-cmor} ${action} ; then
 
       . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${conda_env:-cmor}
+      echo
       return 0
     fi
   fi
@@ -349,8 +387,12 @@ ges_cmip6_conda()
 
 ges_cmip6_mip()
 {
+   local last now
+
    mkdir -p ${QA_HOME}/tables/projects/CMIP6
    cd ${QA_HOME}/tables/projects/CMIP6 &> /dev/null
+
+   ges_checkDate init CMIP6_MIP_tables.xlsx
 
    wget -l1 -N -np  \
       http://proj.badc.rl.ac.uk/svn/exarch/CMIP6dreq/tags/latest/dreqPy/docs/CMIP6_MIP_tables.xlsx \
@@ -362,8 +404,13 @@ ges_cmip6_mip()
       return 41
    fi
 
-   # location of extracted csv table sheets: [~/.qa-dkrz/tables/projects/CMIP6]
-   ${XLSX2CSV} -a -d '|' -l '\n' CMIP6_MIP_tables.xlsx CMIP6_MIP_tables
+   if ges_checkDate CMIP6_MIP_tables.xlsx ; then
+     echo "CMIP6 - last update:" > README.txt
+     echo "  CMIP6_MIP_tables.xlsx: $( date +'%F %T' )" > README.txt
+
+     # location of extracted csv table sheets: [QA_HOME/tables/projects/CMIP6]
+     ${XLSX2CSV} -a -d '|' -l '\n' CMIP6_MIP_tables.xlsx CMIP6_MIP_tables
+   fi
 
    # the CMIP6 json files
    if [ -d CMIP6_CVs ] ; then
@@ -519,6 +566,8 @@ ges_xlsx2csv()
 
 # main
 declare -a err
+declare -a ges_currFile
+declare -a ges_last
 
 while getopts hP:-: option
 do
@@ -555,9 +604,7 @@ cd $QA_HOME &> /dev/null
 # Note that CF may-be stand-alone or together with another project
 if ! . $QA_SRC/scripts/parseConfigFile NEXT_CF_UPDATE --inquire \
         || [ ${forceUpdate:-f} = t ] ; then
-   if ges_cf ; then
-     . $QA_SRC/scripts/parseConfigFile NEXT_CF_UPDATE
-   else
+   if ! ges_cf ; then
      cd ${currPWD} &> /dev/null
      return 41
    fi

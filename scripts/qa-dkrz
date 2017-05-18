@@ -306,9 +306,17 @@ callQaConfig()
   fi
 
   if [ ${DISPLAY_VERSION} ] ; then
-       ${QA_SRC}/scripts/getVersion PRJ=${PROJECT_AS}
-       exit 0
+    local dv_args
+    if [ ${DISPLAY_VERSION} = t ] ; then
+       # brief, i.e. one-line version
+       dv_args=()
+    else
+       dv_args=( --${DISPLAY_VERSION} )
     fi
+
+    ${QA_SRC}/scripts/getVersion ${dv_args[*]} ${PROJECT_AS:-${PROJECT}}
+    exit 0
+  fi
 
 
   test ${RESUME_SESSION:-f} = t && log_sessMessage "session resumed."
@@ -2648,7 +2656,7 @@ fi
 #  set -f
   # revison num of the package
   local currVersion
-  currVersion=( $(. ${QA_SRC}/scripts/getVersion func=one-line ) )
+  currVersion=( $(. ${QA_SRC}/scripts/getVersion ) )
 
   # read ~/.qa-dkrz/conf-.txt for the current revision of tha package
   test ${currVersion} && \
@@ -4955,10 +4963,9 @@ umask 002
 export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
 
 THIS=${0%/*}
-test ${THIS##*/} = scripts && THIS=${THIS%/*}
 
 # resolve symbolic links
-. ${THIS}/scripts/getSrcPath $THIS
+. ${THIS}/getSrcPath $THIS
 
 # is it in a conda built?
 . ${QA_SRC}/scripts/getCondaPath

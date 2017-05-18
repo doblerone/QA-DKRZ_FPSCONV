@@ -478,8 +478,6 @@ findQAConfSeq()
   return
 }
 
-
-
 initSession()
 {
   # Create sub-dir structure for different logs, but
@@ -1813,7 +1811,7 @@ do
   tr_option UOPTARG
 
   OPTNAME=${UOPTARG%%=*}
-  OPTVAL=${OPTARG#*=}
+  OPTVAL=${UOPTARG#*=}
 
   case $option in
   e|E)  if [ ${OPTNAME} = 'CONDA_QA_PATH' ] ; then
@@ -2024,7 +2022,7 @@ do
           installArgs+="up,"
 
         elif [ "${OPTNAME}" = VERSION ] ; then
-          setKWL DISPLAY_VERSION
+          setKWL DISPLAY_VERSION$(echo "${OPTVAL:+=}${OPTVAL}")
 
         elif [ "${OPTNAME:0:4}" = WORK ] ; then
           : # done before

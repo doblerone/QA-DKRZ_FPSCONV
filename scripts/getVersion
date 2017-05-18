@@ -2,13 +2,17 @@
 
 getGitBranch()
 {
-   git -C $thisQA_SRC branch | grep '*' | awk '{print $2}'
+   #git -C $1 branch | grep '*' | awk '{print $2}'
+   cd $1 &> /dev/null
+   git branch | grep '*' | awk '{print $2}'
+   cd - &> /dev/null
+   
    return
 }
 
 getFromConda()
 {
-   if tmp=( $(cat ${thisQA_SRC}/install.log 2> /dev/null) ) ; then
+   if tmp=( $(cat ${QA_SRC}/install.log 2> /dev/null) ) ; then
      branch=${tmp[0]#*=}
      currIdent=${tmp[1]#*=}
      test ${#tmp[*]} -gt 2 && tag=${tmp[2]#*=}
@@ -22,14 +26,17 @@ getQA_Version()
   # get current revision number; this determines whether it is
   # before a change of defaults happened.
 
-  if [ $CONDA_PATH ] ; then
+  if [ $CONDA_QA_PATH ] ; then
     getFromConda
   else
-    local f=${thisQA_SRC}/conda-recipes/qa-dkrz/meta.yaml
+    local f=${QA_SRC}/conda-recipes/qa-dkrz/meta.yaml
 
-    branch=$(getGitBranch)
-    currIdent=$(git -C ${thisQA_SRC} log --pretty=format:'%h' -n 1)
-
+    branch=$(getGitBranch $QA_SRC)
+    cd ${QA_SRC} &> /dev/null
+    #currIdent=$(git -C ${QA_SRC} log --pretty=format:'%h' -n 1)
+    currIdent=$(git log --pretty=format:'%h' -n 1)
+	 cd - &> /dev/null
+	
     tag=$( grep 'name:' $f | awk '{print $(NF)}' )
     tmp2=$( grep 'version:' $f | awk '{print $(NF)}' )
     tmp2=${tmp2:1}
@@ -43,42 +50,71 @@ getQA_Version()
     echo "   GitHub: https://github.com/IS-ENES-Data/QA-DKRZ.git"
     echo "   branch: ${branch}"
     echo "   commit-SHA: ${currIdent}"
-    echo "   tag: ${tag}"
-    exit
+    echo "   tag: ${tag:- -}"
   else
-    eval ${1}="${branch}-${currIdent},${tag}"
+    echo "${branch}-${currIdent}${tag:+,${tag}}"
   fi
 
   return
 }
 
-getTable_Version()
+getExternalVersion()
 {
-  return
-}
+  local i
+  for(( i=0 ; i < ${#prjs[*]} ; ++i )) ; do
+    test ${prjs[i]} = CF && break
+  done
+  test $i -eq ${#prjs[*]} && prjs=( CF ${prjs[*]} )
 
-one-line()
-{
-  if [ $CONDA_QA_PATH ] ; then
-    echo $(getFromConda)
-  else
-    :
-  fi
+  for prj in ${prjs[*]} ; do
+    if [ ${prj} = CMIP6 ] ; then
+       #test -f ${QA_HOME}/tables/projects/CMIP6/README.txt && echo -n "        "
+
+       cd  ${QA_HOME}/tables/projects/CMIP6/CMIP6_CVs &> /dev/null
+       #git -C ${QA_HOME}/CMIP6/CMIP6_CVs log --oneline --decorate\
+       echo -n -e "CMIP6_CVs:\n   "
+       git log --oneline --decorate\
+            2> /dev/null | head -n 1
+		 cd -  &> /dev/null
+
+		 echo -n -e "CMIP6_MIP_tables.xlsx:\n   last wget -> "
+		 echo $(ls -l --time-style='+%FT%T' \
+		           ${QA_HOME}/tables/projects/CMIP6/CMIP6_MIP_tables.xlsx \
+		           | awk '{print $6}')
+
+		 if [ ! ${PrePARE} ] ; then
+	      if ! Prepare=${QA_SRC}/scripts/which_cmd_alias PrePARE ; then
+	 	      . ${QA_SRC}/scripts/parseConfigFile PrePARE
+			fi
+		 fi
+
+		if [ ${PrePARE} ] ; then
+			i=$(ls ${PrePARE%/bin/PrePARE}/conda-meta/cmor-* 2> /dev/null)
+			i=${i##*/}
+		   echo -e "CMOR:\n   ${i%.json}"
+		fi
+    elif [ ${prj} = CORDEX ] ; then
+       #test -f ${QA_HOME}/tables/projects/CORDEX/README.txt && echo -n "         "
+
+       cd ${QA_HOME}/tables/projects/CORDEX/IS-ENES-Data.github.io &> /dev/null
+       echo -n -e "IS-ENES-Data.github.io:\n   "
+       #git -C ${QA_HOME}/CORDEX/IS-ENES-Data.github.io log --oneline --decorate\
+       git log --oneline --decorate\
+            2> /dev/null | head -n 1
+		 cd -  &> /dev/null
+    fi
+  done
 
   return
 }
 
 getVersion()
 {
+  test ! ${QA_SRC} && QA_SRC=${0%/getVersion}
+
   local branch currIdent tag tmp tmp2
   declare -a tmp
 
-  local thisQA_SRC
-  if [ ${QA_SRC} ] ; then
-    thisQA_SRC=${QA_SRC}
-  else
-    thisQA_SRC=${0%/getVersion}
-  fi
 
   local arg
 
@@ -87,24 +123,36 @@ getVersion()
     exit 0
   fi
 
-  for arg in $* ; do
-    if [ "${arg}" = "func=one-line" ] ; then
-      if [ ${CONDA_QA_PATH} ] ; then
-         getFromConda
-         echo "${branch}-${currIdent}${tag:+,${tag}}"
-      else
-         getGitBranch
-      fi
-    elif [ "${arg%=*}" = "PRJ" ] ; then
-      getQA_Version
-      getTable_Version ${arg#PRJ=}
+  local prjs
+  declare -a prjs
 
-      exit 0
-    fi
+  for arg in $* ; do
+    if [ "${arg}" = '--verbose' -o "${arg}" = 'verbose' ] ; then
+      isVerbose=t
+    elif [ ${arg%=*} = '--qa-home' ] ; then
+      QA_HOME=${arg#*=}
+	 else
+      prjs[${#prjs[*]}]=${arg}
+	 fi
   done
+
+  if [ ! ${prjs[0]} ] ; then
+    . ${QA_SRC}/scripts/parseConfig QA_HOME
+	 if [ ${QA_HOME} ] ; then
+      prjs=( $(ls -d ${QA_HOME}/tables/projects/* 2> /dev/null ) )
+    fi
+  fi
+  
+  if [ ${isVerbose} ] ; then
+    getQA_Version
+    getExternalVersion ${prjs[*]}
+  elif [ "${arg%=*}" = "PRJ" ] ; then
+    getQA_Version --brief
+  fi
 
   return
 }
 
 getVersion $*
 
+exit 0

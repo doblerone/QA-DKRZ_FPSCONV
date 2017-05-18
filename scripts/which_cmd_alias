@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/bash
 
 # which for path and alias, even if non-interactive
 
@@ -20,6 +20,9 @@ this_which()
       # scan for alias. Note such is not effective here
       IFS=$'\r\n'
       lines=( $(grep alias ${f[i]}) )
+      lines=( ${lines[*]} $(grep ' \. ' ${f[i]}) )
+      lines=( ${lines[*]} $(grep ' source ' ${f[i]}) )
+      
       IFS="${saveIFS}"
 
       unset f[i]
@@ -60,11 +63,6 @@ this_which()
         done
       done
 
-#      if [ ${#f[*]} -eq 0 ] ; then
-#        echo "no such command or alias $1"
-#        return 1
-#      fi
-
       i=${#f[*]}
     done
 
@@ -76,6 +74,11 @@ this_which()
         fi
       done
     done
+
+    if [ ${#found[*]} -eq 0 ] ; then
+      echo "no such command or alias $1" > /dev/stderr
+      return 1
+    fi
 
   echo ${found[*]}
   return 0

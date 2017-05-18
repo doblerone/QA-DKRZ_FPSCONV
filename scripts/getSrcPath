@@ -1,8 +1,13 @@
 getSrcPath()
 {
+   local src
+   cd $1 &> /dev/null
+   src=$PWD
+   cd - &> /dev/null
+   
   # resolve sym-links: path to the root of the QA package
-   local src=$1
-
+   test ${src##*/} = scripts && src=${src%/scripts}
+   
    if [ -h $src ] ; then
      while [ "$( ls -l $src | awk '{print $(NF-1)}')" = '->' ] ; do
        src=$( ls -l $src | awk '{print $(NF)}' )

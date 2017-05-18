@@ -145,11 +145,11 @@ iRE_findLatestPrePARE()
 {
   local i cc pp pp_all pp_no_pkgs latest_conda
   declare -a cc pp pp_no_pkgs
-  pp_all=( $(. ${QA_SRC}/scripts/which_cmd_alias PrePARE ) )
+  pp_all=( $(${QA_SRC}/scripts/which_cmd_alias PrePARE 2> /dev/null) )
 
   if [ ${#pp_all[*]} -eq 0 ] ; then
     # try with existing conda(s)
-    cc=( $(. ${QA_SRC}/scripts/which_cmd_alias conda ) )
+    cc=( $(${QA_SRC}/scripts/which_cmd_alias conda 2> /dev/null) )
     if [ ${#cc[*]} -gt 1 ] ; then
        iRE_findLatestFile latest_conda ${cc[*]}
     else
@@ -184,6 +184,7 @@ iRE_findLatestPrePARE()
   fi
 
   # does PrePARE work?
+  export UVCDAT_ANONYMOUS_LOG=no
   $PrePARE -h &> /dev/null
 
   if [ $? -gt 1 ] ; then
@@ -266,7 +267,7 @@ fi
 
   # revison num of the package
   local packRec
-  ${QA_SRC}/scripts/getVersion packRev
+  packRev="$( ${QA_SRC}/scripts/getVersion )"
 
   . ${QA_SRC}/scripts/parseConfigFile QA_REVISION${packRev:+=}${packRev}
 

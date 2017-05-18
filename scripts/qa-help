@@ -126,6 +126,7 @@ Usage: qa-DKRZ options
    -m        Display a status line below the command-line call.
    -P        Project name (usually PROJECT= in a config-file).
    -S        Selection of paths and variables (see config-file).
+   -v        Brief version; use --version=v[erbose] for more details.
    -x        Equivalent to -E_DEBUG_C -E_DEBUG_E -E_DEBUG_M.
    --auto-up[=disable]
              Permanently enable/disable automatic updates [default: disable].
@@ -166,6 +167,9 @@ Usage: qa-DKRZ options
              without assignment of a project name, then the binary is compiled
              for CORDEX. This option changes the default permanently .
              Not for the installation by conda.
+   --version[=v[verbose]]
+             Display versions of qa-dkrz and used external tables and programs,
+             which are defined in ${QA_HOME:-QA_HOME}.
    --work    Location of check results. Usually set by option QA_RESULTS.
              However for running the example, then also the HOME for .qa-dkrz
              and tables.
