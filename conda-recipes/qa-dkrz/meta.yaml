@@ -3,13 +3,13 @@ package:
   version: '0.6.5'
 
 build:
-  number: 50
+  number: 51
 
 source:
-#  git_url: https://github.com/IS-ENES-Data/QA-DKRZ.git
-  git_url: ../../.git
-#  git_tag: master
-  git_tag: develop
+   git_url: https://github.com/IS-ENES-Data/QA-DKRZ.git
+   git_tag: master
+#  git_url: ../../.git
+#  git_tag: develop
 
 requirements:
   build:

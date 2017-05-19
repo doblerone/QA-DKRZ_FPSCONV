@@ -89,9 +89,17 @@ getExternalVersion()
 		 fi
 
 		if [ ${PrePARE} ] ; then
+
 			i=$(ls ${PrePARE%/bin/PrePARE}/conda-meta/cmor-* 2> /dev/null)
 			i=${i##*/}
 		   echo -e "CMOR:\n   ${i%.json}"
+
+		   cd  ${QA_HOME}/tables/projects/CMIP6/cmip6-cmor-tables &> /dev/null
+         #git -C ${QA_HOME}/CMIP6/CMIP6_CVs log --oneline --decorate\
+         echo -n "   cmip6-cmor-tables: "
+         git log --oneline --decorate 2> /dev/null | head -n 1
+		   cd -  &> /dev/null
+
 		fi
     elif [ ${prj} = CORDEX ] ; then
        #test -f ${QA_HOME}/tables/projects/CORDEX/README.txt && echo -n "         "
