@@ -1164,8 +1164,7 @@ fi
   ans2="$( ${PrePARE} \
      ${mip_table} \
      ${file} 2>&1 \
-#     | python ${QA_SRC}/scripts/python/qa-dkrz/convertPipedCMOR_output.py \
-     )"
+     | python ${QA_SRC}/scripts/python/qa-dkrz/convertPipedCMOR_output.py )"
 
 if [ ${NO_CONDA_INSTALL} ] ; then
   source ${PrePARE%/*}/deactivate &> /dev/null
