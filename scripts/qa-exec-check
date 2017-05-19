@@ -1163,7 +1163,7 @@ fi
   local ans2
   ans2="$( ${PrePARE} \
      ${mip_table} \
-     ${file} 2>&1 #\
+     ${file} 2>&1 \
 #     | python ${QA_SRC}/scripts/python/qa-dkrz/convertPipedCMOR_output.py \
      )"
 
