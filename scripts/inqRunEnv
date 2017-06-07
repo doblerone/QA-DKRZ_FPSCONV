@@ -215,13 +215,12 @@ iRE_inqState()
          -QA_REVISION \
        )
 
-if [ ! ${NO_CONDA_INSTALL} ] ; then
-  # extend for CONDA installation
-  if [ ${CONDA_QA_PATH} ] ; then
-    rname[${#rname[*]}]=-CONDA_QA_PATH
-    #rname[${#rname[*]}]=+CONDA_QA_ENV
+  if [ ! ${NO_CONDA_INSTALL} ] ; then
+    # extend for CONDA installation
+    if [ ${CONDA_QA_PATH} ] ; then
+      rname[${#rname[*]}]=-CONDA_QA_PATH
+    fi
   fi
-fi
 
   # extend for current projects
   for(( i=0 ; i < ${#prj[*]} ; ++i )) ; do
@@ -230,13 +229,12 @@ fi
     if [ ${prj[i]} = CMIP6 ] ; then
       isCMIP6=t
 
-if [ ! ${NO_CONDA_INSTALL} ] ; then
-      rname[${#name[*]}]=+PrePARE
-#      rname[${#rname[*]}]=+UDUNITS2_XML_PATH
-      rname[${#rname[*]}]=+CONDA_CMOR_ENV
-      rname[${#rname[*]}]=+CONDA_CMOR_PATH
-      rname[${#rname[*]}]=+XLSX2CSV
-fi
+      if [ ! ${NO_CONDA_INSTALL} ] ; then
+          rname[${#name[*]}]=+PrePARE
+          rname[${#rname[*]}]=+CONDA_CMOR_ENV
+          rname[${#rname[*]}]=+CONDA_CMOR_PATH
+          rname[${#rname[*]}]=+XLSX2CSV
+      fi
     fi
   done
 
@@ -259,11 +257,10 @@ fi
 
   test ${isRO:-f} = t -o ${upCount} = 0 && return ${upCount}
 
-if [ ! ${NO_CONDA_INSTALL} ] ; then
-  iRE_scanCondaEnv qa-dkrz
-  iRE_scanCondaEnv PrePARE
-#  iRE_scanCondaEnv udunits2.xml
-fi
+  if [ ! ${NO_CONDA_INSTALL} ] ; then
+    iRE_scanCondaEnv qa-dkrz
+    iRE_scanCondaEnv PrePARE
+  fi
 
   # revison num of the package
   local packRec

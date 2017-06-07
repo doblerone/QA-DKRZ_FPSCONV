@@ -64,7 +64,7 @@ descript()
   echo "  --update-frequency=num"
   echo "                    --uf and any --uXXX_FYYY is valid; num in days with default [1]"
   echo ""
-  echo "  projects-name(s)   At present CF, CMIP5, and CORDEX; the latter by default."
+  echo "  projects-name(s)   At present CF, CMIP5/6, [CORDEX] and HAPPI."
 }
 
 log()
@@ -155,27 +155,27 @@ update()
   # for searching updates after some days; default: once a day
   # set variable today [ days since 1970 ]
 
-if [ ! ${NO_CONDA_INSTALL} ] ; then
-  if [ ${CONDA_QA_PATH} ] ; then
-    test ! ${CONDA_QA_ENV} && \
-      . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
+  if [ ! ${NO_CONDA_INSTALL} ] ; then
+    if [ ${CONDA_QA_PATH} ] ; then
+      test ! ${CONDA_QA_ENV} && \
+        . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
 
-    if [ ${isForceUpdate:-f} = t ] || \
-         ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire
-    then
-      if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
+      if [ ${isForceUpdate:-f} = t ] || \
+           ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire
+      then
+        if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
                       "${CONDA_QA_PATH}"    "${CONDA_QA_ENV}" ; then
 
-        . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
-        . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
+          . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
+          . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
+        fi
       fi
+    elif [ -d ${QA_SRC}/.git ] ; then
+       if ! update_QA_SRC ; then
+         return $?
+       fi
     fi
-  elif [ -d ${QA_SRC}/.git ] ; then
-     if ! update_QA_SRC ; then
-       return $?
-     fi
   fi
-fi
 
   # now for non-QA-DKRZ tables and programs
   for prj in $* ; do

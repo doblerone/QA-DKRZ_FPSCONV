@@ -36,7 +36,7 @@
 
 setDefaults()
 {
-  definedProjects=( CORDEX CMIP5 CMIP6 )
+  #definedProjects=( CORDEX CMIP5 CMIP6 )
 
   # the comment 'export' denotes keywords which must be submitted
   # to the calling qaDirector
@@ -2003,6 +2003,9 @@ do
 
         elif [ "${OPTNAME}" = NET ] ; then
           installArgs+="${OPTARG},"
+
+		  elif [ "${OPTNAME}" = NEXT ] ; then
+          setKWL NEXT=${OPTVAL:-t}
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
           if [ ${OPTARG} = ${OPTVAL} ] ; then
