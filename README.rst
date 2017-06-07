@@ -17,7 +17,7 @@ https://cmor.llnl.gov) is supported. The check results are summarised in json-fo
 Getting Started
 ===============
 
-The recommendated way to install QA-DKRZ is to use the conda package manager.
+The recommended way to install QA-DKRZ is by the conda package manager.
 External tables and programs are downloaded at run-time, when needed for
 dedicated projects.
 
@@ -43,7 +43,10 @@ or by operating the stand-alone-checker with a NetCDF file of your choice.
 
    $ dkrz-cf-checker your-choice.nc
 
-
+*CMIP6*
+The CMOR3 checker PrePARE
+(http://cmor.llnl.gov/mydoc_cmip6_validator)
+is run by the QA-DKRZ tool; the results are merged into the flow of QA-DKRZ annotations.
 
 Documentation
 =============
