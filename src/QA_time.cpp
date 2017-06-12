@@ -355,11 +355,8 @@ QA_Time::init(std::vector<std::string>& optStr)
      if( initAbsoluteTime(str) )
         return false;
    }
-   else
-   {
-     if( initRelativeTime(str) )
+   else if( initRelativeTime(str) )
        return false;  // could  not read any time value
-   }
 
    applyOptions(optStr);
    initTimeTable();
@@ -609,12 +606,28 @@ QA_Time::initRelativeTime(std::string &units)
 
      if( isTimeBounds )
      {
-       initTimeBounds(refTimeOffset) ;
+       if( initTimeBounds(refTimeOffset) )
+       {
+         double dtb = firstTimeBoundsValue[1] - firstTimeBoundsValue[0];
 
-       double dtb = firstTimeBoundsValue[1] - firstTimeBoundsValue[0];
+         prevTimeBoundsValue[0]=firstTimeBoundsValue[0] - dtb ;
+         prevTimeBoundsValue[1]=firstTimeBoundsValue[0]  ;
+       }
+       else
+       {
+          // empty equivalent to only _FillValue
+          isTimeBounds=false;
+          std::string key("6_15");
+          
+          if( notes->inq( key, boundsName ) )
+          {
+            std::string capt(hdhC::tf_var("time_bnds", hdhC::colon));
+            capt += "no data" ;
 
-       prevTimeBoundsValue[0]=firstTimeBoundsValue[0] - dtb ;
-       prevTimeBoundsValue[1]=firstTimeBoundsValue[0]  ;
+            (void) notes->operate(capt) ;
+            notes->setCheckStatus("TIME", pQA->n_fail);
+          }
+       }
      }
    }
 
@@ -687,7 +700,13 @@ QA_Time::initTimeBounds(double offset)
     return false;
   }
 
+  // -1: all records
   (void) pIn->nc.getData(ma_tb, boundsName, 0, -1 );
+  
+  // check for empty data
+  if( ! ma_tb.validRangeBegin.size() )
+    return false;
+  
   m2D = ma_tb.getM();
 
   firstTimeBoundsValue[0]=m2D[0][0] + offset;

@@ -653,7 +653,7 @@ Split::exceptionError(std::string str)
   return ;
 }
 
-std::vector<std::string>
+std::vector<std::string>&
 Split::getItems(void)
 {
   if( ! isDecomposed )

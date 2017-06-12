@@ -2585,10 +2585,11 @@ NcAPI::getChunking(NcAPI &from, int varid,
 }
 
 void*
-NcAPI::getData(int varid, size_t rec, size_t leg)
+NcAPI::getData(int varid, size_t rec, int leg)
 {
   // if rec_leg <= rec, then only the requested rec.
-
+  // if leg < 0, then all records
+   
   size_t rank = layout.varDimName[varid].size();
 
   if( layout.rec_index[varid] < UINT_MAX )
@@ -2609,7 +2610,7 @@ NcAPI::getData(int varid, size_t rec, size_t leg)
     }
   }
 
-  if( leg > 1 )
+  if( leg > 0 )
      dim[0] = curr_count[0] = leg;
 
   void *p=0;
@@ -4258,19 +4259,33 @@ template <typename T>
 bool
 NcAPI::isEmptyData(int varid, T x)
 {
-  bool is=true;
-  std::string vName(layout.varidMap[varid]);
+   // empty is equivalent to only _FillValue
+   bool is=true;
+   std::string vName(layout.varidMap[varid]);
 
-  if( isVarUnlimited(varid) )
-  {
-    if( getNumOfRecords() )
-      is = false;
-  }
-  else
-  {
-    if( layout.varTypeMap[vName] == NC_STRING
-          || layout.varTypeMap[vName] == NC_CHAR )
-    {
+   if( isVarUnlimited(varid) )
+   {
+      size_t num =  getNumOfRecords() ;
+      MtrxArr<T> ma;
+  
+       for( size_t rec=0 ; rec < num ; ++rec )
+       {
+          (void) getData(ma, varid, rec );
+          
+          if( ma.validRangeBegin.size() )
+          {
+             is=false;
+             break;
+          }
+       }
+
+       return (layout.noData[varid] = is) ;
+   }
+
+   // limited variables
+   if( layout.varTypeMap[vName] == NC_STRING
+           || layout.varTypeMap[vName] == NC_CHAR )
+   {
       size_t rank = layout.varDimName[varid].size();
 
       if( layout.rec_index[varid] < UINT_MAX )
@@ -4359,18 +4374,17 @@ NcAPI::isEmptyData(int varid, T x)
       }
 
       delete [] curr_count ;
-    }
-    else
-    {
-      MtrxArr<T> ma;
-      (void) getData(ma, varid );
+   }
+   else
+   {
+     MtrxArr<T> ma;
+     (void) getData(ma, varid, 0, -1 );
 
-      if( ma.validRangeBegin.size() )
-        is=false;
-    }
-  }
+     if( ma.validRangeBegin.size() )
+       is=false;
+   }
 
-  return (layout.noData[varid] = is) ;
+   return (layout.noData[varid] = is) ;
 }
 
 bool

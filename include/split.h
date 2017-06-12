@@ -121,7 +121,7 @@ class Split
   void   exceptionError(std::string);
 
   //! Get a vector containing all sub-strings
-  std::vector<std::string>
+  std::vector<std::string>&
          getItems(void);
 
   //! Get the originally input-string cleared from separators.

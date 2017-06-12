@@ -561,13 +561,14 @@ QA::init(void)
    qaExp.init(optStr);
 
    // DRS specifications
-   if(isCheckDRS_F || isCheckDRS_P)
-   {
+
+//   if(isCheckDRS_F || isCheckDRS_P)
+//   {
      drs_cv_table.setParent(this);
      drs_cv_table.setPath(tablePath);
      drs_cv_table.applyOptions(optStr);
      drs_cv_table.read();
-   }
+//   }
 
    // experiment specific obj: set parent, pass over options
    // check consistency between sub-sequent files or experiments

@@ -21,12 +21,12 @@ class LogSummary(object):
         Constructor
         '''
 
-        # init of available projects
-        self.isCORDEX=False
-        self.isCMIP=False
+        # defaults
         self.project=''
-        self.prj_var_ix = -1
-        self.prj_frq_ix = -1
+        self.prj_fName_sep = '_'
+        self.prj_path_sep = '/'
+        self.prj_var_ix = 0
+        self.prj_frq_ix = 1
 
 
     def annotation_add(self, path_id, var_id, blk, i):
@@ -551,44 +551,17 @@ class LogSummary(object):
 
             # items from the preamble
             for line in fd:
-                line = line.rstrip(' \n')
-                blk.append(line)
+               line = line.rstrip(' \n')
+               blk.append(line)
 
-                words = line.split(None, 1)
+               words = line.split(None, 1)
+               
+               if words[0] == 'items:':
+                  self.blk_last_line = fd.next().rstrip(' \n')
+                  break
 
-                if words[0] == 'PROJECT:' and len(self.project) == 0:
-                    self.project = words[1]
-                    if words[1] == 'CORDEX':
-                        self.isCORDEX = True
-                        self.prj_fName_sep = '_'
-                        self.prj_path_sep = '/'
-                        self.prj_var_ix = 0
-                        self.prj_frq_ix = 7
-
-                    elif words[1][0:4] == 'CMIP':
-                        self.isCMIP = True
-                        self.prj_fName_sep = '_'
-                        self.prj_path_sep = '/'
-                        self.prj_var_ix = 0
-                        self.prj_frq_ix = 1
-
-                elif words[0] == 'DRS_PATH_BASE:' \
-                        or words[0] == 'LOG_PATH_BASE:' \
-                            or words[0] == 'EXP_PATH_BASE:':
-                    self.pathBase = words[1]
-
-                elif words[0] == 'LOG_PATH_INDEX:' \
-                        or words[0] == 'EXP_PATH_INDEX:':
-                    # the following does not seem to work, although it should
-                    # self.logPathIndex = words[1].split('[, ]')
-                    #so, a work-around
-                    w2=words[1].replace('[','')
-                    w2=w2.replace(']','')
-                    self.logPathIndex = w2.split(', ')
-
-                elif words[0] == 'items:':
-                    self.blk_last_line = fd.next().rstrip(' \n')
-                    break
+               # a few opts are used by this script
+               self.get_preamble_opt(words)
 
             # for logPathIndex, pathBase has also to be defined
             try:
@@ -816,6 +789,32 @@ class LogSummary(object):
         return
 
 
+    def get_preamble_opt(self, words):
+         if words[0] == 'PROJECT:' and len(self.project) == 0:
+            self.project = words[1]
+         elif words[0] == 'FILE_NAME_SEP':
+            self.prj_fName_sep = words[1]
+         elif words[0] == 'PATH_SEP':
+            self.prj_path_sep = words[1]
+         elif words[0] == 'FILE_NAME_VAR_INDEX':
+            self.prj_var_ix = words[1]
+         elif words[0] == 'FILE_NAME_FREQ_INDEX':
+            self.prj_frq_ix = words[1]            
+         elif words[0] == 'DRS_PATH_BASE:' \
+               or words[0] == 'LOG_PATH_BASE:' \
+                     or words[0] == 'EXP_PATH_BASE:':
+            self.pathBase = words[1]
+         elif words[0] == 'LOG_PATH_INDEX:' \
+               or words[0] == 'EXP_PATH_INDEX:':
+            # the following does not seem to work, although it should
+            # self.logPathIndex = words[1].split('[, ]')
+            #so, a work-around
+            w2=words[1].replace('[','')
+            w2=w2.replace(']','')
+            self.logPathIndex = w2.split(', ')
+
+         return
+      
     def prelude(self, f_log):
         if repr(type(f_log)).find('str') > -1:
             f_log = [f_log]

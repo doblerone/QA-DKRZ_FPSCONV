@@ -48,9 +48,12 @@ struct DRS_CV
   void   findPath_faults(Split&, Split&,
                    std::map<std::string, std::string>&,
                    std::string& text);
+
   int    getPathBegIndex( Split& drs, Split& x_e,
             std::map<std::string, std::string>& gM );
 
+  bool   isInstantTime(void);
+  
   void run(void);
 
   //! Test the time-period of the input file.

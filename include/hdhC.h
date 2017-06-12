@@ -364,15 +364,17 @@ getNonAlpha(std::string);
 std::string
 getNonAlphaNum(std::string);
 
-//! Remove space-separated duplicates
+//! convert vector of strings into a single string
+/*! Remove space-separated duplicates*/
 std::string
-getUniqueString(std::string&);
+getUniqueString(std::string&, char sep=' ');
 
 std::string
-getUniqueString(std::vector<std::string>&);
+getUniqueString(std::vector<std::string>&, char sep=' ');
 
+//! split a strings at sep into a vector of strings
 std::vector<std::string>
-getUniqueVector(std::string&);
+getUniqueVector(std::string&, char sep=' ');
 
 std::vector<std::string>
 getUniqueVector(std::vector<std::string>&);
@@ -543,6 +545,9 @@ catStringVector(std::vector<std::string>&);
     every occurrence of the string 's'.*/
 std::string
 clearChars(std::string str, std::string s, bool isStr=false );
+
+std::string
+clearEnclosures(std::string& str, char a='(', char b=')' );
 
 //! remove white spaces and newlines
 std::string

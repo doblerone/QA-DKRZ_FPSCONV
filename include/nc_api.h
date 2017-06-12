@@ -414,8 +414,7 @@ void
 
 //! Get the i-th record of variable vName.
 /*! If vName is an invalid variable name, then 0 is returned.
-    Get all the:1
-    data for limited (non-record) variables.
+    Get all the data for limited (non-record) variables.
     This member just returns a void* pointer to the data.*/
     void*
       getData(std::string vName, size_t rec=0, int leg=1 )
@@ -621,7 +620,8 @@ void
     bool
       isDimValid(std::string);
 
-//! Return true if data is entirely empty (limited) or for the current record
+//! Return true if data is entirely empty.
+/*! If bool == true, then also for unlimited variables*/
     bool
       isEmptyData(std::string);
 
@@ -1078,7 +1078,7 @@ private:
       getConstCharSize(T v, size_t trySz=250);
 
     void*
-      getData(int varid, size_t rec, size_t leg=1);
+      getData(int varid, size_t rec, int leg=1);
 
 // Get number of values per record of variable 'vName'.
     size_t

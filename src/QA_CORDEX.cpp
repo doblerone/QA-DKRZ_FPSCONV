@@ -889,6 +889,22 @@ DRS_CV::getPathBegIndex(
   return ix;
 }
 
+bool
+DRS_CV::isInstantTime(void)
+{
+
+//  if( pQA->qaExp.getFrequency() == "6hr" )
+//    return true;
+
+  bool is=true;
+  for( size_t i=0 ; i < pQA->qaExp.varMeDa.size() ; ++i )
+    if( pQA->qaExp.varMeDa[i].attMap[pQA->n_cell_methods].size()
+          && pQA->qaExp.varMeDa[i].attMap[pQA->n_cell_methods] != "time: point" )
+      is=false;
+
+  return is;
+}
+
 void
 DRS_CV::run(void)
 {
@@ -1008,14 +1024,23 @@ DRS_CV::testPeriod(Split& x_f)
     if( pQA->qaTime.time_ix > -1 &&
         ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
     {
-      std::string key("5_8");
-      if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+      if( !isInstantTime() )
       {
-        std::string capt(hdhC::tf_var("time_bnds"));
-        capt += "is missing";
+        std::string tb_name(pQA->qaTime.getBoundsName());
+        
+        if( ! notes->findAnnotation("6_15", tb_name) )
+        {
+          std::string key("5_8");
+          
+          if( notes->inq( key, tb_name ) )
+          {
+            std::string capt(hdhC::tf_var("time_bnds"));
+            capt += "is missing" ;
 
-        (void) notes->operate(capt) ;
-        notes->setCheckStatus("TIME", pQA->n_fail);
+            (void) notes->operate(capt) ;
+            notes->setCheckStatus(drsF, pQA->n_fail);
+          }
+        }
       }
     }
   }
@@ -3993,7 +4018,7 @@ QA_Exp::getFrequency(void)
 
   if( ! frequency.size() )
   {
-    // try the filename
+    // not found in the global attribnutes; try the filename
     std::string f( pQA->pIn->file.basename );
 
     Split splt(f, "_");

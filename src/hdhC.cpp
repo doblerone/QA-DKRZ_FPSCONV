@@ -1469,70 +1469,64 @@ getNonAlphaNum(std::string s)
 }
 
 std::string
-getUniqueString(std::string& s)
+getUniqueString(std::string& s, char sep)
 {
-  std::vector<std::string> vs;
+  Split x_s(s, sep) ;
 
-  Split x_s(s) ;
-
-  for( size_t j=0 ; j < x_s.size() ; ++j )
-    vs.push_back(x_s[j]) ;
-
-  std::vector<std::string>vs2(getUniqueVector(vs));
+  std::vector<std::string>vs( getUniqueVector( x_s.getItems() ));
 
   std::string us;
-  for( size_t j=0 ; j < vs2.size() ; ++j)
+  for( size_t j=0 ; j < vs.size() ; ++j)
   {
     if(j)
-      us += " " ;
-    us += vs2[j];
+      us += sep ;
+    us += vs[j];
   }
 
   return us;
 }
 
 std::string
-getUniqueString(std::vector<std::string>& vs)
+getUniqueString(std::vector<std::string>& vs, char sep)
 {
+  std::vector<std::string> vs_unique(getUniqueVector(vs));
   std::string s;
-
-  for( size_t j=0 ; j < vs.size() ; ++j )
+  
+  for( size_t j=0 ; j < vs_unique.size() ; ++j )
+  {
      if(j)
-       s += vs[j] ;
-
-  return getUniqueString(s);
+       s += sep;
+     
+     s += vs_unique[j] ;
+  }
+     
+  return getUniqueString(s, sep);
 }
 
 std::vector<std::string>
-getUniqueVector(std::string& s)
+getUniqueVector(std::string& s, char sep)
 {
-  std::vector<std::string> vs;
-
-  Split x_s(s) ;
-
-  for( size_t j=0 ; j < x_s.size() ; ++j )
-    vs.push_back(x_s[j]) ;
-
-  return getUniqueVector(vs);
+  Split x_s(s,sep) ;
+  return getUniqueVector( x_s.getItems() );
 }
 
 std::vector<std::string>
 getUniqueVector(std::vector<std::string>& vs)
 {
-  std::vector<std::string> uni;
+  std::vector<std::string> vs_uni;
 
   for( size_t j=0 ; j < vs.size() ; ++j )
   {
      size_t u;
-     for( u=0 ; u < uni.size() ; ++u )
-       if( uni[u] == vs[j] )
+     for( u=0 ; u < vs_uni.size() ; ++u )
+       if( vs_uni[u] == vs[j] )
           break;
 
-     if( u == uni.size() )
-       uni.push_back(vs[j]);
+     if( u == vs_uni.size() )
+       vs_uni.push_back(vs[j]);
    }
 
-  return uni;
+  return vs_uni;
 }
 
 bool isAlpha(unsigned char c)
@@ -2374,6 +2368,64 @@ clearChars(std::string str, std::string s, bool isStr )
   }
 
   return t ;
+}
+
+std::string
+clearEnclosures(std::string& str, char a, char b )
+{
+   if( str.size() == 0 )
+     return str;
+     
+   size_t p0=0;
+
+   std::vector<size_t> pA;
+   while( (p0=str.find(a, p0)) < std::string::npos )
+      pA.push_back(p0++);
+  
+   p0=0;
+   std::vector<size_t> pB;
+   while( (p0=str.find(b, p0)) < std::string::npos )
+      pB.push_back(p0++);
+     
+   std::string s;
+
+   if( pA.size() == pB.size() )
+   {
+     if( pA.size() == 0 )
+        return str ;
+
+     pA.push_back(str.size()+1);
+     pB.push_back(str.size());
+     size_t c=0 ;       
+     size_t pBeg=0 ;
+     size_t ixA=0;
+     size_t ixB=0;
+
+     while( ixA < pA.size() )
+     {
+        if( pA[ixA+c] < pB[ixB+c] && pA[ixA+c+1] > pB[ixB+c] )
+        {
+           if( pA[ixA] > pBeg )
+             s += str.substr(pBeg, pA[ixA] - pBeg);
+             
+           c=0;
+           pBeg = pB[ixB+c] +1 ;
+           ixA += c+1;
+           ixB += c+1;
+        }
+        else if( str.size() < pA[ixA] )
+           break;
+        else
+        {
+           ++c;
+        }
+     }
+
+     if( pBeg < str.size() )
+        s+=str.substr(pBeg, str.size() - pBeg);       
+   }
+
+   return s;
 }
 
 //! Clear all spaces from a string

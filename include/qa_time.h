@@ -122,6 +122,10 @@ class QA_Time
   void   getDRSformattedDateRange(std::vector<Date> &,
                    std::vector<std::string> &);
   void   getTimeBoundsValues(double *pair, size_t rec, double offset=0.);
+  std::string
+         getName(void){ return name; }
+  std::string
+         getBoundsName(void){ return boundsName; }
 
   bool   init(std::vector<std::string>& optStr);
 

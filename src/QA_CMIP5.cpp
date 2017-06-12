@@ -998,8 +998,8 @@ bool
 DRS_CV::isInstantTime(void)
 {
 
-  if( pQA->qaExp.getFrequency() == "6hr" )
-    return true;
+//  if( pQA->qaExp.getFrequency() == "6hr" )
+//    return true;
 
   bool is=true;
   for( size_t i=0 ; i < pQA->qaExp.varMeDa.size() ; ++i )
@@ -1111,14 +1111,20 @@ DRS_CV::testPeriod(Split& x_f)
     {
       if( !isInstantTime() )
       {
-        std::string key("3_17");
-        if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+        std::string tb_name(pQA->qaTime.getBoundsName());
+        
+        if( ! notes->findAnnotation("6_15", tb_name) )
         {
-          std::string capt(hdhC::tf_var("time_bnds"));
-          capt += "is missing" ;
+          std::string key("3_17");
+          
+          if( notes->inq( key, tb_name ) )
+          {
+            std::string capt(hdhC::tf_var("time_bnds"));
+            capt += "is missing" ;
 
-          (void) notes->operate(capt) ;
-          notes->setCheckStatus(drsF, pQA->n_fail);
+            (void) notes->operate(capt) ;
+            notes->setCheckStatus(drsF, pQA->n_fail);
+          }
         }
       }
     }
@@ -1680,67 +1686,68 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
   if( aV == hdhC::NA )
     return;
 
-  Split x_aV(aV, ",");
+  // split string whose "(text)" parts are removed
+  Split x_aV;
+  x_aV.addStripSides(" ");
 
-  std::vector<std::string> vs_items(x_aV.getItems());
-  vs_items = hdhC::unique(vs_items, hdhC::blank);
-
-  std::string item;
-  size_t p0, p1;
-
-  // not a comma-sep list, but separated by blanks?
-  if( vs_items.size() == 1 && aV.find(" ") < std::string::npos )
+  std::vector<char> sep {',', ' '} ;
+  
+  for(size_t i=0 ; i < sep.size() ; ++i )
   {
-      std::string key("2_6b");
-      if( notes->inq( key, pQA->s_global ) )
-      {
-        std::string capt(pQA->s_global);
-        capt += hdhC::blank;
-        capt += hdhC::tf_att(hdhC::empty, n_forcing, aV);
-        capt += "should be a comma separated list, found blanks";
-
-        (void) notes->operate(capt) ;
-        notes->setCheckStatus("CV",  pQA->n_fail );
-      }
-
-      x_aV.setSeparator(' ');
-      x_aV = aV;
-      vs_items = x_aV.getItems() ;
-      vs_items = hdhC::unique(vs_items, hdhC::blank);
-  }
-
-  for( size_t i=0 ; i < vs_items.size() ; ++i )
-  {
-    if( (p0=vs_items[i].find("(")) < std::string::npos )
+    x_aV.setSeparator(sep[i]);
+    x_aV = hdhC::clearEnclosures(aV) ;
+    
+    if( x_aV.size() > 1 )
     {
-      if( p0 )
-        item = vs_items[i].substr(0,p0);
-
-      if( (p1=vs_items[i].find(")")) < std::string::npos )
-        item += vs_items[i].substr(++p1);
-    }
-    else
-      item=vs_items[i];
-
-    // check
-    if( ! hdhC::isAmong(item, vs_rqValue) )
-    {
-      std::string key("2_6a");
-      if( notes->inq( key, pQA->s_global ) )
+      if(i)
       {
-        std::string capt(pQA->s_global);
-        capt += hdhC::blank;
-        capt += hdhC::tf_att(hdhC::empty, n_forcing, item);
-        capt += "not among DRS-CV requested values";
-        capt += hdhC::tf_val( hdhC::catStringVector(vs_rqValue)) ;
+        std::string key("2_6b");
+        if( notes->inq( key, pQA->s_global ) )
+        {
+          std::string capt(pQA->s_global);
+          capt += hdhC::blank;
+          capt += hdhC::tf_att(hdhC::empty, n_forcing, aV);
+          capt += "should be a comma separated list, found blanks";
 
-        (void) notes->operate(capt) ;
-        notes->setCheckStatus("CV",  pQA->n_fail );
-
-        break;
+          (void) notes->operate(capt) ;
+          notes->setCheckStatus("CV",  pQA->n_fail );
+        }
       }
+      
+      break; 
     }
   }
+
+  // check values
+  std::vector<std::string> vs_item;
+
+  for( size_t i=0 ; i < x_aV.size() ; ++i )
+    if( ! hdhC::isAmong(x_aV[i], vs_rqValue) )
+       vs_item.push_back( x_aV[i] );
+
+  if( vs_item.size() )
+  {
+    std::string key("2_6a");
+    if( notes->inq( key, pQA->s_global ) )
+    {
+      std::string item;
+      if( vs_item.size() == 1 )
+         item = vs_item[0];
+      else
+         item = hdhC::getUniqueString(vs_item, ',');
+      
+      std::string capt(pQA->s_global);
+      capt += hdhC::blank;
+      capt += hdhC::tf_att(hdhC::empty, n_forcing);
+      capt += item;
+      capt += " not among DRS-CV requested values";
+      capt += hdhC::tf_val( hdhC::catStringVector(vs_rqValue)) ;
+
+      (void) notes->operate(capt) ;
+      notes->setCheckStatus("CV",  pQA->n_fail );
+    }
+  }
+
 
   return;
 }
