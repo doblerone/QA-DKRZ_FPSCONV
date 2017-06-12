@@ -1,0 +1,60 @@
+#  Forcing Descriptors
+# Description of entries formed by block of lines seperated by empty line(s).
+# 1. Abbreviation
+# 2. Forcing Description
+
+Nat
+natural forcing (a combination, not explicitly defined here, that might include, for example, solar and volcanic)
+
+LU
+land-use change
+
+Ant
+anthropogenic forcing (a mixture, not explicitly defined here, that might include, for example, well-mixed greenhouse gases, aerosols, ozone, and land-use changes).
+
+Sl
+solar irradiance (note: Sl is "S" followed by a lower case "L", not an upper case "I")
+
+GHG
+well-mixed greenhouse gases (a mixture, not explicitly defined here)
+
+Vl
+volcanic aerosol (note: Vl is "V" followed by a lower case "L", not an upper case "I")
+
+SD
+anthropogenic sulfate aerosol, accounting only for direct effects
+
+SS
+sea salt
+
+SI
+anthropogenic sulfate aerosol, accounting only for indirect effects
+
+Ds
+Dust
+
+SA
+(SD + SI) anthropogenic sulfate aerosol direct and indirect effects
+
+BC
+black carbon
+
+TO
+tropospheric ozone
+
+MD
+mineral dust
+
+SO
+stratospheric ozone
+OC
+organic carbon
+
+Oz
+(TO+SO) ozone (= tropospheric and stratospheric ozone)
+
+AA
+anthropogenic aerosols (a mixture of aerosols, not explicitly defined here
+
+N/A
+no forcing

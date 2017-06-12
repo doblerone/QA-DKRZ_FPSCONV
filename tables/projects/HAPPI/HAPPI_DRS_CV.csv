@@ -1,0 +1,78 @@
+# DRS Controlled Vocabulary + CMIP5 Model Output Requirements.
+
+# A comment begins with '#'; leading or trailing blanks are discarded.
+# Ampersand \ at the end of a line indicates a continous line, whose leading blanks
+# are ingored.
+# Variables or keyword 'global' are indicated by a trailing ':'.
+# Attributes must not have a trailing ':'.
+# Requested value by a plain assignment, one out of several |-separated values,
+# as well as ranges [val1, val2].
+# Special Blocks are framed by BEGIN: name and END: name, each alone
+# on a line.
+
+DS-SEP=/
+FE-SEP=_
+
+BEGIN: DRS
+# possible DRS paths with names (including blanks) from the DRS-CV.
+# DS: directory structure, FE: filename encoding.
+# Embracing <> may be omitted
+  CMOR-DS: <activity>/<product>/<institute>/<model>/<experiment>/<frequency>\
+           /<modeling realm>/<variable name>/<ensemble member>
+  ESGF-DS: <activity>/<product>/<institute>/<model>/<experiment>/<frequency>\
+           /<modeling realm>/<MIP table>/<ensemble member>/<version number>\
+           /<variable name>
+
+  HAPPI-FE:<variable name>_<MIP table>_<model>_<experiment>_<ensemble member>\
+           _<temporal subset>_<geographical info>.nc
+  GRIDSPEC-FE:<gridspec>_<modeling realm>_<frequency>_<model>_<experiment>\
+           _<ensemble member>.nc
+
+# Special format: <DRS-CV name> = global attribute name.
+# Components of directory and file structure.
+# Note that requested values are not part of the DRS_CV check.
+  <activity>          = project_id  = HAPPI
+  <product>           = product     = output
+  <institute>         = institute_id
+  <model>             = model_id
+  <experiment>        = experiment_id
+  <frequency>         = frequency
+  <modeling realm>    = modeling_realm
+  <variable name>
+  <ensemble member>                      # composition of three attributes
+  <MIP table>         = table_id         # embedded in table_id
+  <version number>                       # v[[:digits:]]
+  <gridspec>
+  <geographical info>
+  <temporal subset>
+END: DRS
+
+# VAR_TYPE is the type of a variable (note: checked via std_output table)
+#DATA_VAR:
+#   VAR_TYPE=float
+#AUX_VAR:
+#   VAR_TYPE=double
+
+global:
+   branch_time
+   contact
+   Conventions = CF-1.4
+   creation_date = YYYY-MM-DDTHH:MM:SSZ
+   experiment
+   experiment_id
+   forcing = Nat|Ant|GHG|SD|SI|SA|TO|SO|Oz|LU|SI|VI|SS|Ds|BC|MD|OC|AA
+   frequency=yr|mon|day|6hr|3hr|subhr|monClim|fx
+   initialization_method
+   institute_id
+   institution
+   model_id
+   modeling_realm=atmos|ocean|land|landIce|seaIce|aerosol|atmosChem|ocnBgchem
+   parent_experiment_id
+   parent_experiment_rip
+   physics_version
+   product=output
+   project_id=HAPPI
+   realization
+   source
+   table_id
+   tracking_id

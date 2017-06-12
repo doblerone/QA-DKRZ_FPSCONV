@@ -1,0 +1,141 @@
+# Syntax: MIP table, sub_table,experiment(mode)[  experiment(mode)]
+
+# MIP table: As specified in the standard table
+# sub_table: Exactly as given in the MIP table (but only
+#            the first 10 character are significant).
+#            If none, then don't forget the ','.
+# experiment: Experiment_id attribute (multiples WITHOUT ',').
+# (mode): keyword or period of the current netCDF file belongs to.
+#         If more then a single one, then separate by '|'.
+# Note: No space between 'experiment' and '(mode)'.
+# Definitions:
+#       'regular': Full time check of each record.
+#       'disable': No time check at all.
+#        'orphan': No time check across files or experiments (1st rec),
+#                  full time check of all other records.
+# 'date_0-date_1': Period of an experiment. Format: DRS syntax
+# singular values: Integers denote arbitrary sequence of years,
+#                  prefix 'N' indicates the number of required records.
+#          '+int': Period length of 'int' years from the begin given
+#                  by the first time record.
+# Empty lines are ignored. Spaces are insignificant, except for
+# the MIP table and the sub-table string.
+# Continued lines require ':' in front of a new line line.
+
+Oclim,,any(disable)
+
+Oyr,,any(regular)
+
+Amon,2-D fields on atmospheric grid,any(regular)
+Amon,Atmospheric 3-D fields on standard pressure levels,any(regular)
+Amon,Climatological atmospheric 3-D pressure fields,any(N12)
+Amon,2-D bias-corrected fields on atmospheric grid,decadal(orphan)
+
+Omon,,any(regular)
+
+Lmon,,any(regular)
+
+LImon,,any(regular)
+
+OImon,,any(regular)
+
+aero,2-D fields on atmospheric grid,any(regular)
+
+aero,3-D aerosol-related concentrations and properties on model levels,
+  : historical(1850|1870|1890|1910|1930|1950|1960|1970|1980|1990|2000)
+  : rcp(2010|2020|2040|2060|2080|2100)
+  : amip(1980|1990|2000|2010)
+  : sst2030(2035)
+  : decadal(+10)
+  : volcIn2010(2010|2011|2012)
+  : piControl(1850|1870|1890|1910|1930|1950
+  :   |1960|1970|1980|1990|2000|2010|2020|2040|2060|2080|2100)
+
+day,2-D daily mean atmospheric and surface fields,any(regular)
+
+# note the small but essential difference
+day,2-D daily-mean atmospheric and surface fields,
+  : piControl(1986-2005)
+  : historical(1950-2005)
+  : rcp(2006-2100|2181-2200|2281-2300)
+  : any(regular)
+
+
+day,daily mean 3-D atmospheric fields on the following pressure surfaces,
+  : piControl(1986-2005)
+  : historical(1950-2005)
+  : rcp(2006-2100|2181-2200|2281-2300)
+  : any(regular)
+
+6hrLev,,
+  : historical(1950-2005)
+  : amip(regular)
+  : rcp(2006-2100)
+#  : piControl(1979-2008)
+  : any(regular)
+
+3hr,,
+  : rcp(2026-2045|2081-2100|2181-2200|2281-2300)
+  : abrupt4xCO2(orphan)
+  : 1pctCO2(orphan)
+  : historical(1960-2005)
+  : any(regular)
+
+cfMon,CFMIP monthly inline -- monthly mean in line ISCCP and CALIPSO/PARASOL simulator output,
+  : historical(1979-2008)
+  : amip(1979-2008)
+  : amip4xCO2(1979-2008)
+  : amipFuture(1979-2008)
+  : amip4K(1979-2008)
+  : abrupt4xCO2(+5)
+  : aquaControl(+5)
+  : aqua4xCO2(+5)
+  : aqua4K(+5)
+  : sstClim(+30)
+  : sstClim4xCO2(+30)
+  : sstClimSulfate(+30)
+  : sstClimAerosol(+30)
+  : any(+20)
+
+cfMon,,
+  : aquaControl(+5)
+  : aqua4xCO2(+5)
+  : aqua4K(+5)
+  : piControl(+20)
+  : sstClim(+30)
+  : any(1979-2008)
+
+cfOff,,any(2008)
+
+cfDay,CFMIP daily 2D -- daily mean 2-D fields including inline ISCCP/CloudSat/CALIPSO/ PARASOL simulator output,
+  : historical(1979-2008)
+  : amip(1979-2008)
+  : amip4xCO2(1979-2008)
+  : amipFuture(1979-2008)
+  : amip4K(1979-2008)
+  : abrupt4xCO2(+5)
+  : aquaControl(+5)
+  : aqua4xCO2(+5)
+  : aqua4K(+5)
+  : sstClim(+30)
+  : sstClim4xCO2(+30)
+  : sstClimSulfate(+30)
+  : sstClimAerosol(+30)
+  : any(+20)
+
+cfDay,,
+  : piControl(+20)
+  : 1pctCO2(+20)
+  : abrupt4xCO2(+20)
+  : aquaControl(+5)
+  : aqua4xCO2(+5)
+  : aqua4K(+5)
+  : any(1979-2008)
+
+cf3hr,,any(2008)
+
+cfSites,,
+  : aquaControl(+5)
+  : aqua4xCO2(+5)
+  : aqua4K(+5)
+  : any(1979-2008)

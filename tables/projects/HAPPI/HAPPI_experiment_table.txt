@@ -1,0 +1,269 @@
+#  Experiment Table
+# Description of entries formed by block of lines seperated by empty line(s).
+# 1. Experiment number
+# 2. Short Name of Experiment (global attribute: experiment_id”.)
+# 3. Experiment Name (global attribute: experiment
+# 4. Experiment Description
+# 5. Years requested per run
+# 6. Ensemble size requested
+
+1.1, 1.2 & 1.5
+decadalXXXX*
+10- or 30-year run initialized in year XXXX*
+decadal hindcasts/predictions, some extended to 30 years
+10-30
+>=3 >=10
+
+1.3
+noVolcXXXX*
+volcano-free hindcasts
+hindcasts but without volcanoes
+10-30
+>=3
+
+1.4
+volcIn2010
+prediction with 2010 volcano
+Pinatubo-like eruption imposedin year 2010
+10-30
+>=3
+
+3.1
+piControl
+pre-industrial control
+coupled atmosphere/ocean pre-industrial control run
+>=500
+1
+
+3.2
+historical
+historical
+simulation of recent past (1850-2005)
+156
+>=1
+
+3.4
+midHolocene
+mid-Holocene
+consistent with PMIP, impose Mid-Holocene conditions
+100
+1
+
+3.5
+lgm
+last glacial maximum
+consistent with PMIP, impose last glacial maximum conditions
+100
+1
+
+3.6
+past1000
+last millennium
+consistent with PMIP, impose forcing for 850-1850
+1000
+1
+
+4.1
+rcp45
+RCP4.5
+future projection (2006-2300) forced by RCP4.5
+95-295
+1
+
+4.2
+rcp85
+RCP8.5
+future projection (2006-2300) forced by RCP8.5
+95-295
+1
+
+4.3
+rcp26
+RCP2.6
+future projection (2006-2300) forced by RCP2.6
+95-295
+1
+
+4.4
+rcp60
+RCP6
+future projection (2006-2100) forced by RCP6
+95
+1
+
+5.1
+esmControl
+ESM pre-industrial control
+as in experiment 3.1, but emissions-forced (with atmospheric CO2 determined by model)
+250
+1
+
+5.2
+esmHistorical
+ESM historical
+as in experiment3.2, but emissions-forced (with atmospheric CO2 determined by model)
+156
+1
+
+5.3
+esmrcp85
+ESM RCP8.5
+as in
+experiment 4.2, but emissions-forced (with atmospheric CO2 determined by model)
+95
+1
+
+5.4-1
+esmFixClim1
+ESM fixed climate 1
+radiation code "sees" control CO2, but carbon cycle sees 1%/yr rise
+140
+1
+
+5.4-2
+esmFixClim2
+ESM fixed climate 2
+radiation code "sees" control CO2, but carbon cycle sees historical followed by RCP4.5 rise in CO2
+251
+1
+
+5.5-1
+esmFdbk1
+ESM feedback 1
+carbon cycle "sees" control CO2, but radiation sees 1%/yr rise
+140
+1
+
+5.5-2
+esmFdbk2
+ESM feedback 2
+carbon cycle "sees" control CO2, but radiation sees historical followed by RCP4.5 rise in CO2
+251
+1
+
+6.1
+1pctCO2
+1 percent per year CO2
+imposed 1%/yr increase in CO2 to quadrupling
+140
+1
+
+6.3
+abrupt4xCO2
+abrupt 4XCO2
+impose an instantaneous quadrupling of CO2, then hold fixed
+150
+>=1
+
+7.1
+historicalNat
+natural-only
+historical simulation but with natural forcing only
+156
+>=1
+
+7.2
+historicalGHG
+GHG-only
+historical simulation but with greenhouse gas forcing only
+156
+>=1
+
+7.3
+historical
+Misc*
+other historical forcing
+historical simulation but with other individual forcing agentsor combinations of forcings.
+156
+>=1
+
+7.4
+historicalExt
+historical extension
+extension of the historical simulation (experiment 3.2) through year 2012.
+7
+>=1
+
+3.3
+amip
+AMIP
+AMIP (1979-at least 2008)
+>=30
+>=1
+
+2.1
+sst2030
+2030 time-slice
+conditions for 2026-2035 imposed
+10
+>=1
+
+6.2a
+sstClim
+control SST climatology
+control run climatological SSTs & sea ice imposed
+30
+1
+
+6.2b
+sstClim4xCO2
+CO2 forcing
+as in experiment 6.2a, but with 4XCO2 imposed
+30
+1
+
+6.4a
+sstClimAerosol
+all aerosol forcing
+as in experiment 6.2a, but with aerosols from year 2000 of experiment 3.2
+30
+1
+
+6.4b
+sstClimSulfate
+sulfate aerosol forcing
+as in experiment 6.2a, but with sulfate aerosols from year 2000 of experiment 3.2
+30
+1
+
+6.5
+amip4xCO2
+4xCO2 AMIP
+AMIP (1979-2008) conditions (experiment 3.3) but with 4xCO2
+30
+1
+
+6.6
+amipFuture
+AMIP plus patterned anomaly
+consistent with CFMIP, patterned SST anomalies added to AMIP conditions (experiment 3.3)
+30
+1
+
+6.7a
+aquaControl
+aqua planet control
+consistent with CFMIP, zonally uniform SSTs for ocean-covered earth
+5
+1
+
+6.7b
+aqua4xCO2
+4xCO2 aqua planet
+as in experiment 6.7a, but with 4XCO2
+5
+1
+
+6.7c
+aqua4K
+aqua planet plus 4K anomaly
+as in experiment 6.7a, but with a uniform 4K increase in SST
+5
+1
+
+6.8
+amip4K
+AMIP plus 4K anomaly
+as in experiment 3.3, but with a uniform 4K increase in SST
+30
+1
