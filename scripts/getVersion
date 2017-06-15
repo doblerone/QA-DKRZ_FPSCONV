@@ -1,10 +1,27 @@
 #! /bin/bash
 
+descript()
+{
+  echo " -h, --help"
+  echo " -v            Verbose on multiple lines"
+  echo " --debug"
+  echo " --get-branch  Get the current git branch"
+  echo " --qa-home     Path to the tables"
+  echo " --verbose     Verbose on multiple lines"
+  echo " string        Currrent project"
+  exit 0
+}
+
 getGitBranch()
 {
    #git -C $1 branch | grep '*' | awk '{print $2}'
    cd $1 &> /dev/null
-   git branch | grep '*' | awk '{print $2}'
+   
+   # produces output
+   branch=$( git branch | grep '*' | awk '{print $2}' )
+   
+   currIdent=$(git log --pretty=format:'%h' -n 1)
+   
    cd - &> /dev/null
    
    return
@@ -23,20 +40,20 @@ getFromConda()
 
 getQA_Version()
 {
+  
   # get current revision number; this determines whether it is
   # before a change of defaults happened.
+
+  # this is always brief
 
   if [ $CONDA_QA_PATH ] ; then
     getFromConda
   else
-    local f=${QA_SRC}/conda-recipes/qa-dkrz/meta.yaml
+    local branch currIdent
+    local f=${QA_SRC%/scripts}/conda-recipes/qa-dkrz/meta.yaml
 
-    branch=$(getGitBranch $QA_SRC)
-    cd ${QA_SRC} &> /dev/null
-    #currIdent=$(git -C ${QA_SRC} log --pretty=format:'%h' -n 1)
-    currIdent=$(git log --pretty=format:'%h' -n 1)
-	 cd - &> /dev/null
-	
+    getGitBranch $QA_SRC
+    
     tag=$( grep 'name:' $f | awk '{print $(NF)}' )
     tmp2=$( grep 'version:' $f | awk '{print $(NF)}' )
     tmp2=${tmp2:1}
@@ -45,14 +62,15 @@ getQA_Version()
     tag=${tag}-${tmp2}
   fi
 
-  if [ $# -eq 0 ] ; then
-    echo "QA version:"
-    echo "   GitHub: https://github.com/IS-ENES-Data/QA-DKRZ.git"
-    echo "   branch: ${branch}"
-    echo "   commit-SHA: ${currIdent}"
-    echo "   tag: ${tag:- -}"
+  QA_REVISION="${branch}-${currIdent}${tag:+,${tag}}"
+  
+  if [ ${isVerbose} ] ; then
+    vStr="QA version:"
+    vStr="${vStr}\n   branch: ${branch}"
+    vStr="${vStr}\n   commit-SHA: ${currIdent}"
+    vStr="${vStr}\n   tag: ${tag:- -}"
   else
-    echo "${branch}-${currIdent}${tag:+,${tag}}"
+   vStr="${QA_REVISION}"
   fi
 
   return
@@ -60,26 +78,33 @@ getQA_Version()
 
 getExternalVersion()
 {
-  local i
-  for(( i=0 ; i < ${#prjs[*]} ; ++i )) ; do
-    test ${prjs[i]} = CF && break
-  done
-  test $i -eq ${#prjs[*]} && prjs=( CF ${prjs[*]} )
+  local prjs
+  declare -a prjs
+  
+  test ${prj} != CF && prjs[0]=CF
+  prjs[${#prjs[*]}]=${prj}
 
+  if [ ${isVerbose} ] ; then
+    sep0='\n'
+    sep1='\n   '
+  else
+    sep0=','
+  fi
+  
+  local pprj=${QA_HOME}/tables/projects
+  local branch currIdent
+  
   for prj in ${prjs[*]} ; do
     if [ ${prj} = CMIP6 ] ; then
-       #test -f ${QA_HOME}/tables/projects/CMIP6/README.txt && echo -n "        "
-
-       cd  ${QA_HOME}/tables/projects/CMIP6/CMIP6_CVs &> /dev/null
+       getGitBranch $pprj/CMIP6/CMIP6_CVs
+       
        #git -C ${QA_HOME}/CMIP6/CMIP6_CVs log --oneline --decorate\
-       echo -n -e "CMIP6_CVs:\n   "
-       git log --oneline --decorate\
-            2> /dev/null | head -n 1
-		 cd -  &> /dev/null
+       vStr="${vStr}${sep0}CMIP6_CVs:${sep1}"
+       vStr="${vStr}${branch}-${currIdent}"
 
-		 echo -n -e "CMIP6_MIP_tables.xlsx:\n   last wget -> "
-		 echo $(ls -l --time-style='+%FT%T' \
-		           ${QA_HOME}/tables/projects/CMIP6/CMIP6_MIP_tables.xlsx \
+		 vStr="${vStr}${sep0}CMIP6_MIP_tables.xlsx:${sep1}"
+		 vStr="${vStr}"$(ls -l --time-style='+%FT%T' \
+		           $pprj/CMIP6/CMIP6_MIP_tables.xlsx \
 		           | awk '{print $6}')
 
 		 if [ ! ${PrePARE} ] ; then
@@ -92,75 +117,85 @@ getExternalVersion()
 
 			i=$(ls ${PrePARE%/bin/PrePARE}/conda-meta/cmor-* 2> /dev/null)
 			i=${i##*/}
-		   echo -e "CMOR:\n   ${i%.json}"
+		   vStr="${vStr}${sep0}CMOR:${sep1}${i%.json}"
 
-		   cd  ${QA_HOME}/tables/projects/CMIP6/cmip6-cmor-tables &> /dev/null
+         getGitBranch $pprj/CMIP6/cmip6-cmor-tables
          #git -C ${QA_HOME}/CMIP6/CMIP6_CVs log --oneline --decorate\
-         echo -n "   cmip6-cmor-tables: "
-         git log --oneline --decorate 2> /dev/null | head -n 1
-		   cd -  &> /dev/null
-
+         vStr="${vStr}${sep0}cmip6-cmor-tables:${sep1}${branch}-${currIdent}"
 		fi
     elif [ ${prj} = CORDEX ] ; then
-       #test -f ${QA_HOME}/tables/projects/CORDEX/README.txt && echo -n "         "
+       local branch=$(getGitBranch $QA_SRC)
+       cd $pprj/CORDEX/IS-ENES-Data.github.io &>  /dev/null
+       #currIdent=$(git -C ${QA_SRC} log --pretty=format:'%h' -n 1)
+       local currIdent=$(git log --pretty=format:'%h' -n 1)
 
-       cd ${QA_HOME}/tables/projects/CORDEX/IS-ENES-Data.github.io &> /dev/null
-       echo -n -e "IS-ENES-Data.github.io:\n   "
-       #git -C ${QA_HOME}/CORDEX/IS-ENES-Data.github.io log --oneline --decorate\
-       git log --oneline --decorate\
-            2> /dev/null | head -n 1
-		 cd -  &> /dev/null
+       vStr="${vStr}${sep0}CORDEX/IS-ENES-Data.github.io:${sep1}"
+       vStr="${vStr}${branch}-${currIdent}"
+       cd - &> /dev/null       
+    elif [ ${prj} = CF ] ; then
+       if [ ${CF_STD_NAME_VERSION} ] ; then
+         vStr="${vStr}${sep0}CF_STD_NAME_VERSION:${sep1}"
+         vStr="${vStr}${CF_STD_NAME_VERSION}"
+       elif [ -f $pprj/CF/standard-names.html ] ; then
+         local vd
+         vd="$(grep 'Standard Name Table (.*)' $pprj/CF/standard-names.html)"
+         vd="${vd#*(}"
+         vd="${vd%)*}"
+         vd="${vd// /}"
+         vStr="${vStr}${sep0}CF_STD_NAME_VERSION:${sep1}"
+         vStr="${vStr}${vd}"
+       fi
     fi
   done
 
   return
 }
 
-getVersion()
-{
-  test ! ${QA_SRC} && QA_SRC=${0%/getVersion}
+# --- main ---
 
-  local branch currIdent tag tmp tmp2
-  declare -a tmp
+QA_SRC=${0%/getVersion}
+QA_SRC=${QA_SRC%/scripts}
 
+while getopts h:v-: option
+do
+  case $option in
+    h)  descript ;;
+    v)  isVerbose=t ;;
+    -) if [ ${OPTARG%=*} == 'config-file' ] ; then
+         CONFIG_FILE=${OPTARG#*=}
+       elif [ ${OPTARG} = "debug" ] ; then
+         set -x
+       elif [ ${OPTARG} == 'get-branch' ] ; then
+         getGitBranch ${QA_SRC}
+         exit 0
+       elif [ ${OPTARG} == 'help' ] ; then
+         descript
+       elif [ ${OPTARG%=*} == 'qa-home' ] ; then
+         QA_HOME=${OPTARG#*=}
+       elif [ ${OPTARG} == 'verbose' ] ; then
+         isVerbose=t
+       fi
+       ;;
+   \?) echo "getVersion: undefined option $option"
+       exit 41 ;;
+  esac
+done
 
-  local arg
+shift $(( $OPTIND - 1 ))
 
-  if [ $# -eq 0 ] ; then
-    getQA_Version
-    exit 0
-  fi
+test $# -gt 0 && prj=$1
 
-  local prjs
-  declare -a prjs
+getQA_Version
+getExternalVersion
 
-  for arg in $* ; do
-    if [ "${arg}" = '--verbose' -o "${arg}" = 'verbose' ] ; then
-      isVerbose=t
-    elif [ ${arg%=*} = '--qa-home' ] ; then
-      QA_HOME=${arg#*=}
-	 else
-      prjs[${#prjs[*]}]=${arg}
-	 fi
-  done
+# if newer, then update
+. ${QA_SRC}/scripts/parseConfigFile QA_REVISION=${QA_REVISION}
 
-  if [ ! ${prjs[0]} ] ; then
-    . ${QA_SRC}/scripts/parseConfig QA_HOME
-	 if [ ${QA_HOME} ] ; then
-      prjs=( $(ls -d ${QA_HOME}/tables/projects/* 2> /dev/null ) )
-    fi
-  fi
-  
-  if [ ${isVerbose} ] ; then
-    getQA_Version
-    getExternalVersion ${prjs[*]}
-  elif [ "${arg%=*}" = "PRJ" ] ; then
-    getQA_Version --brief
-  fi
-
-  return
-}
-
-getVersion $*
+# print
+if [ ${isVerbose} ] ; then
+  echo -e "${vStr}"
+else
+  echo -n "${vStr}"
+fi
 
 exit 0

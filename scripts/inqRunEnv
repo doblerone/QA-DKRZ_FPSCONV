@@ -96,6 +96,17 @@ iRE_checkTables()
       $p/CF/CF_standardized-region-names.txt \
       $p/CF/cf-standard-name-table.xml \
       )
+      
+    # repair entry in CONFIG_FILE
+    if [ ! ${CF_STD_NAME_VERSION} ] ; then
+      local vd="$(grep 'Standard Name Table (.*)' $p/CF/standard-names.html)"
+      vd="${vd#*(}"
+      vd="${vd%)*}"
+      vd="${vd// /}"
+    
+      . $QA_SRC/scripts/parseConfigFile CF_STD_NAME_VERSION="${vd}"
+      CF_STD_NAME_VERSION="${vd}"
+    fi
 
     local rI
     for rI in ${reqItems[*]} ; do

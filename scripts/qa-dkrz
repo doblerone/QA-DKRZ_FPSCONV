@@ -307,17 +307,15 @@ callQaConfig()
 
   if [ ${DISPLAY_VERSION} ] ; then
     local dv_args
-    if [ ${DISPLAY_VERSION} = t ] ; then
-       # brief, i.e. one-line version
-       dv_args=()
-    else
-       dv_args=( --${DISPLAY_VERSION} )
-    fi
+    declare -a dv_args
+    dv_args[0]=--config-file=${CONFIG_FILE}
+    
+    # brief, i.e. one-line version, is the default
+    test ${DISPLAY_VERSION} != t && dv_args[1]=--verbose
 
-    ${QA_SRC}/scripts/getVersion ${dv_args[*]} ${PROJECT_AS:-${PROJECT}}
+    ${QA_SRC}/scripts/getVersion ${dv_args[*]} ${PROJECT_AS}
     exit 0
   fi
-
 
   test ${RESUME_SESSION:-f} = t && log_sessMessage "session resumed."
 
@@ -2516,9 +2514,9 @@ init()
   # configuration
   export NO_CONDA_INSTALL=t
 
-if [ ! ${NO_CONDA_INSTALL} ] ; then
-  test ${CONDA_QA_ENV} && basic_args=( ${basic_args[*]} -E_CONDA_QA_ENV=${CONDA_QA_ENV} )
-fi
+  if [ ! ${NO_CONDA_INSTALL} ] ; then
+    test ${CONDA_QA_ENV} && basic_args=( ${basic_args[*]} -E_CONDA_QA_ENV=${CONDA_QA_ENV} )
+  fi
 
   # check whether tables have been initaially copied fomr QA_SRC to QA_HOME;
   # if not, then do it.
@@ -2656,12 +2654,7 @@ fi
 #  set -f
   # revison num of the package
   local currVersion
-  currVersion=( $(. ${QA_SRC}/scripts/getVersion ) )
-
-  # read ~/.qa-dkrz/conf-.txt for the current revision of tha package
-  test ${currVersion} && \
-     . $QA_SRC/scripts/parseConfigFile --force_reading \
-          QA_REVISION${currVersion:+=${currVersion}}
+  currVersion=( $( ${QA_SRC}/scripts/getVersion ${prj} ) )
 
   maxNumExecThreads=0
   local nET
@@ -3275,6 +3268,8 @@ log()
   sp[8]='        '
 
   if [ "$1" = '--start' ] ; then
+    QA_REVISION="$(${QA_SRC}/scripts/getVersion ${PROJECT_AS})"
+
     s_out="start:\n${sp[1]}date: $( date +'%FT%T' )"
     s_out="${s_out}\n${sp[1]}qa-revision: ${QA_REVISION}"
     echo -e "$s_out" >> ${SESSION_LOGDIR}/session.prmbl

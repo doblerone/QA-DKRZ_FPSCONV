@@ -33,7 +33,13 @@ ges_cf_html()
   fi
 
   if ges_checkDate ${html} ; then
-    echo "CF - last update: $( date +'%F %T' )" > README.txt
+    # get version and date
+    local vd="$(grep 'Standard Name Table (.*) $html)"
+    vd="${vd#*(}"
+    vd="${vd%)*}"
+    vd="${vd// /}"
+    
+    . $QA_SRC/scripts/parseConfigFile CF_STD_NAME_VERSION=${vd}
 
     if ! ges_parse_html "Standard Name Table" xml ; then
       return $?

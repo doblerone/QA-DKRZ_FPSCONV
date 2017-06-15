@@ -1329,28 +1329,21 @@ setKWL()
 
   local key item value i val vals isAdd
   item="$*"
-
-  for(( i=0 ; i < ${#item} ; ++i )) ; do
-     if [ "${item:i:1}" = '+' ] ; then
-        isAdd=t
-        key="${item%%+=*}"
-
-        break
-     fi
-     if [ "${item:i:1}" = '=' ] ; then
-        isAdd=f
-        key="${item%%=*}"
-        break
-     fi
-  done
-
-  key=$( echo "${key/% /}" | tr "[:lower:]" "[:upper:]" )
-  if [ ${key} ] ; then
+  value=t
+  
+  key="${item%%+=*}"
+  if [ ${key} != ${item} ] ; then
+    isAdd=t
     value="${item#*=}"
   else
-    key="${item#*=}"
-    value=t
+    key="${item%%=*}"
+    if [ ${key} != ${item} ] ; then
+      value="${item#*=}"
+    fi
   fi
+  
+  value=${value/% /}  
+  key=$( echo "${key/% /}" | tr "[:lower:]" "[:upper:]" )
 
   # disable --> f
   test "${value:0:7}" = disable && value=f
@@ -1447,12 +1440,11 @@ setKWL()
      if [ "${keyWordList[i]}" = "$key" ] ; then
 
       # plain assignments require to unset before reassignments
-      if [ $isAdd = f ] ; then
-#        eval unset $key
-        eval ${key}=${value}
+      if [ ${isAdd} ] ; then
+         tmp=${keyWordList[i]}
+         eval $key=\${$tmp},${value// /\\ }
       else
-        tmp=${keyWordList[i]}
-        eval $key=\${$tmp},${value// /\\ }
+         eval ${key}=${value}
       fi
 
       test ${DEBUG_CONF} && voidX
@@ -2025,8 +2017,8 @@ do
           installArgs+="up,"
 
         elif [ "${OPTNAME}" = VERSION ] ; then
-          setKWL DISPLAY_VERSION$(echo "${OPTVAL:+=}${OPTVAL}")
-
+            setKWL DISPLAY_VERSION${OPTVAL:+=}${OPTVAL}
+          
         elif [ "${OPTNAME:0:4}" = WORK ] ; then
           : # done before
 
