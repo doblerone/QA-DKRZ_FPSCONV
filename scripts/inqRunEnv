@@ -74,6 +74,7 @@ iRE_checkTables()
 
     if [ "${prj}" = CORDEX ] ; then
       reqItems=( \
+        $p/${prj}/CORDEX_check-list.conf \
         $p/${prj}/CORDEX_DRS_CV.csv \
         $p/${prj}/CORDEX_GCMModelName.txt \
         $p/${prj}/CORDEX_RCMs_ToU.txt \
@@ -86,6 +87,10 @@ iRE_checkTables()
         $p/${prj}/CMIP6_CVs \
         $p/${prj}/cmip6-cmor-tables \
         $p/${prj}/CMIP6_MIP_tables
+      )
+    elif [ "${prj}" = HAPPI ] ; then
+      reqItems=( \
+        $p/${prj}/HAPPI_check-list.conf \
       )
     fi
 
