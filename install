@@ -153,8 +153,8 @@ update()
   fi
 
   # search updates after some days; default: once a day
-  if [ ! ${NO_CONDA_INSTALL} ] ; then
-    if [ ${CONDA_QA_PATH} ] ; then
+  if [ ${CONDA_QA_PATH} ] ; then
+    if [ ! ${NO_CONDA_INSTALL} ] ; then
       test ! ${CONDA_QA_ENV} && \
         . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
 
@@ -168,11 +168,9 @@ update()
           . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
         fi
       fi
-    elif [ -d ${QA_SRC}/.git ] ; then
-       if ! update_QA_SRC ; then
-         return $?
-       fi
     fi
+  elif [ -d ${QA_SRC}/.git ] ; then
+     update_QA_SRC
   fi
 
   # now for non-QA-DKRZ tables and programs
@@ -432,8 +430,6 @@ fi
 
 THIS=${0%/*}
 #test ${THIS##*/} = scripts && THIS=${THIS%/*}
-
-NO_CONDA_INSTALL=t
 
 # resolve symbolic links if any
 . ${THIS}/scripts/getSrcPath $THIS
