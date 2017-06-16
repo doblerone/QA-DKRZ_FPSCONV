@@ -1700,6 +1700,24 @@ QA_Exp::applyOptions(std::vector<std::string>& optStr)
        continue;
      }
 
+     if( split[0] == "fNFI"
+          || split[0] == "file_name_freq_index" )
+     {
+       if( split.size() == 2 )
+          frequencyPosition=hdhC::string2Double(split[1]);
+
+       continue;
+     }
+
+     if( split[0] == "fNVI"
+          || split[0] == "file_name_var_index" )
+     {
+       if( split.size() == 2 )
+          varnamePosition=hdhC::string2Double(split[1]);
+
+       continue;
+     }
+
      if( split[0] == "tVR"
           || split[0] == "tableVariableRequirement" )
      {
@@ -4016,38 +4034,21 @@ QA_Exp::getFrequency(void)
   // get frequency from attribute (it is required)
   frequency = pQA->pIn->nc.getAttString("frequency") ;
 
-  if( ! frequency.size() )
+  if( frequency.size() == 0 )
   {
-    // not found in the global attribnutes; try the filename
+    // not found in the global attributes; try the filename
     std::string f( pQA->pIn->file.basename );
 
     Split splt(f, "_");
 
-    // test the last two items for time type. If both are,
-    // then this would mean that they are separated by '_'.
-    // This would be a fault for CORDEX.
-    size_t off=0;  // take into account a period separator '_'
-    if( splt.size() > 2 &&
-           hdhC::isDigit( splt[ splt.size() -1 ])
-             && hdhC::isDigit( splt[ splt.size() -2 ]) )
-      off=1;
-
-    if( splt.size() > 7 )
+    // This disables the different variations in number of items
+    // in the filename possible for CORDEX!!!
+    if( frequencyPosition > -1 )
     {
-      if( splt.size() == (9+off) )
-        frequency = splt[7] ;
-      else if( splt.size() == (8+off) )
-      {
-         if( hdhC::isDigit( splt[7][0] ) )
-           // with period; no RCMVersionID
-           frequency = splt[6] ;
-         else
-           // no period; with RCMVersionID
-           frequency = splt[7] ;
-      }
-      else if( splt.size() == (7+off) )
-         // no period; no RCMVersionID
-         frequency = splt[6] ;
+      size_t fp=static_cast<size_t>(frequencyPosition);
+      
+      if( fp < splt.size() )
+         frequency = splt[fp] ;
     }
   }
 
@@ -4209,6 +4210,9 @@ QA_Exp::initDefaults(void)
   isRotated=true;
   isUseStrict=false;
 
+  frequencyPosition=-1;  // not set
+  varnamePosition=-1;
+  
   n_axis="axis";
   n_bnds_name="bnds_name";
   n_coordinates="coordinates";

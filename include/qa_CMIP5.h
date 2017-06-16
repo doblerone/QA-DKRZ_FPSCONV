@@ -514,6 +514,9 @@ public:
   bool isUseStrict;
   bool isClearBits;
 
+  int frequencyPosition;
+  int varnamePosition;
+  
   std::vector<std::string> excludedAttribute;
   std::vector<std::string> overruleAllFlagsOption;
 

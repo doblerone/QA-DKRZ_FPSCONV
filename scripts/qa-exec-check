@@ -1258,7 +1258,7 @@ setParameter()
   set_IN_par
   par_str="${par_str}\n${par}"
 
-  # perform a quality check?
+  # define parameter for the QA file object in $
   if [ "${QA:-on}" = 'on' ] ; then
     set_qa_par # construct directive sequence for QA
     par_str="${par_str}\n${par}"
@@ -1440,8 +1440,11 @@ set_qa_par()
  test ${#FREQUENCY} -gt 0 && \
    par=${par}"${s}"fq=${FREQUENCY}
 
- test ${#FREQUENCY_POSITION} -gt 0 && \
-   par=${par}"${s}"fqp=${FREQUENCY_POSITION}
+ test ${#FILE_NAME_FREQ_INDEX} -gt 0 && \
+   par=${par}"${s}"fNFI=${FILE_NAME_FREQ_INDEX}
+
+ test ${#FILE_NAME_VAR_INDEX} -gt 0 && \
+   par=${par}"${s}"fNVI=${FILE_NAME_VAR_INDEX}
 
  test ${IGNORE_REF_DATE_ACROSS_EXP:-f} = t && \
    par=${par}"${s}"iRDAE

@@ -4223,6 +4223,24 @@ QA_Exp::applyOptions(std::vector<std::string>& optStr)
        continue;
      }
 
+     if( split[0] == "fNFI"
+          || split[0] == "file_name_freq_index" )
+     {
+       if( split.size() == 2 )
+          frequencyPosition=hdhC::string2Double(split[1]);
+
+       continue;
+     }
+
+     if( split[0] == "fNVI"
+          || split[0] == "file_name_var_index" )
+     {
+       if( split.size() == 2 )
+          varnamePosition=hdhC::string2Double(split[1]);
+
+       continue;
+     }
+
      if( split[0] == "tVR"
           || split[0] == "table_variable_requirements" )
      {
@@ -4414,42 +4432,52 @@ QA_Exp::getFrequency(void)
   // get frequency from attribute (it is required)
   frequency = pQA->pIn->nc.getAttString("frequency") ;
 
-  if( frequency.size() )
-    return frequency;  // no frequency provided
-
-  // not found, but error issue is handled elsewhere
-
-  // try the filename
-  std::string f( pQA->pIn->file.basename );
-
-  Split splt(f, "_");
-
-  // the second term denotes the mip table for CMIP5
-  std::string mip_f = splt[1];
-
-  // now, try also global att 'table_id'
-  Split mip_a( pQA->pIn->nc.getAttString(CMOR::n_table_id) ) ;
-
-  if( mip_a.size() > 1 )
+  if( frequency.size() == 0 )
   {
-    if( mip_a[1] != mip_f && mip_a[1].size() )
-      mip_f = mip_a[1]; // annotation issue?
+    // try the filename
+    std::string f( pQA->pIn->file.basename );
 
-    // convert mip table --> frequency
-    if( mip_f.substr(mip_f.size()-2) == "yr" )
-      frequency = "yr" ;
-    else if( mip_f.substr(mip_f.size()-3) == "mon" )
-      frequency = "mon" ;
-    else if( mip_f == "day" )
-      frequency = "day" ;
-    else if( mip_f.substr(mip_f.size()-3) == "Day" )
-      frequency = "day" ;
-    else if( mip_f.substr(0,3) == "6hr" )
-      frequency = "6hr" ;
-    else if( mip_f.substr(0,3) == "3hr" )
-      frequency = "3hr" ;
-    else if( mip_f.substr(mip_f.size()-3) == "3hr" )
-      frequency = "3hr" ;
+    Split splt(f, "_");
+
+    // try a given index (position) for a freq-item in the filename
+    if( frequencyPosition > -1 )
+    {
+      size_t fp=static_cast<size_t>(frequencyPosition);
+      
+      if( fp < splt.size() )
+         frequency = splt[fp] ;
+    }
+
+    if( frequency.size() == 0 )
+    {
+      // the second term denotes the mip table for CMIP5
+      std::string mip_f = splt[1];
+
+      // now, try also global att 'table_id'
+      Split mip_a( pQA->pIn->nc.getAttString(CMOR::n_table_id) ) ;
+
+      if( mip_a.size() > 1 )
+      {
+        if( mip_a[1] != mip_f && mip_a[1].size() )
+          mip_f = mip_a[1]; // annotation issue?
+
+        // convert mip table --> frequency
+        if( mip_f.substr(mip_f.size()-2) == "yr" )
+          frequency = "yr" ;
+        else if( mip_f.substr(mip_f.size()-3) == "mon" )
+          frequency = "mon" ;
+        else if( mip_f == "day" )
+          frequency = "day" ;
+        else if( mip_f.substr(mip_f.size()-3) == "Day" )
+          frequency = "day" ;
+        else if( mip_f.substr(0,3) == "6hr" )
+          frequency = "6hr" ;
+        else if( mip_f.substr(0,3) == "3hr" )
+          frequency = "3hr" ;
+        else if( mip_f.substr(mip_f.size()-3) == "3hr" )
+          frequency = "3hr" ;
+      }
+    }
   }
 
   return frequency ;
@@ -4629,6 +4657,9 @@ QA_Exp::initDefaults(void)
   isUseStrict=false;
   bufferSize=1500;
 
+  frequencyPosition=-1;  // not set
+  varnamePosition=-1;
+  
   return;
 }
 

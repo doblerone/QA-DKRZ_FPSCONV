@@ -515,6 +515,9 @@ public:
   bool isClearBits;
   bool notMIP_table_avail;
 
+  int frequencyPosition;
+  int varnamePosition;
+  
   std::vector<std::string> excludedAttribute;
   std::vector<std::string> overruleAllFlagsOption;
 
