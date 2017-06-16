@@ -152,9 +152,7 @@ update()
     isForceUpdate=t  # look for updates
   fi
 
-  # for searching updates after some days; default: once a day
-  # set variable today [ days since 1970 ]
-
+  # search updates after some days; default: once a day
   if [ ! ${NO_CONDA_INSTALL} ] ; then
     if [ ${CONDA_QA_PATH} ] ; then
       test ! ${CONDA_QA_ENV} && \

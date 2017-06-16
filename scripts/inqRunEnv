@@ -74,7 +74,6 @@ iRE_checkTables()
 
     if [ "${prj}" = CORDEX ] ; then
       reqItems=( \
-        $p/${prj}/CORDEX_check-list.conf \
         $p/${prj}/CORDEX_DRS_CV.csv \
         $p/${prj}/CORDEX_GCMModelName.txt \
         $p/${prj}/CORDEX_RCMs_ToU.txt \
@@ -88,10 +87,6 @@ iRE_checkTables()
         $p/${prj}/cmip6-cmor-tables \
         $p/${prj}/CMIP6_MIP_tables
       )
-    elif [ "${prj}" = HAPPI ] ; then
-      reqItems=( \
-        $p/${prj}/HAPPI_check-list.conf \
-      )
     fi
 
     # check always CF
@@ -101,17 +96,6 @@ iRE_checkTables()
       $p/CF/CF_standardized-region-names.txt \
       $p/CF/cf-standard-name-table.xml \
       )
-      
-    # repair entry in CONFIG_FILE
-    if [ ! ${CF_STD_NAME_VERSION} ] ; then
-      local vd="$(grep 'Standard Name Table (.*)' $p/CF/standard-names.html)"
-      vd="${vd#*(}"
-      vd="${vd%)*}"
-      vd="${vd// /}"
-    
-      . $QA_SRC/scripts/parseConfigFile CF_STD_NAME_VERSION="${vd}"
-      CF_STD_NAME_VERSION="${vd}"
-    fi
 
     local rI
     for rI in ${reqItems[*]} ; do
@@ -161,11 +145,11 @@ iRE_findLatestPrePARE()
 {
   local i cc pp pp_all pp_no_pkgs latest_conda
   declare -a cc pp pp_no_pkgs
-  pp_all=( $(${QA_SRC}/scripts/which_cmd_alias PrePARE 2> /dev/null) )
+  pp_all=( $(. ${QA_SRC}/scripts/which_cmd_alias PrePARE ) )
 
   if [ ${#pp_all[*]} -eq 0 ] ; then
     # try with existing conda(s)
-    cc=( $(${QA_SRC}/scripts/which_cmd_alias conda 2> /dev/null) )
+    cc=( $(. ${QA_SRC}/scripts/which_cmd_alias conda ) )
     if [ ${#cc[*]} -gt 1 ] ; then
        iRE_findLatestFile latest_conda ${cc[*]}
     else
@@ -200,7 +184,6 @@ iRE_findLatestPrePARE()
   fi
 
   # does PrePARE work?
-  export UVCDAT_ANONYMOUS_LOG=no
   $PrePARE -h &> /dev/null
 
   if [ $? -gt 1 ] ; then
@@ -231,12 +214,13 @@ iRE_inqState()
          -QA_REVISION \
        )
 
-  if [ ! ${NO_CONDA_INSTALL} ] ; then
-    # extend for CONDA installation
-    if [ ${CONDA_QA_PATH} ] ; then
-      rname[${#rname[*]}]=-CONDA_QA_PATH
-    fi
+if [ ! ${NO_CONDA_INSTALL} ] ; then
+  # extend for CONDA installation
+  if [ ${CONDA_QA_PATH} ] ; then
+    rname[${#rname[*]}]=-CONDA_QA_PATH
+    #rname[${#rname[*]}]=+CONDA_QA_ENV
   fi
+fi
 
   # extend for current projects
   for(( i=0 ; i < ${#prj[*]} ; ++i )) ; do
@@ -245,12 +229,13 @@ iRE_inqState()
     if [ ${prj[i]} = CMIP6 ] ; then
       isCMIP6=t
 
-      if [ ! ${NO_CONDA_INSTALL} ] ; then
-          rname[${#name[*]}]=+PrePARE
-          rname[${#rname[*]}]=+CONDA_CMOR_ENV
-          rname[${#rname[*]}]=+CONDA_CMOR_PATH
-          rname[${#rname[*]}]=+XLSX2CSV
-      fi
+if [ ! ${NO_CONDA_INSTALL} ] ; then
+      rname[${#name[*]}]=+PrePARE
+#      rname[${#rname[*]}]=+UDUNITS2_XML_PATH
+      rname[${#rname[*]}]=+CONDA_CMOR_ENV
+      rname[${#rname[*]}]=+CONDA_CMOR_PATH
+      rname[${#rname[*]}]=+XLSX2CSV
+fi
     fi
   done
 
@@ -273,14 +258,15 @@ iRE_inqState()
 
   test ${isRO:-f} = t -o ${upCount} = 0 && return ${upCount}
 
-  if [ ! ${NO_CONDA_INSTALL} ] ; then
-    iRE_scanCondaEnv qa-dkrz
-    iRE_scanCondaEnv PrePARE
-  fi
+if [ ! ${NO_CONDA_INSTALL} ] ; then
+  iRE_scanCondaEnv qa-dkrz
+  iRE_scanCondaEnv PrePARE
+#  iRE_scanCondaEnv udunits2.xml
+fi
 
   # revison num of the package
   local packRec
-  packRev="$( ${QA_SRC}/scripts/getVersion )"
+  ${QA_SRC}/scripts/getVersion packRev
 
   . ${QA_SRC}/scripts/parseConfigFile QA_REVISION${packRev:+=}${packRev}
 
