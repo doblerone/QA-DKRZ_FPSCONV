@@ -34,22 +34,22 @@ ges_cf_html()
 
   if ges_checkDate ${html} ; then
     # get version and date
-    local vd="$(grep 'Standard Name Table (.*) $html)"
+    local vd="$(grep 'Standard Name Table' (.*) $html)"
     vd="${vd#*(}"
     vd="${vd%)*}"
     vd="${vd// /}"
     
     . $QA_SRC/scripts/parseConfigFile CF_STD_NAME_VERSION=${vd}
 
-    if ! ges_parse_html "Standard Name Table" xml ; then
+    if ! ges_parse_html 'Standard Name Table' xml ; then
       return $?
     fi
 
-    if ! ges_parse_html "Area Type Table" xml ; then
+    if ! ges_parse_html 'Area Type Table' xml ; then
       return $?
     fi
 
-    if ! ges_parse_html "Standardized Region List" html ; then
+    if ! ges_parse_html 'Standardized Region List' html ; then
       return $?
     fi
 
@@ -580,11 +580,11 @@ do
   case $option in
     h)  ;;
     P)  prj=${OPTARG} ;;
-    -) if [ ${OPTARG%=*} = "config_file" ] ; then
+    -) if [ ${OPTARG%=*} = 'config_file' ] ; then
          CONFIG_FILE=${OPTARG#*=}
-#         elif [ ${OPTARG} == 'debug' ] ; then
-#           set -x
-       elif [ ${OPTARG} == 'force-update' ] ; then
+       elif [ ${OPTARG} = 'debug' ] ; then
+         set -x
+       elif [ ${OPTARG} = 'force-update' ] ; then
          forceUpdate=t
        elif [ ${OPTARG:0:2} == 'update' ] ; then
          isUpdate=t
