@@ -187,7 +187,7 @@ shift $(( $OPTIND - 1 ))
 test $# -gt 0 && prj=$1
 
 getQA_Version
-getExternalVersion
+test ${prj} && getExternalVersion
 
 # if newer, then update
 . ${QA_SRC}/scripts/parseConfigFile QA_REVISION=${QA_REVISION}

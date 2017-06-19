@@ -35,8 +35,8 @@ ges_cf_html()
   if ges_checkDate ${html} ; then
     # get version and date
     local vd="$(grep 'Standard Name Table' (.*) $html)"
-    vd="${vd#*\(}"
-    vd="${vd%\)*}"
+    vd="${vd#*(}"
+    vd="${vd%)*}"
     vd="${vd// /}"
     
     . $QA_SRC/scripts/parseConfigFile CF_STD_NAME_VERSION=${vd}
