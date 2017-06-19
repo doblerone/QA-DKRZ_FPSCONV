@@ -167,6 +167,7 @@ do
          set -x
        elif [ ${OPTARG} == 'get-branch' ] ; then
          getGitBranch ${QA_SRC}
+         echo $branch
          exit 0
        elif [ ${OPTARG} == 'help' ] ; then
          descript
