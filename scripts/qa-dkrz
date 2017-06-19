@@ -1328,7 +1328,7 @@ getExperimentName()
 
   LOG_FNAMES[${#LOG_FNAMES[*]}]=${CURR_LOG_FNAME}
 
-  copyPreamble
+  test ! -f $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log && copyPreamble
 
   return 0
 }

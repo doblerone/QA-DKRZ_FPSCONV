@@ -1245,7 +1245,19 @@ QA_Data::applyOptions(std::vector<std::string>& optStr)
 void
 QA_Data::checkFinally(Variable *var)
 {
-   if( isEntirelyConst && ! var->isScalar )
+   if( var->isNoData() )
+   {
+      std::string key("6_15");
+      if( notes->inq( key, var->name) )
+      {
+        std::string capt(hdhC::tf_var(var->name));
+        capt += "empty data body" ;
+
+        if( notes->operate(capt) )
+          notes->setCheckStatus(pQA->n_data, pQA->n_fail );
+      }
+   }
+   else if( isEntirelyConst && ! var->isScalar )
    {
       std::string key("6_1");
       if( notes->inq( key, name, ANNOT_NO_MT) )

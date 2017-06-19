@@ -220,44 +220,6 @@ QA::applyOptions(bool isPost)
 }
 
 bool
-QA::checkDataBody(std::string vName)
-{
-  // any empty data segments?
-
-  if( vName.size() )
-  {
-    for( size_t i=0 ; i < pIn->varSz ; ++i)
-    {
-      Variable& var = pIn->variable[i];
-      if( var.name == vName )
-        return ! pIn->nc.isEmptyData(var.name) ;
-    }
-  }
-  else if( ! pIn->dataVarIndex.size() )
-    return false;
-
-  std::vector<size_t> vs;
-
-  for( size_t i=0 ; i < pIn->dataVarIndex.size() ; ++i)
-  {
-    Variable& var = pIn->variable[ pIn->dataVarIndex[i] ];
-    if( pIn->nc.isEmptyData(var.name) )
-      notes->setCheckStatus(n_data, n_fail);
-    else
-      vs.push_back(pIn->dataVarIndex[i]) ;
-  }
-
-  if( vs.size() )
-    // only try for variables with data
-    pIn->dataVarIndex = vs ;
-  else
-    // all data variables without any data
-    return false;
-
-  return true;
-}
-
-bool
 QA::checkConsistency(InFile &in, std::vector<std::string> &opt,
                      std::string& tPath)
 {
@@ -469,8 +431,7 @@ QA::finally_data(int xCode)
 
   if( isCheckData )
   {
-    // check for flags concerning the total data set,
-    // but exclude the case of no record
+    // check for flags concerning the total data set
     if( pIn->currRec > 0 )
       for( size_t j=0 ; j < qaExp.varMeDa.size() ; ++j )
         qaExp.varMeDa[j].qaData.checkFinally(qaExp.varMeDa[j].var);
@@ -583,51 +544,8 @@ QA::init(void)
    else
      qaExp.run();
 
-   // check existence of any data at all
-   if( pIn->ncRecBeg == 0 && pIn->ncRecEnd == 0 )
-   {
-      isCheckData=false;
-
-      std::string key("6_15");
-      if( notes->inq( key, fileStr) )
-      {
-        std::string capt("No records in the file") ;
-
-        if( notes->operate(capt) )
-        {
-          notes->setCheckStatus(n_data,  n_fail );
-          setExitState( notes->getExitState() ) ;
-        }
-      }
-   }
-
-   if( isCheckData )
-   {
-     if( !checkDataBody() )
-     {
-       isCheckData = false;
-       notes->setCheckStatus(n_data, n_fail);
-       setExitState(2);
-//       return true;
-     }
-   }
-
    if(isCheckTimeValues && !qaTime.isTime)
       notes->setCheckStatus(n_time, "FIXED");
-
-   if(isCheckTimeValues)
-   {
-      if( qaTime.isTime)
-      {
-         if( !checkDataBody(qaTime.name) )
-         {
-           // time is defined, but there is no data
-           qaTime.isTime = false;
-           notes->setCheckStatus(n_time, n_fail);
-           setExitState(2);
-         }
-      }
-   }
 
    if(isCheckData || isCheckTimeValues)
    {

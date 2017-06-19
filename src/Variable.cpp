@@ -22,7 +22,7 @@ VariableMeta::VariableMeta()
   isLabel=false;
   isMapVar=false;
   isMissingValue=false;
-  isNoData_=false;
+  isNoData_=true;
   isScalar=false;
   isUnitsDefined=false;
   isVoid=false;
@@ -34,7 +34,6 @@ VariableMeta::VariableMeta()
 
   weight_DV=0;
 
-  isNoData_=-1;
   isUnlimited_=-1;
 
   range[0]=MAXDOUBLE;
@@ -183,7 +182,12 @@ Variable::getData(MtrxArr<T>& ma, int rec, int leg )
   if( leg < 0 )
     return;
 
-  return pNc->getData(ma, name, rec, leg) ;
+  bool is = pNc->getData(ma, name, rec, leg) ;
+  
+  if( isNoData_ )
+     isNoData_ = pNc->isEmptyData(name) ;
+  
+  return is;
 }
 
 bool
@@ -303,16 +307,13 @@ Variable::isCoordinate(void)
 bool
 Variable::isNoData(void)
 {
-   if( isNoData_ > -1 )
+   if( ! isNoData_ )
       return isNoData_ ;
 
-   isNoData_=0;
+   MtrxArr<double> tma;
+   pIn->nc.getData(tma, name, 0);
 
-   // questioning isUnlimited() could give a wrong answer for a limited time
-   if( pNc->isEmptyData(name) )
-     isNoData_ = 1;
-
-   return isNoData_  ;
+   return ( isNoData_ = pNc->isEmptyData(name) );
 }
 
 bool

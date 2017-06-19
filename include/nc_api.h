@@ -620,14 +620,12 @@ void
     bool
       isDimValid(std::string);
 
-//! Return true if data is entirely empty.
-/*! If bool == true, then also for unlimited variables*/
-    bool
-      isEmptyData(std::string);
+//! Is the most recent data body empty
+    bool isEmptyData(std::string vName)
+         { return isEmptyData(getVarID(vName)) ;}
 
-  template <typename T>
-    bool
-      isEmptyData(int varid, T x);
+    bool isEmptyData(int vid)
+         { return isLastDataEmpty[vid] ;}
 
 //! Return true if the type is index compatible
     bool
@@ -935,8 +933,9 @@ private:
     size_t effUnlimitedDimSize;
     std::vector<bool> hasEffVarUnlimitedDim;
     std::vector<std::string> pseudoUnlimitedDim;
+    std::vector<bool>        isLastDataEmpty;
 
-    int numOfRecords;
+    int    numOfRecords;
     size_t max_read_sz;
 
     // Spaces for records of various types

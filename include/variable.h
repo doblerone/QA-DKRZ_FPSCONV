@@ -81,7 +81,6 @@ class VariableMeta
   int  countData;
   int  countAux;
   int  weight_DV;
-  int  isNoData_;
   int  isUnlimited_;  // access by isUnlimited() method
 
   bool isArithmeticMean; // externally set
@@ -99,6 +98,7 @@ class VariableMeta
   bool isLabel;
   bool isMapVar;
   bool isMissingValue;
+  bool isNoData_;
   bool isScalar;
   bool isVoid;  // variables which may/must have no data
 

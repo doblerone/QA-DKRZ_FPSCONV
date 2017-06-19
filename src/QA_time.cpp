@@ -1095,9 +1095,8 @@ QA_Time::openQA_NcContrib(NcAPI *nc)
    vs.clear();
    vs.push_back(name);
 
-   currTimeValue = ma_t[0] + refTimeOffset ;
-   nc->setAtt( name, "first_time", currTimeValue);
-   nc->setAtt( name, "first_date", refDate.getDate(currTimeValue).str() );
+   nc->setAtt( name, "first_time", firstTimeValue);
+   nc->setAtt( name, "first_date", refDate.getDate(firstTimeValue).str() );
    nc->setAtt( name, "isTimeBoundsTest", static_cast<double>(0.));
 
    std::string str0("time_step");

@@ -2933,6 +2933,9 @@ NcAPI::getData(MtrxArr<ToT> &to, int varid, size_t rec, int leg)
 
   layout.rec_prev_taker[varid] = (void*) to.arr ;
 
+  // status of the last getData operation
+  isLastDataEmpty[varid] = to.validRangeBegin.size() ? false : true ;
+  
   return to[to_ix];
 }
 
@@ -3482,6 +3485,8 @@ NcAPI::getLayout(void)
      layout.varidMap[id] = name_buf ;
      layout.varTypeMap[name_buf] = type ;
 
+     isLastDataEmpty.push_back(true);
+     
      // ATTRIBUTES of variables
      for( int j=0 ; j < attNum ; ++j )
      {
@@ -4128,6 +4133,7 @@ NcAPI::init(void)
   xtrnlSet.isFletcher  = false ;
 
   notes=0;  // default for this pointer
+  
   return;
 }
 
@@ -4184,207 +4190,6 @@ NcAPI::isDimUnlimited(std::string &dName)
     is = (layout.unlimitedDimName == dName) ? true : false;
 
   return is;
-}
-
-bool
-NcAPI::isEmptyData(std::string vName)
-{
-  int varid=getVarID(vName);
-  if( varid < 0 )
-    return true;
-
-  if( layout.noData[varid] )
-    return true;
-
-  if( layout.varTypeMap[vName] == NC_FLOAT )
-  {
-     float x=0.;
-     return isEmptyData(varid, x);
-  }
-  if( layout.varTypeMap[vName] == NC_DOUBLE )
-  {
-     double x=0.;
-     return isEmptyData(varid, x);
-  }
-  if( layout.varTypeMap[vName] == NC_INT )
-  {
-     int x=0;
-     return isEmptyData(varid, x);
-  }
-  if( layout.varTypeMap[vName] == NC_CHAR )
-  {
-     char x=0;
-     return isEmptyData(varid, x);
-  }
-  if( layout.varTypeMap[vName] == NC_BYTE )
-  {
-     signed char x=0;
-     return isEmptyData(varid, x);
-  }
-  if( layout.varTypeMap[vName] == NC_SHORT )
-  {
-     short x=0;
-     return isEmptyData(varid, x);
-  }
-  if( layout.varTypeMap[vName] == NC_UBYTE )
-  {
-     unsigned char x=0;
-     return isEmptyData(varid, x);
-  }
-  if( layout.varTypeMap[vName] == NC_USHORT )
-  {
-     unsigned short x=0;
-     return isEmptyData(varid, x);
-  }
-  if( layout.varTypeMap[vName] == NC_UINT )
-  {
-     unsigned int x=0;
-     return isEmptyData(varid, x);
-  }
-  if( layout.varTypeMap[vName] == NC_INT64 )
-  {
-     long long x=0;
-     return isEmptyData(varid, x);
-  }
-  if( layout.varTypeMap[vName] == NC_UINT64 )
-  {
-     unsigned long long x=0;
-     return isEmptyData(varid, x);
-  }
-
-  return false ;
-}
-
-template <typename T>
-bool
-NcAPI::isEmptyData(int varid, T x)
-{
-   // empty is equivalent to only _FillValue
-   bool is=true;
-   std::string vName(layout.varidMap[varid]);
-
-   if( isVarUnlimited(varid) )
-   {
-      size_t num =  getNumOfRecords() ;
-      MtrxArr<T> ma;
-  
-       for( size_t rec=0 ; rec < num ; ++rec )
-       {
-          (void) getData(ma, varid, rec );
-          
-          if( ma.validRangeBegin.size() )
-          {
-             is=false;
-             break;
-          }
-       }
-
-       return (layout.noData[varid] = is) ;
-   }
-
-   // limited variables
-   if( layout.varTypeMap[vName] == NC_STRING
-           || layout.varTypeMap[vName] == NC_CHAR )
-   {
-      size_t rank = layout.varDimName[varid].size();
-
-      if( layout.rec_index[varid] < UINT_MAX )
-        layout.rec_start[varid][ layout.rec_index[varid] ] = 0;
-
-      std::vector<size_t> dim ;
-      size_t* curr_count = new size_t [rank] ;
-
-      size_t simpleCount=1;
-      for( size_t i=0 ; i < rank ; ++i)
-      {
-        dim.push_back(layout.rec_count[varid][i]);
-        curr_count[i] = layout.rec_count[varid][i] ;
-        simpleCount *= curr_count[i] ;
-      }
-
-      // scalar defined as a 0-dimensional variable
-      if( rank == 0 )
-        dim.push_back(1);
-
-//      if( leg > rec )
-//        dim[0] = curr_count[0] = leg;
-
-      if( layout.varTypeMap[vName] == NC_CHAR )
-      {
-        rec_val_text[varid].resize( dim ) ;
-
-        status = nc_get_vara_text(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_text[varid].arr );
-
-        std::vector<std::string> fV;
-        std::vector<bool> isFV( get_FillValueStr(varid, fV) );
-
-        for(size_t i=0 ; i < simpleCount ; ++i )
-        {
-          char x = (char) rec_val_text[varid].arr[i] ;
-          size_t j;
-          for( j=0 ; j < fV.size() ; ++j )
-          {
-            for( size_t k=0 ; k < fV[j].size() ; ++k )
-            {
-              if( isFV[j] && x != fV[j][k] )
-              {
-                is=false;
-                break;
-              }
-            }
-          }
-
-          if( j == fV.size() )
-            break;
-        }
-      }
-      else
-      {
-        if( rec_val_string[varid].size() > 0 )
-          nc_free_string( layout.recSize[varid],
-              rec_val_string[varid].begin() );
-
-        rec_val_string[varid].resize( layout.recSize[varid] ) ;
-
-        status = nc_get_vara_string(ncid, varid,
-                layout.rec_start[varid], curr_count,
-                  rec_val_string[varid].arr );
-
-        std::vector<std::string> fV;
-        std::vector<bool> isFV( get_FillValueStr(varid, fV) );
-
-        for(size_t i=0 ; i < simpleCount ; ++i )
-        {
-          std::string str(rec_val_string[varid].arr[i]);
-          size_t j;
-          for( j=0 ; j < fV.size() ; ++j )
-          {
-            if( isFV[j] && str != fV[j] )
-            {
-              is=false;
-              break;
-            }
-          }
-
-          if( j == fV.size() )
-            break;
-        }
-      }
-
-      delete [] curr_count ;
-   }
-   else
-   {
-     MtrxArr<T> ma;
-     (void) getData(ma, varid, 0, -1 );
-
-     if( ma.validRangeBegin.size() )
-       is=false;
-   }
-
-   return (layout.noData[varid] = is) ;
 }
 
 bool

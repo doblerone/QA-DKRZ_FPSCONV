@@ -61,8 +61,6 @@ class QA : public IObj
    each variable at first time encounter in the CORDEX Project ensuring
    conformance.*/
 
-  bool   checkDataBody(std::string vName="");
-
   //!    true requires a check against the project meta data
   bool   checkConsistency(InFile &in, std::vector<std::string> &opts,
                           std::string& tPath);
