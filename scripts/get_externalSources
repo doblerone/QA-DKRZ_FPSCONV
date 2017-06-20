@@ -6,8 +6,6 @@ ges_cf()
    fi
    cd $QA_HOME/tables/projects/CF
 
-   local org=http://cfconventions.org
-
    ges_cf_html
 
    local status=$?
@@ -21,21 +19,22 @@ ges_cf_html()
   local status=0
 
   # htmnl page containing access to cf related tables
+  local org=http://cfconventions.org
   local html=standard-names.html
 
   ges_checkDate init ${html}
 
   wget -q -N $org/$html
 
-  if [ ! -f ${file} ] ; then
+  if [ ! -f ${html} ] ; then
     err[${#err[*]}]="failed wget -N $org/$html"
     return 41
   fi
 
-  if ges_checkDate ${html} ; then
+#  if ges_checkDate ${html} ; then
     # get version and date
-    local vd="$(grep 'Standard Name Table' (.*) $html)"
-    vd="${vd#*(}"
+    local vd="$(grep 'Standard Name Table (.*)' $html)"
+    vd="${vd#*\(}"
     vd="${vd%)*}"
     vd="${vd// /}"
     
@@ -54,7 +53,7 @@ ges_cf_html()
     fi
 
      . $QA_SRC/scripts/parseConfigFile NEXT_CF_UPDATE=${NEXT_CF_UPDATE}
-  fi
+#  fi
 
   return 0
 }
@@ -568,7 +567,6 @@ ges_xlsx2csv()
 
    return 0
 }
-
 
 # main
 declare -a err

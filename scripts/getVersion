@@ -88,7 +88,7 @@ getExternalVersion()
     sep0='\n'
     sep1='\n   '
   else
-    sep0=','
+    sep0='|'
   fi
   
   local pprj=${QA_HOME}/tables/projects

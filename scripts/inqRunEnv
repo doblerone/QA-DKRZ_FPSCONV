@@ -258,26 +258,17 @@ fi
 
   test ${isRO:-f} = t -o ${upCount} = 0 && return ${upCount}
 
-if [ ! ${NO_CONDA_INSTALL} ] ; then
-  iRE_scanCondaEnv qa-dkrz
-  iRE_scanCondaEnv PrePARE
-#  iRE_scanCondaEnv udunits2.xml
-fi
-
-  # revison num of the package
-  local packRec
-  ${QA_SRC}/scripts/getVersion packRev
-
-  . ${QA_SRC}/scripts/parseConfigFile QA_REVISION${packRev:+=}${packRev}
+  if [ ! ${NO_CONDA_INSTALL} ] ; then
+    iRE_scanCondaEnv qa-dkrz
+    iRE_scanCondaEnv PrePARE
+#   iRE_scanCondaEnv udunits2.xml
+  fi
 
   return
 }
 
 iRE_readConfigFile()
 {
-  local count i
-  declare -i count=0
-
   for(( i=0 ; i < ${#name[*]} ; ++i )) ; do
     if . ${QA_SRC}/scripts/parseConfigFile ${name[i]} --inquire ; then
        value[i]=${!name[i]}
@@ -285,7 +276,7 @@ iRE_readConfigFile()
        if [ ${rname[i]:0:1} = '+' -a ${#value[i]} -eq 0 ] ; then
           echo "missing feature: ${name[i]}"
        else
-          count+=1
+          eval export ${name[i]}=${value[i]}
        fi
     fi
   done

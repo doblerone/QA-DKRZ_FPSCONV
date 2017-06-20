@@ -22,7 +22,9 @@ install:
   #- conda config --add channels birdhouse
   #- conda config --add channels conda-forge
   #- conda install -q "libnetcdf <4.4.0" "hdf5 >=1.8.15" "isl <0.16" zlib "udunits2 >=2.2.20" libuuid expat curl gcc
-  - conda install -c conda-forge -c h-dh qa-dkrz  # get qa-dkrz deps
+  #- conda install -c conda-forge -c h-dh qa-dkrz  # get qa-dkrz deps
+  - conda create -n qa-dkrz --channel h-dh/label/dev -c conda-forge -c h-dh qa-dkrz
+
   - conda remove qa-dkrz   # but skip qa-dkrz itself
 
   # Get build script
