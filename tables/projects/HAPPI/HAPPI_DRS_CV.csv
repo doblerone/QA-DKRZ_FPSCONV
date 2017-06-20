@@ -60,7 +60,7 @@ global:
    creation_date = YYYY-MM-DDTHH:MM:SSZ
    experiment
    experiment_id
-   forcing = Nat|Ant|GHG|SD|SI|SA|TO|SO|Oz|LU|SI|VI|SS|Ds|BC|MD|OC|AA
+   forcing = Nat|Ant|GHG|SD|SI|SA|TO|SO|Oz|LU|Sl|Vl|SS|Ds|BC|MD|OC|AA
    frequency=yr|mon|day|6hr|3hr|subhr|monClim|fx
    initialization_method
    institute_id
