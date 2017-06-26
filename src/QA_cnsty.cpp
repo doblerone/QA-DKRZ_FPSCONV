@@ -237,7 +237,6 @@ Consistency::check(Variable &dataVar, std::string entryID)
     }
   }
 
-
   // test for auxiliaries missing in the file.
   testAux("missing",
           vvs_f_aName, vvs_f_aVal, vvs_t_aName, vvs_t_aVal);

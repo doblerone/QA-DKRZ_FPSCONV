@@ -531,18 +531,19 @@ QA::init(void)
      drs_cv_table.read();
 //   }
 
+   qaExp.run();
+
    // experiment specific obj: set parent, pass over options
    // check consistency between sub-sequent files or experiments
 //   if(isCheckCNSTY && (fileSequenceState == 's' || fileSequenceState == 'x') )
+
    if(isCheckCNSTY)
    {
       // return true for a) no previous check available,
       //                 b) deviation from a privous check are found
-      if( checkConsistency(*pIn, optStr, tablePath) )
-        qaExp.run();
+      // check for changed attributes, values
+      (void) checkConsistency(*pIn, optStr, tablePath) ;
    }
-   else
-     qaExp.run();
 
    if(isCheckTimeValues && !qaTime.isTime)
       notes->setCheckStatus(n_time, "FIXED");
