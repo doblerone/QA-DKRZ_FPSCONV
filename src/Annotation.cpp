@@ -105,9 +105,6 @@ Annotation::config(void)
   // note: first items of options may be already defined
   //       in QA.applyOPtions()
 
-  // get flag configuration from file
-  readConf();
-
   // basic default settings
   if( isUseDefault )
   {
@@ -119,6 +116,9 @@ Annotation::config(void)
     // three place holders corresponding to options
     descript.push_back( "" );
   }
+
+  // get flag configuration from file
+  readConf();
 
   parse();
 
