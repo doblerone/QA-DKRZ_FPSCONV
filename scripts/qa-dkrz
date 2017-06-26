@@ -728,27 +728,19 @@ checkClosedMessages()
 checkLockFile()
 {
    # return 0 :: true
-   # $1 == PATH: check only paths
-   # $2        : qa_*.nc file if any
+   # $1        : nc-file if any
+
+   local name=${1%.nc}
+   name=${name##*/}
 
    # any variable locked?
-   ls ${QA_RESULTS}/data/${subPath}/*_lock_${1}.txt &> /dev/null
-   local x_lock=$?
-
-   if [ ${LOCK_NOTES:-f} = t ] ; then
-     ls ${QA_RESULTS}/data/${subPath}/*_note_${1}.txt &> /dev/null
-     local x_note=$?
-   fi
-
-   if [ ${x_note:-1} -eq 0 -o ${x_lock:-1} -eq 0 ] ; then
-     if [ ${IGNORE_LOCK_FILES:-f} = f ] ; then
-       return 0 # option says: don't ignore a blocking file
-     else
-       # option says: ignore blocking file
-       if [ ! "${2}" ] ; then
-         # no qa-result.nc file; block always
-         return 0
-       fi
+   if ls ${QA_RESULTS}/data/${subPath}/*_lock_${name}.txt &> /dev/null ; then
+     countLockedFiles=$(( countLockedFiles + 1 ))
+     return 0
+   elif [ ${LOCK_NOTES:-f} = t ] ; then
+     if ls ${QA_RESULTS}/data/${subPath}/*_note_${1}.txt &> /dev/null ; then
+        countLockedFiles=$(( countLockedFiles + 1 ))
+        return 0
      fi
    fi
 
@@ -1200,6 +1192,10 @@ finally()
   # remove empty paths from the results
   rmEmptyPaths
 
+  if [ ${countLockedFiles} -gt 0 ] ; then
+    echo "Note: ${countLockedFiles} locked variables were not processsed."
+  fi
+  
   if [ ${isTERM:-f} = t ] ; then
     kill -INT $$ 2&> /dev/null
   else
@@ -2773,10 +2769,9 @@ init()
   fi
 
   test ${USE_STRICT:-f} = t -a ! "${CHECKSUM}" && CHECKSUM=t
-
-  # counter for NEXT
-  fileCount=0
-
+  
+  fileCount=0 # counter for NEXT
+  countLockedFiles=0
 }
 
 initExperimentName()
@@ -4411,11 +4406,9 @@ testLocks()
     fi
   fi
 
-  eval dollar2=${!2}
-
   if \
 #trace \
-  checkLockFile $1 $dollar2 ; then
+  checkLockFile $1 ; then
 #    if [ ${PROGRESS_BAR} ] ; then
 #      local num=$( ls -d ${PROJECT_DATA}/${subPath}/${1}*.nc \
 #                    | grep -c . )
