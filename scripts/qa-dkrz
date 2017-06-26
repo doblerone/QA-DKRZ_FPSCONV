@@ -52,6 +52,182 @@
 ## SELECT p1=,p2=v1...  --> error,  SELECT  p1,p2=v1...  --> ok. \n
 ##*/
 
+annot_summary_detectType()
+{
+  local qa_res=$1
+  local logFName=${2%.log}
+
+  if ! ls ${qa_res}/Annotations/* &> /dev/null ; then
+    return 0
+  elif ls ${qa_res}/Annotations/*.json &> /dev/null ; then
+    return 0
+  fi
+
+  return 1
+}
+
+annot_summary()
+{
+  test ${NO_SUMMARY:-f} = t && return
+
+  local i j
+  for(( i=0 ; i < ${#LOG_FNAMES[*]} ; ++i )) ; do
+    if [ -d ${LOG_FNAMES[i]} ] ; then
+       # is a directory and the contained log-files are appended
+       local log_fns
+       log_fns=( $(ls ${LOG_FNAMES[i]}/*.log 2>/dev/null) )
+
+       for(( j=0 ; j < ${#log_fns[*]} ; ++j )) ; do
+          if [ $j -eq 0 ] ; then
+             # overwrite item with the directory path
+             LOG_FNAMES[i]=${log_fns[j]}
+          else
+             # append
+             LOG_FNAMES[${#LOG_FNAMES[*]}]=${log_fns[j]}
+          fi
+       done
+    fi
+
+    if [ ${LOG_FNAMES[i]} != ${LOG_FNAMES[i]%.log} ] ; then
+      LOG_FNAMES[${i}]=${LOG_FNAMES[i]%.log}
+    fi
+
+  done
+
+  # look for e.g.: f0,path/f1,f2,... . apply first path to all relative files
+  local lfn lfn_path exp_ix
+
+  if [ ${ONLY_SUMMARY:-f} != f -a ${ONLY_SUMMARY:-f} != all ] ; then
+    for(( exp_ix=0 ; exp_ix < ${#LOG_FNAMES[*]} ; ++exp_ix )) ; do
+      if [ "${LOG_FNAMES[exp_ix]}" != "${LOG_FNAMES[exp_ix]#*/}" ] ; then
+         lnf_path=${LOG_FNAMES[exp_ix]%/*}/
+         break
+      fi
+    done
+
+    for(( exp_ix=0 ; exp_ix < ${#LOG_FNAMES[*]} ; ++exp_ix )) ; do
+      if [ "${LOG_FNAMES[exp_ix]}" = "${LOG_FNAMES[exp_ix]#*/}" ] ; then
+         LOG_FNAMES[exp_ix]=${lnf_path}${LOG_FNAMES[exp_ix]}
+         break
+      fi
+    done
+  fi
+
+  local cvr prj qrs tcl ers
+  test ${PROJECT}    && prj="-P ${PROJECT}"
+  test ${QA_RESULTS} && qrs="-r ${QA_RESULTS}"
+
+  if [ ${TABLE_PATH} ] ; then
+    tcl="-t ${TABLE_PATH}/${QA_CHECK_LIST}"
+    tcfcl="-c ${TABLE_PATH}/${QA_CHECK_LIST}"
+    test ${FIND_NOT_DELIVERED:-t} = t &&
+      cvr="-s ${TABLE_PATH}/${TABLE_VAR_REQ}"
+  fi
+
+  if [ ${EMAIL_SUMMARY} ] ; then
+    ers="${EMAIL_SUMMARY[*]}"
+    ers=" -e ${ers// /,}"
+  fi
+
+
+  # multiple threads, but a maximum of 2
+  exp_ix=0
+  local pidBufMax=2
+  local pidBuf
+  local isStart=f
+  local buf_ix=0
+  local i
+
+  for(( i=0 ; i < pidBufMax ; ++i )) ; do
+    pidBuf[i]=''
+  done
+
+  local qa_res
+
+  while [ ${exp_ix} -lt ${#LOG_FNAMES[*]} ] ; do
+    for(( i=0 ; i < pidBufMax ; ++i )) ; do
+      if [ "${pidBuf[i]}" ] ; then
+        if ! ps -p ${pidBuf[i]} -o pid= &> /dev/null  ; then
+          # there is still an active job for this fBase
+          isStart=t
+          break
+        fi
+      else
+        isStart=t
+        break
+      fi
+    done
+
+    if [ ${isStart} = t ] ; then
+      if [ "${LOG_FNAMES[exp_ix]}" != "${LOG_FNAMES[exp_ix]#*/}" ] ; then
+         qa_res=${LOG_FNAMES[exp_ix]%/*}
+         LOG_FNAMES[exp_ix]=${LOG_FNAMES[exp_ix]##*/}
+
+         if [ ! -r $qa_res/${LOG_FNAMES[exp_ix]}.log ] ; then
+           echo "$qa_res/${LOG_FNAMES[exp_ix]}: no such file or directory"
+           continue
+         fi
+      else
+         qa_res=${QA_RESULTS}/check_logs
+      fi
+
+      # detect the kind of summary structure (traditionally or new)
+      if [ ${PY_SUMMARY:-f} = f -a ${TRADITIONAL_SUMMARY:-f} = f ] ; then
+        if annot_summary_detectType ${qa_res} ${LOG_FNAMES[exp_ix]} ; then
+           PY_SUMMARY=t
+        else
+           PY_SUMMARY=f
+        fi
+      fi
+
+      if [ ${PY_SUMMARY:-f} = t ] ; then
+         python ${QA_SRC}/scripts/python/qa-dkrz/qa_summary.py \
+              ${qa_res}/${LOG_FNAMES[exp_ix]}
+              
+         annot_summary_send ${qa_res}/Annotations/${LOG_FNAMES[exp_ix]}.json
+      else
+         /bin/bash ${QA_SRC}/scripts/taskSummary ${DEBUG_X} \
+           -p ${qa_res} --src=$QA_SRC \
+           ${cvr} ${ers} ${prj} ${qrs} ${tcl} ${LOG_FNAMES[exp_ix]}
+      fi
+
+      pidBuf[i]=$!
+      isStart=f
+      exp_ix=$((exp_ix+1))
+    else
+      sleep 1
+    fi
+  done
+
+  wait
+  return
+}
+
+annot_summary_send()
+{
+  # $1: path/filename of annotation summary
+  
+  test ! ${EMAIL_SUMMARY} && return
+  test ! -f $1 && return
+  
+  local exp=${1##*/}
+  exp=${exp%.json}
+  local caption="QA-DKRZ: ${exp}"
+
+  if which mutt &> /dev/null ; then
+    mutt -s "${caption}" -a ${1} -- ${EMAIL_SUMMARY[*]}
+
+  elif which mailx &> /dev/null ; then
+
+    mailx -s "${caption}" ${EMAIL_SUMMARY[*]// /,} << EOF
+$( cat ${1} )
+EOF
+
+  fi
+  
+  return
+}
+
 applyRules()
 {
    # return 0 :: true
@@ -735,11 +911,11 @@ checkLockFile()
 
    # any variable locked?
    if ls ${QA_RESULTS}/data/${subPath}/*_lock_${name}.txt &> /dev/null ; then
-     countLockedFiles=$(( countLockedFiles + 1 ))
+     countLockedVars=$(( countLockedVars + 1 ))
      return 0
    elif [ ${LOCK_NOTES:-f} = t ] ; then
      if ls ${QA_RESULTS}/data/${subPath}/*_note_${1}.txt &> /dev/null ; then
-        countLockedFiles=$(( countLockedFiles + 1 ))
+        countLockedVars=$(( countLockedVars + 1 ))
         return 0
      fi
    fi
@@ -1177,7 +1353,7 @@ finally()
   if [ ${isShow:-f} = f -a ${isTERM:-f} = f ] ; then
 #    if [ ${isAnythingDone:-f} = t -a ${NO_SUMMARY:-f} = f ] ; then
     if [ ${NO_SUMMARY:-f} = f ] ; then
-      summary_task
+      annot_summary
     fi
   fi
 
@@ -1192,8 +1368,16 @@ finally()
   # remove empty paths from the results
   rmEmptyPaths
 
-  if [ ${countLockedFiles} -gt 0 ] ; then
-    echo "Note: ${countLockedFiles} locked variables were not processsed."
+  echo "number of processed variables: ${countProcessedVars}"
+
+  countSelectedVars=$((countSelectedVars - countLockedVars ))
+  countSelectedVars=$((countSelectedVars - countProcessedVars ))
+  
+  if [ ${countSelectedVars} -gt 0 ] ; then
+    echo -n "number of un-processed variables: ${countSelectedVars}"
+  fi
+  if [ ${countLockedVars} -gt 0 ] ; then
+    echo "number of locked variables: ${countLockedVars}"
   fi
   
   if [ ${isTERM:-f} = t ] ; then
@@ -1617,6 +1801,8 @@ getNextVariable()
   # the path to the candidates of files to be checked
   nextPath=${PROJECT_DATA}/${subPath}
 
+  countSelectedVars=$(( countSelectedVars +1 )) 
+
   # explict file is selected
   if [ ${explFName} ] ; then
     nextFile=${explFName}
@@ -1680,7 +1866,7 @@ getNextVariable()
       if [ ! -s $nextPath/${nV_fls[l]} ] ; then
         if [ ${QUERY_EMPTY_FILE:-f} = t ] ; then
           y_impact=L2
-          y_caption='empty data file'
+          y_caption='no data file'
           y_tag=M3
           initLog ${nV_fls[l]}
           unset nV_fls[${l}]
@@ -2605,7 +2791,7 @@ init()
     # only summary of provided logfile names with absolute path
     if [ ${LOG_FNAMES} ] ; then
       LOG_FNAMES=( ${LOG_FNAMES//,/ } )
-      summary_task
+      annot_summary
       exit
     fi
   fi
@@ -2727,7 +2913,7 @@ init()
        LOG_FNAMES=( ${LOG_FNAMES[*]##*/} )
      fi
 
-     summary_task
+     annot_summary
      exit
   fi
 
@@ -2771,7 +2957,9 @@ init()
   test ${USE_STRICT:-f} = t -a ! "${CHECKSUM}" && CHECKSUM=t
   
   fileCount=0 # counter for NEXT
-  countLockedFiles=0
+  countLockedVars=0
+  countSelectedVars=0
+  countProcessedVars=0
 }
 
 initExperimentName()
@@ -3618,6 +3806,8 @@ operatePipes()
     fi
   fi
 
+  countProcessedVars=$(( countProcessedVars +1 )) 
+  
   # purpose of this loop: when all allowed execution threads
   # are busy, then wait until any of them is free again
   local op_nap=1
@@ -3972,6 +4162,7 @@ rmEmptyPaths()
   return
 }
 
+
 setKWL()
 {
   # store keywords for empty values
@@ -4121,155 +4312,6 @@ std_out()
 
   unset outputText
 
-  return
-}
-
-summary_detectType()
-{
-  local qa_res=$1
-  local logFName=${2%.log}
-
-  if ! ls ${qa_res}/Annotations/* &> /dev/null ; then
-    return 0
-  elif ls ${qa_res}/Annotations/*.json &> /dev/null ; then
-    return 0
-  fi
-
-  return 1
-}
-
-summary_task()
-{
-  test ${NO_SUMMARY:-f} = t && return
-
-  local i j
-  for(( i=0 ; i < ${#LOG_FNAMES[*]} ; ++i )) ; do
-    if [ -d ${LOG_FNAMES[i]} ] ; then
-       # is a directory and the contained log-files are appended
-       local log_fns
-       log_fns=( $(ls ${LOG_FNAMES[i]}/*.log 2>/dev/null) )
-
-       for(( j=0 ; j < ${#log_fns[*]} ; ++j )) ; do
-          if [ $j -eq 0 ] ; then
-             # overwrite item with the directory path
-             LOG_FNAMES[i]=${log_fns[j]}
-          else
-             # append
-             LOG_FNAMES[${#LOG_FNAMES[*]}]=${log_fns[j]}
-          fi
-       done
-    fi
-
-    if [ ${LOG_FNAMES[i]} != ${LOG_FNAMES[i]%.log} ] ; then
-      LOG_FNAMES[${i}]=${LOG_FNAMES[i]%.log}
-    fi
-
-  done
-
-  # look for e.g.: f0,path/f1,f2,... . apply first path to all relative files
-  local lfn lfn_path exp_ix
-
-  if [ ${ONLY_SUMMARY:-f} != f -a ${ONLY_SUMMARY:-f} != all ] ; then
-    for(( exp_ix=0 ; exp_ix < ${#LOG_FNAMES[*]} ; ++exp_ix )) ; do
-      if [ "${LOG_FNAMES[exp_ix]}" != "${LOG_FNAMES[exp_ix]#*/}" ] ; then
-         lnf_path=${LOG_FNAMES[exp_ix]%/*}/
-         break
-      fi
-    done
-
-    for(( exp_ix=0 ; exp_ix < ${#LOG_FNAMES[*]} ; ++exp_ix )) ; do
-      if [ "${LOG_FNAMES[exp_ix]}" = "${LOG_FNAMES[exp_ix]#*/}" ] ; then
-         LOG_FNAMES[exp_ix]=${lnf_path}${LOG_FNAMES[exp_ix]}
-         break
-      fi
-    done
-  fi
-
-  local cvr prj qrs tcl ers
-  test ${PROJECT}    && prj="-P ${PROJECT}"
-  test ${QA_RESULTS} && qrs="-r ${QA_RESULTS}"
-
-  if [ ${TABLE_PATH} ] ; then
-    tcl="-t ${TABLE_PATH}/${QA_CHECK_LIST}"
-    tcfcl="-c ${TABLE_PATH}/${QA_CHECK_LIST}"
-    test ${FIND_NOT_DELIVERED:-t} = t &&
-      cvr="-s ${TABLE_PATH}/${TABLE_VAR_REQ}"
-  fi
-
-  if [ ${EMAIL_SUMMARY} ] ; then
-    ers="${EMAIL_SUMMARY[*]}"
-    ers=" -e ${ers// /,}"
-  fi
-
-
-  # multiple threads, but a maximum of 2
-  exp_ix=0
-  local pidBufMax=2
-  local pidBuf
-  local isStart=f
-  local buf_ix=0
-  local i
-
-  for(( i=0 ; i < pidBufMax ; ++i )) ; do
-    pidBuf[i]=''
-  done
-
-  local qa_res
-
-  while [ ${exp_ix} -lt ${#LOG_FNAMES[*]} ] ; do
-    for(( i=0 ; i < pidBufMax ; ++i )) ; do
-      if [ "${pidBuf[i]}" ] ; then
-        if ! ps -p ${pidBuf[i]} -o pid= &> /dev/null  ; then
-          # there is still an active job for this fBase
-          isStart=t
-          break
-        fi
-      else
-        isStart=t
-        break
-      fi
-    done
-
-    if [ ${isStart} = t ] ; then
-      if [ "${LOG_FNAMES[exp_ix]}" != "${LOG_FNAMES[exp_ix]#*/}" ] ; then
-         qa_res=${LOG_FNAMES[exp_ix]%/*}
-         LOG_FNAMES[exp_ix]=${LOG_FNAMES[exp_ix]##*/}
-
-         if [ ! -r $qa_res/${LOG_FNAMES[exp_ix]}.log ] ; then
-           echo "$qa_res/${LOG_FNAMES[exp_ix]}: no such file or directory"
-           continue
-         fi
-      else
-         qa_res=${QA_RESULTS}/check_logs
-      fi
-
-      # detect the kind of summary structure (traditionally or new)
-      if [ ${PY_SUMMARY:-f} = f -a ${TRADITIONAL_SUMMARY:-f} = f ] ; then
-        if summary_detectType ${qa_res} ${LOG_FNAMES[exp_ix]} ; then
-           PY_SUMMARY=t
-        else
-           PY_SUMMARY=f
-        fi
-      fi
-
-      if [ ${PY_SUMMARY:-f} = t ] ; then
-         python ${QA_SRC}/scripts/python/qa-dkrz/qa_summary.py \
-              ${qa_res}/${LOG_FNAMES[exp_ix]} &
-      else
-         /bin/bash ${QA_SRC}/scripts/taskSummary ${DEBUG_X} \
-           -p ${qa_res} --src=$QA_SRC \
-           ${cvr} ${ers} ${prj} ${qrs} ${tcl} ${LOG_FNAMES[exp_ix]} &
-      fi
-
-      pidBuf[i]=$!
-      isStart=f
-      exp_ix=$((exp_ix+1))
-    else
-      sleep 1
-    fi
-  done
-
-  wait
   return
 }
 
