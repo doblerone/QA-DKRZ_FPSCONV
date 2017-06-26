@@ -918,7 +918,10 @@ class LogSummary(object):
                 while i < sz :
                     i = i+1
                     words = blk[i].lstrip(' -').split(None,1)
-
+                    if len(words) == 0:
+                       # a string purly of '-' would results in this
+                       words=['-----------']
+                       
                     if words[0] == 'file:':
                         # fse contains ( var, StartTime, EndTime ); the
                         # times could be empty strings or EndTime could be empty
