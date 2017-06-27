@@ -76,35 +76,6 @@ setDefaults()
   setKWL SLEEP_PERIOD=300            # [s] export
 }
 
-
-changeGroupPermission()
-{
-  local sendText
-
-  # Give permissions to all group members
-  if [ ${GROUP_NAME} ] ; then
-    # change to new group name
-    item=$( ls -ld $1 | awk '{print $4}' )
-    if [ "$item" != "$GROUP_NAME" ] ; then
-      if ! chgrp -R $GROUP_NAME $1 &> /dev/null ; then
-        std_out "${0##*/}::changeGroupPermission(): chgrp "
-        std_out "Invalid group or you are probably not allowed to change group."
-        std_out "If so, please ask your admin to chgrp -R $GROUP_NAME $1"
-        std_out flush
-        exit 1
-      fi
-    fi
-
-    # set SGID bit
-    item=$( ls -ld $1 | awk '{print $1}' )
-    if [ ! "${#sendText}" -a ${item:6:1} != s ] ; then
-      # It would be amazing if chmod would not be allowed, but chgrp was
-      find $1 -type d -exec chmod g+srwx {} \;
-      find $1 -type f -exec $QA_SRC/scripts/cpMod {} \;
-    fi
-  fi
-}
-
 ##//! Check availabillity of tools.
 
 checkTools()
@@ -262,7 +233,8 @@ findProject()
 
   # look for a specification in the current conf-files.
   local val
-
+  declare -a val
+  
   if [ ! ${PROJECT} ] ; then
     val=( $(grep "^[[:space:]]*[^#]*[[:space:]]*PROJECT=" $1 ) )
     if [ "${val}" ] ; then
@@ -279,6 +251,7 @@ findProject()
 
   if [ ! ${PROJECT} ] ; then
     local item names name
+    declare -a names
     names=( QA_CONF QC_CONF qa_conf qc_conf )
 
     for name in ${names[*]} ; do
@@ -342,7 +315,9 @@ getMultiLists()
   done
 
   # precedence of check lists: user-defined --> default
-  local fs=( CF_check-list.conf ${qa_cl[*]#*=} \
+  local fs
+  declare -a fs
+  fs=( CF_check-list.conf ${qa_cl[*]#*=} \
              ${PROJECT}_check-list.conf \
              ${PROJECT_AS}_check-list.conf )
 
@@ -464,7 +439,8 @@ findQAConfSeq()
   # is found or a path found before is found again;
   # an invalid file would also break processing
   local fs
-
+  declare -a fs
+  
   for(( i=0 ; i < ${#pDir[*]} ; ++i )) ; do
     if ! fs=( $(ls ${pDir[i]}/*_qa.conf 2> /dev/null) ) ;then
       fs=( $(ls ${pDir[i]}/*_qc.conf 2> /dev/null) )
@@ -519,6 +495,7 @@ initSession()
   local currDate=$( date +'%F_%T' )
 
   local qaC qaCs
+  declare -a qaCs
   qaCs=( ${QA_CONFS[*]//,/ } )
 
   if [ ${#qaCs[*]} -gt 0 ] ; then
@@ -531,7 +508,7 @@ initSession()
 
   # test for resuming a session
   if [ ${RESUME_SESSION} = t ] ; then
-    local k l sDates
+    local k l
     local dates0 dates1
     declare -a dates0 dates1
 
@@ -701,12 +678,6 @@ loadSetting()
   # Naming and placement of the base dirs in QA_RESULTS.
   # Inits also session-logs
   naming
-
-  # change permissions
-#  changeGroupPermission $QA_SRC
-#  if [ "${QA_RESULTS:0:${#QA_WORK}}" != "$QA_WORK" ] ; then
-#    changeGroupPermission $QA_RESULTS
-#  fi
 
   # any error case happened before is written now
   if [ ${sendSubject} ] ; then
@@ -1174,6 +1145,7 @@ sel_lock()
 
 
   local i p v z
+  declare -a p v
 
   # this is very special: a fully qualified file
   if [ -f $2 ] ; then
@@ -1248,6 +1220,8 @@ sel_lock()
 
   # multiple, comma-separated paths?
   local j pp vv
+  declare -a pp vv
+
   pp=( ${p//,/ } )
   vv=( ${v//,/ } )
   p=()
@@ -1327,7 +1301,7 @@ setKWL()
 {
   test ${DEBUG_CONF} && voidX
 
-  local key item value i val vals isAdd
+  local key item value i val isAdd
   item="$*"
   value=t
   
@@ -1379,9 +1353,14 @@ setKWL()
 
   # special: QA_BIN
   if [ "$key" = QA_BIN ] ; then
+    local vals
+    declare -a vals
+    
     value=${value%/}  # rm a trailing '/'
     vals=( ${value//,/ } )
     local host hosts
+    declare -a hosts
+    
     for(( i=0 ; i < ${#vals[*]} ; ++i )) ; do
       val=${vals[i]}
       if [ "${val#*:}" = "${val}" ] ; then
@@ -1571,6 +1550,7 @@ tryExist()
     fi
 
     # try a C compilation
+    local answ status
     if [ -e ${QA_SRC}/src/${2%.x}.c ] ; then
       if [ ! ${CC} ] ; then
         sendText="${sendText}\nC compiler not found."
@@ -1578,7 +1558,6 @@ tryExist()
         return 1
       fi
 
-      local answ status
       answ=$( $CC ${CFLAGS[*]} -o ${curr_QA_BIN#*:}/$2 \
           ${QA_SRC}/src/${2%.x}.c )
 
@@ -1599,7 +1578,6 @@ tryExist()
         return 1
       fi
 
-      local answ status
       answ=$( $CXX ${CPPFLAGS[*]} -o ${curr_QA_BIN#*:}/$2 \
           ${QA_SRC}/src/${2%.x}.cpp &> /dev/null )
 

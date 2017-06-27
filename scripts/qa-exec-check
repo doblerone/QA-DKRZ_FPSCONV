@@ -88,7 +88,8 @@ bind_checksum()
   fs=( ${*##*/} ) # just the filename
 
   local arr item cs force type
-
+  declare -a arr
+  
   arr=( ${CHECKSUM//,/ } )
 
   for item in ${arr[*]} ; do
@@ -679,6 +680,8 @@ log()
 {
   # print execution messages to the experiment-log file
   local sp
+  declare -a sp
+  
   sp[0]=''
   sp[1]=' '
   sp[2]='  '
@@ -831,6 +834,7 @@ parseOutput()
 
   # xtract embedded string: KEY-BEG any text KEY-END
   local is key keys mess strX strY
+  declare -a keys
   keys=( PERIOD CHECK CPU EMAIL REAL STATUS SUBJECT FLAG )
 
   while : ; do  # for keys with multiple occurrence
@@ -907,7 +911,10 @@ parseKey()
     test ${#trackingID}   -gt 0 && sTxt[${#sTxt[*]}]="3tracking_id: $trackingID"
 
   elif [ ${key} = PERIOD ] ; then
-    local arr=( ${mess} )
+    local arr
+    declare -a arr
+    
+    arr=( ${mess} )
     sTxt[${#sTxt[*]}]="3period:"
     if [ ${#arr[*]} -eq 3 ] ; then
       sTxt[${#sTxt[*]}]="4begin: ${arr[0]}"
@@ -1028,6 +1035,7 @@ reportFindings()
 
   # any type of error/warning file for current netCDF file
   local fs
+  declare -a fs
   fs=( $( ls [^tid_]*_${nm}.txt 2> /dev/null) )
 
   # no notification
@@ -1341,6 +1349,7 @@ set_fd_par()
 
   # Properties of the freq. dist. Note: current dir is destination.
   local files
+  declare -a files
 
   if files=( $( ls fd_${name}*.build 2> /dev/null ) ) ; then
     # Rule 1: rebuild, i.e continue a FD
@@ -1355,6 +1364,7 @@ set_fd_par()
     fi
   elif [ "${FD_EXPLICIT_PROPS}" ] ; then  # rule 3
     local props
+    declare -a props
     props=( ${FD_EXPLICIT_PROPS//\// } )
     par=${par}":w=${props[0]}@i=${props[1]}"
   fi
@@ -1559,18 +1569,21 @@ set_X_par()
 
     if [ "${CF_NOTE}" ] ; then
       local saveNOTE
+      declare -a saveNOTE
       test ${NOTE} && saveNOTE=( ${NOTE[*]} )
       NOTE=( ${CF_NOTE} )
     fi
 
     if [ "${CF_NOTE_ALWAYS}" ] ; then
       local saveNOTE_ALWAYS
+      declare -a saveNOTE_ALWAYS
       test ${NOTE_ALWAYS} && saveNOTE_ALWAYS=( ${NOTE_ALWAYS[*]} )
       NOTE_ALWAYS=( ${CF_NOTE_ALWAYS[*]} )
     fi
 
     if [ "${CF_NOTE_LEVEL_LIMIT}" ] ; then
       local saveNOTE_LEVEL_LIMIT
+      declare -a saveNOTE_LEVEL_LIMIT
       test ${NOTE_LEVEL_LIMIT} && saveNOTE_LEVEL_LIMIT=( ${NOTE_LEVEL_LIMIT[*]} )
       NOTE_LEVEL_LIMIT=( ${CF_NOTE_LEVEL_LIMIT[*]} )
     fi
@@ -1876,7 +1889,6 @@ tracePrint()
     echo -e -n "${tab}${depth[i]}"   >> $out
     echo -e -n "\t${trc_count[i]}"   >> $out
     echo -e    "\t${trc_time[i]}"    >> $out
-
   done
 
   echo -e "--------\t\t \t----------------" >> $out

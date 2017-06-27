@@ -10,7 +10,6 @@ compilerSetting()
 {
   # Notice priority
   local locCC locCFLAGS locCXX locCXXFLAGS
-  local lf
 
   # external setting gets highest priority
   locCC="$CC"
@@ -209,11 +208,10 @@ libInclSetting()
    INCLUDE=${INCLUDE/ / -I}
    INCLUDE=${INCLUDE//:/ -I}
 
-   local is
-
-   local is_i=( f f f f )
-   local is_l=( f f f f )
-   local item
+   local is is_i is_l item
+   declare -a is_i is_l
+   is_i=( f f f f )
+   is_l=( f f f f )
 
    # ----check include file
    for item in ${INCLUDE[*]} ; do
@@ -226,10 +224,11 @@ libInclSetting()
    # ----check lib
    # note that static and/or shared as well as lib and/or lib64 may occur
    local j tp typ kind isShared isStatic
-   typ=( a so )
+   declare -a typ isShared isStatic
 
-   local isShared=( f f f f )
-   local isStatic=( f f f f )
+   typ=( a so )
+   isShared=( f f f f )
+   isStatic=( f f f f )
 
    for tp in a so ; do
      for item in ${LIB[*]} ; do
@@ -280,6 +279,7 @@ libInclSetting()
 
    if [ ${isS:-f} = t ] ; then
       local dls
+      declare -a
       dls=( $( find /lib -name "libdl.*" 2> /dev/null ) )
       test ${#dls[*]} -eq 0 && \
           dls=( $( find /usr/lib -name "libdl.*" 2> /dev/null ) )
@@ -516,10 +516,11 @@ showInst()
      done
    fi
 
-   local is=( f f f f )
-   local text=( "zlib" "hdf5" "netCDF" "udunits" )
+   local is item text
+   declare -a is text
 
-   local item
+   is=( f f f f )
+   text=( "zlib" "hdf5" "netCDF" "udunits" )
 
    # ----check include file
    echo -e "\nINCLUDE=${INCLUDE}"
@@ -546,6 +547,8 @@ showInst()
    echo -e "\nLIB=${LIB}"
 
    local j typ kind
+   declare -a typ kind
+   
    typ=( a so )
    kind=( static shared )
 
@@ -627,6 +630,8 @@ store_LD_LIB_PATH()
 
   # current -L paths
   local i j lib
+  declare -a libh
+  
   lib=( ${LIB[*]//-L/} )
   lib=( ${lib[*]//:/ } )
 

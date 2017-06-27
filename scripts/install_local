@@ -98,6 +98,7 @@ cmpStrings()
   local s1=$3
 
   local res
+  declare -a res
   res=( $(echo -e "${s0}\n${s1}" | sort ) )
 
   # equal?
@@ -211,8 +212,8 @@ editInstallConfigure_link()
   # procedure for LIB is more intricate, because of lib and lib64
 
   # linked libs are collected, but multiple names are possible.
-  local libs
-  declare -a libs
+  local incls libs
+  declare -a incls libs
 
   # map lib and lib64 always to QA_DKRZ/local
 
@@ -388,8 +389,11 @@ f_link()
   local i is
   local changeCount=0
 
-  local names=( hdf5 netcdf udunits zlib )
-  local ids=( h n u z )
+  local ids names
+  declare -a ids names
+  
+  names=( hdf5 netcdf udunits zlib )
+  ids=( h n u z )
 
   local lib  # value is returned by ln_'name'()
 
@@ -429,7 +433,7 @@ f_link()
 findPackage()
 {
   local packs
-  declare -a dirs
+  declare -a packs
 
   packs=( $( ls -d ${1}/${2}-* | sort ) )
   eval curr_${2}=${packs[0]##*/}
@@ -751,7 +755,8 @@ saveAsCycle()
 
     local ext val x
     local maxVal fs fx
-
+    declare -a fs
+    
     maxVal=0
     fs=( $(ls -d $f.* 2> /dev/null) )
 

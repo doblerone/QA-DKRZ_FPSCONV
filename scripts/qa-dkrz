@@ -75,6 +75,7 @@ annot_summary()
     if [ -d ${LOG_FNAMES[i]} ] ; then
        # is a directory and the contained log-files are appended
        local log_fns
+       declare -a log_fns
        log_fns=( $(ls ${LOG_FNAMES[i]}/*.log 2>/dev/null) )
 
        for(( j=0 ; j < ${#log_fns[*]} ; ++j )) ; do
@@ -322,6 +323,7 @@ applySelectionRules()
 bind_checksum()
 {
   local fs
+  declare -a fs
   fs=( ${*##*/} ) # just the filename
 
   local type
@@ -406,7 +408,8 @@ callQaConfig()
 # LOGIDR/cache_request.txt.
 
   local items i key
-
+  declare -a items
+  
 # necessary for returning embedded arrays from qaConfiguration
   OLD_IFS="$IFS"
   IFS="%"
@@ -686,7 +689,6 @@ callQaExecutor()
       fi
     done
 
-
     echo -e "$text" > $procFile
 
     if callPing ; then
@@ -706,7 +708,9 @@ catFiles()
 
   local target=$1
   shift
-  local fs=( $* )
+  local fs
+  declare -a fs
+  fs=( $* )
 
   local i sec isNew=f
   declare -a sec
@@ -820,7 +824,8 @@ checkClosedMessages()
 {
   # qaExecutors have added locked or closed files for finished runs
   local expName f fs ffs ff g
-
+  declare -a ffs
+  
   fs=( $( ls $PROC_POOL/*.closed 2> /dev/null ) )
 
   for f in ${fs} ; do
@@ -978,6 +983,8 @@ checkValidNcFile()
 clear()
 {
   local f fs t tx ts
+  declare -a fs ts
+  
   local isFL=f
   local isResume=f
   local isMessage=f
@@ -1183,8 +1190,6 @@ QA result path: $QA_RESULTS/data\nDRS tree:\t${subPath}\n${note}"
 
 copyPreamble()
 {
-  local i zsTxt
-
   test ${isShow:-f} = t && return
 
   if [ -f ${SESSION_LOGDIR}/session.prmbl ] ; then
@@ -1271,6 +1276,8 @@ deref_link()
   # $2: the link
 
   local arr ipos
+  declare -a arr
+  
   arr=( $( \
            tryCom \
            ls -l $2 ) )
@@ -1318,6 +1325,8 @@ finally()
 
   # Note: there could be 2 sub-dirs and files in PROC_POOL during operation.
   local f fs
+  declare -a fs
+  
   fs=( $( ls -d $PROC_POOL/* 2> /dev/null) )
 
   local count=0
@@ -1419,7 +1428,9 @@ getAllExps()
           getExperimentName F ${fs[0]##*/}
         fi
       else
-        local fs=( $( ls ${PROJECT_DATA}/${subPath}/*.nc 2> /dev/null) )
+        local fs
+        declare -a fs
+        fs=( $( ls ${PROJECT_DATA}/${subPath}/*.nc 2> /dev/null) )
         getExperimentName F ${fs[0]##*/}
       fi
 
@@ -1557,6 +1568,7 @@ getExperimentNameFromPath()
 
   # decompose the path
   local pcs
+  declare -a pcs
   pcs=${PROJECT_DATA}/$1
   pcs=( ${pcs//\// } )
 
@@ -1622,6 +1634,9 @@ getFilenameBase()
     fi
   fi
 
+  local fileNames
+  declare -a fileNames
+  
   if [ ${QUERY_NON_NC_FILE:-f} = t ] ; then
     fileNames=($(find ${PROJECT_DATA}/${subPath} -maxdepth 1 ! -type d -name "*"))
   else
@@ -1991,8 +2006,7 @@ getNextVariable()
 
   if [ ${isMixingRefused} = t -a ${IGNORE_TEMP_FILES:-f} = t ] ; then
     local tf tff tfs
-    declare -a tfs
-    declare -a tff
+    declare -a tff tfs
 
     for tf in ${nV_fls[*]} ; do
       # exclude fixed variables from ignoring
@@ -2154,7 +2168,8 @@ getNextSubPath()
 {
   # subPaths from a temporary file redirected to stdin.
   local ix line
-
+  declare -a line
+  
   # init progress estimation
 #  if [ ${PROGRESS_BAR} ] ; then
     if [ ${progressTotalAtomicNum:-0} -eq 0 ] ; then
@@ -2384,6 +2399,7 @@ getProjectTableName()
 {
   # decompose the path
   local pcs
+  declare -a pcs
   pcs=${PROJECT_DATA}/$1
   pcs=( ${pcs//\// } )
 
@@ -2392,6 +2408,7 @@ getProjectTableName()
 
   local countEPB=0
   local c ptPathIndex M N
+  declare ptPathIndex
   N=${#pcs[*]}
 
   # for multiple occurrences
@@ -2524,6 +2541,7 @@ getSelectedPaths()
 
     if [ ${HIDDEN_DIRECTORIES:-f} = t ] ; then
       local hidden
+      declare -a hidden
       hidden=( $(ls -ad $currDir/.* 2> /dev/null) )
       if [ ${#hidden[*]} -gt 2 ] ; then
         # rm . and ..
@@ -2620,7 +2638,8 @@ getSelectedPaths()
 has()
 {
   local c i j t
-
+  declare -a c
+  
   if [ ${1:0:7} = '--char=' ] ; then
     if [ ${#1} -eq 7 ] ; then
       c=' '
@@ -2676,6 +2695,8 @@ init()
   done
 
   local T
+  declare -a T
+  
   if [ -c "$TTY" ] ; then
     T=( -T ${TTY} )
   fi
@@ -2702,7 +2723,7 @@ init()
     test ${CONDA_QA_ENV} && basic_args=( ${basic_args[*]} -E_CONDA_QA_ENV=${CONDA_QA_ENV} )
   fi
 
-  # check whether tables have been initaially copied fomr QA_SRC to QA_HOME;
+  # check whether tables have been initially copied from QA_SRC to QA_HOME;
   # if not, then do it.
   if [ ! -d $QA_HOME/tables ] ; then
     # note that QA_HOME is user-defined
@@ -2733,8 +2754,10 @@ init()
 
   local prj=${PROJECT_AS:-${PROJECT}}
   if [ ${#prj} -eq 0 -a ${#installArgs} -gt 0 ] ; then
-    local iA_args=(${installArgs//,/ })
-    local iA_Arg
+    local iA_args iA_arg
+    declare -a iA_args
+    iA_args=(${installArgs//,/ })
+
     for iA_arg in ${iA_args[*]} ; do
       if [ ${iA_arg:0:2} != '--' ] ; then
         setKWL PROJECT=${iA_arg}
@@ -2838,6 +2861,7 @@ init()
 #  set -f
   # revison num of the package
   local currVersion
+  declare -a currVersion
   currVersion=( $( ${QA_SRC}/scripts/getVersion ${prj} ) )
 
   maxNumExecThreads=0
@@ -2936,8 +2960,10 @@ init()
     # write to stdout
   if [ ${PROGRESS_BAR} ] ; then
     # (over)write to a file and set percentage stepping
-    local pbs=( ${PROGRESS_BAR//,/ } )
-    local pb
+    local pb pbs
+    declare -a pbs
+    pbs=( ${PROGRESS_BAR//,/ } )
+    
     for pb in ${pbs[*]} ; do
       if expr match ${pb} '.*[[:alpha:]]' &> /dev/null ; then
         progressFile=" >> ${pb}"
@@ -3152,6 +3178,7 @@ initT()
    fi
 
    local pDir  # index 0 -> 3 provides precedence
+   declare -a pDir
    local prj=$currPrj
 
    #pDir[0]=tables/projects/${prj}
@@ -3210,7 +3237,9 @@ initTcat()
    fi
 
    # the regular copy part
-   local fs=(${value//,/ })
+   local fs
+   declare -a fs
+   fs=(${value//,/ })
 
    # cat Files, when younger; the target files must be the first parameter
    local target=${fs[$((${#fs[*]}-1))]##*/}
@@ -3231,6 +3260,7 @@ intTryComRepeat()
   # parse REATTEMPT_LIMIT and SLEEP_TIME
 
   local rLs
+  declare -a rLs
   rLs=( ${REATTEMPT_LIMIT//,/ } )
   unset REATTEMPT_LIMIT
 
@@ -3442,6 +3472,8 @@ log()
   local s_out  # collects sTxt for output
 
   local sp
+  declare -a sp
+  
   sp[0]=''
   sp[1]=' '
   sp[2]='  '
@@ -3631,9 +3663,8 @@ mkLinks()
   local src_filename=$3
   local fBase=$4
 
-  local i grfs grf text text2
-
-  local f tmp
+  local i f grfs grf text text2 tmp
+  declare -a grfs
 
   tmp=$( getDateRange ${src_filename} )
   f=${src_filename%.nc}
@@ -4018,8 +4049,8 @@ rmBlock()
 
   # get all lines with line numbers having ' file: pattern'
   local nums num sz i
-
   declare -a nums
+  
   nums=($(grep -n "[[:space:]]*file:[[:space:]]*${pattern}" $1 ))
 
   # extract the numbers
@@ -4050,8 +4081,8 @@ rmConsistTableEntry()
 
   # get all lines with line numbers having ' file: pattern'
   local nums num sz i
-
   declare -a nums
+  
   nums=($(grep -n "[[:space:]]*file:[[:space:]]*${pattern}" $1 ))
 
   # extract the numbers

@@ -319,6 +319,8 @@ summaryHR()
     test "${str:0:1}" && echo -e "${str}" >> $outT
 
     local f fc
+    declare -a fc
+    
     fc=( $( ls $summary/$exp/L* 2> /dev/null ) )
 
     for f in ${fc[*]} ; do

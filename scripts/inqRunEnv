@@ -115,6 +115,8 @@ iRE_findLatestFile()
   shift
 
   local pp tt
+  declare -a pp tt
+  
   pp=($*)
   # find the latest command
   for(( i=0 ; i < ${#pp[*]} ; ++i )) ; do
@@ -144,7 +146,7 @@ iRE_findLatestFile()
 iRE_findLatestPrePARE()
 {
   local i cc pp pp_all pp_no_pkgs latest_conda
-  declare -a cc pp pp_no_pkgs
+  declare -a cc pp pp_all pp_no_pkgs
   pp_all=( $(. ${QA_SRC}/scripts/which_cmd_alias PrePARE ) )
 
   if [ ${#pp_all[*]} -eq 0 ] ; then

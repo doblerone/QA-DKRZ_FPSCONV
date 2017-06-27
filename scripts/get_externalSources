@@ -458,6 +458,8 @@ ges_cordex()
      fi
 
      local remote
+     declare -a remote
+     
      remote=( $( git remote -v ) )
      if [ ${remote[1]##*/} = 'IS-ENES-Data.github.io' ] ; then
        git fetch &>> log_cordex_tables.txt \
