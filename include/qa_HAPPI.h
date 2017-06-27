@@ -543,12 +543,13 @@ public:
 };
 
 const char* CMIP5_MIPS[] = {
+  "Aday",
   "fx",       "Oyr",      "Oclim",    "Amon",      "Omon",     "Lmon",
   "LImon",    "OImon",    "aero",     "day",       "6hrLev",   "6hrPlev",
   "3hr",      "cfMon",    "cfDay",    "cf3hr",     "cfSites",  "cfOff"
 };
 
-std::vector<std::string> QA_Exp::MIP_tableNames(CMIP5_MIPS, CMIP5_MIPS + 18);
+std::vector<std::string> QA_Exp::MIP_tableNames(CMIP5_MIPS, CMIP5_MIPS + 19);
 
 #endif
 
