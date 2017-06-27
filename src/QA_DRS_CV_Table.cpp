@@ -98,7 +98,7 @@ DRS_CV_Table::read(void)
 
   Split x_item;
   x_item.setSeparator("=");
-  x_item.setStripSides(" ");
+  x_item.setStripSides(); // ' ' and \t
 
   bool isDS=false;
   bool isFE=false;
