@@ -1854,6 +1854,8 @@ CMOR::checkMIP_table(InFile& in, VariableMetaData& vMD,
       notes->setCheckStatus("CV", pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
+    
+    return false;
   }
 
   // file and table properties are compared to each other
@@ -2776,6 +2778,9 @@ CMOR::checkMIPT_var_longName(
           return;
     }
   }
+  else if( tEntry.attMap[n_long_name] == vMD.attMap[n_long_name] )
+    return;
+  
 
   std::string key("4_5");
 
