@@ -81,7 +81,7 @@ global:
    driving_model_ensemble_member
    driving_experiment_name
    experiment_id
-   frequency
+   frequency                       = 3hr, 6hr, day, mon, sem, fx
    institute_id
    model_id
    product                         = output

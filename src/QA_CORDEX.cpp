@@ -3234,6 +3234,9 @@ QA_Exp::checkMetaData(InFile &in)
   // check attributes required in the meta data section of the file
   reqAttCheck() ;
 
+   getSubTable() ;
+
+  
   // check existance (and data) of the pressure coordinate for those
   // variables defined on a level indicated by a trailing number
   checkPressureCoord(in);
@@ -4033,7 +4036,7 @@ QA_Exp::getFrequency(void)
     return frequency;  // already known
 
   // get frequency from attribute (it is required)
-  frequency = pQA->pIn->nc.getAttString("frequency") ;
+  frequency = pQA->pIn->nc.getAttString(pQA->n_frequency) ;
 
   if( frequency.size() == 0 )
   {
@@ -4077,39 +4080,16 @@ QA_Exp::getSubTable(void)
   if( subTable.size() )
     return ;  // already checked
 
-  // This is CORDEX specific; taken directly from the standard table.
-  std::vector<std::string> sTables;
-
-  sTables.push_back("3hr");
-  sTables.push_back("6hr");
-  sTables.push_back("day");
-  sTables.push_back("mon");
-  sTables.push_back("sem");
-  sTables.push_back("fx");
-
   // the counter-parts in the attributes
 
-  // actually, there are no standard table names specified in the
-  // original tables, but frequencies are embedded in the caption
-  std::string sTable( getFrequency() );
-
   //check for valid names
-  bool is=true;
-  for( size_t i=0 ; i < sTables.size() ; ++i )
-  {
-    if( sTables[i] == sTable )
-    {
-      is=false ;
-      break;
-    }
-  }
-
-  if( is )
+/*
+  if( ! hdhC::isAmong(getFrequency(),  possibleFrequencies) )
   {
      std::string key("7_5");
      if( notes->inq( key, pQA->fileStr) )
      {
-       std::string capt(hdhC::tf_assign("frequency", getFrequency()));
+       std::string capt(hdhC::tf_assign(pQA->n_frequency, getFrequency()));
        capt += " not defined in the CORDEX_variables_requirement table" ;
 
        subTable.clear();
@@ -4121,8 +4101,8 @@ QA_Exp::getSubTable(void)
         }
      }
   }
-
-  subTable=sTable;
+*/
+  subTable=getFrequency();
   return ;
 }
 
@@ -4160,9 +4140,8 @@ QA_Exp::init(std::vector<std::string>& optStr)
    {
      fVarname = getVarnameFromFilename();
      getFrequency();
-     getSubTable() ;
    }
-
+   
    if( pQA->isCheckCV || pQA->isCheckData )
    {
      // Create and set VarMetaData objects.
@@ -4775,7 +4754,15 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
 
        else if( aV != rqValue )
        {
-        // there is a value. is it the required one?
+         // there is a value. is it the required one?
+         if( rqName == pQA->n_frequency )
+         {
+            // one of those specified in DRS_CV
+            Split x_f(rqValue, " ,", true);
+            if( hdhC::isAmong(aV, x_f.getItems()) )
+               continue;
+         }
+         
          std::string key("2_8");
          if( notes->inq( key, pQA->s_global ) )
          {
@@ -4984,7 +4971,7 @@ QA_Exp::run(void)
      }
    }
 
-   if(pQA->isCheckCV)
+     if(pQA->isCheckCV)
    {
      // check variable type; uses DRS_CV_Table
      checkVariableType();
@@ -5084,7 +5071,7 @@ QA_Exp::varReqTableCheck(InFile &in, VariableMetaData &vMD,
    {
      std::string capt(hdhC::tf_var(vMD.var->name));
      capt += " for " ;
-     capt += hdhC::tf_assign("frequency", getFrequency()) ;
+     capt += hdhC::tf_assign(pQA->n_frequency, getFrequency()) ;
      capt += " not specified in the CORDEX_variables_requirement table";
 
      (void) notes->operate(capt) ;

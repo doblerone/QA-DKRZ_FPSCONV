@@ -42,8 +42,8 @@ class Split
   Split(const char* s);
 
   //! Construct and split a string at string sep.
-  /*! By default, each character in the string is set as individual
-   separator. If each char in string is a separator, set 'isContain' true.
+  /*! By default, the string acts an individual separator;
+   true for each char in string is a separator.
    Note: no white-spaces by default with this constructor.*/
   Split(std::string s, std::string sep, bool eachCharIsSep=false);
 

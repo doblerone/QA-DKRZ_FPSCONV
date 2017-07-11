@@ -370,6 +370,7 @@ class QA_Exp
   std::string RCMModelName;
   std::string institute_id;
 
+  std::vector<std::string> possibleFrequencies;
   std::string frequency;
   std::string parentExpID;
   std::string parentExpRIP;

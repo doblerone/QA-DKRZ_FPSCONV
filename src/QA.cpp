@@ -659,6 +659,7 @@ QA::initDefaults(void)
 
   n_axis="axis";
   n_cell_methods="cell_methods";
+  n_frequency="frequency";
   n_long_name="long_name";
   n_outputVarName="output variable name";
   n_positive="positive";
