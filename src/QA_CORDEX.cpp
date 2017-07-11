@@ -3284,7 +3284,8 @@ QA_Exp::createVarMetaData(void)
     for( size_t k=0; k < var.dimName.size() ; ++k)
     {
       int sz;
-      if( (sz=pQA->pIn->nc.getDimSize( var.dimName[k] )) == 1 )
+      if( ! pQA->pIn->nc.isVarUnlimited(var.name) &&
+            (sz=pQA->pIn->nc.getDimSize( var.dimName[k] )) == 1 )
       {
         std::string key("4_7");
         if( notes->inq( key, var.name) )
@@ -4108,8 +4109,8 @@ QA_Exp::getSubTable(void)
      std::string key("7_5");
      if( notes->inq( key, pQA->fileStr) )
      {
-       std::string capt(hdhC::tf_assign("frequency","fx"));
-       capt += " not found in the CORDEX_variables_requirement table" ;
+       std::string capt(hdhC::tf_assign("frequency", getFrequency()));
+       capt += " not defined in the CORDEX_variables_requirement table" ;
 
        subTable.clear();
 
