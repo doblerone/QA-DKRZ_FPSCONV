@@ -116,7 +116,8 @@ class LogSummary(object):
         pMutables=[]
 
         annot_sz = len(self.annot_capt)
-
+        p_sz=annot_sz
+        
         # there is not a single annotation
         if annot_sz == 0:
             return
@@ -396,6 +397,7 @@ class LogSummary(object):
             items, mutables = self.getAnnotSource(afi, sep='_')
 
         return items, mutables
+
 
     def check_for_skipping(self, blk, skip_fBase):
         for line in blk:
@@ -879,24 +881,23 @@ class LogSummary(object):
         self.fName_ids=[]
         self.fName_dt_id={}  # each fName_id gets a list of dt ids
         self.path_ids=[]
-        self.f_p_ids={}
         self.f_items=[]
         self.p_items=[]
         self.p_drs=[]
 
         self.var_ids={}  # contains all [ids] with the same variable name in {}
 
-        self.atomicBeg=[]      # atomic time interval
-        self.atomicEnd=[]      # atomic time interval
-        self.dt=[]             # time intervals of sub-temp files
+        self.atomicBeg=[]         # atomic time interval
+        self.atomicEnd=[]         # atomic time interval
+        self.dt=[]                # time intervals of sub-temp files
 
-        self.annot_capt=[]     # brief annotations
+        self.annot_capt=[]        # brief annotations
         self.annot_impact=[]      # corresponding  severity level
-        self.annot_tag=[]      # corresponding tag
-        self.annot_scope=[]    # brief annotations
-        self.annot_fName_id=[]   # for each var involved
-        self.annot_path_id=[]  #
-        self.annot_var_ix=[]    # only project variable names
+        self.annot_tag=[]         # corresponding tag
+        self.annot_scope=[]       # brief annotations
+        self.annot_fName_id=[]    # for each var involved
+        self.annot_path_id=[]  
+        self.annot_var_ix=[]      # only project variable names
         self.annot_fName_dt_id=[] # for each time interval of each var involved
 
         # count total occurrences (good and bad)
@@ -919,8 +920,8 @@ class LogSummary(object):
                     i = i+1
                     words = blk[i].lstrip(' -').split(None,1)
                     if len(words) == 0:
-                       # a string purly of '-' would results in this
-                       words=['-----------']
+                        # a string of just '-' would results in this
+                        words=['-----------']
                        
                     if words[0] == 'file:':
                         # fse contains ( var, StartTime, EndTime ); the
@@ -962,11 +963,9 @@ class LogSummary(object):
                             self.atomicEnd.append('')   # smaller than any date
 
                     elif words[0] == 'data_path:':
+                        # used later
                         path_id = self.decomposition(words[1], self.p_items,
                                                      self.path_ids, self.prj_path_sep)
-
-                        # in particular for paths with several variables
-                        self.f_p_ids[fName_id_ix] = path_id
 
                     elif words[0] == 'period:':
                         # time ranges of atomic variables
