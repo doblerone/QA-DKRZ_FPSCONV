@@ -1377,10 +1377,10 @@ finally()
   # remove empty paths from the results
   rmEmptyPaths
 
-  echo "number of processed variables: ${countProcessedVars}"
+  echo "number of processed files: ${countProcessedFiles}"
 
   countSelectedVars=$((countSelectedVars - countLockedVars ))
-  countSelectedVars=$((countSelectedVars - countProcessedVars ))
+  countSelectedVars=$((countSelectedVars - countProcessedFiles ))
   
   if [ ${countSelectedVars} -gt 0 ] ; then
     echo -n "number of un-processed variables: ${countSelectedVars}"
@@ -2985,7 +2985,7 @@ init()
   fileCount=0 # counter for NEXT
   countLockedVars=0
   countSelectedVars=0
-  countProcessedVars=0
+  countProcessedFiles=0
 }
 
 initExperimentName()
@@ -3838,8 +3838,6 @@ operatePipes()
     fi
   fi
 
-  countProcessedVars=$(( countProcessedVars +1 )) 
-  
   # purpose of this loop: when all allowed execution threads
   # are busy, then wait until any of them is free again
   local op_nap=1
@@ -3898,6 +3896,8 @@ operatePipes()
       fi
 
       nextFile=${p_nF[0]}
+      countProcessedFiles=$(( countProcessedFiles +1 )) 
+  
 
       if [ ${nF_SEQ[${nFcurr}]} = 'f' ] ; then
         if [ ${#p_nF[*]} -eq 1 ] ; then
