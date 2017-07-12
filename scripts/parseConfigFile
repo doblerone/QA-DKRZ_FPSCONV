@@ -80,6 +80,10 @@ readCF()
    local noSection=t
 
    while read line ; do
+       if expr match "$line" '^[[:space:]]*#' > /dev/null ; then
+         continue
+       fi
+       
        if [ "${uCF_is}" = t -a ! "${line}" ] ; then
           noSection=f
           break
