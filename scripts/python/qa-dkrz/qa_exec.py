@@ -120,6 +120,12 @@ class QaExec(object):
         if qaOpts.isOpt('DATA_IN_PRODUCTION'):
             par += ':dIP'
 
+        if qaOpts.isOpt('DEFAULT_VALID_MAX'):
+            par += ':dVMX'
+
+        if qaOpts.isOpt('DEFAULT_VALID_MIN'):
+            par += ':dVMN'
+
         if qaOpts.isOpt('DISABLE_CONSISTENCY_CHECK'):
             par += ':dCC'
 
@@ -130,11 +136,17 @@ class QaExec(object):
             s=','
             par += ':eA=' + s.join(qaOpts.getOpts('EXCLUDE_ATTRIBUTE'))
 
+        if qaOpts.isOpt('FILE_NAME_FREQ_INDEX'):
+            par += ':fNFI=' + qaOpts.getOpt('FILE_NAME_FREQ_INDEX')
+
+        if qaOpts.isOpt('FILE_NAME_VAR_INDEX'):
+            par += ':fNVI=' + qaOpts.getOpt('FILE_NAME_VAR_INDEX')
+
+        if qaOpts.isOpt('FILE_SEQUENCE'):
+            par += ':fS=' + qaOpts.getOpt('FILE_SEQUENCE')
+
         if qaOpts.isOpt('FREQUENCY'):
             par += ':fq=' + qaOpts.getOpt('FREQUENCY')
-
-        if qaOpts.isOpt('FREQUENCY_POSITION'):
-            par += ':fqp=' + qaOpts.getOpt('FREQUENCY_POSITION')
 
         if qaOpts.isOpt('IGNORE_REF_DATE_ACROSS_EXP'):
             par += ':iRDAE=' + qaOpts.getOpt('IGNORE_REF_DATE_ACROSS_EXP')
@@ -510,8 +522,8 @@ class QaExec(object):
             for eve in log_entry['event']:
                 entry_id = self.log.append( entry_id,
                                             caption  = eve['caption'],
-                                    impact   = eve['impact'],
-                                    tag      = eve['tag'])
+                                            impact   = eve['impact'],
+                                            tag      = eve['tag'])
 
             if 'info' in eve.keys():
                 entry_id = self.log.append(entry_id, info=eve['info'])
