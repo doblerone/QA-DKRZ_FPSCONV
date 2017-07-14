@@ -17,8 +17,6 @@ import sys
 import threading
 import time
 
-import ConfigParser
-
 class GetPaths(object):
     '''
     classdocs
@@ -311,84 +309,6 @@ def cat( srcs, dest, append=False):
     return True
 
 
-def cfg_parser(rCP, cfgFile, section='', key='', value='', init=False,
-               final=False):
-
-    if not hasattr(cfg_parser, 'isModified'):
-        cfg_parser.isModified=False
-
-    # any valid conf-file written by a ConfigParser?
-    if init:
-        (path, tail)=os.path.split(cfgFile)
-        old = os.path.join(path, 'config.txt' )
-
-        if os.path.isfile(cfgFile):
-            # read a file created by a rCP instance
-            rCP.read(cfgFile)
-
-        elif os.path.isfile(old):
-            # note config.txt is a file not created  by rCP,
-            # conversion.
-            with open(old) as r:
-                for line in r:
-                    line = clear_line(line)
-                    if len(line):
-                        sz1=len(line)-1
-
-                        if line[sz1] == ':' :
-                            ny_sect=line[0:sz1] # rm ':'
-                            rCP.add_section(ny_sect)
-                        else:
-                            k, v = line.split('=')
-                            rCP.set(ny_sect, k, repr(v))
-
-                        cfg_parser.isModified=True
-        return
-
-    if final == True and cfg_parser.isModified == True:
-        with open(cfgFile,'wb') as cfg:
-            rCP.write(cfg)
-        return
-
-    # compare+adjust, or set
-    bVal=False
-    if len(value):
-        bVal=True
-
-    retVal=value
-
-    # inquire/add from/to an existing cfg files
-    try:
-        # does section exist?
-        getVal =rCP.get(section, key)
-    except ConfigParser.NoSectionError:
-        if bVal and not ( value == 'd' or value == 'disable'):
-            # a new section
-            rCP.add_section(section)
-            if len(value):
-                rCP.set(section, key, value)
-            cfg_parser.isModified=True
-    except ConfigParser.NoOptionError:
-        # a new assignment to an existing section
-        if bVal and not (value == 'd' or value == 'disable'):
-            rCP.set(section, key, value)
-            cfg_parser.isModified=True
-    else:
-        # try: section and key exist
-        if bVal:
-            if value == 'd' or value == 'disable':
-                # delete a key=value pair
-                rCP.remove_option(section, key)
-                retVal=''
-                cfg_parser.isModified=True
-            elif getVal != value:
-                # replacement
-                rCP.set(section, key, value)
-                cfg_parser.isModified=True
-
-    return retVal
-
-
 def clear_line(line):
     line=line.replace(' ','')  # all blanks
     line = line.strip() # other white chars and \n
@@ -598,15 +518,15 @@ def get_experiment_name(g_vars, qaOpts, fB='', sp='', isInit=False):
 
         elif qaOpts.isOpt('LOG_PATH_INDEX'):
             g_vars.log_path_index = qaOpts.getOpt('LOG_PATH_INDEX')
-            qaOpts.setOpt('LOG_INDEX_MAX', max(g_vars.log_path_index))
+            qaOpts.addOpt('LOG_INDEX_MAX', max(g_vars.log_path_index))
 
         elif qaOpts.isOpt('LOG_FNAME_INDEX'):
             g_vars.log_fname_index = qaOpts.getOpt('LOG_PATH_INDEX')
-            qaOpts.setOpt('LOG_INDEX_MAX', max(g_vars.log_fname_index))
+            qaOpts.addOpt('LOG_INDEX_MAX', max(g_vars.log_fname_index))
 
         else:
             g_vars.log_fname = 'all-scope'
-            qaOpts.setOpt('LOG_NAME', g_vars.log_fname)
+            qaOpts.addOpt('LOG_NAME', g_vars.log_fname)
 
         g_vars.log_fnames = []
 
@@ -735,7 +655,7 @@ def get_project_table_name(g_vars, qaOpts, fB='', sp='', isInit=False):
 
         elif qaOpts.isOpt('PT_PATH_INDEX'):
             g_vars.pt_path_index = qaOpts.getOpt('PT_PATH_INDEX')
-            qaOpts.setOpt('PT_PATH_INDEX_MAX', max(g_vars.pt_path_index))
+            qaOpts.addOpt('PT_PATH_INDEX_MAX', max(g_vars.pt_path_index))
 
             if len(g_vars.pt_path_index):
                 g_vars.pt_path_index_max = max(g_vars.pt_path_index)
@@ -744,7 +664,7 @@ def get_project_table_name(g_vars, qaOpts, fB='', sp='', isInit=False):
 
         else:
             g_vars.pt_name = 'pt_all-scope'
-            qaOpts.setOpt('PROJECT_TABLE', g_vars.pt_name)
+            qaOpts.addOpt('PROJECT_TABLE', g_vars.pt_name)
             g_vars.pt_prefix = ''
 
         if qaOpts.isOpt('PROJECT_TABLE_PREFIX'):

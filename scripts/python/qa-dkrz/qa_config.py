@@ -13,9 +13,11 @@ import argparse
 #import argcomplete
 #import subprocess
 
+import ConfigParser
+
 import qa_util
 
-class QaConfig(object):
+class QaOptions(object):
     '''
     classdocs
     '''
@@ -60,7 +62,8 @@ class QaConfig(object):
 
         self.finalSelLoc()
 
-        self.dOpts['CFG_FILE']=os.path.join(self.dOpts['QA_HOME'],
+        self.dOpts['CFG_FILE']=os.path.join(os.getenv('HOME'),
+                                            '.qa-dkrz',
                                             self.dOpts['CFG_FILE'])
         if 'PROJECT' in self.dOpts.keys():
             if not 'PROJECT_AS' in self.dOpts.keys():
@@ -79,38 +82,49 @@ class QaConfig(object):
         self.lLock=[]
 
 
+    def addOpt(self, key, val, dct={}):
+        if len(dct):
+            local_dct = dct
+        else:
+            local_dct = self.dOpts
+
+        local_dct[key]=val
+
+        return
+
+
     def backward_compat(self):
         # rather intricate, but ensures later correct merging of options
         for ldo in self.ldOpts:
             if len(ldo):
                 if self.isOpt('EXP_NAME', dct=ldo):
-                    self.setOpt('LOG_FNAME', ldo['EXP_NAME'], dct=ldo)
+                    self.addOpt('LOG_FNAME', ldo['EXP_NAME'], dct=ldo)
                     del self.dOpts['EXP_NAME']
 
                 if self.isOpt('EXP_FNAME_PATTERN', dct=ldo):
-                    self.setOpt('LOG_FNAME_PATTERN', ldo['EXP_FNAME_PATTERN'],
+                    self.addOpt('LOG_FNAME_PATTERN', ldo['EXP_FNAME_PATTERN'],
                                 dct=ldo)
                     del ldo['EXP_FNAME_INDEX']
 
                 if self.isOpt('EXP_PATH_BASE', dct=ldo):
-                    self.setOpt('DRS_PATH_BASE', ldo['EXP_PATH_BASE'], dct=ldo)
+                    self.addOpt('DRS_PATH_BASE', ldo['EXP_PATH_BASE'], dct=ldo)
                     del ldo['EXP_PATH_BASE']
 
                 if self.isOpt('EXP_PATH_INDEX', dct=ldo):
-                    self.setOpt('LOG_PATH_INDEX', ldo['EXP_PATH_INDEX'],
+                    self.addOpt('LOG_PATH_INDEX', ldo['EXP_PATH_INDEX'],
                                 dct=ldo)
                     del ldo['EXP_PATH_INDEX']
 
                 if self.isOpt('SHOW_EXPS', dct=ldo):
-                    self.setOpt('SHOW_EXP', ldo['SHOW_EXPS'], dct=ldo)
+                    self.addOpt('SHOW_EXP', ldo['SHOW_EXPS'], dct=ldo)
                     del ldo['SHOW_EXPS']
 
                 if self.isOpt('SUMMARY_ONLY', dct=ldo):
-                    self.setOpt('ONLY_SUMMARY', ldo['SUMMARY_ONLY'], dct=ldo)
+                    self.addOpt('ONLY_SUMMARY', ldo['SUMMARY_ONLY'], dct=ldo)
                     del ldo['SUMMARY_ONLY']
 
                 if self.isOpt('SUMMARY', dct=ldo):
-                    self.setOpt('ONLY_SUMMARY', ldo['SUMMARY'], dct=ldo)
+                    self.addOpt('ONLY_SUMMARY', ldo['SUMMARY'], dct=ldo)
                     del ldo['SUMMARY']
 
         return
@@ -368,9 +382,14 @@ Number depends on --next''')
         return parser
 
 
-    def delOpt(self, key):
-        if key in self.dOpts:
-            del self.dOpts[key]
+    def delOpt(self, key, dct={}):
+        if len(dct):
+            local_dct = dct
+        else:
+            local_dct = self.dOpts
+
+        if key in local_dct:
+            del local_dct[key]
 
         return
 
@@ -743,17 +762,6 @@ Number depends on --next''')
         return
 
 
-    def setOpt(self, key, val, dct={}):
-        if len(dct):
-            local_dct = dct
-        else:
-            local_dct = self.dOpts
-
-        local_dct[key]=val
-
-        return
-
-
     def setSelLock(self, line):
         # process and return line
         if line[0] == 'S':
@@ -778,3 +786,119 @@ Number depends on --next''')
             p0 += 1
 
         return line
+
+
+class CfgFile(object):
+   '''
+   classdocs
+   # read,write, modify a configuration file
+   '''
+
+   def __init__(self, qaOpts):
+      '''
+      Constructor
+      '''
+      
+      # traditional config file, usually in the users' home directory
+      self.rCP = ConfigParser.RawConfigParser()
+      self.rCP.optionxform = str # thus, case-sensitive
+
+      self.qaOpts = qaOpts
+      self.isModified = False
+
+         
+   def entry(self, key='', value=''):
+
+      retVal=value
+
+      # inquire/add from/to an existing cfg files
+      try:
+         # does section exist?
+         getVal =self.rCP.get(self.section, key)
+      except ConfigParser.NoSectionError:
+         if len(value) and not (value == 'd' or value == 'disable'):
+               # a new section
+               self.rCP.add_section(self.section)
+               self.rCP.set(self.section, key, value)
+               self.isModified=True
+      except ConfigParser.NoOptionError:
+         # a new assignment to an existing section
+         if len(value) and not (value == 'd' or value == 'disable'):
+               self.rCP.set(self.section, key, value)
+               self.isModified=True
+               self.qaOpts.addOpt(key,value)
+      else:
+         # section and key exist
+         if len(value):
+            if value == 'd' or value == 'disable':
+               # delete a key=value pair
+               self.rCP.remove_option(self.section, key)
+               retVal=''
+               self.isModified=True
+            elif getVal != value:
+               # replacement
+               self.rCP.set(self.section, key, value)
+               self.isModified=True
+         else:
+            retVal=getVal
+
+      return retVal
+
+
+   def read_file(self, file='', section=''):
+
+      self.section = section
+      
+      if len(file):
+         self.file = file
+      elif self.qaOpts.isOpt('CFG_FILE'):
+         self.file = self.qaOpts.getOpt('CFG_FILE')
+
+      # any valid conf-file written by a ConfigParser?
+      (path, tail)=os.path.split(self.file)
+
+      if os.path.isfile(self.file):
+         # read a file created by a self.rCP instance
+         self.rCP.read(self.file)
+         self.isModified=False
+
+      else:
+         old = os.path.join(path, 'config.txt' )
+           
+         if os.path.isfile(old):
+         # note config.txt is a file not created  by self.rCP,
+         # conversion.
+            with open(old) as r:
+               self.isModified=True
+               
+               for line in r:
+                  line = qa_util.clear_line(line)
+                  if len(line):
+                     sz1=len(line)-1
+
+                     if line[sz1] == ':' :
+                        ny_sect=line[0:sz1] # rm ':'
+                        self.rCP.add_section(ny_sect)
+                     else:
+                        k, v = line.split('=')
+                        self.rCP.set(ny_sect, k, repr(v))
+
+                        
+      # append parsed setting to the list of options
+      if len(self.section):
+         cfg_list = self.rCP.options(self.section)
+    
+         for key in cfg_list:
+            val = self.entry(key=key)
+            self.qaOpts.addOpt(key, val)
+
+      return 
+
+
+   def write_file(self):
+   
+      if self.isModified:
+         with open(self.file,'wb') as cfg:
+            self.rCP.write(cfg)
+            
+      return

@@ -76,8 +76,8 @@ def init_session(g_vars, qaOpts):
     g_vars.session_logdir = os.path.join(g_vars.res_dir_path,
                                'session_logs', g_vars.curr_date)
 
-    qaOpts.setOpt('SESSION', g_vars.session)
-    qaOpts.setOpt('SESSION_LOGDIR', g_vars.session_logdir)
+    qaOpts.addOpt('SESSION', g_vars.session)
+    qaOpts.addOpt('SESSION_LOGDIR', g_vars.session_logdir)
 
     if qaOpts.isOpt('SHOW'):
         return
@@ -108,7 +108,7 @@ def init_tables(g_vars, qaOpts):
         g_vars.table_path = os.path.join(g_vars.res_dir_path, 'tables')
 
     qa_util.mkdirP(g_vars.table_path)
-    qaOpts.setOpt(TP, g_vars.table_path)
+    qaOpts.addOpt(TP, g_vars.table_path)
 
     # Precedence of path search for tables:
     #
@@ -147,7 +147,7 @@ def init_tables(g_vars, qaOpts):
             if regExp:
                 tables[key] = tName
 
-    qaOpts.setOpt('TABLES', tables)
+    qaOpts.addOpt('TABLES', tables)
 
     pDir=[]
     for key in tables.keys():
@@ -156,40 +156,14 @@ def init_tables(g_vars, qaOpts):
     return
 
 
-def run_install(qaOpts, g_vars):
-    # update external tables and in case of running qa_dkrz.py from
-    # sources update C++ executables
-
-    if not qaOpts.isOpt('PROJECT'):
-        qaOpts.setOpt('PROJECT', 'NONE')
-    if not qaOpts.isOpt('PROJECT_AS'):
-        qaOpts.setOpt('PROJECT_AS', qaOpts.getOpt('PROJECT'))
-
-    if not g_vars.NO_GIT:
-        # checksum of the current qa_dkrz.py
-        md5_0 = qa_util.get_md5sum(sys.argv[0])
-
-        p = os.path.join(g_vars.qa_src, 'install')
-        if qaOpts.isOpt('install_args'):
-            p += ' ' + qaOpts.getOpt('install_args')
-
-        try:
-            subprocess.check_call(p, shell=True)
-        except:
-            return
-
-        md5_1 = qa_util.get_md5sum(sys.argv[0])
-
-        if md5_0 == md5_1:
-            # restart the script
-            pass
-
-    return
-
-
-def run(log, g_vars, qaOpts, rawCfgPars, cfgFile):
+def run(log, g_vars, qaOpts, cfg):
     #g_vars.TTY = os.ttyname(0)
 
+    # read the cfg files; may also convert a plain text file;
+    # cfg assignments are also appended to qaOpts
+    cfg.read_file(file=qaOpts.getOpt('CFG_FILE'),
+                  section=g_vars.qa_src)
+    
     # are git and wget available?
     g_vars.NO_GIT=True
     if qa_util.which('git'):
@@ -230,28 +204,27 @@ def run(log, g_vars, qaOpts, rawCfgPars, cfgFile):
             cs_dir='cs_table'
         g_vars.cs_dir = os.path.join(g_vars.res_dir_path, cs_dir)
 
-    qaOpts.setOpt('LOG_FNAME_DIR', g_vars.check_logs_path)
+    qaOpts.addOpt('LOG_FNAME_DIR', g_vars.check_logs_path)
     qa_util.mkdirP(g_vars.check_logs_path) # error --> exit
 
     qa_util.mkdirP(os.path.join(g_vars.res_dir_path, 'data')) # error --> exit
 
     # some more settings
     if not qaOpts.isOpt('ZOMBIE_LIMIT'):
-        qaOpts.setOpt('ZOMBIE_LIMIT', 3600)
+        qaOpts.addOpt('ZOMBIE_LIMIT', 3600)
 
     if not qaOpts.isOpt('CHECKSUM'):
         if qaOpts.isOpt('CS_STAND_ALONE') or qaOpts.isOpt('CS_DIR'):
-            qaOpts.setOpt('CHECKSUM', True)
+            qaOpts.addOpt('CHECKSUM', True)
 
     # save current version id to the cfg-file
     qv=qaOpts.getOpt('QA_REVISION')
     if len(qv) == 0:
         qv=qa_util.get_curr_revision(g_vars.qa_src, g_vars.isConda)
 
-    qv = qa_util.cfg_parser(rawCfgPars, cfgFile,
-                           section=g_vars.qa_src, key='QA_REVISION', value=qv)
+    qv = cfg.entry(key='QA_REVISION', value=qv)
 
-    qaOpts.setOpt('QA_REVISION', qv)
+    qaOpts.addOpt('QA_REVISION', qv)
     g_vars.qa_revision = qv
 
     # table path and copy of tables for operational runs
@@ -280,5 +253,36 @@ def run(log, g_vars, qaOpts, rawCfgPars, cfgFile):
         sys.exit(1)
 
     g_vars.anyProgress = False
+
+    return
+
+
+def run_install(qaOpts, g_vars):
+    # update external tables and in case of running qa_dkrz.py from
+    # sources update C++ executables
+
+    if not qaOpts.isOpt('PROJECT'):
+        qaOpts.addOpt('PROJECT', 'NONE')
+    if not qaOpts.isOpt('PROJECT_AS'):
+        qaOpts.addOpt('PROJECT_AS', qaOpts.getOpt('PROJECT'))
+
+    if not g_vars.NO_GIT:
+        # checksum of the current qa_dkrz.py
+        md5_0 = qa_util.get_md5sum(sys.argv[0])
+
+        p = os.path.join(g_vars.qa_src, 'install')
+        if qaOpts.isOpt('install_args'):
+            p += ' ' + qaOpts.getOpt('install_args')
+
+        try:
+            subprocess.check_call(p, shell=True)
+        except:
+            return
+
+        md5_1 = qa_util.get_md5sum(sys.argv[0])
+
+        if md5_0 == md5_1:
+            # restart the script
+            pass
 
     return

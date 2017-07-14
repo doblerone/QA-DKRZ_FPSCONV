@@ -542,6 +542,16 @@ class QaExec(object):
         return proceed  # true: proceed with next sub-temporal file
 
 
+    def run_CMOR_LLNL(self):
+         os.environ["UVCDAT_ANONYMOUS_LOG"] = "no"
+
+         #if qaOpts.isOpt(''):
+         #   self.is_...
+
+
+         return
+     
+
     def start(self, queue):
         # only called for non-thread operation
 

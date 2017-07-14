@@ -13,7 +13,6 @@ import re
 import shutil
 import subprocess
 import copy
-import ConfigParser
 
 import qa_util
 import qa_init
@@ -21,7 +20,8 @@ import qa_init
 from Queue import Queue
 from threading import Thread
 
-from qa_config import QaConfig
+from qa_config import QaOptions
+from qa_config import CfgFile
 from qa_log import Log
 from qa_util import GetPaths
 from qa_launcher import QaLauncher
@@ -31,7 +31,8 @@ from qa_summary import LogSummary
 (isCONDA, QA_SRC) = qa_util.get_QA_SRC(sys.argv[0])
 
 # for options on the command-line as well as in configuration files
-qaOpts=QaConfig(QA_SRC)
+qaOpts=QaOptions(QA_SRC)
+cfg = CfgFile(qaOpts)
 
 if not qaOpts.isOpt('PROJECT') and not qaOpts.isOpt('ONLY_SUMMARY'):
     print 'PROJECT option is missing'
@@ -55,14 +56,10 @@ g_vars.pid = str(os.getpid())
 log = Log(qaOpts.dOpts)
 
 if isCONDA:
-    qaOpts.setOpt('CONDA', True)
-
-# traditional config file, usually in the users' home directory
-rawCfgPars = ConfigParser.RawConfigParser()
+    qaOpts.addOpt('CONDA', True)
 
 # obj for getting and iteration next path
 getPaths = GetPaths(qaOpts.dOpts)
-
 
 def clear(qa_var_path, fBase, logfile):
 
@@ -239,7 +236,7 @@ def final():
             # first time that a check was done for this log-file
             os.rename(tmp_log, dest_log)
 
-    qa_util.cfg_parser(rawCfgPars, qaOpts.getOpt('CFG_FILE'), final=True)
+    cfg.write_file()
 
     return
 
@@ -521,15 +518,12 @@ def testLock(t_vars, fBase):
 
 
 # -------- main --------
-# read (may-be convert) the cfg files
-qa_util.cfg_parser(rawCfgPars, qaOpts.getOpt('CFG_FILE'), init=True)
 
 if 'QA_EXAMPLE' in qaOpts.dOpts:
     runExample()
     sys.exit(0)
 
-qa_init.run(log, g_vars, qaOpts, rawCfgPars,
-            qaOpts.getOpt('CFG_FILE'))
+qa_init.run(log, g_vars, qaOpts, cfg)
 
 # the checks
 if not qaOpts.getOpt('ONLY_SUMMARY'):
