@@ -374,8 +374,7 @@ struct DRS_CV
       Syntax of date ranges as given in CORDEX  DRS Syntax.*/
   bool   testPeriod(Split&);
   bool   testPeriodAlignment(std::vector<std::string> &sd, Date** pDates, bool b[])  ;
-  void   testPeriodPrecision(std::vector<std::string> &sd,
-              std::vector<std::string>& text);
+  void   testPeriodPrecision(std::vector<std::string> &sd);
   bool   testPeriodDatesFormat(std::vector<std::string> &sd) ;
   bool   testPeriodFormat(Split&, std::vector<std::string> &sd) ;
 
@@ -527,6 +526,7 @@ public:
   std::string currMIP_tableName;
   std::string frequency;
   static std::vector<std::string> MIP_tableNames;
+  static std::vector<int>         MIP_FNameTimeSz;
 
   std::string experiment_id;
   std::string fVarname;
@@ -548,6 +548,14 @@ const char* CMIP5_MIPS[] = {
 };
 
 std::vector<std::string> QA_Exp::MIP_tableNames(CMIP5_MIPS, CMIP5_MIPS + 18);
+
+const int FNameTimeSz[] = {
+  0,       4,      6,    6,      6,     6,
+  6,    6,    6,     8,       10,   10,
+  10,      6,    8,    10,     12,  -1
+};
+
+std::vector<int> QA_Exp::MIP_FNameTimeSz(FNameTimeSz, FNameTimeSz + 18);
 
 #endif
 

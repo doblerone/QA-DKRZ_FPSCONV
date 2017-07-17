@@ -630,6 +630,7 @@ public:
   std::string currMIP_tableName;
   std::string frequency;
   static std::vector<std::string> MIP_tableNames;
+  static std::vector<int>         MIP_FNameTimeSz;
 
   std::string experiment_id;
   std::string fVarname;

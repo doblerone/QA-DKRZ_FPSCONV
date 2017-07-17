@@ -1186,22 +1186,7 @@ DRS_CV::testPeriod(Split& x_f)
   {
     // period requires a cut specific to the various frequencies.
     std::vector<std::string> text ;
-    testPeriodPrecision(sd, text) ;
-
-    if( text.size() )
-    {
-      std::string key("1_6d");
-      std::string capt("period in the filename with wrong precision") ;
-
-      for( size_t i=0 ; i < text.size() ; ++i )
-      {
-        if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
-        {
-          (void) notes->operate(capt + text[i]) ;
-          notes->setCheckStatus(drsF, pQA->n_fail );
-        }
-      }
-    }
+    testPeriodPrecision(sd) ;
   }
 
   // note that indices 0 and 1 belong to a vector
@@ -1275,8 +1260,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates, bool b[
 }
 
 void
-DRS_CV::testPeriodPrecision(std::vector<std::string>& sd,
-                  std::vector<std::string>& text)
+DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
 {
   // Partitioning of files check are equivalent.
   // Note that the format was tested before.
@@ -1285,77 +1269,66 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd,
 
   if( sd[0].size() != sd[1].size() )
   {
-    text.push_back(" 1st and 2nd date are different") ;
+    std::string key("1_6d");
+    std::string capt("period in the filename:") ;
+    capt += " Start- and EndTime of different size" ;
+
+    (void) notes->operate(capt + text) ;
+    notes->setCheckStatus(drsF, pQA->n_fail );
     return;
   }
+  
+  int len ;
 
-  // precision corresponds to the MIP table
-  std::vector<size_t> ix;
-
-  // a) yyyy
-  if( QA::tableId == QA_Exp::MIP_tableNames[1] )
+  size_t sz = QA_Exp::MIP_tableNames.size() ;
+  size_t i;
+  for( i=0 ; i < sz ; ++i )
   {
-    if( sd[0].size() != 4 )
+     if( QA::tableId == QA_Exp::MIP_tableNames[i] )
+     {
+        len = QA_Exp::MIP_FNameTimeSz[i] ;  
+        break;
+     }
+  }
+  
+  if( len == -1 || i == sz )
+     return;
+
+  int len_sd = sd[0].size() ;
+  
+  // a) yyyy
+  if( len_sd == 4 && len_sd != len )
       text.push_back(", expected yyyy, found " + sd[0] + "-" + sd[1]) ;
 
-    return;
-  }
-
   // b) ...mon, aero, Oclim, and cfOff
-  ix.push_back(2);
-  ix.push_back(3);
-  ix.push_back(4);
-  ix.push_back(5);
-  ix.push_back(6);
-  ix.push_back(7);
-  ix.push_back(8);
-  ix.push_back(13);
-  ix.push_back(17);
-
-  for(size_t i=0 ; i < ix.size() ; ++i )
-  {
-    if( QA::tableId == QA_Exp::MIP_tableNames[ix[i]] )
-    {
-      if( sd[0].size() != 6 )
-        text.push_back(", expected yyyyMM, found " + sd[0] + "-" + sd[1]) ;
-
-      return;
-    }
-  }
+  else if( len_sd == 6 && len_sd != len )
+      text.push_back(", expected YYYYMM, found " + sd[0] + "-" + sd[1]) ;
 
   // c) day, cfDay
-  if( QA::tableId == QA_Exp::MIP_tableNames[9]
-        || QA::tableId == QA_Exp::MIP_tableNames[14] )
-  {
-    if( sd[0].size() != 8 )
-      text.push_back(", expected yyyyMMdd, found " + sd[0] + "-" + sd[1]) ;
+  else if( len_sd == 8 && len_sd != len )
+      text.push_back(", expected YYYYMMDD, found " + sd[0] + "-" + sd[1]) ;
 
-    return;
-  }
-
-  // d) 6hr..., 3hr, and cf3hr
-  ix.clear();
-  ix.push_back(10);
-  ix.push_back(11);
-  ix.push_back(12);
-  ix.push_back(15);
-
-  for(size_t i=0 ; i < ix.size() ; ++i )
-  {
-    if( QA::tableId == QA_Exp::MIP_tableNames[ix[i]] )
-    {
-      if( sd[0].size() != 12 )
-        text.push_back(", expected yyyyMMddhhmm, found " + sd[0] + "-" + sd[1]) ;
-
-      return;
-    }
-  }
+    // d) x-hr
+  else if( len_sd == 10 && len_sd != len )
+      text.push_back(", expected YYYYMMDDhh, found " + sd[0] + "-" + sd[1]) ;
 
   // e) cfSites
-  if( QA::tableId == QA_Exp::MIP_tableNames[16] )
+  else if( len_sd == 12 && len_sd != len )
+      text.push_back(", expected YYYYMMDDhhmm, found " + sd[0] + "-" + sd[1]) ;
+
+  else if( len_sd == 14 && len_sd != len )
+      text.push_back(", expected YYYYMMDDhhmmss, found " + sd[0] + "-" + sd[1]) ;
+
+  if( text.size() )
   {
-    if( sd[0].size() != 14 )
-      text.push_back(", expected yyyyMMddhhmmss, found " + sd[0] + "-" + sd[1]) ;
+    std::string key("1_6d");
+    std::string capt("period in the filename with wrong precision") ;
+
+    if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+    {
+      (void) notes->operate(capt + text) ;
+      notes->setCheckStatus(drsF, pQA->n_fail );
+    }
   }
 
   return;
