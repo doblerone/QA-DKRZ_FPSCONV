@@ -35,6 +35,7 @@ struct CMOR
    conformance.*/
 
   void   checkEnsembleMemItem(std::string& rqName, std::string& attVal);
+  void   checkFullDate(std::string& rqName, std::string& attVal);
   void   checkForcing(std::vector<std::string>&, std::string&);
 
   void   checkMIPT_dim(std::vector<std::string>&,
@@ -187,6 +188,7 @@ struct CMOR
   void   checkReqAtt_global(void);
   void   checkReqAtt_variable(Variable&);
 
+  void   checkRunID(std::string& rqName, std::string& attVal);
   void   checkSource(void);
 
   // the next one is applied to several checks
