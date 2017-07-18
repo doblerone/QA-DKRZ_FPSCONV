@@ -73,6 +73,7 @@ global:
    product=output
    project_id=HAPPI
    realization
+   run_id  = runNNN
    source
    table_id
    tracking_id

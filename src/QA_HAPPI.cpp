@@ -3073,18 +3073,32 @@ CMOR::checkReqAtt_global(void)
               else
                 is=true;
             }
-            else
-              is=true;
 
+          else if( x_rqValue[0] == "runNNN" )
+          {
+            // check a sequence of digits
+            bool is=false;
+            if( aV.substr(0,3) != "run" )
+               is=true;
+            
+            if( !is && hdhC::isDigit(aV[3]) )
+            {
+               for(size_t i=4 ; i < aV.size() ; ++i )
+                 if( aV[i] != aV[3] )
+                    is=true;
+            }
+            else
+               is=true;
+            
             if( is )
             {
-              std::string key("2_4");
+              std::string key("2_8");
               if( notes->inq( key, pQA->s_global) )
               {
                 std::string capt(pQA->s_global);
                 capt += hdhC::blank;
                 capt += hdhC::tf_att(rqName);
-                capt += "does not comply with YYYY-MM-DDThh:mm:ssZ, found: " ;
+                capt += "expects three digits, found: " ;
                 capt += aV ;
 
                 (void) notes->operate(capt) ;
@@ -3229,6 +3243,26 @@ CMOR::checkReqAtt_variable(Variable &var)
     }
   } // end of for-loop
 */
+
+  return;
+}
+
+void
+CMOR::checkSource(void)
+{
+  // global attribute 'source'
+  Variable& glob = pQA->pIn->variable[pQA->pIn->varSz] ;
+
+  
+  std::string key("x2_7a");
+  if( notes->inq(key) )
+  {
+     std::string capt(hdhC::tf_att(n_global, n_source, hdhC::colon));
+          capt += "The 1st item should be the model_id attribute";
+
+          (void) notes->operate(capt) ;
+          notes->setCheckStatus("CV", pQA->n_fail);
+  }
 
   return;
 }

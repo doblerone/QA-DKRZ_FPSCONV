@@ -357,6 +357,7 @@ struct DRS_CV
   void   checkProductName(std::string& drs_product,
                    std::string prod_choice,
                    std::map<std::string, std::string>& gM);
+  void   checkRunID(void);
   void   checkVariableName(std::string& f_vName);
 
   std::string
