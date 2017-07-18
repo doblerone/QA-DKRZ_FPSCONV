@@ -3245,11 +3245,14 @@ CMOR::checkRunID(std::string& rqName, std::string& aV)
 {
    // check a sequence of digits
    bool is=false;
-   if( aV.size() != 6 || aV.substr(0,3) != "run" )
-      is=true;
-            
-   if( ! is && hdhC::isDigit(aV.substr(3)) )
-      is=true;
+
+   if( aV.size() == 6 && aV.substr(0,3) == "run" )
+   {
+      if( hdhC::isDigit(aV.substr(3)) )
+         is=true;
+   }
+   else
+      is=true
             
    if( is )
    {
