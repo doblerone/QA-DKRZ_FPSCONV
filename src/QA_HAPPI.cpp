@@ -3246,15 +3246,10 @@ CMOR::checkRunID(std::string& rqName, std::string& aV)
    // check a sequence of digits
    bool is=false;
 
-   if( aV.size() == 6 && aV.substr(0,3) == "run" )
-   {
-      if( hdhC::isDigit(aV.substr(3)) )
-         is=true;
-   }
-   else
-      is=true
-            
-   if( is )
+   // check a sequence of digits
+   if( ! (aV.size() == 6 
+             && aV.substr(0,3) == "run" 
+                && hdhC::isDigit(aV.substr(3)) ) )
    {
       std::string key("2_8");
       if( notes->inq( key, pQA->s_global) )
