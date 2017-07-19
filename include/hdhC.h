@@ -549,6 +549,8 @@ clearChars(std::string str, std::string s, bool isStr=false );
 std::string
 clearEnclosures(std::string& str, char a='(', char b=')' );
 
+static bool clearEnclosures_unpaired(false);
+
 //! remove white spaces and newlines
 std::string
 clearSpaces(std::string str);

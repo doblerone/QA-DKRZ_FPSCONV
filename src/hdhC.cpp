@@ -2373,6 +2373,9 @@ clearChars(std::string str, std::string s, bool isStr )
 std::string
 clearEnclosures(std::string& str, char a, char b )
 {
+   clearEnclosures_unpaired = false;
+   
+   // example: str="one(two(three)four)five" --> "onefive
    if( str.size() == 0 )
      return str;
      
@@ -2424,6 +2427,8 @@ clearEnclosures(std::string& str, char a, char b )
      if( pBeg < str.size() )
         s+=str.substr(pBeg, str.size() - pBeg);       
    }
+   else
+      clearEnclosures_unpaired=true;
 
    return s;
 }
