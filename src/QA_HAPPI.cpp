@@ -114,7 +114,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
     {
       if( cvMap.count(x_e[x]) == 0 )
       {
-        std::string key("7_3");
+        std::string key("7_3b");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding ";
@@ -605,13 +605,13 @@ DRS_CV::checkProductName(std::string& drs_product,
     }
   }
 
-  std::string key("1_2a");
+  std::string key("1_1b");
 
   if( notes->inq( key, drsP) )
   {
-    std::string capt("DRS fault for path component");
+    std::string capt("DRS path component");
     capt += hdhC::tf_val(CMOR::n_product);
-    capt += ", found" ;
+    capt += ": found" ;
     capt += hdhC::tf_val(drs_product) ;
     capt += ", expected ";
     capt += hdhC::tf_val(prod_choice);
@@ -661,7 +661,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
     {
       if( cvMap.count(x_e[x]) == 0 )
       {
-        std::string key("7_3");
+        std::string key("7_3a");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding not available in CV, found " ;
@@ -759,7 +759,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
   if( txt.size() )
   {
     text.push_back(txt);
-    keys.push_back("1_2a");
+    keys.push_back("1_1");
   }
 
   if( text.size() )
@@ -1272,7 +1272,7 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
 
   if( sd[0].size() != sd[1].size() )
   {
-    std::string key("1_6d");
+    std::string key("1_6e");
     std::string capt("period in the filename:") ;
     capt += " Start- and EndTime of different size" ;
     
@@ -1671,7 +1671,6 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
   for(size_t i=0 ; i < sep.size() ; ++i )
   {
     x_aV.setSeparator(sep[i]);
-    
     x_aV = hdhC::clearEnclosures(aV) ;
 
     if( hdhC::clearEnclosures_unpaired )

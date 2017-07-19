@@ -114,7 +114,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
     {
       if( cvMap.count(x_e[x]) == 0 )
       {
-        std::string key("7_3");
+        std::string key("7_3b");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding ";
@@ -660,7 +660,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
     {
       if( cvMap.count(x_e[x]) == 0 )
       {
-        std::string key("7_3");
+        std::string key("7_3a");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding not available in CV, found " ;
@@ -757,7 +757,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
   if( txt.size() )
   {
     text.push_back(txt);
-    keys.push_back("1_2");
+    keys.push_back("1_1");
   }
 
   if( text.size() )
@@ -782,7 +782,7 @@ DRS_CV::checkVariableName(std::string& f_vName)
 {
   if( f_vName.find('-') < std::string::npos )
   {
-    std::string key("1_4c");
+    std::string key("1_4");
 
     if( notes->inq( key, pQA->fileStr) )
     {
@@ -1267,13 +1267,15 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
   // Note that desplaced start/end points, e.g. '02' for monthly data, would
   // lead to a wrong cut.
 
+  std::string text;
+   
   if( sd[0].size() != sd[1].size() )
   {
-    std::string key("1_6d");
+    std::string key("1_6e");
     std::string capt("period in the filename:") ;
     capt += " Start- and EndTime of different size" ;
 
-    (void) notes->operate(capt + text) ;
+    (void) notes->operate(capt) ;
     notes->setCheckStatus(drsF, pQA->n_fail );
     return;
   }
@@ -1298,26 +1300,26 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
   
   // a) yyyy
   if( len_sd == 4 && len_sd != len )
-      text.push_back(", expected yyyy, found " + sd[0] + "-" + sd[1]) ;
+      text =", expected yyyy, found " + sd[0] + "-" + sd[1] ;
 
   // b) ...mon, aero, Oclim, and cfOff
   else if( len_sd == 6 && len_sd != len )
-      text.push_back(", expected YYYYMM, found " + sd[0] + "-" + sd[1]) ;
+      text = ", expected YYYYMM, found " + sd[0] + "-" + sd[1] ;
 
   // c) day, cfDay
   else if( len_sd == 8 && len_sd != len )
-      text.push_back(", expected YYYYMMDD, found " + sd[0] + "-" + sd[1]) ;
+      text = ", expected YYYYMMDD, found " + sd[0] + "-" + sd[1] ;
 
     // d) x-hr
   else if( len_sd == 10 && len_sd != len )
-      text.push_back(", expected YYYYMMDDhh, found " + sd[0] + "-" + sd[1]) ;
+      text = ", expected YYYYMMDDhh, found " + sd[0] + "-" + sd[1] ;
 
   // e) cfSites
   else if( len_sd == 12 && len_sd != len )
-      text.push_back(", expected YYYYMMDDhhmm, found " + sd[0] + "-" + sd[1]) ;
+      text = ", expected YYYYMMDDhhmm, found " + sd[0] + "-" + sd[1] ;
 
   else if( len_sd == 14 && len_sd != len )
-      text.push_back(", expected YYYYMMDDhhmmss, found " + sd[0] + "-" + sd[1]) ;
+      text = ", expected YYYYMMDDhhmmss, found " + sd[0] + "-" + sd[1] ;
 
   if( text.size() )
   {
@@ -1670,6 +1672,21 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
     x_aV.setSeparator(sep[i]);
     x_aV = hdhC::clearEnclosures(aV) ;
     
+    if( hdhC::clearEnclosures_unpaired )
+    {
+      std::string key("2_6c");
+      if( notes->inq( key, pQA->s_global ) )
+      {
+         std::string capt(pQA->s_global);
+         capt += hdhC::blank;
+         capt += hdhC::tf_att(hdhC::empty, n_forcing, aV);
+         capt += "text without without paired parentheses";
+
+         (void) notes->operate(capt) ;
+         notes->setCheckStatus("CV",  pQA->n_fail );
+      }
+    }
+    
     if( x_aV.size() > 1 )
     {
       if(i)
@@ -1723,6 +1740,68 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
 
 
   return;
+}
+
+void
+CMOR::checkFullDate(std::string& rqName, std::string& aV)
+{
+   // a valid date format may have T substituted by a blank
+   // and Z omitted or the latter be lower case.
+   bool is=false;
+   if( aV.size() > 18 )
+   {
+      if( aV[4] == '-' && aV[7] == '-' )
+      {
+         if( aV[10] == 'T' || aV[10] == ' ' )
+         {
+            if( aV[13] == ':' && aV[16] == ':' )
+            {
+               if( aV.size() == 20 )
+               {
+                  if( !(aV[19] == 'Z' || aV[19] == 'z' ) )
+                     is=true;
+               }
+
+               if( ! hdhC::isDigit( aV.substr(0, 4) ) )
+                  is=true ;
+               else if( ! hdhC::isDigit( aV.substr(5, 2) ) )
+                  is=true ;
+               else if( ! hdhC::isDigit( aV.substr(8, 2) ) )
+                  is=true ;
+               else if( ! hdhC::isDigit( aV.substr(11, 2) ) )
+                  is=true ;
+               else if( ! hdhC::isDigit( aV.substr(14, 2) ) )
+                  is=true ;
+               else if( ! hdhC::isDigit( aV.substr(17, 2) ) )
+                  is=true ;
+            }
+            else
+               is=true;
+         }
+         else
+            is=true;
+      }
+      else
+         is=true;
+   }
+
+   if( is )
+   {
+      std::string key("2_4");
+      if( notes->inq( key, pQA->s_global) )
+      {
+         std::string capt(pQA->s_global);
+         capt += hdhC::blank;
+         capt += hdhC::tf_att(rqName);
+         capt += "does not comply with YYYY-MM-DDThh:mm:ssZ, found: " ;
+         capt += aV ;
+
+         (void) notes->operate(capt) ;
+         notes->setCheckStatus("CV",  pQA->n_fail );
+      }
+   }
+
+   return;
 }
 
 bool
@@ -2001,7 +2080,7 @@ CMOR::checkMIPT_dim_boundsQuest(
   if( f_DMD.var->bounds.size() )
     return ;
 
-  std::string key("4_4i");
+  std::string key("4_1i");
 
   if( notes->inq( key, vMD.var->name) )
   {
@@ -2069,7 +2148,7 @@ CMOR::checkMIPT_dim_coordsAtt(
       // Is coordinates-att set in the corresponding variable?
       if( pQA->pIn->getVarIndex(dimVar[ix]) == -1 );
       {
-        std::string key("4_4h");
+        std::string key("4_1h");
         if( notes->inq( key, vMD.var->name) )
         {
           std::string capt("missing coordinates variable, expected");
@@ -2112,7 +2191,7 @@ CMOR::checkMIPT_dim_longName(
             == f_DMD.attMap[n_standard_name] )
     return;
 
-  std::string key("4_4d");
+  std::string key("4_1d");
 
   std::string& t_DMD_long_name = t_DMD.attMap[n_long_name] ;
   std::string& f_long_name = f_DMD.attMap[n_long_name] ;
@@ -2143,7 +2222,7 @@ CMOR::checkMIPT_dim_outname(
     struct DimensionMetaData& f_DMD,
     struct DimensionMetaData& t_DMD)
 {
-  std::string key("4_4b");
+  std::string key("4_1b");
 
   if( notes->inq( key, vMD.var->name) )
   {
@@ -2171,7 +2250,7 @@ CMOR::checkMIPT_dim_positive(
   if( t_positive == f_positive )
     return;
 
-  std::string key("4_4m");
+  std::string key("4_1m");
   if( notes->inq( key, vMD.var->name) )
   {
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_positive));
@@ -2233,7 +2312,7 @@ CMOR::checkMIPT_dim_stdName(
   if( name == "lev" || name == "loc" || name == "site" )
     return;
 
-  std::string key("4_4c");
+  std::string key("4_1c");
 
   if( notes->inq( key, vMD.var->name) )
   {
@@ -2265,7 +2344,7 @@ CMOR::checkMIPT_dim_type(
   if( f_DMD.attMap[n_type] == "char" && t_DMD.attMap[n_type] == "character" )
      return;
 
-  std::string key("4_4l");
+  std::string key("4_1l");
   if( notes->inq( key, vMD.var->name) )
   {
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_type ));
@@ -2300,7 +2379,7 @@ CMOR::checkMIPT_dim_units(
   // all time values should be positive, just test the first one
   if( (pQA->qaTime.firstTimeValue - pQA->qaTime.refTimeOffset) < 0 )
   {
-    std::string key("3_9b");
+    std::string key("3_3b");
     if( notes->inq( key, vMD.var->name) )
     {
       std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_units ));
@@ -2331,7 +2410,7 @@ CMOR::checkMIPT_dim_units(
     if( (f_units.find("days since") < std::string::npos)
           != (t_units.find("days since") < std::string::npos) )
     {
-      std::string key("3_9");
+      std::string key("3_3a");
       if( notes->inq( key, vMD.var->name) )
       {
         std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_units ));
@@ -2378,7 +2457,7 @@ CMOR::checkMIPT_dim_units(
       return;
   }
 
-  std::string key("3_10");
+  std::string key("3_4");
 
   if( hasUnits )
   {
@@ -2396,7 +2475,7 @@ CMOR::checkMIPT_dim_units(
   }
 
   // regular case: mismatch
-  key = "4_4f" ;
+  key = "4_1f" ;
 
   if( notes->inq( key, vMD.var->name) )
   {
@@ -2438,7 +2517,7 @@ CMOR::checkMIPT_dim_validMin(
 
     if( min < t_val )
     {
-      std::string key("4_4j");
+      std::string key("4_1j");
       if( notes->inq( key, vMD.var->name) )
       {
         std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_valid_min ));
@@ -2479,7 +2558,7 @@ CMOR::checkMIPT_dim_validMax(
 
     if( max > t_val )
     {
-      std::string key("4_4k");
+      std::string key("4_1k");
       if( notes->inq( key, vMD.var->name) )
       {
         std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_valid_max ));
@@ -2604,7 +2683,7 @@ CMOR::checkMIPT_var_cellMeasures(
 
   if(is)
   {
-    std::string key("3_3");
+    std::string key("3_2a");
 
     if( notes->inq( key, vMD.var->name) )
     {
@@ -2674,7 +2753,7 @@ CMOR::checkMIPT_var_cellMethods(
 
   if(is)
   {
-    std::string key("3_3");
+    std::string key("3_2b");
 
     if( notes->inq( key, vMD.var->name) )
     {
@@ -2755,7 +2834,7 @@ CMOR::checkMIPT_var_longName(
   else if( tEntry.attMap[n_long_name] == vMD.attMap[n_long_name] )
      return;
 
-  std::string key("4_5");
+  std::string key("3_2f");
 
   if( notes->inq( key, vMD.var->name) )
   {
@@ -2820,7 +2899,7 @@ CMOR::checkMIPT_var_type(
 
   if( tEntry.attMap[n_type].size() == 0 && vMD.attMap[n_type].size() != 0 )
   {
-    std::string key("4_11");
+    std::string key("3_2g");
 
     if( notes->inq( key, vMD.var->name) )
     {
@@ -2838,7 +2917,7 @@ CMOR::checkMIPT_var_type(
   else if( (isTblTypeReal && ! isNcTypeReal)
             || ( ! isTblTypeReal && isNcTypeReal) )
   {
-    std::string key("4_8");
+    std::string key("3_2g");
 
     if( notes->inq( key, vMD.var->name) )
     {
@@ -2972,7 +3051,7 @@ CMOR::checkReqAtt_global(void)
     // missing requested global attribute
     if( ! glob.isValidAtt(rqName) )
     {
-       std::string key("2_3");
+       std::string key("2_1");
 
        if( notes->inq( key, pQA->fileStr) )
        {
@@ -3032,65 +3111,7 @@ CMOR::checkReqAtt_global(void)
             checkEnsembleMemItem(rqName, aV) ;
 
           else if( x_rqValue[0] == "YYYY-MM-DDTHH:MM:SSZ" )
-          {
-            // a valid date format may have T substituted by a blank
-            // and Z omitted or the latter be lower case.
-            bool is=false;
-            if( aV.size() > 18 )
-            {
-              if( aV[4] == '-' && aV[7] == '-' )
-              {
-                  if( aV[10] == 'T' || aV[10] == ' ' )
-                  {
-                    if( aV[13] == ':' && aV[16] == ':' )
-                    {
-                      if( aV.size() == 20 )
-                      {
-                        if( !(aV[19] == 'Z' || aV[19] == 'z' ) )
-                          is=true;
-                      }
-
-                      if( ! hdhC::isDigit( aV.substr(0, 4) ) )
-                        is=true ;
-                      else if( ! hdhC::isDigit( aV.substr(5, 2) ) )
-                        is=true ;
-                      else if( ! hdhC::isDigit( aV.substr(8, 2) ) )
-                        is=true ;
-                      else if( ! hdhC::isDigit( aV.substr(11, 2) ) )
-                        is=true ;
-                      else if( ! hdhC::isDigit( aV.substr(14, 2) ) )
-                        is=true ;
-                      else if( ! hdhC::isDigit( aV.substr(17, 2) ) )
-                        is=true ;
-                    }
-                    else
-                      is=true;
-                  }
-                  else
-                    is=true;
-              }
-              else
-                is=true;
-            }
-            else
-              is=true;
-
-            if( is )
-            {
-              std::string key("2_4");
-              if( notes->inq( key, pQA->s_global) )
-              {
-                std::string capt(pQA->s_global);
-                capt += hdhC::blank;
-                capt += hdhC::tf_att(rqName);
-                capt += "does not comply with YYYY-MM-DDThh:mm:ssZ, found: " ;
-                capt += aV ;
-
-                (void) notes->operate(capt) ;
-                notes->setCheckStatus("CV",  pQA->n_fail );
-              }
-            }
-          }
+            checkFullDate(rqName, aV);
 
           else if( !hdhC::isAmong(aV, vs_rqValue) )
           {
@@ -3428,7 +3449,7 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
       // requested of models with sufficient resolution in the stratosphere.
       if( vs_values.size() > static_cast<size_t>(23) )
       {
-         std::string key("4_4p");
+         std::string key("4_1p");
          if( notes->inq( key, f_DMD.var->name) )
          {
            std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
@@ -3446,7 +3467,7 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
 
   if( is && vs_values.size() != x_tVal.size() )
   {
-    std::string key("4_4");
+    std::string key("4_2");
 
     if( cName == n_value )
       key += 'n';
@@ -3536,7 +3557,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
       // requested of models with sufficient resolution in the stratosphere.
       if( ma.size() > static_cast<size_t>(23) )
       {
-         std::string key("4_4p");
+         std::string key("4_1p");
          if( notes->inq( key, f_DMD.var->name) )
          {
            std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
@@ -3554,7 +3575,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
 
   if( is && ma.size() != x_tVal.size() )
   {
-    std::string key("4_4");
+    std::string key("4_2");
 
     if( cName == n_value )
       key += 'n';
@@ -3610,7 +3631,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
   if( i == maxSz )
     return;
 
-  std::string key("4_4");
+  std::string key("4_2");
 
   if( cName == n_value )
     key += 'n';
@@ -4657,7 +4678,7 @@ QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
 
     if( j == varMeDa.size() )
     {
-       std::string key("3_14");
+       std::string key("3_6a");
        if( notes->inq( key, prevTargets[i]) )
        {
          std::string capt("variable");
@@ -4681,7 +4702,7 @@ QA_Exp::initResumeSession(std::vector<std::string>& prevTargets)
 
     if( i == prevTargets.size() )
     {
-       std::string key("3_15");
+       std::string key("3_6b");
        if( notes->inq( key, pQA->fileStr) )
        {
          std::string capt("variable");
