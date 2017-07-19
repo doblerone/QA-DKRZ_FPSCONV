@@ -336,8 +336,8 @@ QA_Time::init(std::vector<std::string>& optStr)
       }
    }
 
-   if( pIn->nc.isEmptyData(name) )
-     return false;
+//   if( pIn->nc.isEmptyData(name) )
+//     return false;
 
    timeOutputBuffer.initBuffer(pQA, pQA->currQARec, pQA->bufferSize);
    timeOutputBuffer.setName(name);

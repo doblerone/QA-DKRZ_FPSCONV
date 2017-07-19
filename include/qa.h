@@ -239,6 +239,7 @@ class QA : public IObj
   std::string getCaptIntroDim(VariableMetaData &vMD,
                    struct DimensionMetaData &nc_entry,
                    struct DimensionMetaData &tbl_entry, std::string att="");
+  void        activate_modules(std::string &vName)  ;
   void        appendToHistory();
   bool        isExit(void);
   std::string getSubjectsIntroDim(VariableMetaData &vMD,

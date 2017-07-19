@@ -19,6 +19,25 @@ QA::~QA()
 }
 
 void
+QA::activate_modules(std::string &vName)
+{
+   // setCheckMode() was called already by applyOptions()
+   
+   if(isRequiredVariable)
+     pIn->pullMetaData('V', vName);
+
+   if(isRequiredTime && !isRequiredVariable)
+     pIn->pullMetaData('T');
+
+   if(isRequiredGlobal)
+     pIn->pullMetaData('G');
+
+   initCheckStatus();
+   
+   return;
+}
+
+void
 QA::appendToHistory(void)
 {
   // date and time at run time
@@ -496,17 +515,8 @@ QA::init(void)
 
    std::string vName(qaExp.getVarnameFromFilename());
 
-   if(isRequiredVariable)
-     pIn->pullMetaData('V', vName);
-
-   if(isRequiredTime && !isRequiredVariable)
-     pIn->pullMetaData('T');
-
-   if(isRequiredGlobal)
-     pIn->pullMetaData('G');
-
-   initCheckStatus();
-
+   activate_modules(vName);
+   
    // check for CF Convention.
    if(isCheckCF)
    {
