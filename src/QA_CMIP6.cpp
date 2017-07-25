@@ -4322,7 +4322,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
   }
 
   double tolVal=0;
-  if( t_DMD.attMap[n_tol_on_requests].size());
+  if( t_DMD.attMap[n_tol_on_requests].size())
     tolVal = hdhC::string2Double(t_DMD.attMap[n_tol_on_requests]);
 
   if( !maxSz )

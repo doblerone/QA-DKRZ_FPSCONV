@@ -359,7 +359,7 @@ Ensemble::Ensemble()
   isWithTarget     = false;
 
   startIndex  = 0;
-  newline="\\n";
+  newline="\n";
 }
 
 void
@@ -1102,7 +1102,7 @@ Member::Member()
   isPrintDateRange=false;
   isModTimeNote=false;
   isPrintOnlyMarked=false ;
-  newline="\\n";
+  newline="\n";
 }
 
 void

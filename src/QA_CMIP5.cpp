@@ -2146,7 +2146,7 @@ CMOR::checkMIPT_dim_coordsAtt(
     if( t_DMD_coAtt == coAtt[ix] )
     {
       // Is coordinates-att set in the corresponding variable?
-      if( pQA->pIn->getVarIndex(dimVar[ix]) == -1 );
+      if( pQA->pIn->getVarIndex(dimVar[ix]) == -1 )
       {
         std::string key("4_1h");
         if( notes->inq( key, vMD.var->name) )
@@ -3604,7 +3604,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
   }
 
   double tolVal=0;
-  if( t_DMD.attMap[n_tol_on_requests].size());
+  if( t_DMD.attMap[n_tol_on_requests].size())
     tolVal = hdhC::string2Double(t_DMD.attMap[n_tol_on_requests]);
 
   if( !maxSz )

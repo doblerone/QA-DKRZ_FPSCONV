@@ -4859,9 +4859,11 @@ NcAPI::setAttString(int varid, std::string aName,
    for( size_t i=0 ; i < text.size() ; ++i)
    {
      for( size_t j=0 ; j < text[i].size() ; ++j)
+     {
        p[k++] = text[i][j];
+     }
 
-       p[k++] = '\0' ;
+     p[k++] = '\0' ;
    }
 
    // call method for char-array

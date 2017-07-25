@@ -175,6 +175,7 @@ Variable::getCoordinateType(void)
   return i ;
 }
 
+/*
 template<typename T>
 std::pair<int,int>
 Variable::getData(MtrxArr<T>& ma, int rec, int leg )
@@ -189,6 +190,7 @@ Variable::getData(MtrxArr<T>& ma, int rec, int leg )
   
   return is;
 }
+*/
 
 bool
 Variable::getData(int rec)
