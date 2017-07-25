@@ -247,12 +247,12 @@ struct CMOR
             std::map<std::string, size_t>& d_col);
 
   //! Starting function for all table cross-checks.
-  void   run(InFile&, VariableMetaData&);
+  void   run(InFile&, std::vector<VariableMetaData>&);
 
   // a little bit intricated, because of Omon-3D tracers, cf3hr, and cfSites
   void                     bufTableSheets(VariableMetaData&);
-  std::vector<std::string> tableIdBuf;
-  size_t                   tableIdBufIx;
+  std::vector<std::string> tableIDBuf;
+  size_t                   tableIDBufIx;
 
   std::string parentExpID;
   std::string parentExpRIP;
@@ -513,8 +513,11 @@ public:
   // init for test about times
   bool isUseStrict;
   bool isClearBits;
+  bool notMIP_table_avail;
+
 
   int frequencyPosition;
+  int mipPosition;
   int varnamePosition;
   
   std::vector<std::string> excludedAttribute;

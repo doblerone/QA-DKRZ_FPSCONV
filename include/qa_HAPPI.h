@@ -252,8 +252,8 @@ struct CMOR
 
   // a little bit intricated, because of Omon-3D tracers, cf3hr, and cfSites
   void                     bufTableSheets(VariableMetaData&);
-  std::vector<std::string> tableIdBuf;
-  size_t                   tableIdBufIx;
+  std::vector<std::string> tableIDBuf;
+  size_t                   tableIDBufIx;
 
   std::string parentExpID;
   std::string parentExpRIP;
@@ -518,6 +518,7 @@ public:
   bool notMIP_table_avail;
 
   int frequencyPosition;
+  int mipPosition;
   int varnamePosition;
   
   std::vector<std::string> excludedAttribute;

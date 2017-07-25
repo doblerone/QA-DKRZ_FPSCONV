@@ -592,6 +592,7 @@ callQaExecutor()
           EXCLUDE_ATTRIBUTE \
           EXCLUDE_VARIABLE \
           FILE_NAME_FREQ_INDEX \
+          FILE_NAME_MIP_INDEX \
           FILE_NAME_VAR_INDEX \
           LOG_FNAME_DIR \
           LOG_FNAME \

@@ -214,8 +214,8 @@ class QA : public IObj
   std::vector<std::string> srcStr;
   std::string revision;
 
-  static std::string tableId;
-  static std::string tableIdSub;
+  static std::string tableID;
+  static std::string tableIDSub;
 
   std::string n_data;
   std::string n_time;
@@ -252,8 +252,8 @@ class QA : public IObj
   void        setProcessing(void);
 };
 
-std::string QA::tableId=hdhC::empty;
-std::string QA::tableIdSub=hdhC::empty;
+std::string QA::tableID=hdhC::empty;
+std::string QA::tableIDSub=hdhC::empty;
 
 #endif
 

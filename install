@@ -494,6 +494,9 @@ do
           exit 41
         elif [ "${OPTNAME}" = HOME ] ; then
           continue
+        elif [ "${OPTNAME}" = INQ_TABLES ] ; then
+          isInqTables=t
+          continue
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
           isLink=t
         elif [ "${OPTNAME}" = NET ] ; then
@@ -558,7 +561,6 @@ if [ ! "${TTY}" ] ; then
   if tty -s ; then TTY=$(tty) ; fi
 fi
 
-
 for pck in $* ; do
   PCK="${pck}"
   tr_option PCK
@@ -593,6 +595,14 @@ done
 test ${#projects[*]} -eq 0 && projects=(${default_prj})
 
 # inquire from ~/.qa-dkrz/config.txt;
+if [ ${isInqTables} ] ; then
+  if . ${QA_SRC}/scripts/inqRunEnv --read-only ${projects[0]} ; then
+    exit 0
+  else
+    exit 41
+  fi
+fi
+
 # also ensures that all names in the config.files are defined in this program
 if [ ! ${isCondaBuild} ] ; then
   if [ ! ${isBuild} ] ; then

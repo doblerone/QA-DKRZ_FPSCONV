@@ -727,8 +727,8 @@ QA_Time::initTimeBounds(double offset)
 void
 QA_Time::initTimeTable(void)
 {
-   std::string id_1st(QA::tableId);
-   std::string id_2nd(QA::tableIdSub);
+   std::string id_1st(QA::tableID);
+   std::string id_2nd(QA::tableIDSub);
 
    if( timeTableMode == UNDEF )
      return;

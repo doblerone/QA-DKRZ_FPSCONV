@@ -1102,26 +1102,31 @@ run_CMOR_LLNL()
 
 NO_CONDA_INSTALL=t
 
-export UVCDAT_ANONYMOUS_LOG=no
+  export UVCDAT_ANONYMOUS_LOG=no
 
-if [ ${NO_CONDA_INSTALL} ] ; then
-  source activate ${CONDA_CMOR_ENV} &> /dev/null
+#  if [ ${NO_CONDA_INSTALL} ] ; then
+#    source activate ${CONDA_CMOR_ENV} &> /dev/null
 
-  if which PrePARE &> /dev/null ; then
-    PrePARE=PrePARE
-  fi
-else
-  . $QA_SRC/scripts/parseConfigFile PrePARE
-  if ! source ${PrePARE%/*}/bin/activate ${CONDA_CMOR_ENV:-place_holder} &> /dev/null ; then
-     PrePARE=
-  fi
-  export PATH=${PrePARE%/*}:${PATH}
-fi
+#    if which PrePARE &> /dev/null ; then
+#      PrePARE=PrePARE
+#    fi
+#  else
+#    . $QA_SRC/scripts/parseConfigFile PrePARE
+#    if ! source ${PrePARE%/*}/bin/activate ${CONDA_CMOR_ENV:-place_holder} &> /dev/null ; then
+#       PrePARE=
+#    fi
+#    export PATH=${PrePARE%/*}:${PATH}
+#  fi
 
-  if [ ${PREPARE} ] ; then
-    echo "could not activate/find PrePARE"
-    signalParent TERM
-    exit 1
+  if [ ! ${PrePARE} ] ; then
+    . $QA_SRC/scripts/parseConfigFile PrePARE
+    export PATH=${PrePARE%/*}:${PATH}
+    
+    if [ ! ${PrePARE} ] ; then
+      echo "could not activate/find PrePARE"
+      signalParent TERM
+      exit 1
+    fi
   fi
 
 #  if . $QA_SRC/scripts/parseConfigFile UDUNITS2_XML_PATH ; then
@@ -1145,31 +1150,33 @@ fi
   # find the right MIP table
   table_path=$QA_HOME/tables/projects/CMIP6/cmip6-cmor-tables/Tables
 
-#  local table_id=$( ${QA_SRC}/bin/getNC_att.x $file --only-value table_id)
+  local table_id=$( ${QA_SRC}/bin/getNC_att.x $file --only-value table_id)
 
-  # check whether at leat one of the two name an existing json-table
-#  local mip_table=${table_path}/CMIP6_${table_id}.json
-#  if ! ls ${mip_table} &> /dev/null ; then
+  # check whether at leat one of the two indicate an existing json-table
+  local mip_table=${table_path}/CMIP6_${table_id}.json
+  if ! ls ${mip_table} &> /dev/null ; then
     # still contains the filename without path
-#    local x_fname
-#    declare -a x_fname
-#    x_fname=( ${words[1]//_/ } )
-#    mip_table=${table_path}/CMIP6_${x_fname[1]}.json
+    local x_fname
+    declare -a x_fname
+    x_fname=( ${words[1]//_/ } )
+    mip_table=${table_path}/CMIP6_${x_fname[1]}.json
 
-#    if ! ls ${mip_table} &> /dev/null ; then
-#       if [ -c "$TTY" ] ; then
-#         echo 'Invalid MIP Table in filename and attributes' # > $TTY
-#         echo 'Cancel CMOR_LLN run' # > $TTY
-#       else
-#       fi
-#       return 1
-#    fi
-#  fi
+    if ! ls ${mip_table} &> /dev/null ; then
+       if [ -c "$TTY" ] ; then
+         echo 'Invalid MIP Table in filename and attributes' # > $TTY
+         echo 'Cancel CMOR_LLN run' # > $TTY
+    #   else
+       fi
+       return 1
+    fi
+  fi
 
-  mip_table=${table_path}/CMIP6_CV.json
-
+#  mip_table=${table_path}/CMIP6_CV.json
+  variable=${file##*/}
+  
   local ans2
   ans2="$( ${PrePARE} \
+     --variable ${variable%%_*} \
      ${mip_table} \
      ${file} 2>&1 \
      | python ${QA_SRC}/scripts/python/qa-dkrz/convertPipedCMOR_output.py )"
@@ -1452,6 +1459,9 @@ set_qa_par()
 
  test ${#FILE_NAME_FREQ_INDEX} -gt 0 && \
    par=${par}"${s}"fNFI=${FILE_NAME_FREQ_INDEX}
+
+ test ${#FILE_NAME_MIP_INDEX} -gt 0 && \
+   par=${par}"${s}"fNMI=${FILE_NAME_MIP_INDEX}
 
  test ${#FILE_NAME_VAR_INDEX} -gt 0 && \
    par=${par}"${s}"fNVI=${FILE_NAME_VAR_INDEX}
