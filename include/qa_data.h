@@ -194,8 +194,9 @@ class QA_Data
   void   store(hdhC::FieldData &);
 
   void   test( int, hdhC::FieldData &);
-  bool   testConst(hdhC::FieldData &);
-  bool   testInfNaN(hdhC::FieldData &);
+  void   testConst(hdhC::FieldData &);
+  void   testInfNaN(hdhC::FieldData &);
+  void   testNegativeVal(hdhC::FieldData &);
   bool   testValidity(hdhC::FieldData &);
 
   std::string name;

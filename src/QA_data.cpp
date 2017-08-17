@@ -175,7 +175,7 @@ SharedRecordFlag::adjustFlag(int num, size_t rec, int erase)
   {
     // check whether the identical error flag is already available
     int flags[] = { 0, 1, 2, 4, 8, 16, 32, 64,
-                  100, 200, 400, 800, 1600, 3200, 6400};
+                  100, 200, 400, 800, 1600, 3200, 6400, 12800};
     int sz = 15;
     int iv=ma_i[0] ;
 
@@ -1980,6 +1980,8 @@ QA_Data::test(int i, hdhC::FieldData &fA)
 
     testConst(fA) ;
 
+    testNegativeVal(fA) ;
+
     if( enableOutlierTest )
     {
       if( ! fA.isValid )
@@ -1993,14 +1995,14 @@ QA_Data::test(int i, hdhC::FieldData &fA)
   return ;
 }
 
-bool
+void
 QA_Data::testConst(hdhC::FieldData &fA)
 {
   if( ! fA.isValid )
-    return false;
+    return ;
 
   if( ! enableConstValueTest )
-    return true;
+    return ;
 
   if( currMin != currMax )
   {
@@ -2013,7 +2015,7 @@ QA_Data::testConst(hdhC::FieldData &fA)
       constValueRecordState=false;
     }
 
-    return false;
+    return ;
   }
 
   std::string val=hdhC::double2String(currMin);
@@ -2033,28 +2035,52 @@ QA_Data::testConst(hdhC::FieldData &fA)
     constValueRecordStartRec.push_back(pIn->currRec) ;
   }
 
-  return true;
+  return ;
 }
 
-bool
+void
 QA_Data::testInfNaN(hdhC::FieldData &fA)
 {
-  if( !fA.infCount && !fA.nanCount )
-    return false;
-
-  std::string key=("R6400");
-  if( notes->inq( key, name, ANNOT_ACCUM) )
+  if( fA.infCount || fA.nanCount )
   {
-    sharedRecordFlag.currFlag += 6400;
+    std::string key=("R6400");
+    if( notes->inq( key, name, ANNOT_ACCUM) )
+    {
+      sharedRecordFlag.currFlag += 6400;
 
-    std::string capt("Inf or NaN value(s), found rec#");
-    capt += hdhC::tf_val( hdhC::itoa(pIn->currRec));
+      std::string capt("Inf or NaN value(s), found rec#");
+      capt += hdhC::tf_val( hdhC::itoa(pIn->currRec));
 
-    (void) notes->operate(capt) ;
-    notes->setCheckStatus(pQA->n_data, pQA->n_fail);
+      (void) notes->operate(capt) ;
+      notes->setCheckStatus(pQA->n_data, pQA->n_fail);
+    }
   }
 
-  return true ;
+  return ;
+}
+
+void
+QA_Data::testNegativeVal(hdhC::FieldData &fA)
+{
+  if( fA.min < 0.0 )
+  {
+    std::string key=("R12800");
+    if( notes->inq( key, name, ANNOT_ACCUM) )
+    {
+      sharedRecordFlag.currFlag += 12800;
+
+      std::string capt(hdhC::tf_var(name, ":") );
+      capt += "Negative data value " ;
+      capt += hdhC::tf_val( hdhC::double2String(fA.min) ) ;
+      capt += " at rec# " ;
+      capt += hdhC::tf_val( hdhC::itoa(pIn->currRec));
+
+      (void) notes->operate(capt) ;
+      notes->setCheckStatus(pQA->n_data, pQA->n_fail);
+    }
+  }
+
+  return ;
 }
 
 bool
