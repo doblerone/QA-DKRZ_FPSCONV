@@ -194,6 +194,7 @@ class QA_Data
   void   store(hdhC::FieldData &);
 
   void   test( int, hdhC::FieldData &);
+  void   testAnyFillValue(hdhC::FieldData &);
   void   testConst(hdhC::FieldData &);
   void   testInfNaN(hdhC::FieldData &);
   void   testNegativeVal(hdhC::FieldData &);

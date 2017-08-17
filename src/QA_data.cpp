@@ -175,7 +175,7 @@ SharedRecordFlag::adjustFlag(int num, size_t rec, int erase)
   {
     // check whether the identical error flag is already available
     int flags[] = { 0, 1, 2, 4, 8, 16, 32, 64,
-                  100, 200, 400, 800, 1600, 3200, 6400, 12800};
+                  100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600};
     int sz = 15;
     int iv=ma_i[0] ;
 
@@ -1982,6 +1982,8 @@ QA_Data::test(int i, hdhC::FieldData &fA)
 
     testNegativeVal(fA) ;
 
+    testAnyFillValue(fA) ;
+
     if( enableOutlierTest )
     {
       if( ! fA.isValid )
@@ -1989,6 +1991,29 @@ QA_Data::test(int i, hdhC::FieldData &fA)
          statMax.add( currMax );
          statMin.add( currMin );
       }
+    }
+  }
+
+  return ;
+}
+
+void
+QA_Data::testAnyFillValue(hdhC::FieldData &fA)
+{
+  if( fA.fillingValueNum > 0 )
+  {
+    std::string key=("R25600");
+    if( notes->inq( key, name, ANNOT_ACCUM) )
+    {
+      sharedRecordFlag.currFlag += 25600;
+
+      std::string capt(hdhC::tf_var(name, ":") );
+      capt += "_FillValue " ;
+      capt += " at rec# " ;
+      capt += hdhC::tf_val( hdhC::itoa(pIn->currRec));
+
+      (void) notes->operate(capt) ;
+      notes->setCheckStatus(pQA->n_data, pQA->n_fail);
     }
   }
 
