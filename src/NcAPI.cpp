@@ -1284,6 +1284,8 @@ NcAPI::defineVar(std::string vName, nc_type type,
   layout.noData.push_back(false) ;
   hasEffVarUnlimitedDim.push_back( false) ;
 
+  isLastDataEmpty.push_back(true);
+
   for( size_t i=0 ; i < currDimName.size() ; ++i )
   {
     bool is=false;
@@ -2589,7 +2591,7 @@ NcAPI::getData(int varid, size_t rec, int leg)
 {
   // if rec_leg <= rec, then only the requested rec.
   // if leg < 0, then all records
-   
+
   size_t rank = layout.varDimName[varid].size();
 
   if( layout.rec_index[varid] < UINT_MAX )
@@ -2935,7 +2937,7 @@ NcAPI::getData(MtrxArr<ToT> &to, int varid, size_t rec, int leg)
 
   // status of the last getData operation
   isLastDataEmpty[varid] = to.validRangeBegin.size() ? false : true ;
-  
+
   return to[to_ix];
 }
 
@@ -3486,7 +3488,7 @@ NcAPI::getLayout(void)
      layout.varTypeMap[name_buf] = type ;
 
      isLastDataEmpty.push_back(true);
-     
+
      // ATTRIBUTES of variables
      for( int j=0 ; j < attNum ; ++j )
      {
@@ -4133,7 +4135,7 @@ NcAPI::init(void)
   xtrnlSet.isFletcher  = false ;
 
   notes=0;  // default for this pointer
-  
+
   return;
 }
 
