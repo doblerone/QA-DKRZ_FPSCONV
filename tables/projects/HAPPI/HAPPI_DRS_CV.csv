@@ -22,24 +22,28 @@ BEGIN: DRS
   ESGF-DS: <activity>/<product>/<institute>/<model>/<experiment>/<frequency>\
            /<modeling realm>/<MIP table>/<ensemble member>/<version number>\
            /<variable name>
+  HAPPI-DS: <activity>/<product>/<institute>/<model>/<exp family>/<experiment>/<subexperiment>/<frequency>\
+           /<modeling realm>/<variable name>/<ensemble member>
 
-  HAPPI-FE:<variable name>_<MIP table>_<model>_<experiment>_<ensemble member>\
-           _<temporal subset>_<geographical info>.nc
+  HAPPI-FE:<variable name>_<MIP table>_<model>_<exp family>_<experiment>_<subexperiment>_<ensemble member>\
+           _<temporal subset>.nc
   GRIDSPEC-FE:<gridspec>_<modeling realm>_<frequency>_<model>_<experiment>\
            _<ensemble member>.nc
 
 # Special format: <DRS-CV name> = global attribute name.
 # Components of directory and file structure.
 # Note that requested values are not part of the DRS_CV check.
-  <activity>          = project_id  = HAPPI
-  <product>           = product     = output
+  <activity>          = HAPPI
+  <product>           = output
   <institute>         = institute_id
   <model>             = model_id
-  <experiment>        = experiment_id
+  <exp family>        = experiment_family
+  <experiment>        = experiment
+  <subexperiment>     = subexperiment
   <frequency>         = frequency
   <modeling realm>    = modeling_realm
   <variable name>
-  <ensemble member>                      # composition of three attributes
+  <ensemble member>   = run_id           # composition of three attributes
   <MIP table>         = table_id         # embedded in table_id
   <version number>                       # v[[:digits:]]
   <gridspec>
@@ -48,32 +52,29 @@ BEGIN: DRS
 END: DRS
 
 # VAR_TYPE is the type of a variable (note: checked via std_output table)
-#DATA_VAR:
-#   VAR_TYPE=float
-#AUX_VAR:
-#   VAR_TYPE=double
+DATA_VAR:
+   VAR_TYPE=float
+AUX_VAR:
+   VAR_TYPE=double
 
 global:
-   branch_time
    contact
-   Conventions = CF-1.4
    creation_date = YYYY-MM-DDTHH:MM:SSZ
+   experiment_family
    experiment
-   experiment_id
-   forcing = Nat|Ant|GHG|SD|SI|SA|TO|SO|Oz|LU|Sl|Vl|SS|Ds|BC|MD|OC|AA
-   frequency=yr|mon|day|6hr|3hr|subhr|monClim|fx
-   initialization_method
+   subexperiment
+   forcing
+   frequency = yr|mon|day|6hr|3hr|subhr|monClim|fx
    institute_id
    institution
    model_id
-   modeling_realm=atmos|ocean|land|landIce|seaIce|aerosol|atmosChem|ocnBgchem
-   parent_experiment_id
-   parent_experiment_rip
-   physics_version
-   product=output
-   project_id=HAPPI
-   realization
-   run_id  = runNNN
-   source
-   table_id
-   tracking_id
+   project_id = C20C+ Detection and Attribution Project 
+   run_id = runNNN
+   references
+   title
+   parent_experiment
+   parent_experiment_family
+   parent_subexperiment
+   parent_run_id
+   institute_run_id
+   license

@@ -56,5 +56,8 @@ Oz
 AA
 anthropogenic aerosols (a mixture of aerosols, not explicitly defined here
 
+AMIP
+sea surface temperature and sea ice fraction
+
 N/A
 no forcing
