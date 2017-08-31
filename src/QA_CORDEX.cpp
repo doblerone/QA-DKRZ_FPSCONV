@@ -315,7 +315,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
   findFN_faults(drs, x_e, gM, txt) ;
   if( txt.size() )
   {
-    keys.push_back("1_2");
+    keys.push_back("1_1b");
     text.push_back(txt);
   }
 
@@ -535,7 +535,7 @@ DRS_CV::checkProductName(std::string& drs_product,
     }
   }
 
-  std::string key("1_3");
+  std::string key("1_2b");
 
   if( notes->inq( key, drsP) )
   {
@@ -699,7 +699,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
   findPath_faults(drs, x_e, gM, txt) ;
   if( txt.size() )
   {
-    keys.push_back("1_1");
+    keys.push_back("1_1a");
     text.push_back(txt);
   }
 
@@ -827,7 +827,7 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
       if(x_e[j] == "activity" )
       {
         std::string s( hdhC::Upper()(drs[i]) ) ;
-        if( s == t  && !notes->inq( "1_3a", pQA->fileStr, "INQ_ONLY") )
+        if( s == t  && !notes->inq( "1_2a", pQA->fileStr, "INQ_ONLY") )
           continue;
       }
 
@@ -1027,11 +1027,11 @@ DRS_CV::testPeriod(Split& x_f)
       if( !isInstantTime() )
       {
         std::string tb_name(pQA->qaTime.getBoundsName());
-        
+
         if( ! notes->findAnnotation("6_15", tb_name) )
         {
           std::string key("5_8");
-          
+
           if( notes->inq( key, tb_name ) )
           {
             std::string capt(hdhC::tf_var("time_bnds"));
@@ -1804,7 +1804,7 @@ QA_Exp::checkDimAxis(InFile &in,
     struct DimensionMetaData &f_DMD_entry,
     struct DimensionMetaData &t_DMD_entry)
 {
-  std::string key("47_4");
+  std::string key("4_9");
   std::string& t_DMD_axis = t_DMD_entry.attMap[n_axis] ;
   std::string& f_DMD_axis = f_DMD_entry.attMap[n_axis] ;
 
@@ -1850,7 +1850,7 @@ QA_Exp::checkDimChecksum(InFile &in,
 
   std::string t0;
 
-  std::string key("47_5");
+  std::string key("4_8");
   if( notes->inq( key, vMD.var->name) )
   {
     std::string capt( getCaptIntroDim(vMD, f_DMD_entry, t_DMD_entry) ) ;
@@ -2269,7 +2269,7 @@ QA_Exp::checkPressureCoord(InFile &in)
    // is there a difference between filename and variable name?
    if( pFile.size() && pFile != pVarname )
    {
-     std::string key("3_15");
+     std::string key("1_5c");
      if( notes->inq( key ) )
      {
        std::string capt("p-level in the filename and the variable name do not match") ;
@@ -3236,7 +3236,7 @@ QA_Exp::checkMetaData(InFile &in)
 
    getSubTable() ;
 
-  
+
   // check existance (and data) of the pressure coordinate for those
   // variables defined on a level indicated by a trailing number
   checkPressureCoord(in);
@@ -4050,7 +4050,7 @@ QA_Exp::getFrequency(void)
     if( frequencyPosition > -1 )
     {
       size_t fp=static_cast<size_t>(frequencyPosition);
-      
+
       if( fp < splt.size() )
          frequency = splt[fp] ;
     }
@@ -4141,7 +4141,7 @@ QA_Exp::init(std::vector<std::string>& optStr)
      fVarname = getVarnameFromFilename();
      getFrequency();
    }
-   
+
    if( pQA->isCheckCV || pQA->isCheckData )
    {
      // Create and set VarMetaData objects.
@@ -4192,7 +4192,7 @@ QA_Exp::initDefaults(void)
 
   frequencyPosition=-1;  // not set
   varnamePosition=-1;
-  
+
   n_axis="axis";
   n_bnds_name="bnds_name";
   n_coordinates="coordinates";
@@ -4762,7 +4762,7 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
             if( hdhC::isAmong(aV, x_f.getItems()) )
                continue;
          }
-         
+
          std::string key("2_8");
          if( notes->inq( key, pQA->s_global ) )
          {
