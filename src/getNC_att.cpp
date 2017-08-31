@@ -70,16 +70,6 @@ int main(int argc,char *argv[])
         continue;
     }
 
-    if( ! nc.isAttValid(att) )
-    {
-      if( !isOnlyValue )
-      {
-        vs_att.push_back(att);
-        vs_val.push_back("");
-        continue;
-      }
-    }
-
     if( att == "record_num" )
     {
       std::ostringstream ostr;
@@ -87,6 +77,17 @@ int main(int argc,char *argv[])
 
       vs_att.push_back("record_num");
       vs_val.push_back(ostr.str());
+
+      continue;
+    }
+
+    if( ! nc.isAttValid(att) )
+    {
+      if( !isOnlyValue )
+      {
+        vs_att.push_back(att);
+        vs_val.push_back("");
+      }
 
       continue;
     }
@@ -115,19 +116,28 @@ int main(int argc,char *argv[])
     }
   }
 
-  for( size_t i=0 ; i < vs_att.size() ; ++i )
+  int retValue=0 ;
+
+  if( vs_att.size() )
   {
-    if(i)
-        std::cout << " " ;
+     for( size_t i=0 ; i < vs_att.size() ; ++i )
+     {
+       if(i)
+           std::cout << " " ;
 
-    if( !isOnlyValue )
-        std::cout << vs_att[i] << "=" ;
+       if( !isOnlyValue )
+           std::cout << vs_att[i] << "=" ;
 
-    if( vs_val[i].size() )
-      std::cout << vs_val[i] ;
+       if( vs_val[i].size() )
+         std::cout << vs_val[i] ;
+       else
+         retValue=1;
+     }
   }
+  else
+     retValue=1;
 
-  return 0;
+  return retValue;
 }
 
 void
