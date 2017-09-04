@@ -466,10 +466,10 @@ def runExample():
             print "building data in example requires the ncgen utility"
 
     print 'run'
-    print os.path.join(QA_SRC, 'scripts', 'qa-dkrz') +\
+    print os.path.join(QA_SRC, 'python', 'qa-dkrz') +\
                        " -m --work=" + currdir + '-f qa-test.task'
 
-    subprocess.call([os.path.join(QA_SRC, 'scripts', 'qa-dkrz'), \
+    subprocess.call([os.path.join(QA_SRC, 'python', 'qa-dkrz'), \
                     '--work=' + currdir, "-f", "qa-test.task"])
 
     return

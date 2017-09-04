@@ -11,7 +11,7 @@ import subprocess
 import Queue
 
 import qa_util
-from qa_convert_cmor_output import convert_CMOR_output
+#from qa_convert_cmor_output import convert_CMOR_output
 
 #from pkg_resources import load_entry_point
 
@@ -603,8 +603,10 @@ class QaExec(object):
         except subprocess.CalledProcessError as e:
             pass
 
-        convert = os.path.join(self.g_vars.qa_src, "scripts", "python",
-                               "qa-dkrz", "convertPipedCMOR_output.py")
+#        convert = os.path.join(self.g_vars.qa_src, "python",
+#                               "qa-dkrz", "convertPipedCMOR_output.py")
+        convert = os.path.join(self.g_vars.qa_src, "python",
+                               "qa-dkrz", "qa_convert_cmor_output.py")
 
         try:
             pp_out = subprocess.check_output(convert, stdin=ps.stdout, shell=True)

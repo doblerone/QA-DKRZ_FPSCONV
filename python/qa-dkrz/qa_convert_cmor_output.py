@@ -1,6 +1,10 @@
+#! /hdh/local/miniconda/bin/python
+
 import sys
 
 def convert_CMOR_output(lines):
+    blk_marks = [ '!', '=' ]
+
     blk=[]
     ix=-1
     blkOn=False
@@ -9,9 +13,14 @@ def convert_CMOR_output(lines):
     #    for line in fd:
     #        lines.append(line)
 
+
     for line in lines:
         # find the beginning of a block
-        count = line.count('!')
+        count = 0
+        for mark in blk_marks:
+            c = line.count(mark)
+            if c > count:
+                count = c
 
         if count > 5:
             if blkOn:
@@ -31,7 +40,7 @@ def convert_CMOR_output(lines):
         for jx in range(len(blk[ix])-1,-1,-1):
             # rm line-feed
             blk[ix][jx] = blk[ix][jx].strip("\t\n !")
-            #blk[ix][jx].strip()
+
             if len(blk[ix][jx]) == 0:
                 del  blk[ix][jx]
             else:
@@ -82,21 +91,16 @@ def convert_CMOR_output(lines):
 
                     pos0 = pos+1
 
-            #if len(phrase):
-            #    annot[ix].append(phrase)
-            #    phrase=''
-
         if len(phrase):
             annot[ix].append(phrase)
 
     for ix in range(len(annot)):
         # the first annot of each annotation group is a caption
         # the tag equals the length of the caption
-        flag = ' FLAG-BEGL1-CMOR_' + str(len(annot[ix][0])) + ':CAPT-BEG'
-        flag += 'CMOR: ' + annot[ix][0] + 'CAPT-END'
+        flag = ' FLAG-BEG:CAPT-BEG'
+        flag += 'CMOR ' + annot[ix][0] + 'CAPT-END'
 
         annot[ix][0] = flag
-
         sz = len(annot[ix])
 
         if sz > 1:
@@ -125,11 +129,11 @@ def convert_CMOR_output(lines):
 
 if __name__ == '__main__':
     lines=[]
-    if len(sys.argv) == 1:
-        for line in sys.stdin:
-            lines.append(line)
-    elif len(sys.argv) == 2:
-        for arg in argv[1:]:
-            lines.append( arg.split('\n') )
+    #if len(sys.argv) == 1:
+    for line in sys.stdin:
+        lines.append(line)
+    #elif len(sys.argv) == 2:
+    #    for arg in argv[1:]:
+    #        lines.append( arg.split('\n') )
 
     convert_CMOR_output(lines)
