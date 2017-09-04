@@ -97,11 +97,11 @@ checkTools()
     fi
   fi
 
-  if [ ! -x ${QA_SRC}/bin/qA-${PROJECT_AS}.x ] ; then
-    if [ qA-${PROJECT_AS}.x = qA-install.x ] ; then
+  if [ ! -x ${QA_SRC}/bin/qA-${PROJECT}.x ] ; then
+    if [ qA-${PROJECT}.x = qA-install.x ] ; then
       std_out "PROJECT name not available. See qa-dkrz --help for option '--install'"
 #    else
-#      std_out "Executable ${QA_SRC}/bin/qA-${PROJECT_AS}.x not available."
+#      std_out "Executable ${QA_SRC}/bin/qA-${PROJECT}.x not available."
 #      std_out "Please, run: ${QA_SRC}/install with ${PROJECT} or PROJECT_AS name"
     isExit=t ;
     fi
@@ -234,7 +234,7 @@ findProject()
   # look for a specification in the current conf-files.
   local val
   declare -a val
-  
+
   if [ ! ${PROJECT} ] ; then
     val=( $(grep "^[[:space:]]*[^#]*[[:space:]]*PROJECT=" $1 ) )
     if [ "${val}" ] ; then
@@ -264,7 +264,6 @@ findProject()
         for(( i=0 ; i < ${#definedProjects[*]} ; ++i )) ; do
           if [ ${definedProjects[i]} = ${val} ] ; then
              setKWL PROJECT=$val
-             setKWL PROJECT_AS=$val
              return
           fi
         done
@@ -319,7 +318,7 @@ getMultiLists()
   declare -a fs
   fs=( CF_check-list.conf ${qa_cl[*]#*=} \
              ${PROJECT}_check-list.conf \
-             ${PROJECT_AS}_check-list.conf )
+             ${PROJECT_VIRT}_check-list.conf )
 
   local ff i p pL
   for p in ${pDir[*]} ; do
@@ -384,8 +383,8 @@ getMultiLists()
   local cf="${cl_CF_note}${cl_CF_note:+ }${cfList[*]}"
   local prj="${cl_PRJ_note}${cl_PRJ_note:+ }${prjList[*]}"
 
-  setKWL CF_CHECK_LIST="${cf// /,}"
-  setKWL QA_CHECK_LIST="${prj// /,}"
+  test ${cf// /,}  && setKWL CF_CHECK_LIST="${cf// /,}"
+  test ${prj// /,} && setKWL QA_CHECK_LIST="${prj// /,}"
 
   return
 }
@@ -412,11 +411,7 @@ findQAConfSeq()
     findProject ${qaConfFileSeq[i]}
   done
 
-  if [ ${PROJECT} ] ; then
-     test ! ${PROJECT_AS} && PROJECT_AS=$PROJECT
-  elif [ ${isExample:-f} = f ] ; then
-     return
-  fi
+  test ${isExample:-t} = f  && return
 
   # paths to files to be concatenated; highest priority for the first one.
   # When PROJECT_AS and PROJECT are set differently, then PROJECT is derived
@@ -424,26 +419,41 @@ findQAConfSeq()
   # there is no default setting for PROJECT, but only for PROJECT_AS. Configuration
   # options pointing to files must begin with PROJECT or PROJECT_AS, respectively,
   # followed by '_'.
-  pDir[0]=$(pwd)  # local path
-  pDir[${#pDir[*]}]=${QA_HOME}/tables
-  if [ ${#PROJECT} -gt 0 -a "${PROJECT}" != "${PROJECT_AS}" ] ; then
-    pDir[${#pDir[*]}]=${QA_HOME}/tables/${PROJECT}
-  else
-    pDir[${#pDir[*]}]=${QA_HOME}/tables/${PROJECT_AS}
-  fi
-  pDir[${#pDir[*]}]=${QA_HOME}/tables/projects/${PROJECT_AS}
 
+  # now names are changed:
+  local prj prj_virt pName vName
+  if [ ${PROJECT_AS} ] ; then
+     prj=${PROJECT_AS}
+     prj_virt=${PROJECT}
+     vName=${PROJECT}
+     pName=${PROJECT_AS}
+     setKWL PROJECT=$prj
+     setKWL PROJECT_VIRT=$prj_virt
+  else
+     prj=${PROJECT}
+     setKWL PROJECT=$prj
+     pName=${PROJECT}_qa.conf
+  fi
+
+  pDir[0]=$(pwd)  # local path
+  if [ ${PROJECT_AS} ] ; then
+    pDir[${#pDir[*]}]=${QA_HOME}/tables/$prj_virt/$vName
+    pDir[${#pDir[*]}]=${QA_HOME}/tables/$prj_virt/$pName
+  fi
+
+  pDir[${#pDir[*]}]=${QA_HOME}/tables/$prj/$pName
+  pDir[${#pDir[*]}]=${QA_HOME}/tables/projects/$prj/$pName
 
   # This loop only works for filenames passed as parameters.
-  # Go through the chain of files unless no more
-  # is found or a path found before is found again;
+  # Go through the chain of files unless there is no more
+  # or a path the first time found;
   # an invalid file would also break processing
   local fs
   declare -a fs
-  
+
   for(( i=0 ; i < ${#pDir[*]} ; ++i )) ; do
-    if ! fs=( $(ls ${pDir[i]}/*_qa.conf 2> /dev/null) ) ;then
-      fs=( $(ls ${pDir[i]}/*_qc.conf 2> /dev/null) )
+    if ! fs=( $(ls ${pDir[i]}_qa.conf 2> /dev/null) ) ;then
+      fs=( $(ls ${pDir[i]}_qc.conf 2> /dev/null) )
     fi
 
     test ${#fs[*]} -gt 0 && \
@@ -800,6 +810,7 @@ naming()
 
   # sub-dir for experiment logs
   setKWL LOG_FNAME_DIR=${QA_RESULTS}/check_logs
+
   test ! "${LOG_FNAMES}"&& mkdir -p $LOG_FNAME_DIR
 
   if [ ! "${LOG_FNAMES}" ] ; then
@@ -831,6 +842,8 @@ naming()
     std_out flush
     exit 1
   fi
+
+  return
 }
 
 output()
@@ -1304,7 +1317,7 @@ setKWL()
   local key item value i val isAdd
   item="$*"
   value=t
-  
+
   key="${item%%+=*}"
   if [ ${key} != ${item} ] ; then
     isAdd=t
@@ -1315,8 +1328,8 @@ setKWL()
       value="${item#*=}"
     fi
   fi
-  
-  value=${value/% /}  
+
+  value=${value/% /}
   key=$( echo "${key/% /}" | tr "[:lower:]" "[:upper:]" )
 
   # disable --> f
@@ -1355,12 +1368,12 @@ setKWL()
   if [ "$key" = QA_BIN ] ; then
     local vals
     declare -a vals
-    
+
     value=${value%/}  # rm a trailing '/'
     vals=( ${value//,/ } )
     local host hosts
     declare -a hosts
-    
+
     for(( i=0 ; i < ${#vals[*]} ; ++i )) ; do
       val=${vals[i]}
       if [ "${val#*:}" = "${val}" ] ; then
@@ -1426,7 +1439,7 @@ setKWL()
          eval ${key}=${value}
       fi
 
-      test ${DEBUG_CONF} && voidX
+#      test ${DEBUG_CONF} && voidX
       return 0
     fi
   done
@@ -1689,6 +1702,7 @@ unsetKWL()
       # plain assignments require to unset before reassignments
       eval unset $key
       unset keyWordList[$i]
+      keyWordList=(${keyWordList[*]})
       break
     fi
   done
@@ -1881,6 +1895,20 @@ done
 # command-line overwrites configuration file assignments
 comLine=( $* ) # for e-mail and initSession
 
+# now names are changed:
+if [ ${PROJECT_AS} ] ; then
+   prj=${PROJECT_AS}
+   prj_virt=${PROJECT}
+   setKWL PROJECT=$prj
+   setKWL PROJECT_VIRT=$prj_virt
+else
+   prj=${PROJECT}
+   setKWL PROJECT=$prj
+fi
+
+# no longer needed
+test ${PROJECT_AS} && unsetKWL PROJECT_AS
+
 test ${QA_CONFS} && setKWL QA_CONF=${QA_CONFS}
 
 # look for multiple occurrences; pass command-line notes as parameter
@@ -1996,7 +2024,7 @@ do
 
         elif [ "${OPTNAME}" = VERSION ] ; then
             setKWL DISPLAY_VERSION${OPTVAL:+=}${OPTVAL}
-          
+
         elif [ "${OPTNAME:0:4}" = WORK ] ; then
           : # done before
 
@@ -2034,12 +2062,8 @@ fi
 
 set +f
 
-if [ ${PROJECT} ] ; then
-  test ! ${PROJECT_AS} && setKWL PROJECT_AS=$PROJECT
-
-  # almost everything is done here
-  loadSetting
-fi
+# almost everything is done here
+loadSetting
 
 output
 

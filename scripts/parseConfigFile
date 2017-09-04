@@ -80,16 +80,16 @@ readCF()
    local noSection=t
 
    while read line ; do
-       if expr match "$line" '^[[:space:]]*#' > /dev/null ; then
-         continue
-       fi
-       
        if [ "${uCF_is}" = t -a ! "${line}" ] ; then
           noSection=f
           break
        fi
 
        sz=$((sz + 1))
+
+       if expr match "$line" '^[[:space:]]*#' > /dev/null ; then
+         continue
+       fi
 
        if [ "${line}" = ${QA_SRC}: ] ; then
            uCF_is=t
@@ -231,7 +231,7 @@ updateConfFile()
        fi
        # else: match
      elif [ "${param_value}" ] ; then
-       lineNum=$((uCF_blkBeg+i+1))
+       lineNum=$((uCF_blkBeg+i+2))
        sed -i "${lineNum} c${param}" $CONFIG_FILE &> /dev/null
        uCF_lines[i]="${param_name}=${param_value}"
        status=1

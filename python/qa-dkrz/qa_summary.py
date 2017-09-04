@@ -34,7 +34,7 @@ class LogSummary(object):
         # fse contains ( var, StartTime, EndTime )
         # index i points to blk[i] == 'caption:'
 
-        # just to have them define in case of an error
+        # just to have them defined in case of an error
         capt=''
         impact=''
         tag=''
@@ -108,6 +108,33 @@ class LogSummary(object):
         return j
 
 
+    def annotation_getItems(self, ix, sep='/'):
+        # ix: index of annotation
+        # self.prj_var_ix: path with variable as i-th component
+        # self.prj_frq_ix: path with frequency as i-th component
+
+        # find identical indices of path and variable items
+        # within the annot_..._ids
+
+        # Find the beginning of a path common for the entire annotation.
+        # Note that each index of p_items stores a list of corresponding
+        # path components.
+
+        # init of pItems[[]] found for this, i.e. ix-th, annotation.
+        # Mutable items are represented by '*'
+        # pItems takes into account the possibility that different annotation
+        # paths are of different size. pItems_api[[]] gives corresponding
+        # api elements.
+        if sep == '/':
+            api = self.annot_path_id[ix]
+            items, mutables = self.getAnnotSource(api)
+        else:
+            afi = self.annot_fName_id[ix]
+            items, mutables = self.getAnnotSource(afi, sep='_')
+
+        return items, mutables
+
+
     def annotation_merge(self):
         # find condensed scopes of annotations
 
@@ -117,7 +144,7 @@ class LogSummary(object):
 
         annot_sz = len(self.annot_capt)
         p_sz=annot_sz
-        
+
         # there is not a single annotation
         if annot_sz == 0:
             return
@@ -371,32 +398,29 @@ class LogSummary(object):
 
         return
 
+    def annot_synthetic_tag(self):
+        # create a synthetic tag for annotations that have none;
+        # this will not eventually be printed.
+        annot_sz = len(self.annot_tag)
 
-    def annotation_getItems(self, ix, sep='/'):
-        # ix: index of annotation
-        # self.prj_var_ix: path with variable as i-th component
-        # self.prj_frq_ix: path with frequency as i-th component
+        # there is not a single annotation
+        if annot_sz == 0:
+            return
 
-        # find identical indices of path and variable items
-        # within the annot_..._ids
+        for ix in range(annot_sz):
+            if len(self.annot_tag[ix]) == 0:
+                md5 = qa_util.get_md5sum(self.annot_capt[ix])
 
-        # Find the beginning of a path common for the entire annotation.
-        # Note that each index of p_items stores a list of corresponding
-        # path components.
+                # try for 3 digits
+                width=3
+                while True:
+                    if md5[0:width] in self.annot_tag:
+                       width=4
+                    else:
+                       self.annot_tag[ix]=md5[0:width]
+                       break
 
-        # init of pItems[[]] found for this, i.e. ix-th, annotation.
-        # Mutable items are represented by '*'
-        # pItems takes into account the possibility that different annotation
-        # paths are of different size. pItems_api[[]] gives corresponding
-        # api elements.
-        if sep == '/':
-            api = self.annot_path_id[ix]
-            items, mutables = self.getAnnotSource(api)
-        else:
-            afi = self.annot_fName_id[ix]
-            items, mutables = self.getAnnotSource(afi, sep='_')
-
-        return items, mutables
+        return
 
 
     def check_for_skipping(self, blk, skip_fBase):
@@ -557,7 +581,7 @@ class LogSummary(object):
                blk.append(line)
 
                words = line.split(None, 1)
-               
+
                if words[0] == 'items:':
                   self.blk_last_line = fd.next().rstrip(' \n')
                   break
@@ -801,7 +825,7 @@ class LogSummary(object):
          elif words[0] == 'FILE_NAME_VAR_INDEX':
             self.prj_var_ix = words[1]
          elif words[0] == 'FILE_NAME_FREQ_INDEX':
-            self.prj_frq_ix = words[1]            
+            self.prj_frq_ix = words[1]
          elif words[0] == 'DRS_PATH_BASE:' \
                or words[0] == 'LOG_PATH_BASE:' \
                      or words[0] == 'EXP_PATH_BASE:':
@@ -816,17 +840,24 @@ class LogSummary(object):
             self.logPathIndex = w2.split(', ')
 
          return
-      
+
     def prelude(self, f_log):
         if repr(type(f_log)).find('str') > -1:
             f_log = [f_log]
 
-        # would be sufficient to provide only one file with a path or
-        # even only a path
+        # 1) path only applies to each file without a path
+        # 2) file with a path as is.
+        # 3) first occurrence of a path either from file or alone
+        #    applies to 1)
+
         coll=[]
+        paths=[]
+        path=''
+
         for i in range( len(f_log) ):
             if os.path.isdir(f_log[i]):
-                head = f_log[i]
+               if len(path) == 0:
+                  path = f_log[i]
             else:
                 if f_log[i][-4:] != '.log':
                     f_log[i] = f_log[i] + '.log'
@@ -834,12 +865,25 @@ class LogSummary(object):
                 # look for a path component
                 head, tail = os.path.split(f_log[i])
 
+                if len(path) == 0 and len(head) > 0:
+                   path = head
+
                 if len(head) == 0:
-                    coll.append(i)
+                    paths.append(path)
+                else:
+                    paths.append(head)
+
+                coll.append(tail)
 
         # could be empty
-        for i in coll:
-            f_log[i] = os.path.join(head, f_log[i])
+        f_log=[]
+        for i in range(len(coll)):
+            if len(paths[i]):
+               p=paths[i]
+            else:
+               p=path
+
+            f_log.append( os.path.join(p, coll[i]))
 
         return f_log  # always a list
 
@@ -896,7 +940,7 @@ class LogSummary(object):
         self.annot_tag=[]         # corresponding tag
         self.annot_scope=[]       # brief annotations
         self.annot_fName_id=[]    # for each var involved
-        self.annot_path_id=[]  
+        self.annot_path_id=[]
         self.annot_var_ix=[]      # only project variable names
         self.annot_fName_dt_id=[] # for each time interval of each var involved
 
@@ -922,7 +966,7 @@ class LogSummary(object):
                     if len(words) == 0:
                         # a string of just '-' would results in this
                         words=['-----------']
-                       
+
                     if words[0] == 'file:':
                         # fse contains ( var, StartTime, EndTime ); the
                         # times could be empty strings or EndTime could be empty
@@ -990,6 +1034,8 @@ class LogSummary(object):
 
         # test for ragged time intervals of atomic variables for given frequency
         self.period_final(log_name)
+
+        self.annot_synthetic_tag()
 
         self.annotation_merge()
 
@@ -1161,10 +1207,14 @@ class LogSummary(object):
                 fd.write(keys + ',\n')
 
         capt = self.annot_capt[ix].strip("'")
-        fd.write(3*tab + '"caption": "' + capt + '",\n')
+        fd.write(3*tab + '"caption": "' + capt )
 
-        impact = self.annot_impact[ix].strip("'")
-        fd.write(3*tab + '"severity": "' + impact + '"\n')
+        if len(self.annot_impact[ix]):
+            impact = self.annot_impact[ix].strip("'")
+            fd.write(",\n" + 3*tab + '"severity": "' + impact + '"\n')
+        else:
+            fd.write("\n")
+
         fd.write(2*tab + '}')
 
         return
@@ -1180,7 +1230,10 @@ class LogSummary(object):
         #tag = self.annot_tag[ix].strip("'")
 
         fd.write('annotation: ' + capt + '\n')
-        fd.write('impact:     ' + impact + '\n')
+
+        if len(self.annot_impact[ix]):
+            fd.write('impact:     ' + impact + '\n')
+
         fd.write('tag:        ' + tag + '\n')
 
         return

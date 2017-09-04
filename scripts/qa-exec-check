@@ -45,7 +45,7 @@ analyseExec()
 
     elif [ $status -gt 4 ] ; then
 
-      sTxt[${#sTxt[*]}]="text: qA-${PROJECT_AS}.x: run-time error. \
+      sTxt[${#sTxt[*]}]="text: qA-${PROJECT}.x: run-time error. \
 Note: possibly due to a bug in NetCDF 4.1.2 F90 lib. \
 However, the check was successful."
 
@@ -63,7 +63,7 @@ However, the check was successful."
 
     sessText="qA-${PROJECT}.x: run-time error, exit status: ${status}"
 
-    local s_out="${ans}qA-${PROJECT_AS}.x: run-time error"
+    local s_out="${ans}qA-${PROJECT}.x: run-time error"
 
     s_out="${s_out}\nfile: ${NEXT_FILE}"
     s_out="${s_out}\ndata_path: ${PROJECT_DATA}/${SUB_PATH}"
@@ -89,7 +89,7 @@ bind_checksum()
 
   local arr item cs force type
   declare -a arr
-  
+
   arr=( ${CHECKSUM//,/ } )
 
   for item in ${arr[*]} ; do
@@ -681,7 +681,7 @@ log()
   # print execution messages to the experiment-log file
   local sp
   declare -a sp
-  
+
   sp[0]=''
   sp[1]=' '
   sp[2]='  '
@@ -913,7 +913,7 @@ parseKey()
   elif [ ${key} = PERIOD ] ; then
     local arr
     declare -a arr
-    
+
     arr=( ${mess} )
     sTxt[${#sTxt[*]}]="3period:"
     if [ ${#arr[*]} -eq 3 ] ; then
@@ -959,13 +959,20 @@ parseKey()
 
     mess=$sX
 
-    local tag=${impact#*-}
-    impact=${impact%-*}
+    local tag
+
+    if [ "${impact:2:1}" = '-' ] ; then
+       tag=${impact#*-}
+       impact=${impact%-*}
+    else
+       tag=''
+       impact=''
+    fi
 
     sTxt[${#sTxt[*]}]="3 - event:"
     sTxt[${#sTxt[*]}]="7caption: '${caption}'"
-    sTxt[${#sTxt[*]}]="7impact: $impact"
-    sTxt[${#sTxt[*]}]="7tag: \'$tag\'"
+    test ${impact} && sTxt[${#sTxt[*]}]="7impact: $impact"
+    test ${tag} && sTxt[${#sTxt[*]}]="7tag: \'$tag\'"
 
     sX=${mess#*TXT-BEG}
     sX=${sX%%TXT-END*}
@@ -1068,7 +1075,7 @@ reportFindings()
 run()
 {
   local cmd
-  cmd="$NICE qA-${PROJECT_AS}.x  --file=param_file_$$.txt"
+  cmd="$NICE qA-${PROJECT}.x  --file=param_file_$$.txt"
 
   sessText="run: ${cmdText}\n"
 
@@ -1085,7 +1092,6 @@ run()
   if [ ${RUN_CMOR3_LLNL} ] ; then
     declare -a annot_CMOR_LLNL
 
-
     # streams into ans
     run_CMOR_LLNL
   fi
@@ -1099,10 +1105,9 @@ run()
 
 run_CMOR_LLNL()
 {
-
-NO_CONDA_INSTALL=t
-
   export UVCDAT_ANONYMOUS_LOG=no
+
+#  NO_CONDA_INSTALL=t
 
 #  if [ ${NO_CONDA_INSTALL} ] ; then
 #    source activate ${CONDA_CMOR_ENV} &> /dev/null
@@ -1121,7 +1126,7 @@ NO_CONDA_INSTALL=t
   if [ ! ${PrePARE} ] ; then
     . $QA_SRC/scripts/parseConfigFile PrePARE
     export PATH=${PrePARE%/*}:${PATH}
-    
+
     if [ ! ${PrePARE} ] ; then
       echo "could not activate/find PrePARE"
       signalParent TERM
@@ -1148,12 +1153,13 @@ NO_CONDA_INSTALL=t
   done < param_file_$$.txt
 
   # find the right MIP table
-  table_path=$QA_HOME/tables/projects/CMIP6/cmip6-cmor-tables/Tables
+  table_path=$TABLE_PATH/cmip6-cmor-tables/Tables
 
   local table_id=$( ${QA_SRC}/bin/getNC_att.x $file --only-value table_id)
 
-  # check whether at leat one of the two indicate an existing json-table
+  # check whether at least one of the two indicate an existing json-table
   local mip_table=${table_path}/CMIP6_${table_id}.json
+
   if ! ls ${mip_table} &> /dev/null ; then
     # still contains the filename without path
     local x_fname
@@ -1173,19 +1179,13 @@ NO_CONDA_INSTALL=t
 
 #  mip_table=${table_path}/CMIP6_CV.json
   variable=${file##*/}
-  
+
   local ans2
   ans2="$( ${PrePARE} \
      --variable ${variable%%_*} \
      ${mip_table} \
      ${file} 2>&1 \
-     | python ${QA_SRC}/scripts/python/qa-dkrz/convertPipedCMOR_output.py )"
-
-if [ ${NO_CONDA_INSTALL} ] ; then
-  source ${PrePARE%/*}/deactivate &> /dev/null
-else
-  source deactivate
-fi
+     | python ${QA_SRC}/python/qa-dkrz/convertPipedCMOR_output.py )"
 
   local i
   local on=f
@@ -1609,7 +1609,7 @@ set_X_par()
     NOTE="${NOTE[*]}"
     for(( i=0 ; i < ${#NOTE} ; ++i )) ; do
        test "${NOTE:i:1}" = '{' -o "${NOTE:i:1}" = '}' \
-          && tmp=${tmp}
+          && tmp=${tmp}\\
        tmp=${tmp}${NOTE:i:1}
     done
     par=${par}":"note="${tmp// /,}"

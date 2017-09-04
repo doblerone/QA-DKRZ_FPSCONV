@@ -1,0 +1,10 @@
+import sys
+from pkg_resources import load_entry_point
+sys.argv=[]
+sys.argv.append("/hdh/local/miniconda/envs/cmor/bin/PrePARE")
+sys.argv.append("--variable")
+sys.argv.append("tas")
+sys.argv.append("/hdh/hdh/QA-DKRZ/test/test.CMIP6/tables/cmip6-cmor-tables/Tables/CMIP6_Amon.json")
+sys.argv.append("/data/CMIP6/CMIP/MPI-M/MPI-ESM-LR/1pctCO2/r1i1p1f2/Amon/tas/gn/v20161130/tas_Amon_1pctCO2_MPI-ESM-LR_r1i1p1f2_gn_200601-210012.nc")
+
+sys.exit(load_entry_point('CMOR==3.2', 'console_scripts', 'PrePARE')() )

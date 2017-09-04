@@ -320,6 +320,27 @@ def clear_line(line):
     return line
 
 
+def convert2brace(lst):
+    if str(type(lst)).find('str') > -1:
+        lst = lst.split(',')
+
+    s=''
+    for l in lst:
+        l = l.strip()
+        if l[0] == '{':
+            l = '\\' + l
+
+        if l[len(l)-1] == '}':
+            l = l[0:-1] + '\\}'
+
+        if len(s):
+            s += ','
+
+        s += l
+
+    return s
+
+
 def date(t=0):
     if t == 0:
         lt = time.localtime(time.time())
@@ -506,8 +527,6 @@ def get_curr_revision(src, is_CONDA):
 def get_experiment_name(g_vars, qaOpts, fB='', sp='', isInit=False):
 
     if isInit:
-        g_vars.drs_path_base = qaOpts.getOpt('DRS_PATH_BASE')
-
         # precedence for provided LOG_NAME
         g_vars.log_fname = ''
         if qaOpts.isOpt('LOG_FNAME'):
@@ -549,25 +568,24 @@ def get_experiment_name(g_vars, qaOpts, fB='', sp='', isInit=False):
 
 
 def get_md5sum(arg):
-    md5 = hashlib.md5()
+   md5 = hashlib.md5()
 
-    # try at first for a file, then a list and eventually a string
-    if not os.path.isfile(arg):
-        if 'str' in repr(type(arg)):
-            arg = [arg]
+    # try at first for a list, then a file and eventually a string
+   if str(type(arg)).find('list') > -1:
+      for a in arg:
+         md5.update(a)
+   elif os.path.isfile(arg):
+      with open(arg, 'rb') as fd:
+         while True:
+               s = fd.read(32768)
+               if len(s):
+                  md5.update(s)
+               else:
+                  break
+   else:
+      md5.update(arg)
 
-        for a in arg:
-            md5.update(a)
-    else:
-        with open(arg, 'rb') as fd:
-            while True:
-                s = fd.read(32768)
-                if len(s):
-                    md5.update(s)
-                else:
-                   break
-
-    return md5.hexdigest()
+   return md5.hexdigest()
 
 
 def get_name_from_file(fBase, fname_index):
@@ -640,11 +658,10 @@ def get_project_table_name(g_vars, qaOpts, fB='', sp='', isInit=False):
 
     if isInit:
         # identical to experiment_name
-        g_vars.drs_path_base = qaOpts.getOpt('DRS_PATH_BASE')
 
         # precedence for provided prefix of project tables
         g_vars.pt_name = ''
-        g_vars.pt_path_index = []
+        g_vars.ct_path_index = []
 
         if qaOpts.isOpt('PROJECT_TABLE'):
             g_vars.pt_name = qaOpts.getOpt('PROJECT_TABLE')
@@ -653,14 +670,14 @@ def get_project_table_name(g_vars, qaOpts, fB='', sp='', isInit=False):
             qaOpts.delOpt('PROJECT_TABLE_PREFIX')
             g_vars.pt_prefix = ''
 
-        elif qaOpts.isOpt('PT_PATH_INDEX'):
-            g_vars.pt_path_index = qaOpts.getOpt('PT_PATH_INDEX')
-            qaOpts.addOpt('PT_PATH_INDEX_MAX', max(g_vars.pt_path_index))
+        elif qaOpts.isOpt('CT_PATH_INDEX'):
+            g_vars.ct_path_index = qaOpts.getOpt('CT_PATH_INDEX')
+            qaOpts.addOpt('CT_PATH_INDEX_MAX', max(g_vars.ct_path_index))
 
-            if len(g_vars.pt_path_index):
-                g_vars.pt_path_index_max = max(g_vars.pt_path_index)
+            if len(g_vars.ct_path_index):
+                g_vars.ct_path_index_max = max(g_vars.ct_path_index)
             else:
-                g_vars.pt_path_index_max = 100
+                g_vars.ct_path_index_max = 100
 
         else:
             g_vars.pt_name = 'pt_all-scope'
@@ -679,10 +696,10 @@ def get_project_table_name(g_vars, qaOpts, fB='', sp='', isInit=False):
     if len(g_vars.pt_name):
         curr_name = g_vars.pt_name
 
-    elif len(g_vars.pt_path_index):
+    elif len(g_vars.ct_path_index):
         path = os.path.join(g_vars.project_data_path, sp)
         curr_name = get_name_from_path(path, g_vars.drs_path_base,
-                                       g_vars.pt_path_index)
+                                       g_vars.ct_path_index)
 
     # collection of used log_fnames
     if not curr_name in g_vars.pt_names:
@@ -798,11 +815,34 @@ def isValid_var_name(name):
 
     return True
 
+
 def isAmong(lst0, lst1):
     for l0 in lst0:
         if not l0 in lst1:
             return False
     return True
+
+
+def join(val, sep=','):
+   # In contrast to the str.join method: if val is not a list, but a single string,
+   # then sep.join('asd') would not result in 'a,s,d'.
+   # Additionally, a list of int is transformed to a csv string
+
+    if str(type(val)).find('list') > -1:
+       v=''
+       for x in val:
+          if v:
+             v += sep
+
+          if str(type(x)).find('int') > -1:
+             v += str(x)
+          else:
+             v += x
+
+       return v
+
+    return val
+
 
 def mkdirP(path):
 

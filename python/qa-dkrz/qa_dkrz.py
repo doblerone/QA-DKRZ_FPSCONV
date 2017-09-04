@@ -21,7 +21,7 @@ from Queue import Queue
 from threading import Thread
 
 from qa_config import QaOptions
-from qa_config import CfgFile
+#from qa_config import CfgFile
 from qa_log import Log
 from qa_util import GetPaths
 from qa_launcher import QaLauncher
@@ -32,7 +32,6 @@ from qa_summary import LogSummary
 
 # for options on the command-line as well as in configuration files
 qaOpts=QaOptions(QA_SRC)
-cfg = CfgFile(qaOpts)
 
 if not qaOpts.isOpt('PROJECT') and not qaOpts.isOpt('ONLY_SUMMARY'):
     print 'PROJECT option is missing'
@@ -191,52 +190,51 @@ def clearInq(qa_var_path, fBase, logfile):
 
 
 def final():
-
     # only the summary of previous runs
-    if not qaOpts.isOpt('NO_SUMMARY') and not qaOpts.isOpt('SHOW'):
-        summary()
+    if not ( qaOpts.isOpt('NO_SUMMARY') or qaOpts.isOpt('SHOW') ):
+        # remove duplicates
+        for log_fname in g_vars.log_fnames:
+            tmp_log = os.path.join(g_vars.check_logs_path,
+                                'tmp_' + log_fname + '.log')
+            dest_log = os.path.join(g_vars.check_logs_path,
+                                    log_fname + '.log')
 
-    # remove duplicates
-    for log_fname in g_vars.log_fnames:
-        tmp_log = os.path.join(g_vars.check_logs_path,
-                               'tmp_' + log_fname + '.log')
-        dest_log = os.path.join(g_vars.check_logs_path,
-                                log_fname + '.log')
+            if not os.path.isfile(tmp_log):
+                continue  # nothing new
 
-        if not os.path.isfile(tmp_log):
-            continue  # nothing new
+            if os.path.isfile(dest_log):
+                if qaOpts.isOpt('CLEAR_LOGFILE'):
+                    ix = g_vars.log_fnames.index(log_fname)
+                    fBase = g_vars.clear_fBase[ix]
 
-        if os.path.isfile(dest_log):
-            if qaOpts.isOpt('CLEAR_LOGFILE'):
-                ix = g_vars.log_fnames.index(log_fname)
-                fBase = g_vars.clear_fBase[ix]
+                    clrdName='cleared_' + log_fname + '.log'
+                    clrdFile=os.path.join(g_vars.check_logs_path, clrdName)
 
-                clrdName='cleared_' + log_fname + '.log'
-                clrdFile=os.path.join(g_vars.check_logs_path, clrdName)
+                    with open(clrdFile, 'w') as clrd_fd:
+                        while True:
+                            blk = log.get_next_blk(dest_log,
+                                                skip_fBase=fBase,
+                                                skip_prmbl=False)
 
-                with open(clrdFile, 'w') as clrd_fd:
-                    while True:
-                        blk = log.get_next_blk(dest_log,
-                                               skip_fBase=fBase,
-                                               skip_prmbl=False)
+                            for b in blk:
+                                clrd_fd.write(b)
+                            else:
+                                break
 
-                        for b in blk:
-                            clrd_fd.write(b)
-                        else:
-                            break
+                    if clrd_fd.errors == None:
+                        os.rename(clrdFile, dest_log)
 
-                if clrd_fd.errors == None:
-                    os.rename(clrdFile, dest_log)
+                # append recent results to a logfile
+                qa_util.cat(tmp_log, dest_log, append=True)
+                os.remove(tmp_log)
 
-            # append recent results to a logfile
-            qa_util.cat(tmp_log, dest_log, append=True)
-            os.remove(tmp_log)
+            else:
+                # first time that a check was done for this log-file
+                os.rename(tmp_log, dest_log)
 
-        else:
-            # first time that a check was done for this log-file
-            os.rename(tmp_log, dest_log)
+    summary()
 
-    cfg.write_file()
+    qaOpts.cfg.write_file()
 
     return
 
@@ -367,6 +365,7 @@ def run():
             t.daemon = True
             t.start()
 
+    isNoPath=True
 
     while True:
 
@@ -377,12 +376,18 @@ def run():
             data_path, fBase, fNames = getPaths.next()
 
         except StopIteration:
+            if isNoPath:
+                print "PROJECT_DATA: " + qaOpts.getOpt("PROJECT_DATA") + " not found."
+
             queue.put( ('---EOQ---', '', t_vars), block=True)
             break
         else:
+            isNoPath=False
+
             # return a list of files which have not processed, yet.
             # Thus, the list could be empty
             fL = get_next_variable(data_path, fBase, fNames)
+            #fL[0]=fL[0][:-2]
 
             if len(fL) == 0:
                 continue
@@ -472,6 +477,8 @@ def runExample():
 
 def summary():
     # preparation to call a summary object
+    if qaOpts.isOpt('NO_SUMMARY'):
+       return
 
     if qaOpts.isOpt('ONLY_SUMMARY'):
         # build only the summary of previously written log-files.
@@ -489,7 +496,7 @@ def summary():
 
     # summary object
     log_sum = LogSummary()
-    f_log = log_sum.prelude()
+    f_log = log_sum.prelude(f_log)
     for i in range( len(f_log) ):
         log_sum.run(f_log[i])
 
@@ -523,7 +530,7 @@ if 'QA_EXAMPLE' in qaOpts.dOpts:
     runExample()
     sys.exit(0)
 
-qa_init.run(log, g_vars, qaOpts, cfg)
+qa_init.run(log, g_vars, qaOpts)
 
 # the checks
 if not qaOpts.getOpt('ONLY_SUMMARY'):

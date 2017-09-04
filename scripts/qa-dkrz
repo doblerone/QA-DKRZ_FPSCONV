@@ -26,7 +26,7 @@
 
 ## A path is a sub-path appended to the tree given by PROJECT_DATA.
 ## Several SELECT and LOCK statements, respectively, are cumulative.
-## There must be no assignment character '=' following key-words
+# ## There must be no assignment character '=' following key-words
 ## or SELECT or LOCK.
 ## Each variable specification is applied to all paths.\n
 ## Assignments may contain (and usually do) regular expressions.
@@ -184,7 +184,7 @@ annot_summary()
       if [ ${PY_SUMMARY:-f} = t ] ; then
          python ${QA_SRC}/scripts/python/qa-dkrz/qa_summary.py \
               ${qa_res}/${LOG_FNAMES[exp_ix]}
-              
+
          annot_summary_send ${qa_res}/Annotations/${LOG_FNAMES[exp_ix]}.json
       else
          /bin/bash ${QA_SRC}/scripts/taskSummary ${DEBUG_X} \
@@ -207,10 +207,10 @@ annot_summary()
 annot_summary_send()
 {
   # $1: path/filename of annotation summary
-  
+
   test ! ${EMAIL_SUMMARY} && return
   test ! -f $1 && return
-  
+
   local exp=${1##*/}
   exp=${exp%.json}
   local caption="QA-DKRZ: ${exp}"
@@ -225,7 +225,7 @@ $( cat ${1} )
 EOF
 
   fi
-  
+
   return
 }
 
@@ -409,7 +409,7 @@ callQaConfig()
 
   local items i key
   declare -a items
-  
+
 # necessary for returning embedded arrays from qaConfiguration
   OLD_IFS="$IFS"
   IFS="%"
@@ -451,19 +451,19 @@ callQaConfig()
       eval ${key}=\("${items[i]#*=}"\)
     fi
 
-    # collection of variable names for tables
-    test ${key%%_*} = TABLE && tableVars[${#tableVars[*]}]=${key%=*}
+    # collection of variable names for tables (doesn't matter if
+    # non-files are among them)
+    if [ ${key%%_*} = TABLE ] ; then
+      tableCandidates[${#tableCandidates[*]}]=${key%=*}
+    elif [ ${key%%_*} = CF ] ; then
+      tableCandidates[${#tableCandidates[*]}]=${key%=*}
+    elif [ ${key/CHECK_LIST/} != ${key} ] ; then
+      tableCandidates[${#tableCandidates[*]}]=${key%=*}
+    fi
 
     setKWL ${key}
   done
   set +f
-
-#  if [ ! "${PROJECT}" ] ; then
-#     echo "qa-dkrz requires PROJECT=name in the configuration or on the command-line"
-#     exit
-#  fi
-
-  test ! ${PROJECT_AS} && setKWL PROJECT_AS=${PROJECT}
 
 # invoked by option -E_DEBUG_MANAGER
   if [ ${#DEBUG_MANAGER} -gt 1 ] ; then
@@ -488,11 +488,11 @@ callQaConfig()
     local dv_args
     declare -a dv_args
     dv_args[0]=--config-file=${CONFIG_FILE}
-    
+
     # brief, i.e. one-line version, is the default
     test ${DISPLAY_VERSION} != t && dv_args[1]=--verbose
 
-    ${QA_SRC}/scripts/getVersion ${dv_args[*]} ${PROJECT_AS}
+    ${QA_SRC}/scripts/getVersion ${dv_args[*]} ${PROJECT}
     exit 0
   fi
 
@@ -626,7 +626,6 @@ callQaExecutor()
           PRINT_GREP_MARK \
           PROC_POOL \
           PROJECT \
-          PROJECT_AS \
           PROJECT_DATA \
           PROJECT_TABLE \
           QA \
@@ -648,7 +647,7 @@ callQaExecutor()
           WORK_AT_LOW_LOAD \
   )
 
-  keyW=( ${keyW[*]} ${tableVars[*]} )
+  keyW=( ${keyW[*]} ${tableCandidates[*]} )
   i=0
 
   test ! ${DEBUG_MANAGER} && voidX
@@ -698,46 +697,6 @@ callQaExecutor()
   fi
 
   currPID=$!
-
-  return
-}
-
-catFiles()
-{
-  # check whether at least one of the files to be concatenated is younger
-  # than the target. Here, younger means that the time in seconds is higher
-
-  local target=$1
-  shift
-  local fs
-  declare -a fs
-  fs=( $* )
-
-  local i sec isNew=f
-  declare -a sec
-
-  if [ -f ${target} ] ; then
-    local secTarget=$( $QA_SRC/bin/fModTime.x ${target} | awk '{print $6}')
-
-    for(( i=0 ; i < ${#fs[*]} ; ++i )) ; do
-       sec[i]=$( $QA_SRC/bin/fModTime.x ${fs[i]} | awk '{print $6}')
-
-       if [ ${sec[i]} -gt ${secTarget} ] ; then
-          isNew=t
-          break
-       fi
-    done
-  else
-    isNew=t
-  fi
-
-  if [ ${isNew} = t ] ; then
-    cat ${fs[0]} > ${target}
-
-    for(( i=1 ; i < ${#fs[*]} ; ++i )) ; do
-      cat ${fs[i]} >> ${target}
-    done
-  fi
 
   return
 }
@@ -826,7 +785,7 @@ checkClosedMessages()
   # qaExecutors have added locked or closed files for finished runs
   local expName f fs ffs ff g
   declare -a ffs
-  
+
   fs=( $( ls $PROC_POOL/*.closed 2> /dev/null ) )
 
   for f in ${fs} ; do
@@ -985,7 +944,7 @@ clear()
 {
   local f fs t tx ts
   declare -a fs ts
-  
+
   local isFL=f
   local isResume=f
   local isMessage=f
@@ -1200,6 +1159,95 @@ copyPreamble()
   return
 }
 
+cpTables()
+{
+   local key=$1
+   local fTable=$2  # src table name
+   local pTable=$3  # dest table name for project
+   local prj_from=$4
+   local prj_to=$5
+
+   if [ ${#pDir[*]} = 0 ] ; then
+      if [ ${prj_from} = ${prj_to} ] ; then
+         # regular precedence of paths, i.e. highest first
+         if [ -f $fTable ] ; then
+            if [ ${fTable/\//} != ${fTable} ] ; then
+               # local file
+               pDir[${#pDir[*]}]=''
+            else
+               # with path
+               pDir[${#pDir[*]}]=$fTable
+            fi
+         fi
+
+         if [ ${USE_STRICT:-f} = f -a ${prj_from} = ${prj_to} ] ; then
+            # USE_STRICT: only the project\'s default directory
+            pDir[${#pDir[*]}]=${QA_HOME}/tables/${prj_from}
+         fi
+
+         pDir[${#pDir[*]}]=${QA_HOME}/tables/projects/${prj_from}
+      else
+         # the only possible place
+         pDir[${#pDir[*]}]=$QA_HOME/tables/$prj_from
+      fi
+   fi
+
+   if [ ${prj_from} = ${prj_to} ] ; then
+      if [ ${prj_from} != CF ] ; then
+         test ${fTable:0:3} = 'CF_' -o  ${fTable:0:3} = 'cf-' && \
+            pDir[${#pDir[*]}]=$QA_HOME/tables/projects/CF
+      fi
+   fi
+
+   local dest src
+   if [ ${key/CHECK_LIST/} != ${key} ] ; then
+      # Concatenate (may-be just a copy of a single file) existing check-lists.
+      # Is any of the files newer than the destination?
+      dest=$TABLE_PATH/$pTable
+      #local dest_mT
+      #dest_mT=$( $QA_SRC/bin/fModTime.x ${dest} )
+
+      #local dest_modTime=$($QA_SRC/bin/fModTime.x ${dest} 2> /dev/null )
+
+      local pD
+      for pD in ${pDir[*]} ; do
+         src=$pD/$fTable
+
+         if [ -f ${src}  ] ; then
+            #local src_modTime=$($QA_SRC/bin/fModTime.x ${src} )
+            #test ${src_modTime} -gt ${dest_modTime} 2> /dev/null && cat $src >> $dest
+            cat $src >> $dest
+            break
+         fi
+      done
+   else
+      # just copy the file with highest precedence; there should only
+      # be a single one for each kind of table
+      local pD
+      for pD in ${pDir[*]} ; do
+         src=$pD/$fTable
+
+         if [ -f ${src} ] ; then
+            if [ ${prj_from} = ${prj_to} ] ; then
+               dest=$TABLE_PATH/$pTable
+            else
+               dest=$TABLE_PATH/$fTable
+
+               # exchange properties of corresponding project file
+               setKWL ${key}=${fTable}
+            fi
+
+            local dest_modTime=$($QA_SRC/bin/fModTime.x ${dest} 2> /dev/null )
+            local src_modTime=$($QA_SRC/bin/fModTime.x ${src} )
+
+            test ${src_modTime} -gt ${dest_modTime} 2> /dev/null && cp $src $dest
+         fi
+      done
+   fi
+
+   return
+}
+
 disableStatusLine()
 {
   # no status line for SHOW_CALL
@@ -1278,7 +1326,7 @@ deref_link()
 
   local arr ipos
   declare -a arr
-  
+
   arr=( $( \
            tryCom \
            ls -l $2 ) )
@@ -1327,7 +1375,7 @@ finally()
   # Note: there could be 2 sub-dirs and files in PROC_POOL during operation.
   local f fs
   declare -a fs
-  
+
   fs=( $( ls -d $PROC_POOL/* 2> /dev/null) )
 
   local count=0
@@ -1382,14 +1430,14 @@ finally()
 
   countSelectedVars=$((countSelectedVars - countLockedVars ))
   countSelectedVars=$((countSelectedVars - countProcessedFiles ))
-  
+
   if [ ${countSelectedVars} -gt 0 ] ; then
     echo -n "number of un-processed variables: ${countSelectedVars}"
   fi
   if [ ${countLockedVars} -gt 0 ] ; then
     echo "number of locked variables: ${countLockedVars}"
   fi
-  
+
   if [ ${isTERM:-f} = t ] ; then
     kill -INT $$ 2&> /dev/null
   else
@@ -1637,7 +1685,7 @@ getFilenameBase()
 
   local fileNames
   declare -a fileNames
-  
+
   if [ ${QUERY_NON_NC_FILE:-f} = t ] ; then
     fileNames=($(find ${PROJECT_DATA}/${subPath} -maxdepth 1 ! -type d -name "*"))
   else
@@ -1817,7 +1865,7 @@ getNextVariable()
   # the path to the candidates of files to be checked
   nextPath=${PROJECT_DATA}/${subPath}
 
-  countSelectedVars=$(( countSelectedVars +1 )) 
+  countSelectedVars=$(( countSelectedVars +1 ))
 
   # explict file is selected
   if [ ${explFName} ] ; then
@@ -2170,7 +2218,7 @@ getNextSubPath()
   # subPaths from a temporary file redirected to stdin.
   local ix line
   declare -a line
-  
+
   # init progress estimation
 #  if [ ${PROGRESS_BAR} ] ; then
     if [ ${progressTotalAtomicNum:-0} -eq 0 ] ; then
@@ -2640,7 +2688,7 @@ has()
 {
   local c i j t
   declare -a c
-  
+
   if [ ${1:0:7} = '--char=' ] ; then
     if [ ${#1} -eq 7 ] ; then
       c=' '
@@ -2697,7 +2745,7 @@ init()
 
   local T
   declare -a T
-  
+
   if [ -c "$TTY" ] ; then
     T=( -T ${TTY} )
   fi
@@ -2728,7 +2776,7 @@ init()
   # if not, then do it.
   if [ ! -d $QA_HOME/tables ] ; then
     # note that QA_HOME is user-defined
-    rsync -auz --exclude '*~' $QA_SRC/tables $QA_HOME &> /dev/null
+    rsync -auz --exclude='*~' $QA_SRC/tables $QA_HOME &> /dev/null
   fi
 
   callQaConfig ${T[*]} ${basic_args[*]} $*
@@ -2753,15 +2801,14 @@ init()
     fi
   fi
 
-  local prj=${PROJECT_AS:-${PROJECT}}
-  if [ ${#prj} -eq 0 -a ${#installArgs} -gt 0 ] ; then
+  local prj=${PROJECT}
+  if [ ${#installArgs} -gt 0 ] ; then
     local iA_args iA_arg
     declare -a iA_args
     iA_args=(${installArgs//,/ })
 
     for iA_arg in ${iA_args[*]} ; do
       if [ ${iA_arg:0:2} != '--' ] ; then
-        setKWL PROJECT=${iA_arg}
         prj=${iA_arg}
         break
       fi
@@ -2820,7 +2867,7 @@ init()
     fi
   fi
 
-  if [ "${PROJECT_AS}" = NONE ] ; then
+  if [ "${PROJECT}" = NONE ] ; then
     std_out flush "PROJECT option is missing"
     exit 1
   fi
@@ -2964,7 +3011,7 @@ init()
     local pb pbs
     declare -a pbs
     pbs=( ${PROGRESS_BAR//,/ } )
-    
+
     for pb in ${pbs[*]} ; do
       if expr match ${pb} '.*[[:alpha:]]' &> /dev/null ; then
         progressFile=" >> ${pb}"
@@ -2982,7 +3029,7 @@ init()
   fi
 
   test ${USE_STRICT:-f} = t -a ! "${CHECKSUM}" && CHECKSUM=t
-  
+
   fileCount=0 # counter for NEXT
   countLockedVars=0
   countSelectedVars=0
@@ -3115,26 +3162,23 @@ initTables()
 
   # Precedence of path search for tables:
   #
-  #   tables/projects/${PROJECT}
-  #   tables/projects
+  #   tables/${PROJECT_VIRT}
   #   tables/${PROJECT}
-  #   tables
+  #   tables/projects/${PROJECT}
 
-  # 1) default tables are provided in ${QA_SRC}/tables/projects/PROJECT.
-  # 2) a table of the same name provided in ${QA_SRC}/tables gets
-  #    priority, thus may be persistently modified.
-  # 3) tables from 2) or 1) are copied to ${QA_Results}/tables.
-  # 4) Option TABLE_AUTO_UPDATE is the default, i.e. tables in
-  #    projects are updated and are applied.
-  # 5) 4) also for option USE_STRICT.
+  # 1) default tables are provided in QA_SRC/tables/projects/PROJECT
+  # 2) do not edit default tables; they are overwritten by updates
+  # 3) Option TABLE_AUTO_UPDATE would search for updates for projects/PROJECT
+  # 4) option USE_STRICT discards non-default tables.
+
 
   # default tables
   rsync --copy-links -auz \
-     --exclude '*~' --exclude '.*' --exclude '*_qa.conf' \
-     ${QA_HOME}/tables/projects/${PROJECT_AS}/* ${TABLE_PATH}
+     --exclude='*~' --exclude='.*' --exclude='*_qa.conf' \
+     ${QA_HOME}/tables/projects/${PROJECT}/* ${TABLE_PATH}
 
   if [ "$PROJECT" != CF ] ; then
-    rsync -auz --exclude '*~' --exclude '.*' \
+    rsync -auz --exclude='*~' --exclude='.*' \
        ${QA_HOME}/tables/projects/CF/* ${TABLE_PATH}
 
     export CF_AREA_TYPES=${CF_AREA_TYPES}
@@ -3143,116 +3187,66 @@ initTables()
     export CF_CHECK_LIST=${CF_CHECK_LIST}
   fi
 
-  local currPrj=$PROJECT
-  local tn name
-  for tn in ${tableVars[*]} ; do
-    eval name=\$${tn}
-    test ${tn} != TABLE_PATH && initT $tn=${name}
+  local name tc
+  local tables keys
+  declare -a tables keys
+  for tc in ${tableCandidates[*]} ; do
+    test $tc = TABLE_PATH && continue
+    eval name=\$${tc}
+    test ${name} = t && continue
+
+    if expr match $name '^[a-zA-Z0-9\._-]*$' &> /dev/null ; then
+       tables[${#tables[*]}]=$name  # still a candidate
+       keys[${#keys[*]}]=${tc#*=}
+    fi
   done
 
-  if [ "${QA_CHECK_LIST}" = "${QA_CHECK_LIST//,/}" ] ; then
-    initT QA_CHECK_LIST=${QA_CHECK_LIST}
-  else
-    initTcat QA_CHECK_LIST=${QA_CHECK_LIST}
-  fi
+  local i prj_from prj_to
+  local pDir
+  declare -a pDir
 
-  currPrj=CF
-  if [ "${CF_CHECK_LIST}" = "${CF_CHECK_LIST//,/}" ] ; then
-    initT CF_CHECK_LIST=${CF_CHECK_LIST}
-  else
-    initTcat CF_CHECK_LIST=${CF_CHECK_LIST}
+  prj_to=${PROJECT}
+  for(( i=0 ; i < ${#keys[*]} ;  ++i )) ; do
+     # for genuine projects
+     cpTables ${keys[i]} ${tables[i]} ${tables[i]} $prj_to $prj_to
+  done
+
+  if [ ${PROJECT_VIRT} ] ; then
+     prj_from=${PROJECT_VIRT}
+
+     # find corresponding tables in the virtual project
+     local vTables vKeys
+     declare -a vTables vKeys
+
+     local pHT=${QA_HOME}/tables/$prj_from
+
+     for(( i=0 ; i < ${#keys[*]} ;  ++i )) ; do
+        eval name=\$${keys[i]}
+        test ${name} = t && continue
+
+        if [ -f $pHT/${name/${prj_to}/${prj_from}} ] ; then
+            vTables[${#vTables[*]}]=${name/${prj_to}/${prj_from}}
+            vKeys[${#vKeys[*]}]=${keys[i]}
+        elif [ -f $pHT/${name} ] ; then
+            vTables[${#vTables[*]}]=$name
+            vKeys[${#vKeys[*]}]=${keys[i]}
+        fi
+
+     done
+
+     pDir=()
+     for(( i=0 ; i < ${#vKeys[*]} ;  ++i )) ; do
+        # map virtual prjf to the genuine project\'s table name
+        local j
+        for(( j=0 ; j < ${#keys[*]} ; ++j )) ; do
+          test ${keys[j]} = ${vKeys[i]} && break
+        done
+
+        cpTables ${vKeys[i]} ${vTables[i]} ${tables[j]} $prj_from $prj_to
+     done
   fi
 
   return
-}
-
-initT()
-{
-   # update or copy only user defined table modifications
-   local table=${1%=*}
-
-   test "${1}" != "${1/=/}" && local value=${1#*=}
-
-   if [ ${value} ] ; then
-     value=${value##*/}
-   else
-     return  # not provided
-   fi
-
-   local pDir  # index 0 -> 3 provides precedence
-   declare -a pDir
-   local prj=$currPrj
-
-   #pDir[0]=tables/projects/${prj}
-   #pDir[1]=tables/projects
-   # ipath to user defined modifications
-   pDir[${#pDir[*]}]=tables/${prj}
-   pDir[${#pDir[*]}]=tables
-
-   local ix p
-
-   # implicitly and highest: local file and file with absolute path
-
-   if [ ${USE_STRICT:-f} = t ] ; then
-      # if USE_STRICT is enabled, then only tables in projects are allowed;
-      # already copied by rsync
-      value=${value%/*}
-   elif [ ! -f ${value} ] ; then
-      # a local instance precedes always
-      if [ -f ${QA_HOME}/${value} ] ; then
-        # explicitly in a sub-dir path
-        p=${QA_HOME}/
-      else
-        for(( ix=0 ; ix < ${#pDir[*]} ; ++ix )) ; do
-
-          # scan through the precedence chain
-          test -f ${QA_HOME}/${pDir[ix]}/${value} && p=${QA_HOME}/${pDir[ix]}/
-        done
-      fi
-   fi
-
-   # the regular copy part
-   if [ -f "${p}${value}" ] ; then
-     if ! diff ${p}${value} ${TABLE_PATH}/${value} \
-           &> /dev/null ; then
-       tryCom \
-       cp ${p}${value} ${TABLE_PATH}
-     fi
-   fi
-
-   eval ${table}=${value}
-   export ${table}
-
-   return
-}
-
-initTcat()
-{
-   local table=${1%=*}
-   local value=${1#*=}
-
-   test ! ${value} && return  # not provided
-
-   if [ ${USE_STRICT:-f} = t ] ; then
-      # if USE_STRICT is enabled, then only default tables are required
-      return
-   fi
-
-   # the regular copy part
-   local fs
-   declare -a fs
-   fs=(${value//,/ })
-
-   # cat Files, when younger; the target files must be the first parameter
-   local target=${fs[$((${#fs[*]}-1))]##*/}
-
-   catFiles $TABLE_PATH/$target ${fs[*]}
-
-   export ${table}=$target  # note: no value
-
-   test ${fs[0]:0:4} = /tmp && \rm -f ${fs[0]}
-
-   return
 }
 
 ##//! Initialisation of the command launcher
@@ -3475,7 +3469,7 @@ log()
 
   local sp
   declare -a sp
-  
+
   sp[0]=''
   sp[1]=' '
   sp[2]='  '
@@ -3487,7 +3481,7 @@ log()
   sp[8]='        '
 
   if [ "$1" = '--start' ] ; then
-    QA_REVISION="$(${QA_SRC}/scripts/getVersion ${PROJECT_AS})"
+    QA_REVISION="$(${QA_SRC}/scripts/getVersion ${PROJECT})"
 
     s_out="start:\n${sp[1]}date: $( date +'%FT%T' )"
     s_out="${s_out}\n${sp[1]}qa-revision: ${QA_REVISION}"
@@ -3897,8 +3891,8 @@ operatePipes()
       fi
 
       nextFile=${p_nF[0]}
-      countProcessedFiles=$(( countProcessedFiles +1 )) 
-  
+      countProcessedFiles=$(( countProcessedFiles +1 ))
+
 
       if [ ${nF_SEQ[${nFcurr}]} = 'f' ] ; then
         if [ ${#p_nF[*]} -eq 1 ] ; then
@@ -4052,7 +4046,7 @@ rmBlock()
   # get all lines with line numbers having ' file: pattern'
   local nums num sz i
   declare -a nums
-  
+
   nums=($(grep -n "[[:space:]]*file:[[:space:]]*${pattern}" $1 ))
 
   # extract the numbers
@@ -4084,7 +4078,7 @@ rmConsistTableEntry()
   # get all lines with line numbers having ' file: pattern'
   local nums num sz i
   declare -a nums
-  
+
   nums=($(grep -n "[[:space:]]*file:[[:space:]]*${pattern}" $1 ))
 
   # extract the numbers

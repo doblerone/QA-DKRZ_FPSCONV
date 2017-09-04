@@ -175,13 +175,9 @@ update()
 
   # now for non-QA-DKRZ tables and programs
   for prj in $* ; do
-    test "${PROJECT_AS}" && prj=${PROJECT_AS}
-
     if ! update_external $prj ; then
       return $?
     fi
-
-    test "${PROJECT_AS}" && break
   done
 
   if ! mkdir -p ${QA_HOME}/tables  ; then
@@ -253,6 +249,7 @@ update_external()
   test ${INTERNET:-t} = f && return 0
 
   local prj=$1
+  test ${PROJECT_VIRT} && prj=${PROJECT_VIRT}
 
   # check it here in order to prevent an update of the config-file in case
   # that the installation failed or was terminated.
@@ -397,7 +394,7 @@ do
           fi
         elif [ "${OPTNAME}" = HOME ] ; then
           export QA_HOME=${OPTVAL}
-        elif [ "${OPTNAME}" = PROJECT_AS ] ; then
+        elif [ "${OPTNAME}" = PROJECT ] ; then
           prj="${OPTVAL}"
         elif [ "${OPTNAME}" = QA_HOME ] ; then
           export QA_HOME=${OPTVAL}
@@ -511,8 +508,8 @@ do
 #          . ${QA_SRC}/scripts/parseConfigFile INTERNET=${OPTVAL}
         elif [ "${OPTNAME:0:6}" = ONLY_Q ] ; then
           :  # for backward compatibilty
-        elif [ "${OPTNAME}" = PROJECT_AS ] ; then
-          PROJECT_AS="${OPTVAL}"
+        elif [ "${OPTNAME}" = PROJECT ] ; then
+          PROJECT="${OPTVAL}"
         elif [ "${OPTNAME}" = QA_SRC ] ; then
           export QA_SRC=${OPTVAL}
         elif [ "${OPTNAME}" = QA_HOME ] ; then
@@ -575,8 +572,8 @@ for pck in $* ; do
     udunits=${pck}
   elif [ ${PCK:0:7} = QA_HOME ] ; then
     QA_HOME=${PCK:8}
-  elif [ ${PCK:0:10} = PROJECT_AS ] ; then
-    PROJECT_AS=${PCK:11}
+  elif [ ${PCK:0:10} = PROJECT ] ; then
+    PROJECT=${PCK:11}
   else
 #    if [ ${pck:0:1} = '-' ] ; then
 #      echo -e "\nFound PROJECT name=${pck}" > $TTY
@@ -653,5 +650,5 @@ fi
 
 exec ${QA_SRC}/scripts/install.sh ${debug} --pack=${package} \
 ${isContinueLog:+--continue_log} ${pcks} \
-${PROJECT_AS:+--PROJECT_AS=${PROJECT_AS}} \
+${PROJECT:+--PROJECT=${PROJECT}} \
 --qa-src=${QA_SRC} ${coll[*]}

@@ -26,6 +26,8 @@ class Log(object):
         self.entry_id = []
         self.entry_lock = ''
         self.write_lock = ''
+        self.line_wrap_sz = 80
+        self.word_line_sz = 50
 
         self.indent = [''] # indentations for yaml
         for i in range(9):
@@ -64,19 +66,28 @@ class Log(object):
         if len(caption):
             entry.append(self.indent[4] + '- event:')
             entry.append(self.indent[7] + 'caption: ' + caption)
-            entry.append(self.indent[7] + 'impact:' + impact)
-            entry.append(self.indent[7] + 'tag: ' + tag)
+            if len(impact):
+                entry.append(self.indent[7] + 'impact: ' + impact)
+            if len(tag):
+                entry.append(self.indent[7] + 'tag: ' + tag)
 
         if len(info):
             entry.append(self.indent[7] + 'text:')
 
-            for s in info:
-                entry.append(self.indent[8] + '- ' + s)
+            for line in info:
+                if len(line) > self.line_wrap_sz:
+                    # at first test for a line wrap of lines too long
+                    lines = self.line_wrap(line)
+                else:
+                    lines = [ line ]
 
-        if set_qa_lock:
+                for l in range(len(lines)):
+                    entry.append(self.indent[8] + '- ' + lines[l])
+
+        if status > -1:
             entry.append(self.indent[3] + 'status: ' + repr(status))
 
-            if status > 1:
+            if set_qa_lock:
                 ff = f
                 if ff[-3:] == '.nc':
                     ff = ff[:-3]
@@ -87,16 +98,17 @@ class Log(object):
                 with open(out, 'w') as f_qa_lock:
                     f_qa_lock.write('Path: ' + d_path + '\n')
                     f_qa_lock.write('File: ' + f + '\n')
-                    f_qa_lock.write(impact + '-' + tag + ': '
-                                            + caption + '\n')
 
-        if len(info):
-            if indent > -1:
-                entry.append(self.indent[indent])
-            entry.extend(info)
+                    if len(impact) > 0 and len(tag) > 0:
+                        f_qa_lock.write(impact + '-' + tag )
+                    elif len(impact):
+                        f_qa_lock.write(impact)
+                    elif len(tag):
+                        f_qa_lock.write(tag)
 
-        if status > -1:
-            entry.append(self.indent[3] + 'status: ' + repr(status))
+                    f_qa_lock.write(': ' + caption + '\n')
+
+
 
         (ix, entry_id) = self.get_entry_slot_ix(entry_id, entry)
 
@@ -273,6 +285,50 @@ class Log(object):
             return True
 
         return False
+
+
+    def line_wrap(self, line, lw=0):
+        # Wrap long lines, but preserve words (if reasonable).
+        lines=[]
+        max_ext = 20  # maximum extension of line wrap
+        if lw == 0:
+            lw=self.line_wrap_sz
+
+        # split line at blanks, \n and ';'
+        words=[]
+        w0 = line.split(';')
+        for w in w0:
+            w1 = w.split('\n')
+            for w in w1:
+                w2 = w.split()
+                for w in w2:
+                    words.append(w)
+
+        wline=''
+        for word in words:
+            word_sz = len(word)
+            wline_sz = len(wline)
+            if wline_sz:
+                wline += ' '
+
+            if (wline_sz + word_sz) < lw:
+                wline += word
+            elif (wline_sz + word_sz - max_ext) < lw:
+                wline += word
+                lines.append(wline.rstrip())
+                wline=''
+            else:
+                lines.append(wline.rstrip())
+                wline = word
+        else:
+            if len(wline):
+                wline = wline.rstrip()
+                if wline[-1] != '.':
+                    wline += '.'
+
+                lines.append(wline)
+
+        return lines
 
 
     def set_preamble(self, opts):

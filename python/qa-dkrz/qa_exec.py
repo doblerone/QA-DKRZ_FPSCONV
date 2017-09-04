@@ -4,12 +4,16 @@ Created on 21.03.2016
 @author: hdh
 '''
 
+import sys
 import os
 import glob
 import subprocess
 import Queue
 
 import qa_util
+from qa_convert_cmor_output import convert_CMOR_output
+
+#from pkg_resources import load_entry_point
 
 class QaExec(object):
     '''
@@ -39,19 +43,24 @@ class QaExec(object):
         self.len_end  = len(self.end)
 
 
-    def getParamStr(self, t_vars):
+    def getParamStr(self, t_vars, show=''):
         par =  ' -p ' + t_vars.data_path
-        par += ' -f ' + t_vars.fName
-        par += ' -t ' + self.g_vars.table_path
+        par += show + '-f ' + t_vars.fName
+        par += show + '-t ' + self.g_vars.table_path
 
-        par += self.get_X_par(t_vars)
-        par += self.get_CF_par(t_vars)
-        par += self.get_IN_par(t_vars)
-        par += self.get_QA_par(t_vars)
+        #  directives for QA annotations
+        par += show + self.get_X_par(t_vars)
+
+        #  directives for CF annotations
+        par += show + self.get_X_par(t_vars, inst_ix=1)
+
+        par += show + self.get_CF_par(t_vars)
+        par += show + self.get_IN_par(t_vars)
+        par += show + self.get_QA_par(t_vars)
         if self.qaOpts.isOpt('TIME_LIMIT'):
-            par += self.get_TC_par(t_vars)
+            par += show + self.get_TC_par(t_vars)
         if self.qaOpts.isOpt('FREQ_DIST'):
-            par += self.get_FD_par(t_vars)
+            par += show + self.get_FD_par(t_vars)
 
         return par
 
@@ -59,11 +68,8 @@ class QaExec(object):
     def get_CF_par(self, t_vars, inst_ix=0):
         qaOpts = self.qaOpts
 
-        # construct directives for the annotation handling
-        par = self.get_X_par(t_vars, inst_ix=1)
-
-        # combine objects
-        par += ' CF::0:IN::0:X::1'
+        # combine objects; the space is important
+        par = 'CF::0:IN::0:X::1'
 
         if qaOpts.isOpt('CF'):
             par += ':cF=' + qaOpts.getOpt('CF')
@@ -72,7 +78,7 @@ class QaExec(object):
             par += ':cFAT=' + qaOpts.getOpt('CF_AREA_TYPES')
 
         if qaOpts.isOpt('CF_STANDARD_NAMES'):
-            par += ':cFSN=' + qaOpts.isOpt('CF_STANDARD_NAMES')
+            par += ':cFSN=' + qaOpts.getOpt('CF_STANDARD_NAMES')
 
         if qaOpts.isOpt('CF_STD_REGION_NAMES'):
             par += ':cFSRN=' + qaOpts.getOpt('CF_STD_REGION_NAMES')
@@ -86,7 +92,7 @@ class QaExec(object):
     def get_IN_par(self, t_vars, inst_ix=0):
         qaOpts = self.qaOpts
 
-        par = ' IN::0:X::0'
+        par = 'IN::0:X::0'
 
         if qaOpts.isOpt('ARITHMETIC_MEAN'):
             par += ':aM'
@@ -95,8 +101,7 @@ class QaExec(object):
             par += ':dIN'
 
         if qaOpts.isOpt('EXCLUDE_VARIABLE'):
-            s=','
-            par += ':eV=' + s.join(qaOpts.getOpts('EXCLUDE_VARIABLE'))
+            par += ':eV=' + qa_util.join(qaOpts.getOpt('EXCLUDE_VARIABLE'), sep=',')
 
         return par
 
@@ -104,7 +109,7 @@ class QaExec(object):
     def get_QA_par(self, t_vars, inst_ix=0):
         qaOpts = self.qaOpts
 
-        par = ' QA::0:IN::0:CF::0:X::0'
+        par = 'QA::0:IN::0:CF::0:X::0'
         par += ':f=' + t_vars.qaFN
         par += ':fS=' + t_vars.seq_pos
 
@@ -114,8 +119,10 @@ class QaExec(object):
             par += ':aMDR=' + qaOpts.getOpt('APPLY_MAXIMUM_DATE_RANGE')
 
         if qaOpts.isOpt('CHECK_MODE'):
-            s=','
-            par += ':cM=' + s.join(qaOpts.getOpts('CHECK_MODE'))
+            #val = qaOpts.getOpt('CHECK_MODE')
+            #val = qa_util.join(val, sep=',')
+            #par += ':cM=' + val
+            par += ':cM=' + qa_util.join(qaOpts.getOpt('CHECK_MODE'), sep=',')
 
         if qaOpts.isOpt('DATA_IN_PRODUCTION'):
             par += ':dIP'
@@ -133,14 +140,13 @@ class QaExec(object):
             par += ':dTB'
 
         if qaOpts.isOpt('EXCLUDE_ATTRIBUTE'):
-            s=','
-            par += ':eA=' + s.join(qaOpts.getOpts('EXCLUDE_ATTRIBUTE'))
+            par += ':eA=' + qa_util.join(qaOpts.getOpt('EXCLUDE_ATTRIBUTE'), sep=',')
 
         if qaOpts.isOpt('FILE_NAME_FREQ_INDEX'):
-            par += ':fNFI=' + qaOpts.getOpt('FILE_NAME_FREQ_INDEX')
+            par += ':fNFI=' + qaOpts.getOpt('FILE_NAME_FREQ_INDEX', bStr=True)
 
         if qaOpts.isOpt('FILE_NAME_VAR_INDEX'):
-            par += ':fNVI=' + qaOpts.getOpt('FILE_NAME_VAR_INDEX')
+            par += ':fNVI=' + qaOpts.getOpt('FILE_NAME_VAR_INDEX', bStr=True)
 
         if qaOpts.isOpt('FILE_SEQUENCE'):
             par += ':fS=' + qaOpts.getOpt('FILE_SEQUENCE')
@@ -155,14 +161,14 @@ class QaExec(object):
             par += ':iRD'
 
         if qaOpts.isOpt('NEXT_RECORDS'):
-            par += ':nextRecords=' + qaOpts.getOpt('NEXT_RECORDS')
+            par += ':nextRecords=' + qaOpts.getOpt('NEXT_RECORDS', bStr=True)
 
         if qaOpts.isOpt('NON_REGULAR_TIME_STEP'):
             par += ':nRTS=' + qaOpts.getOpt('NON_REGULAR_TIME_STEP')
 
         if qaOpts.isOpt('OUTLIER_TEST'):
             s=','
-            par += ':oT=' + s.join(qaOpts.getOpt('OUTLIER_TEST'))
+            par += ':oT=' + qa_util.convert2brace(qaOpts.getOpt('OUTLIER_TEST'))
 
         if qaOpts.isOpt('PARENT_EXP_ID'):
             par += ':pEI=' + qaOpts.getOpt('PARENT_EXP_ID')
@@ -184,7 +190,7 @@ class QaExec(object):
 
         if qaOpts.isOpt('REPLICATED_RECORD'):
             s=','
-            par += ':rR=' + s.join(qaOpts.getOpt('REPLICATED_RECORD'))
+            par += ':rR=' + qa_util.convert2brace(qaOpts.getOpt('REPLICATED_RECORD'))
 
         if qaOpts.isOpt('TABLE_DRS_CV'):
             par += ':tCV=' + qaOpts.getOpt('TABLE_DRS_CV')
@@ -220,7 +226,7 @@ class QaExec(object):
 
 
     def get_X_par(self, t_vars, inst_ix=0):
-        par = ' X::' + str(inst_ix)
+        par = 'X::' + str(inst_ix)
 
         if inst_ix == 0:
             note             = self.qaOpts.getOpt('NOTE')
@@ -237,7 +243,8 @@ class QaExec(object):
             par += ':nCR'
 
         if len(note):
-            par += ':note=' + note
+            # note is a list
+            par += ':note=' + qa_util.convert2brace(note)
         if len(note_always):
             par += ':nA=' + note_always
         if len(note_level_limit):
@@ -249,8 +256,8 @@ class QaExec(object):
 
 
     def get_TC_par(self, t_vars, inst_ix=0):
-        par = ' TC::' + str(inst_ix)
-        par += ":e=" + self.qaOpts.getOpt('TIME_LIMIT')
+        par = 'TC::' + str(inst_ix)
+        par += ":e=" + self.qaOpts.getOpt('TIME_LIMIT', bStr=True)
 
         return par
 
@@ -258,7 +265,7 @@ class QaExec(object):
     def get_FD_par(self, t_vars, inst_ix=0):
         qaOpts = self.qaOpts
 
-        par = ' FD::' + str(inst_ix)
+        par = 'FD::' + str(inst_ix)
         par += 'useAreaWeight'
 
         if qaOpts.isOpt('FD_PLAIN'):
@@ -267,8 +274,8 @@ class QaExec(object):
         if qaOpts.isOpt('FD_BARS'):
             par += ':printBars'
 
-        if qaOpts.isOpt(''):
-            par += ':=' + qaOpts.getOpt('')
+        #if qaOpts.isOpt(''):
+        #    par += ':=' + qaOpts.getOpt('')
 
         # A fd-build-file of the same variable at destination has priority.
         # Second choice is a fd-build-file or fd-prop-file in a specified
@@ -329,11 +336,15 @@ class QaExec(object):
         p0 = remainder.find(':')
         event['impact'] = issue[:p0]
 
-        p0 = event['impact'].find('-')
-        event['tag'] = event['impact'][p0+1:]
+        if 'impact' in event.keys():
+            p0 = event['impact'].find('-')
+            event['tag'] = event['impact'][p0+1:]
 
-        p0 = event['impact'].rfind('-')
-        event['impact'] = event['impact'][:p0]
+            p0 = event['impact'].rfind('-')
+            event['impact'] = event['impact'][:p0]
+        else:
+            event['tag'] = ''
+            event['impact'] = ''
 
         for k in add.keys():
             event[k] = add[k]
@@ -403,9 +414,9 @@ class QaExec(object):
             p1 = check_output.find(key+self.end)
 
             if p1 > -1:
-                front = check_output[0:p0]
-                back  = check_output[p1+len(key)+self.len_end:]
-                issue = check_output[p0+len(key)+self.len_beg:p1]
+                front = check_output[0:p0].strip()
+                back  = check_output[p1+len(key)+self.len_end:].strip()
+                issue = check_output[p0+len(key)+self.len_beg:p1].strip()
                 check_output = front + back
 
                 if key == 'CHECK':
@@ -454,10 +465,16 @@ class QaExec(object):
             print self.nc_file
             return True
 
-        param = self.getParamStr(t_vars)
-
         if self.is_show_call:
+            param = self.getParamStr(t_vars, '\n')
+
+            fd=open('./param_file.txt', 'w')
+            print >> fd, param
             print param
+            sys.exit(1)
+        else:
+            param = self.getParamStr(t_vars, ' ')
+
 
         log_entry={}
 
@@ -477,7 +494,7 @@ class QaExec(object):
             if istatus == 63:
                 return True
 
-            check_output = e.output
+            check_output = e.output.strip()
 
             # atomic variable gets locked
             if istatus > 1:
@@ -503,6 +520,10 @@ class QaExec(object):
         else:
             istatus = 0
 
+        if self.qaOpts.isOpt('RUN_CMOR3_LLNL'):
+            # run and append output
+            check_output += self.run_CMOR_LLNL(t_vars)
+
         entry_id=''
 
         # prepare the logfile entry
@@ -525,8 +546,8 @@ class QaExec(object):
                                             impact   = eve['impact'],
                                             tag      = eve['tag'])
 
-            if 'info' in eve.keys():
-                entry_id = self.log.append(entry_id, info=eve['info'])
+                if 'info' in eve.keys():
+                    entry_id = self.log.append(entry_id, info=eve['info'])
 
         entry_id = self.log.append(entry_id, status=istatus)
 
@@ -542,15 +563,72 @@ class QaExec(object):
         return proceed  # true: proceed with next sub-temporal file
 
 
-    def run_CMOR_LLNL(self):
-         os.environ["UVCDAT_ANONYMOUS_LOG"] = "no"
+    def run_CMOR_LLNL(self, t_vars):
+        os.environ["UVCDAT_ANONYMOUS_LOG"] = "no"
 
-         #if qaOpts.isOpt(''):
-         #   self.is_...
+        head, file = os.path.split(self.nc_file)
+        x_file = file.split('_')
+
+        # get the table_id
+        getNC_run = os.path.join( self.g_vars.qa_src, "bin", "getNC_att.x " )
+        getNC_run +=  self.nc_file + " --only-value table_id"
+
+        try:
+            table_id = subprocess.check_output(getNC_run, shell=True)
+
+        except subprocess.CalledProcessError as e:
+            # let's try the filename
+            if len(x_file) > 1:
+                table_id = x_file[1]
+
+        mip_table = os.path.join(self.g_vars.table_path, "cmip6-cmor-tables",
+                                 "Tables", "CMIP6_" + table_id + ".json")
+
+        if not os.path.isfile(mip_table):
+            print 'Invalid MIP Table for' + mip_table
+            print 'Cancel run of PrePARE'
+            return
 
 
-         return
-     
+        # run PrePARE and pipe output to convertPipedCMOR_output
+        #pp_run = "/hdh/local/miniconda/envs/cmor/bin/python "
+
+        pp_run = self.qaOpts.getOpt("PrePARE")
+        pp_run += ' --variable ' + x_file[0]
+        pp_run += ' ' + mip_table + ' ' + self.nc_file
+        pp_run += ' 2>&1'
+
+        try:
+            ps = subprocess.Popen(pp_run, stdout=subprocess.PIPE, shell=True)
+        except subprocess.CalledProcessError as e:
+            pass
+
+        convert = os.path.join(self.g_vars.qa_src, "scripts", "python",
+                               "qa-dkrz", "convertPipedCMOR_output.py")
+
+        try:
+            pp_out = subprocess.check_output(convert, stdin=ps.stdout, shell=True)
+        except subprocess.CalledProcessError as e:
+            pass
+
+        ps.wait()
+
+        # replace "..." by <....>
+        pp_out2=''
+        on=False
+        for i in range(len(pp_out)):
+            if pp_out[i] == '"':
+                if on:
+                    on=False
+                    pp_out2 += '>'
+                else:
+                    on=True
+                    pp_out2 += '<'
+            else:
+                pp_out2 += pp_out[i]
+
+        return pp_out2
+
 
     def start(self, queue):
         # only called for non-thread operation
