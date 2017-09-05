@@ -432,7 +432,7 @@ findQAConfSeq()
   else
      prj=${PROJECT}
      setKWL PROJECT=$prj
-     pName=${PROJECT}_qa.conf
+     pName=${PROJECT}
   fi
 
   pDir[0]=$(pwd)  # local path
@@ -459,7 +459,6 @@ findQAConfSeq()
     test ${#fs[*]} -gt 0 && \
       qaConfFileSeq[${#qaConfFileSeq[*]}]=${fs[0]}
   done
-
 
   return
 }
@@ -1439,7 +1438,7 @@ setKWL()
          eval ${key}=${value}
       fi
 
-#      test ${DEBUG_CONF} && voidX
+      test ${DEBUG_CONF} && voidX
       return 0
     fi
   done
