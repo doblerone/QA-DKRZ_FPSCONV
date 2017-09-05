@@ -243,7 +243,7 @@ findProject()
   fi
 
   if [ ! ${PROJECT_AS} ] ; then
-    val=( $(grep "^[[:space:]]*[^#][[:space:]]*PROJECT_AS=" $1 ) )
+    val=( $(grep "^[[:space:]]*[^#]*[[:space:]]*PROJECT_AS=" $1 ) )
     if [ "${val}" ] ; then
       setKWL PROJECT_AS=${val#*=}
     fi
@@ -310,7 +310,7 @@ getMultiLists()
   declare -a prjList cfList
 
   for qacf in ${QA_CONFS//,/ } ; do
-     qa_cl=( ${qa_cl[*]} $(grep "^[[:space:]]*[^#][[:space:]]*QA_CHECK_LIST=" $qacf ) )
+     qa_cl=( ${qa_cl[*]} $(grep "^[[:space:]]*[^#]*[[:space:]]*QA_CHECK_LIST=" $qacf ) )
   done
 
   # precedence of check lists: user-defined --> default
