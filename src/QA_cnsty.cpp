@@ -248,7 +248,7 @@ Consistency::check(Variable &dataVar, std::string entryID)
   // test atts of auxiliaries
   for( size_t i=1; i < vvs_f_aName.size() ; ++i )
   {
-    for( size_t j=1; i < vvs_t_aName.size() ; ++j )
+    for( size_t j=1; j < vvs_t_aName.size() ; ++j )
     {
        if( vvs_f_aVal[i][0] == vvs_t_aVal[j][0] )
        {
