@@ -2661,7 +2661,7 @@ CF::run()
    // the CF specific ones.
    attributeSpellCheck();
 
-   // which CF Conventions are going to be checked?
+   // which CF Convention?
    if( ! chap261() )
      return false;  // undefined Convention is specified
 
@@ -3260,7 +3260,7 @@ CF::timeUnitsFormat_date(Variable& var, std::string item,
     {
         int num = hdhC::string2Double(x_item[j]);
 
-        if( j == 0 && num > 24 )
+        if( j == 0 ) // could be any year
           ++countItems;
         else if( j == 1  && num < 13 )
           ++countItems;
@@ -4361,17 +4361,17 @@ bool
 CF::chap261(void)
 {
   // find the CF Conventions ID
-  std::string glob_cv;
+  std::string glob_cf;
   std::string aName;
 
   int j;
   if( (j=pIn->getVarIndex(n_NC_GLOBAL)) > -1 )
   {
     std::string n_att(n_Conventions);
-    glob_cv = pIn->variable[j].getAttValue(n_att, lowerCase) ;
+    glob_cf = pIn->variable[j].getAttValue(n_att) ;
   }
 
-  if( glob_cv.size() == 0 )
+  if( glob_cf.size() == 0 )
   {
     if( notes->inq(bKey + "261a") )
     {
@@ -4382,29 +4382,66 @@ CF::chap261(void)
       notes->setCheckStatus( n_CF, fail );
     }
   }
-  else if( glob_cv.substr(0,3) != "cf-" )
+
+  Split x_glob_cf(glob_cf, ",; ", true);
+
+  std::string low_val ;
+  bool isCorrected=false;
+  bool isMissingPrefix=true;
+
+  for( size_t i=0 ; i < x_glob_cf.size() ; ++i )
   {
+     low_val = hdhC::Lower()(x_glob_cf[i]) ;
+
+     if( low_val.substr(0,3) == "cf-" )
+         isMissingPrefix = false;
+
+     size_t off = isMissingPrefix ? 0 : 3 ;
+
+     if( low_val.size() > (2+off) )
+     {
+        if( hdhC::isDigit(low_val[0+off]) && hdhC::isDigit(low_val[2+off]) )
+        {
+            if( low_val[1+off] == '-' )
+            {
+              low_val[1+off] = '.' ;  // correction for internal use
+              isCorrected=true;
+            }
+
+            if( isMissingPrefix )
+              low_val = "cf-" + low_val;
+        }
+     }
+
+     if( ! isMissingPrefix || isCorrected )
+         break;
+  }
+
+  if( isMissingPrefix )
+  {
+      std::string tag(bKey+"261b");
+      if( notes->inq(tag) )
+      {
+        std::string capt("unknown global ") ;
+        capt += hdhC::tf_att(hdhC::empty, n_Conventions, glob_cf);
+
+        (void) notes->operate(capt) ;
+        notes->setCheckStatus( n_CF, fail );
+      }
+  }
+  else if( isCorrected )
+  {
+    // test whether "CF-" is missing
     std::string tag(bKey+"261b");
     if( notes->inq(tag) )
     {
-      std::string capt("unknown global ") ;
-      capt += hdhC::tf_att(hdhC::empty, n_Conventions, glob_cv);
+        std::string capt("global ") ;
+        capt += hdhC::tf_att(hdhC::empty, n_Conventions, glob_cf);
+        capt += ", expected " ;
+        glob_cf = "CF-" + low_val.substr(3) ;
 
-      // test whether "CF-" is missing
-      if( glob_cv.size() > 2 )
-      {
-        if( hdhC::isDigit(glob_cv[0])
-            && glob_cv[1] == '-' && hdhC::isDigit(glob_cv[2]) )
-        {
-           glob_cv[1] = '.' ;  // correction for internal use
-           capt += ", expected " ;
-           glob_cv = "CF-" + glob_cv ;
-           capt += glob_cv ;
-        }
-      }
-
-      (void) notes->operate(capt) ;
-      notes->setCheckStatus( n_CF, fail );
+        (void) notes->operate(capt) ;
+        notes->setCheckStatus( n_CF, fail );
     }
   }
 
@@ -4413,9 +4450,12 @@ CF::chap261(void)
     if( !setCheck(cFVersion) ) // option-provided convention supersedes
        return false;
   }
-  else if( glob_cv.size() )
+  else if( low_val.size() )
   {
-    if( !setCheck(glob_cv) )
+    if( isMissingPrefix && ! isCorrected )
+       return false;
+
+    if( !setCheck(low_val) )
        return false;
 
     if( cFVal == 14 )
@@ -9351,7 +9391,7 @@ CF::chap82(Variable& var)
     //get compressed indices
     MtrxArr<int> ma;
     pIn->nc.getData(ma, var.name, 0 , -1 );
-    
+
     int ma_min=d_max+1;
     int ma_max=-1;
     for( size_t i=0 ; i < ma.size() ; ++i )

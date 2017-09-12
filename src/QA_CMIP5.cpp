@@ -1112,11 +1112,11 @@ DRS_CV::testPeriod(Split& x_f)
       if( !isInstantTime() )
       {
         std::string tb_name(pQA->qaTime.getBoundsName());
-        
+
         if( ! notes->findAnnotation("6_15", tb_name) )
         {
           std::string key("3_17");
-          
+
           if( notes->inq( key, tb_name ) )
           {
             std::string capt(hdhC::tf_var("time_bnds"));
@@ -1268,7 +1268,7 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
   // lead to a wrong cut.
 
   std::string text;
-   
+
   if( sd[0].size() != sd[1].size() )
   {
     std::string key("1_6e");
@@ -1279,7 +1279,7 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
     notes->setCheckStatus(drsF, pQA->n_fail );
     return;
   }
-  
+
   int len ;
 
   size_t sz = QA_Exp::MIP_tableNames.size() ;
@@ -1288,16 +1288,16 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
   {
      if( QA::tableID == QA_Exp::MIP_tableNames[i] )
      {
-        len = QA_Exp::MIP_FNameTimeSz[i] ;  
+        len = QA_Exp::MIP_FNameTimeSz[i] ;
         break;
      }
   }
-  
+
   if( len == -1 || i == sz )
      return;
 
   int len_sd = sd[0].size() ;
-  
+
   // a) yyyy
   if( len_sd == 4 && len_sd != len )
       text =", expected yyyy, found " + sd[0] + "-" + sd[1] ;
@@ -1666,12 +1666,12 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
   x_aV.addStripSides(" ");
 
   std::vector<char> sep {',', ' '} ;
-  
+
   for(size_t i=0 ; i < sep.size() ; ++i )
   {
     x_aV.setSeparator(sep[i]);
     x_aV = hdhC::clearEnclosures(aV) ;
-    
+
     if( hdhC::clearEnclosures_unpaired )
     {
       std::string key("2_6c");
@@ -1686,7 +1686,7 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
          notes->setCheckStatus("CV",  pQA->n_fail );
       }
     }
-    
+
     if( x_aV.size() > 1 )
     {
       if(i)
@@ -1703,8 +1703,8 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
           notes->setCheckStatus("CV",  pQA->n_fail );
         }
       }
-      
-      break; 
+
+      break;
     }
   }
 
@@ -1725,7 +1725,7 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
          item = vs_item[0];
       else
          item = hdhC::getUniqueString(vs_item, ',');
-      
+
       std::string capt(pQA->s_global);
       capt += hdhC::blank;
       capt += hdhC::tf_att(hdhC::empty, n_forcing);
@@ -1907,7 +1907,7 @@ CMOR::checkMIP_table(InFile& in, VariableMetaData& vMD,
       notes->setCheckStatus("CV", pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
-    
+
     return false;
   }
 
@@ -2888,15 +2888,16 @@ CMOR::checkMIPT_var_type(
   // the standard table has type==real. Is it for
   // float only, or also for double? So, in case of real,
   // any non-int type is accepted
-  bool isTblTypeDouble =
-      (tEntry.attMap[n_type] == "double") ? true : false ;
-  bool isNcTypeDouble =
-      (vMD.attMap[n_type] == "double") ? true : false ;
+  bool isTblType =
+      (tEntry.attMap[n_type] == "real") ? true : false ;
+  bool isNcType =
+      (vMD.attMap[n_type] == "float") ? true : false ;
 
-  bool isTblTypeInt =
-      (tEntry.attMap[n_type] == "integer") ? true : false ;
-  bool isNcTypeInt =
-      (vMD.attMap[n_type] == "int") ? true : false ;
+  if( ! isTblType )
+  {
+      isTblType = (tEntry.attMap[n_type] == "integer") ? true : false ;
+      isNcType = (vMD.attMap[n_type] == "int") ? true : false ;
+  }
 
   if( tEntry.attMap[n_type].size() == 0 && vMD.attMap[n_type].size() != 0 )
   {
@@ -2915,8 +2916,7 @@ CMOR::checkMIPT_var_type(
       pQA->setExitState( notes->getExitState() ) ;
     }
   }
-  else if( ! ( (isTblTypeDouble && isNcTypeDouble)
-                   || ( isTblTypeInt && isNcTypeInt) ) )
+  else if( ! ( isTblType && isNcType ) )
   {
     std::string key("3_2g");
 
@@ -4452,7 +4452,7 @@ QA_Exp::getFrequency(void)
     if( frequencyPosition > -1 )
     {
       size_t fp=static_cast<size_t>(frequencyPosition);
-      
+
       if( fp < splt.size() )
          frequency = splt[fp] ;
     }
@@ -4488,7 +4488,7 @@ QA_Exp::getFrequency(void)
       }
     }
    }
-  
+
   return frequency ;
 }
 
@@ -4510,13 +4510,13 @@ QA_Exp::getMIP_tableName(std::string tName)
      std::string key("7_6");
      std::string capt;
      std::string text;
-     
+
      if( notes->inq( key, CMOR::n_global) )
      {
        capt = "Missing global " ;
        capt += hdhC::tf_att(hdhC::empty, CMOR::n_table_id) ;
      }
-     
+
      // try the filename
      if( mipPosition > -1 )
      {
@@ -4535,7 +4535,7 @@ QA_Exp::getMIP_tableName(std::string tName)
           (void) notes->operate(capt, text) ;
           pQA->setExitState( notes->getExitState() ) ;
        }
-     }    
+     }
 
      return tableID ;
   }
@@ -4694,14 +4694,14 @@ QA_Exp::initDataOutputBuffer(void)
 void
 QA_Exp::initDefaults(void)
 {
-  notMIP_table_avail=false;   
+  notMIP_table_avail=false;
   isUseStrict=false;
   bufferSize=1500;
 
   frequencyPosition=-1;  // not set
   mipPosition=-1;
   varnamePosition=-1;
-    
+
   return;
 }
 

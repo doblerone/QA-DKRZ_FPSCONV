@@ -57,7 +57,7 @@ global:
    branch_time
    contact
    Conventions = CF-1.4
-   creation_date = YYYY-MM-DDTHH:MM:SSZ
+   creation_date = DATE:YYYY-MM-DDTHH:MM:SSZ
    experiment
    experiment_id
    forcing = Nat|Ant|GHG|SD|SI|SA|TO|SO|Oz|LU|Sl|Vl|SS|Ds|BC|MD|OC|AA

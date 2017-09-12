@@ -8,11 +8,9 @@ import sys
 import os
 import shutil
 import socket
-
-import argparse
-#import argcomplete
 import subprocess
 
+import argparse
 import ConfigParser
 
 import qa_util

@@ -53,7 +53,7 @@ struct DRS_CV
             std::map<std::string, std::string>& gM );
 
   bool   isInstantTime(void);
-  
+
   void run(void);
 
   //! Test the time-period of the input file.
@@ -130,6 +130,9 @@ class QA_Exp
   QA_Exp();
 
   void   applyOptions(std::vector<std::string>&);
+
+  bool   checkDateFormat(std::string& requested, std::string available) ;
+  bool   checkDateFormatDT(std::string& rV, std::string aV) ;
 
   void   checkDimStandardTable(ReadLine &tbl, InFile &in,
             VariableMetaData &var,
@@ -357,7 +360,7 @@ class QA_Exp
 
   int frequencyPosition;
   int varnamePosition;
-  
+
   std::vector<std::string> excludedAttribute;
   std::vector<std::string> overruleAllFlagsOption;
 

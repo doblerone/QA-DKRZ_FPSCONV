@@ -1743,6 +1743,193 @@ QA_Exp::applyOptions(std::vector<std::string>& optStr)
    return;
 }
 
+bool
+QA_Exp::checkDateFormat(std::string& rV, std::string aV)
+{
+    // a) return true for: does not match
+    // b) leading and/or trailing '*' indicate that any corresponding
+    //    non-digits are expected
+    // c) leading and/or trailing non-digits are mandatory in val_is
+
+    if( rV.size() == 0 || aV.size() == 0 )
+        return true;
+
+    // [pref], string, [tail]
+    Split x_rV(rV, " |", true);
+
+    int ix=0;  // index one before the date
+
+    if( x_rV[0] != "DATE:" )
+        return true;
+    else
+        ix=1;
+
+    // prefix
+    int x_sz = x_rV.size();
+
+    if( x_sz > (ix+1) )
+    {
+        // check prefix
+        if(x_rV[ix][0] == '*')
+        {
+           size_t i;
+           for( i=0 ; i < aV.size() ; ++i )
+           {
+               if( hdhC::isDigit(aV[i]) )
+               {
+                  aV = aV.substr(i);
+                  break;
+               }
+           }
+
+           if( i == aV.size() )
+               return true;
+
+           ix +=1 ;
+        }
+        else
+        {
+            // requested prefix
+            if( aV.substr(0,x_rV[ix].size()) == x_rV[ix] )
+            {
+                aV = aV.substr(x_rV[ix].size()) ;
+                ix +=1 ;
+            }
+            else
+                return true;
+        }
+    }
+
+    // trailer
+    if( x_sz > (ix+1) )
+    {
+        // check tail
+        if(x_rV[ix+1][0] == '*')
+        {
+           int sz = static_cast<int>(aV.size()) ;
+           int i =  sz -1 ;
+           for( ; i >= 0 ; --i )
+           {
+               if( hdhC::isDigit(aV[i]) )
+               {
+                  aV = aV.substr(0,i+1);
+                  break;
+               }
+           }
+
+           if( i == -1 )
+               return true;
+        }
+        else
+        {
+            // requested prefix
+            size_t sz = x_rV[2].size() ;
+            if( aV.substr(sz-x_rV[2].size()) == x_rV[2] )
+                aV = aV.substr(0,sz-x_rV[0].size()) ;
+            else
+                return true;
+        }
+    }
+
+    // try various date formats
+    return ! checkDateFormatDT(rV, aV) ;
+}
+
+bool
+QA_Exp::checkDateFormatDT(std::string& rV, std::string aV)
+{
+    // return true for a match;
+
+    std::vector<std::string> v_rV_date;
+    std::vector<std::string> v_aV_date;
+
+    std::vector<std::string> v_rV_time;
+    std::vector<std::string> v_aV_time;
+
+    // a valid date format may have T substituted by a blank
+    // and Z omitted or the latter be lower case.
+
+    if( hdhC::isNumber(aV) )  // a pure float would be ok
+    {
+      // strip .decZ
+      size_t p ;
+      if (p=aV.find('.') < std::string::npos )
+          if( p )
+             aV = aV.substr(0, p-1);
+
+
+    }
+    else
+    {
+      Split x_rV_sep(rV, " T", true);
+      Split x_aV_sep(rV, " T", true);
+      if( x_rV_sep.size() != x_aV_sep.size() )
+          return false;
+
+      Split x_rV_date(x_rV_sep[0], '-');
+      Split x_aV_date(x_aV_sep[0], '-');
+      if( x_rV_date.size() != x_aV_date.size() )
+          return false;
+
+      for( size_t j=0 ; j < x_rV_date.size() ; ++j )
+      {
+          v_rV_date.push_back(x_rV_date[j]);
+          v_aV_date.push_back(x_aV_date[j]);
+      }
+
+      if( x_rV_sep.size() > 1 )
+      {
+        Split x_rV_time(x_rV_sep[1], ':');
+        Split x_aV_time(x_aV_sep[1], ':');
+        if( x_rV_time.size() != x_aV_time.size() )
+            return false;
+
+         for( size_t j=0 ; j < x_rV_time.size() ; ++j )
+         {
+             v_rV_time.push_back(x_rV_time[j]);
+             v_aV_time.push_back(x_aV_time[j]);
+         }
+      }
+    }
+
+    std::vector<int> months = { 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12 } ;
+    std::vector<int> mdays =  { 31,29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 } ;
+
+    size_t i;
+    int imon;
+    for( i=0 ; i < v_rV_date.size() ; ++i )
+    {
+        int ival = hdhC::string2Double(v_aV_date[i]);
+
+        if( i == 0 && v_aV_date[i].size() > 4 )  // year
+            return false;
+        else if( i == 1 && (imon=ival) > 12 ) // month
+            return false;
+        else if( i == 2 && ival != mdays[imon] )
+            return false;
+    }
+
+    for( i=0 ; i < v_rV_time.size() ; ++i )
+    {
+        int ival ;
+
+        if( i == 2 )
+           // strip decimals and time zone
+           ival = hdhC::string2Double(v_aV_date[i].substr(0,2)) ;
+        else
+           ival = hdhC::string2Double(v_aV_date[i]) ;
+
+        if( i == 0 && ival > 24 )  // hours
+            return false;
+        else if( i == 1 && ival > 60) // minutes
+            return false;
+        else if( i == 2 && ival > 60) // seconds (int)
+            return false;
+    }
+
+    return true;
+}
+
 void
 QA_Exp::checkDimTableEntry(InFile &in,
     VariableMetaData &vMD,
@@ -4691,51 +4878,10 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
          }
        }
 
-       else if( rqValue == "YYYY-MM-DDTHH:MM:SSZ" )
+       else if( rqValue.substr(0,5) == "DATE:"
+                   || rqValue.substr(0,4) == "YYYY" )
        {
-         // a valid date format may have T substituted by a blank
-         // and Z omitted or the latter be lower case.
-         bool is=false;
-         if( aV.size() > 18 )
-         {
-           if( aV[4] == '-' && aV[7] == '-' )
-           {
-              if( aV[10] == 'T' || aV[10] == ' ' )
-              {
-                if( aV[13] == ':' && aV[16] == ':' )
-                {
-                  if( aV.size() == 20 )
-                  {
-                    if( !(aV[19] == 'Z' || aV[19] == 'z' ) )
-                      is=true;
-                  }
-
-                  if( ! hdhC::isDigit( aV.substr(0, 4) ) )
-                    is=true ;
-                  else if( ! hdhC::isDigit( aV.substr(5, 2) ) )
-                    is=true ;
-                  else if( ! hdhC::isDigit( aV.substr(8, 2) ) )
-                    is=true ;
-                  else if( ! hdhC::isDigit( aV.substr(11, 2) ) )
-                    is=true ;
-                  else if( ! hdhC::isDigit( aV.substr(14, 2) ) )
-                    is=true ;
-                  else if( ! hdhC::isDigit( aV.substr(17, 2) ) )
-                    is=true ;
-                }
-                else
-                  is=true;
-              }
-              else
-                is=true;
-           }
-           else
-             is=true;
-         }
-         else
-           is=true;
-
-         if( is )
+         if( checkDateFormat(rqValue, aV) )
          {
            std::string key("7_12");
            if( notes->inq( key, pQA->s_global) )
