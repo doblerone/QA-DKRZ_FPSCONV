@@ -1744,7 +1744,7 @@ QA_Exp::applyOptions(std::vector<std::string>& optStr)
 }
 
 bool
-QA_Exp::checkDateFormat(std::string& rV, std::string aV)
+QA_Exp::checkDateFormat(std::string rV, std::string aV)
 {
     // a) return true for: does not match
     // b) leading and/or trailing '*' indicate that any corresponding
@@ -1754,180 +1754,151 @@ QA_Exp::checkDateFormat(std::string& rV, std::string aV)
     if( rV.size() == 0 || aV.size() == 0 )
         return true;
 
-    // [pref], string, [tail]
-    Split x_rV(rV, " |", true);
-
-    int ix=0;  // index one before the date
-
-    if( x_rV[0] != "DATE:" )
-        return true;
-    else
-        ix=1;
-
-    // prefix
-    int x_sz = x_rV.size();
-
-    if( x_sz > (ix+1) )
+    // [DATE: ]request
+    size_t i;
+    if( rV.substr(0,5) == "DATE:" )
     {
-        // check prefix
-        if(x_rV[ix][0] == '*')
-        {
-           size_t i;
-           for( i=0 ; i < aV.size() ; ++i )
-           {
-               if( hdhC::isDigit(aV[i]) )
-               {
-                  aV = aV.substr(i);
-                  break;
-               }
-           }
+       // skip following blanks
+       for( i=5 ; i < rV.size() ; ++i )
+          if( rV[i] != ' ' )
+             break;
 
-           if( i == aV.size() )
+       rV = rV.substr(i);
+    }
+
+    // a prefix is separated by '|'
+    size_t pos;
+    std::string prefix;
+    if( (pos=rV.find('|')) < std::string::npos )
+    {
+        prefix = rV.substr(0,pos) ;
+        rV = rV.substr(pos+1);
+    }
+
+    bool isPrefix=false;
+
+    if( prefix.size() )
+    {
+       size_t p_ast;
+       if( (p_ast=prefix.find('*')) < std::string::npos )
+       {
+          if( prefix.size() == 1 )
+             isPrefix=true;
+          else
+          {
+              // non-static prefix (also with digits) of fixed size
+              int sz = std::stoi(prefix.substr(0,p_ast)) ;
+              if( rV.substr(0,sz) != aV.substr(0,sz) )
+                 return true;
+              else
+                 isPrefix=true;
+          }
+       }
+       else if( prefix != aV.substr(0, prefix.size()) )
+               // prefix has to be identical
                return true;
+    }
 
-           ix +=1 ;
-        }
-        else
+    if( prefix.size() == 0 || isPrefix )
+    {
+        // prefix of non-digits and variable size
+        for( i=0 ; i < aV.size() ; ++i )
         {
-            // requested prefix
-            if( aV.substr(0,x_rV[ix].size()) == x_rV[ix] )
+          if( hdhC::isDigit(aV[i]) )
+          {
+            if(i)
             {
-                aV = aV.substr(x_rV[ix].size()) ;
-                ix +=1 ;
+               aV = aV.substr(i);
+               rV = rV.substr(i);
             }
-            else
-                return true;
+            break;
+          }
         }
     }
 
-    // trailer
-    if( x_sz > (ix+1) )
+    // pure digits are requested, the available one should have the same size
+    if( aV.size() && hdhC::isDigit(aV) )
     {
-        // check tail
-        if(x_rV[ix+1][0] == '*')
-        {
-           int sz = static_cast<int>(aV.size()) ;
-           int i =  sz -1 ;
-           for( ; i >= 0 ; --i )
-           {
-               if( hdhC::isDigit(aV[i]) )
-               {
-                  aV = aV.substr(0,i+1);
-                  break;
-               }
-           }
-
-           if( i == -1 )
-               return true;
-        }
-        else
-        {
-            // requested prefix
-            size_t sz = x_rV[2].size() ;
-            if( aV.substr(sz-x_rV[2].size()) == x_rV[2] )
-                aV = aV.substr(0,sz-x_rV[0].size()) ;
-            else
-                return true;
-        }
+       if( rV.find('*') < std::string::npos )
+          return false;
+       else
+          return aV.size() == rV.size() ? false : true ;
     }
-
-    // try various date formats
-    return ! checkDateFormatDT(rV, aV) ;
-}
-
-bool
-QA_Exp::checkDateFormatDT(std::string& rV, std::string aV)
-{
-    // return true for a match;
-
-    std::vector<std::string> v_rV_date;
-    std::vector<std::string> v_aV_date;
-
-    std::vector<std::string> v_rV_time;
-    std::vector<std::string> v_aV_time;
 
     // a valid date format may have T substituted by a blank
     // and Z omitted or the latter be lower case.
+    Split x_aV(aV, " T", true);
+    Split x_rV(rV, " T", true);
 
-    if( hdhC::isNumber(aV) )  // a pure float would be ok
+    // '*' at any position inicates omissioni of leading 0
+    bool isLeadingZero=true;
+    if( rV.find('*') < std::string::npos )
     {
-      // strip .decZ
-      size_t p ;
-      if (p=aV.find('.') < std::string::npos )
-          if( p )
-             aV = aV.substr(0, p-1);
+        isLeadingZero = false;
+        size_t sz = rV.size()-1;
+        if( rV[sz] == '*' )
+            rV = rV.substr(0,sz);
+    }
+
+    Split x_aV_dt(x_aV[0], '-');
+    Split x_rV_dt(x_rV[0], '-');
+
+    if( x_aV.size() )
+    {
+        // the date
+        if( x_aV_dt.size() != x_rV_dt.size() )
+            return true;
+
+        if( isLeadingZero )
+        {
+            for( size_t i=0 ; i < x_rV_dt.size() ; ++i )
+                if( x_rV_dt[i].size() != x_aV_dt[i].size() )
+                    return true;
+        }
+    }
+
+    if( x_aV.size() < 3 )
+    {
+        // the time
+        x_aV_dt.setSeparator(':');
+        x_rV_dt.setSeparator(':');
+        x_aV_dt=x_aV[1] ;
+        x_rV_dt=x_rV[1] ;
+
+        // time zone by an appending letter
+        size_t last = x_rV_dt.size() -1 ;
+        //bool is_TZ_rV = false;
+        if( x_rV_dt.size() == 3 && hdhC::isAlpha(x_rV_dt[2][last]) )
+        {
+            x_rV_dt[2] = x_rV_dt[2].substr(0,last);
+            //is_TZ_rV = true;
+        }
+
+        last = x_aV_dt.size() -1 ;
+        //bool is_TZ_aV = false;
+        if( x_aV_dt.size() == 3 && hdhC::isAlpha(x_aV_dt[2][last]) )
+        {
+            x_aV_dt[2] = x_aV_dt[2].substr(0,last);
+            //is_TZ_aV = true;
+        }
+
+        //if( is_TZ_aV != is_TZ_rV )
+        //    return true;
+
+        if( x_aV_dt.size() != x_rV_dt.size() )
+            return true;
+
+        if( isLeadingZero )
+        {
+            for( size_t i=0 ; i < x_rV_dt.size() ; ++i )
+                if( x_rV_dt[i].size() != x_aV_dt[i].size() )
+                    return true;
+        }
 
 
     }
-    else
-    {
-      Split x_rV_sep(rV, " T", true);
-      Split x_aV_sep(rV, " T", true);
-      if( x_rV_sep.size() != x_aV_sep.size() )
-          return false;
 
-      Split x_rV_date(x_rV_sep[0], '-');
-      Split x_aV_date(x_aV_sep[0], '-');
-      if( x_rV_date.size() != x_aV_date.size() )
-          return false;
-
-      for( size_t j=0 ; j < x_rV_date.size() ; ++j )
-      {
-          v_rV_date.push_back(x_rV_date[j]);
-          v_aV_date.push_back(x_aV_date[j]);
-      }
-
-      if( x_rV_sep.size() > 1 )
-      {
-        Split x_rV_time(x_rV_sep[1], ':');
-        Split x_aV_time(x_aV_sep[1], ':');
-        if( x_rV_time.size() != x_aV_time.size() )
-            return false;
-
-         for( size_t j=0 ; j < x_rV_time.size() ; ++j )
-         {
-             v_rV_time.push_back(x_rV_time[j]);
-             v_aV_time.push_back(x_aV_time[j]);
-         }
-      }
-    }
-
-    std::vector<int> months = { 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12 } ;
-    std::vector<int> mdays =  { 31,29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 } ;
-
-    size_t i;
-    int imon;
-    for( i=0 ; i < v_rV_date.size() ; ++i )
-    {
-        int ival = hdhC::string2Double(v_aV_date[i]);
-
-        if( i == 0 && v_aV_date[i].size() > 4 )  // year
-            return false;
-        else if( i == 1 && (imon=ival) > 12 ) // month
-            return false;
-        else if( i == 2 && ival != mdays[imon] )
-            return false;
-    }
-
-    for( i=0 ; i < v_rV_time.size() ; ++i )
-    {
-        int ival ;
-
-        if( i == 2 )
-           // strip decimals and time zone
-           ival = hdhC::string2Double(v_aV_date[i].substr(0,2)) ;
-        else
-           ival = hdhC::string2Double(v_aV_date[i]) ;
-
-        if( i == 0 && ival > 24 )  // hours
-            return false;
-        else if( i == 1 && ival > 60) // minutes
-            return false;
-        else if( i == 2 && ival > 60) // seconds (int)
-            return false;
-    }
-
-    return true;
+    return false;
 }
 
 void
@@ -4878,8 +4849,7 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
          }
        }
 
-       else if( rqValue.substr(0,5) == "DATE:"
-                   || rqValue.substr(0,4) == "YYYY" )
+       else if( rqValue.substr(0,5) == "DATE:" || rqValue.substr(0,4) == "YYYY" )
        {
          if( checkDateFormat(rqValue, aV) )
          {
@@ -4888,9 +4858,12 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
            {
              std::string capt(pQA->s_global);
              capt += hdhC::blank;
-             capt += hdhC::tf_att(rqName);
-             capt += "does not comply with YYYY-MM-DDThh:mm:ssZ, found: " ;
-             capt += aV ;
+             capt += hdhC::tf_att(hdhC::empty, rqName, aV);
+             capt += "does not comply with DRS_CV request ";
+             if( rqValue.substr(0,5) == "DATE:" )
+                capt += rqValue.substr(5);
+             else
+                capt += rqValue ;
 
              (void) notes->operate(capt) ;
              notes->setCheckStatus("CV", pQA->n_fail );

@@ -131,8 +131,7 @@ class QA_Exp
 
   void   applyOptions(std::vector<std::string>&);
 
-  bool   checkDateFormat(std::string& requested, std::string available) ;
-  bool   checkDateFormatDT(std::string& rV, std::string aV) ;
+  bool   checkDateFormat(std::string requested, std::string available) ;
 
   void   checkDimStandardTable(ReadLine &tbl, InFile &in,
             VariableMetaData &var,
