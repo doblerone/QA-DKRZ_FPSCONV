@@ -29,6 +29,8 @@
 #    i.e. 2017-02 does not match YYYY-MM-DD, but 2017-2-8 does.
 #    '*' anywhere in date or time indicates that fields may be without
 #        a leading 0 for single digits
+# TimeZone: if Z is requested, then it may be omitted
+
 
 DS-SEP=/
 FE-SEP=_
@@ -95,7 +97,7 @@ global:
    contact
    Conventions
    CORDEX_domain
-   creation_date                   = DATE: YYYY-MM-DDThh:mm:ss
+   creation_date                   = DATE: YYYY-MM-DDThh:mm:ssZ
    driving_model_id
    driving_model_ensemble_member
    driving_experiment_name

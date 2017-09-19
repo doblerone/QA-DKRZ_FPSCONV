@@ -519,39 +519,6 @@ DRS_CV::checkNetCDF(NcAPI* p_nc)
 }
 
 void
-DRS_CV::checkProductName(std::string& drs_product,
-  std::string prod_choice,
-  std::map<std::string, std::string>& gM)
-{
-  Split x_cp(prod_choice, "|");
-
-  for( size_t i=0 ; i < x_cp.size() ; ++i )
-  {
-    if( drs_product == hdhC::stripSides(x_cp[i]) )
-    {
-      // adjustment for a test
-      gM["product"] = drs_product ;
-      return;
-    }
-  }
-
-  std::string key("1_2b");
-
-  if( notes->inq( key, drsP) )
-  {
-    std::string capt("DRS fault for path component <product>, found") ;
-    capt += hdhC::tf_val(drs_product) ;
-    capt += ", expected ";
-    capt += hdhC::tf_val(prod_choice);
-
-    (void) notes->operate(capt) ;
-    pQA->setExitState( notes->getExitState() ) ;
-  }
-
-  return;
-}
-
-void
 DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 {
   // pathEncodingStr: name of the encoding type
@@ -721,6 +688,39 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 }
 
 void
+DRS_CV::checkProductName(std::string& drs_product,
+  std::string prod_choice,
+  std::map<std::string, std::string>& gM)
+{
+  Split x_cp(prod_choice, "|");
+
+  for( size_t i=0 ; i < x_cp.size() ; ++i )
+  {
+    if( drs_product == hdhC::stripSides(x_cp[i]) )
+    {
+      // adjustment for a test
+      gM["product"] = drs_product ;
+      return;
+    }
+  }
+
+  std::string key("1_2b");
+
+  if( notes->inq( key, drsP) )
+  {
+    std::string capt("DRS fault for path component <product>, found") ;
+    capt += hdhC::tf_val(drs_product) ;
+    capt += ", expected ";
+    capt += hdhC::tf_val(prod_choice);
+
+    (void) notes->operate(capt) ;
+    pQA->setExitState( notes->getExitState() ) ;
+  }
+
+  return;
+}
+
+void
 DRS_CV::findFN_faults(Split& drs, Split& x_e,
                    std::map<std::string,std::string>& gM,
                    std::string& text)
@@ -729,10 +729,10 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
   std::string n_ast="*";
   int x_eSz = x_e.size();
   int drsSz = drs.size() ;
-  bool isMiss = drsSz < x_eSz;
+  bool isMiss = drsSz < x_eSz ;
 
   if( isMiss )
-    text = " suspicion of a missing item in the filename, found" ;
+    text = " suspicion of a missing item, " ;
 
   for( int j=0 ; j < x_eSz ; ++j)
   {
@@ -741,23 +741,15 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
     if( !(drs[j] == t || t == n_ast) )
     {
       if( isMiss )
-      {
-        if( j == 0 )
-            break;
-
-        text += " last valid item is" ;
-        text += hdhC::tf_val(drs[j-1]) ;
-        break;
-      }
+          text += " probably " + hdhC::tf_val(x_e[j]) ;
       else
       {
-        text = " global " ;
-        text += hdhC::tf_att(hdhC::empty, x_e[j],t) ;
-        text += " vs." ;
-        text += hdhC::tf_val(drs[j]) ;
-        text += " in the filename";
-        break;
+        text = " found " + hdhC::tf_val(drs[j]) ;
+        text += " as DRS item";
+        text += hdhC::tf_val(x_e[j]) ;
       }
+
+      break;
     }
   }
 
@@ -802,11 +794,10 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
     }
   }
 
-  if( drsBeg < 0)
-  {
-    text = " check failed" ;
-    return; // fewer path items than expected
-  }
+  bool isMiss = drsBeg < 0 ;
+
+  if( isMiss)
+    text = "suspicion of a missing item, " ;
 
   for( int j=0 ; j < x_eSz ; ++j)
   {
@@ -814,26 +805,23 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
 
     int i = drsBeg+j ;
 
-    if( i == -1 )
-    {
-      text = " suspicion of a missing item in the path, found" ;
-      text += hdhC::tf_val(drs.getStr()) ;
-
-      break;
-    }
-
     if( !( drs[i] == t || t == n_ast) )
     {
-      if(x_e[j] == "activity" )
+      if( isMiss )
+        text = " probably " + hdhC::tf_val(x_e[j]) ;
+      else
       {
-        std::string s( hdhC::Upper()(drs[i]) ) ;
-        if( s == t  && !notes->inq( "1_2a", pQA->fileStr, "INQ_ONLY") )
-          continue;
-      }
+        if(x_e[j] == "activity" )
+        {
+          std::string s( hdhC::Upper()(drs[i]) ) ;
+          if( s == t  && !notes->inq( "1_2a", pQA->fileStr, "INQ_ONLY") )
+           continue;
+        }
 
-      text += hdhC::tf_assign(x_e[j],drs[drsBeg+j]) ;
-      text += " does not match global " ;
-      text += hdhC::tf_att(hdhC::empty,x_e[j],t) ;
+        text += " found " + hdhC::tf_val(drs[j]) ;
+        text += " as DRS item " ;
+        text += hdhC::tf_val(x_e[j]) ;
+      }
 
       break;
     }
@@ -1775,7 +1763,7 @@ QA_Exp::checkDateFormat(std::string rV, std::string aV)
         rV = rV.substr(pos+1);
     }
 
-    bool isPrefix=false;
+    size_t prefix_width = 0;
 
     if( prefix.size() )
     {
@@ -1783,7 +1771,7 @@ QA_Exp::checkDateFormat(std::string rV, std::string aV)
        if( (p_ast=prefix.find('*')) < std::string::npos )
        {
           if( prefix.size() == 1 )
-             isPrefix=true;
+             prefix_width=1;
           else
           {
               // non-static prefix (also with digits) of fixed size
@@ -1791,30 +1779,22 @@ QA_Exp::checkDateFormat(std::string rV, std::string aV)
               if( rV.substr(0,sz) != aV.substr(0,sz) )
                  return true;
               else
-                 isPrefix=true;
+                 prefix_width=sz;
           }
        }
-       else if( prefix != aV.substr(0, prefix.size()) )
-               // prefix has to be identical
-               return true;
+       else
+       {
+          size_t sz = prefix.size();
+          if( prefix != aV.substr(0, sz) )
+             // prefix has to be identical
+             return true;
+          else
+             prefix_width=sz;
+       }
     }
 
-    if( prefix.size() == 0 || isPrefix )
-    {
-        // prefix of non-digits and variable size
-        for( i=0 ; i < aV.size() ; ++i )
-        {
-          if( hdhC::isDigit(aV[i]) )
-          {
-            if(i)
-            {
-               aV = aV.substr(i);
-               rV = rV.substr(i);
-            }
-            break;
-          }
-        }
-    }
+    if( prefix_width > 0 )
+        aV = aV.substr(prefix_width);
 
     // pure digits are requested, the available one should have the same size
     if( aV.size() && hdhC::isDigit(aV) )
@@ -1867,23 +1847,23 @@ QA_Exp::checkDateFormat(std::string rV, std::string aV)
 
         // time zone by an appending letter
         size_t last = x_rV_dt.size() -1 ;
-        //bool is_TZ_rV = false;
+        bool is_TZ_rV = false;
         if( x_rV_dt.size() == 3 && hdhC::isAlpha(x_rV_dt[2][last]) )
         {
             x_rV_dt[2] = x_rV_dt[2].substr(0,last);
-            //is_TZ_rV = true;
+            is_TZ_rV = true;
         }
 
         last = x_aV_dt.size() -1 ;
-        //bool is_TZ_aV = false;
+        bool is_TZ_aV = false;
         if( x_aV_dt.size() == 3 && hdhC::isAlpha(x_aV_dt[2][last]) )
         {
             x_aV_dt[2] = x_aV_dt[2].substr(0,last);
-            //is_TZ_aV = true;
+            is_TZ_aV = true;
         }
 
-        //if( is_TZ_aV != is_TZ_rV )
-        //    return true;
+        if( is_TZ_aV != is_TZ_rV )
+            return true;
 
         if( x_aV_dt.size() != x_rV_dt.size() )
             return true;
@@ -2646,11 +2626,12 @@ QA_Exp::domainCheck(void)
   std::string key = "7_6";
   if( notes->inq(key, pQA->fileStr) )
   {
-    std::string capt("CORDEX_domain does not match Table ") ;
+    std::string capt("domain does not match Table ") ;
     if( isTbl_1st )
-      capt += "<1>";
+      capt += " 1";
     else
-      capt += "<2>";
+      capt += " 2";
+    capt += " of the CORDEX Archive Design";
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus("CV", pQA->n_fail);
@@ -4811,7 +4792,7 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
     {
        std::string key("2_6");
 
-       if( notes->inq( key, pQA->fileStr) )
+       if( notes->inq( key, pQA->fileStr, "NO_MT") )
        {
          std::string capt("required ");
          capt += pQA->s_global;
@@ -4834,15 +4815,28 @@ QA_Exp::reqAttCheckGlobal(Variable& glob)
       if( aV.size() == 0 )
       {
         std::string key("2_7");
+
         if( notes->inq( key, pQA->s_global) )
         {
+           std::string text;
+
            std::string capt(pQA->s_global);
            capt += hdhC::blank;
-           capt += hdhC::tf_att(rqName, hdhC::no_blank);
-           capt=" missing required value=";
-           capt += rqValue;
 
-           (void) notes->operate(capt) ;
+           if( rqValue.find(',') < std::string::npos )
+           {
+             capt += hdhC::tf_att(rqName, hdhC::colon);
+             capt += " Missing among required values";
+             text = "required: " + rqValue;
+           }
+           else
+           {
+             capt += hdhC::tf_att(rqName, hdhC::colon);
+             capt += " Missing required value";
+             capt += hdhC::tf_val(rqValue) ;
+           }
+
+           (void) notes->operate(capt, text) ;
            notes->setCheckStatus("CV", pQA->n_fail );
 
            continue;
