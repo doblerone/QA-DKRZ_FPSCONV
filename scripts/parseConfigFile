@@ -9,7 +9,6 @@
 # return 1 for a new/updated parameter, a mismatch, disable, a set variable, not defined,
 #          or when today is older than the scheduled next time
 
-set -x
 isNextDate()
 {
    local t_conf_day t_conf_date
