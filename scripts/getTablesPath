@@ -1,4 +1,4 @@
-getHomePath()
+getTablesPath()
 {
   export CONFIG_FILE
 
@@ -65,4 +65,4 @@ getHomePath()
 
 # main
 
-getHomePath
+getTablesPath

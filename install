@@ -586,7 +586,7 @@ for pck in $* ; do
   fi
 done
 
-. ${QA_SRC}/scripts/getHomePath
+. ${QA_SRC}/scripts/getTablesPath
 
 . ${QA_SRC}/scripts/parseConfigFile DEFAULT_PROJECT${default_prj:+=${default_prj}}
 test ${#projects[*]} -eq 0 && projects=(${default_prj})

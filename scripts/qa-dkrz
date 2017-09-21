@@ -2760,7 +2760,7 @@ init()
   basic_args=( ${example_args[*]} -E_QA_SRC=${QA_SRC} )
 
   # sets: QA_TABLES, CONFIG_FILE
-  . ${QA_SRC}/scripts/getHomePath
+  . ${QA_SRC}/scripts/getTablesPath
 
   basic_args=( ${basic_args[*]} -E_QA_TABLES=${QA_TABLES} )
 

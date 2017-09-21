@@ -28,15 +28,15 @@ descript()
 
 checkInstallation()
 {
-  # sets: QA_HOME, CONFIG_FILE
-  . ${QA_SRC}/scripts/getHomePath
+  # sets: QA_TABLES, CONFIG_FILE
+  . ${QA_SRC}/scripts/getTablesPath
 
   if [ ${isLCF} ] ; then
     if [ ! "${locConfFile}" ] ; then
-      if [ ${QA_HOME} ] ; then
-        locConfFile=${QA_HOME}
+      if [ ${QA_TABLES} ] ; then
+        locConfFile=${QA_TABLES}
       else
-        echo "option --lcf requires provision of --qa-home"
+        echo "option --lcf requires provision of --qa-tables"
         exit 1
       fi
     fi
@@ -193,7 +193,7 @@ elif [ ${#ts_fs[*]} -gt 0 ] ; then
   fs=(${ts_fs[*]})  # the test-suite files
 fi
 
-param_T="\\n-t ${QA_HOME}/tables/projects/CF"
+param_T="\\n-t ${QA_TABLES}/tables/projects/CF"
 
 param_IN="\\nIN::oCF"
 
