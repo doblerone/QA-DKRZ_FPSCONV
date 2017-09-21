@@ -34,12 +34,12 @@ iRE_checkForUpdate()
     fi
   done
 
-  if [ ${#failedItems[*]} -gt 0 -a "${QA_HOME}" ] ; then
-    # try to restore missing items in config.txt from QA_HOME
+  if [ ${#failedItems[*]} -gt 0 -a "${QA_TABLES}" ] ; then
+    # try to restore missing items in config.txt from QA_TABLES
     local item
     for item in ${failedItems[*]} ; do
        if [ ${item} = XLSX2CSV ] ; then
-          item=$( find ${QA_HOME} -name xlsx2csv.py )
+          item=$( find ${QA_TABLES} -name xlsx2csv.py )
           if [ ${item} ] ; then
              . ${QA_SRC}/scripts/parseConfigFile XLSX2CSV=$item
              XLSX2CSV=$item
@@ -56,14 +56,14 @@ iRE_checkTables()
 {
   local prj=$1
 
-  if [ ! ${QA_HOME} ] ; then
+  if [ ! ${QA_TABLES} ] ; then
     upCount=$(( upCount + 1 ))
     return
-  elif [ ! -d ${QA_HOME}/tables/projects/$prj ] ; then
+  elif [ ! -d ${QA_TABLES}/tables/projects/$prj ] ; then
     upCount=$(( upCount + 1 ))
     return
   else
-    local p=${QA_HOME}/tables/projects
+    local p=${QA_TABLES}/tables/projects
 
     if [ ${#prj} -eq 0 -a ${#DEFAULT_PROJECT} -gt 0 ] ; then
       prj=${DEFAULT_PROJECT}
@@ -116,7 +116,7 @@ iRE_findLatestFile()
 
   local pp tt
   declare -a pp tt
-  
+
   pp=($*)
   # find the latest command
   for(( i=0 ; i < ${#pp[*]} ; ++i )) ; do
@@ -207,12 +207,13 @@ iRE_inqState()
   # First char of names indicate whether optional (-) or required (+),
   # second by + indicates required and must exist;
   # as to must-have names working also in case of a non-update option (default)
+  # Note that only one of QA_TABLES or QA_HOME has to exist.
   rname=(
          -AUTO_UPDATE \
          -DEFAULT_PROJECT \
          -INTERNET \
          -NEXT_QA_UPDATE \
-         +QA_HOME \
+         +QA_TABLES \
          -QA_REVISION \
        )
 

@@ -336,7 +336,7 @@ getMultiLists()
     done
   done
 
-  p=${QA_HOME}/tables/projects/CF
+  p=${QA_TABLES}/tables/projects/CF
   test -f $p/${fs[0]} && cfList[${#cfList[*]}]=$p/${fs[0]}
 
   if [ $# -gt 0 ] ; then
@@ -437,12 +437,12 @@ findQAConfSeq()
 
   pDir[0]=$(pwd)  # local path
   if [ ${PROJECT_AS} ] ; then
-    pDir[${#pDir[*]}]=${QA_HOME}/tables/$prj_virt/$vName
-    pDir[${#pDir[*]}]=${QA_HOME}/tables/$prj_virt/$pName
+    pDir[${#pDir[*]}]=${QA_TABLES}/tables/$prj_virt/$vName
+    pDir[${#pDir[*]}]=${QA_TABLES}/tables/$prj_virt/$pName
   fi
 
-  pDir[${#pDir[*]}]=${QA_HOME}/tables/$prj/$pName
-  pDir[${#pDir[*]}]=${QA_HOME}/tables/projects/$prj/$pName
+  pDir[${#pDir[*]}]=${QA_TABLES}/tables/$prj/$pName
+  pDir[${#pDir[*]}]=${QA_TABLES}/tables/projects/$prj/$pName
 
   # This loop only works for filenames passed as parameters.
   # Go through the chain of files unless there is no more
@@ -1806,8 +1806,8 @@ do
           setKWL ${OPTARG}
         elif [ ${OPTNAME} = 'QA_CONFIG' ] ; then
           localQAC=${OPTVAL}
-        elif [ ${OPTNAME} = 'QA_HOME' ] ; then
-          setKWL QA_HOME=${OPTVAL}
+        elif [ ${OPTNAME} = 'QA_TABLES' ] ; then
+          setKWL QA_TABLES=${OPTVAL}
         elif [ ${OPTNAME} = 'QA_SRC' ] ; then
           setKWL QA_SRC=${OPTVAL}
         fi
@@ -1843,8 +1843,8 @@ do
         elif [ ${OPTNAME} = CONFIG_FILE -o ${OPTNAME} = CF ] ; then
           installArgs+="--cf=${OPTVAL},"
 
-        elif [ "${OPTNAME}" = HOME -o "${OPTNAME}" = QA_HOME ] ; then
-           setKWL QA_HOME=${OPTVAL}
+        elif [ "${OPTNAME}" = HOME -o "${OPTNAME}" = QA_TABLES ] ; then
+           setKWL QA_TABLES=${OPTVAL}
 
         elif [ "${OPTNAME}" = WORK ] ; then
            setKWL QA_RESULTS=${OPTVAL}
@@ -1860,10 +1860,10 @@ fi
 
 if [ ${isConfigFile} ] ; then
   if [ ! "${CONFIG_FILE_LOCATION}" ] ; then
-    if [ ${QA_HOME} ] ; then
-      setKWL CONFIG_FILE=${QA_HOME}/.qa-dkrz/config.txt
+    if [ ${QA_TABLES} ] ; then
+      setKWL CONFIG_FILE=${QA_TABLES}/.qa-dkrz/config.txt
     else
-      echo "option --lcf requires provision of --qa-home"
+      echo "option --lcf requires provision of --qa-tables"
       exit 1
     fi
   fi

@@ -47,14 +47,14 @@ descript()
   echo "                    is assigned, then debug only this one."
   echo "  --force           Force update of the given project."
   echo "  --help            Display usage and exit."
-  echo "  --home=path       Same as QA_HOME."
+  echo "  --home=path       Same as --qa-tables."
   echo "  --lcf=path        Location of .qa-dkrz/config.txt [~]."
   echo "  --link=path       Hard links of external NetCDF installations from the"
   echo "                    directories in 'your-path/${package}/local'."
   echo "                    Shared by all hdf, netcdf, udunits  and zlib."
   echo "  --link_type=path  Same as for 'link' but just for type=netcdf, hdf, zlib, or udunits"
   echo "  --net=no          Disable internet access."
-  echo "  --qa-home=path    Location of the projects tables and external programs."
+  echo "  --qa-tables=path  Location of the projects tables and external programs."
   echo "                    Also for user-modified QA tables."
   echo "  --set-default-project=PROJECT "
   echo "  --show-inst       Display properties of the current installation."
@@ -180,13 +180,13 @@ update()
     fi
   done
 
-  if ! mkdir -p ${QA_HOME}/tables  ; then
-    echo "could not mkdir -p ${QA_HOME}/tables"
+  if ! mkdir -p ${QA_TABLES}/tables  ; then
+    echo "could not mkdir -p ${QA_TABLES}/tables"
     exit 41
   fi
 
-  # note that QA_HOME points to .qa-dkrz wherever it is located
-  rsync -auz --exclude '*~' $QA_SRC/tables ${QA_HOME} &> /dev/null
+  # note that QA_TABLES points to .qa-dkrz wherever it is located
+  rsync -auz --exclude '*~' $QA_SRC/tables ${QA_TABLES} &> /dev/null
 
   return 0
 }
@@ -259,7 +259,7 @@ update_external()
   then
      . ${QA_SRC}/scripts/get_externalSources \
          -P $prj --qa-src=${QA_SRC} \
-         --qa-home=${QA_HOME} --config_file=${CONFIG_FILE} \
+         --qa-tables=${QA_TABLES} --config_file=${CONFIG_FILE} \
          ${isUpdate:+--update} ${isForceUpdate:+--force-update}
 
      test $? -gt 0 && exit 41
@@ -393,13 +393,13 @@ do
             fi
           fi
         elif [ "${OPTNAME}" = HOME ] ; then
-          export QA_HOME=${OPTVAL}
+          export QA_TABLES=${OPTVAL}
         elif [ "${OPTNAME}" = PROJECT ] ; then
           prj="${OPTVAL}"
-        elif [ "${OPTNAME}" = QA_HOME ] ; then
-          export QA_HOME=${OPTVAL}
+        elif [ "${OPTNAME}" = QA_TABLES ] ; then
+          export QA_TABLES=${OPTVAL}
         elif [ "${OPTNAME}" = WORK ] ; then
-          export QA_HOME=${OPTVAL}
+          export QA_TABLES=${OPTVAL}
         fi
         ;;
    \?)  ;;
@@ -408,10 +408,10 @@ done
 
 if [ ${isDisplacedConfigFile} ] ; then
   if [ ! "${displacedConfigFile}" ] ; then
-    if [ ${QA_HOME} ] ; then
-      displacedConfigFile=${QA_HOME}
+    if [ ${QA_TABLES} ] ; then
+      displacedConfigFile=${QA_TABLES}
     else
-      echo "option --cf requires provision of --qa-home"
+      echo "option --cf requires provision of --qa-tables"
       exit 1
     fi
   fi
@@ -512,7 +512,7 @@ do
           PROJECT="${OPTVAL}"
         elif [ "${OPTNAME}" = QA_SRC ] ; then
           export QA_SRC=${OPTVAL}
-        elif [ "${OPTNAME}" = QA_HOME ] ; then
+        elif [ "${OPTNAME}" = QA_TABLES ] ; then
           continue
         elif [ "${OPTNAME}" = SRC ] ; then
           :  # for backward compatibilty
@@ -570,8 +570,8 @@ for pck in $* ; do
     netcdf=${pck}
   elif [ ${PCK:0:7} = UDUNITS ] ; then
     udunits=${pck}
-  elif [ ${PCK:0:7} = QA_HOME ] ; then
-    QA_HOME=${PCK:8}
+  elif [ ${PCK:0:7} = QA_TABLES ] ; then
+    QA_TABLES=${PCK:8}
   elif [ ${PCK:0:10} = PROJECT ] ; then
     PROJECT=${PCK:11}
   else

@@ -1,10 +1,10 @@
 ges_cf()
 {
-   if ! mkdir -p $QA_HOME/tables/projects/CF ; then
+   if ! mkdir -p $QA_TABLES/tables/projects/CF ; then
      mkdir -p $1
      return 41
    fi
-   cd $QA_HOME/tables/projects/CF
+   cd $QA_TABLES/tables/projects/CF
 
    ges_cf_html
 
@@ -37,7 +37,7 @@ ges_cf_html()
     vd="${vd#*\(}"
     vd="${vd%)*}"
     vd="${vd// /}"
-    
+
     . $QA_SRC/scripts/parseConfigFile CF_STD_NAME_VERSION=${vd}
 
     if ! ges_parse_html 'Standard Name Table' xml ; then
@@ -235,11 +235,11 @@ ges_cmip6()
      fi
    fi
 
-   if ! mkdir -p $QA_HOME/tables/projects/$prj ; then
+   if ! mkdir -p $QA_TABLES/tables/projects/$prj ; then
      mkdir -p $1
      return 41
    fi
-   cd $QA_HOME/tables/projects/$prj &> /dev/null
+   cd $QA_TABLES/tables/projects/$prj &> /dev/null
 
    if [ ! ${PrePARE} ] ; then
      forceUpdate=t
@@ -269,9 +269,9 @@ ges_cmip6_cmor()
    # Clone the CMIP6 table to your working directory.
    # Disable SSL verification (firewall only).
 
-   cd ${QA_HOME}/tables/projects/CMIP6/cmip6-cmor-tables &> /dev/null
+   cd ${QA_TABLES}/tables/projects/CMIP6/cmip6-cmor-tables &> /dev/null
 
-   if [ -d ${QA_HOME}/tables/projects/CMIP6/cmip6-cmor-tables ] ; then
+   if [ -d ${QA_TABLES}/tables/projects/CMIP6/cmip6-cmor-tables ] ; then
      #look for an update
 
      local remote
@@ -322,12 +322,12 @@ ges_cmip6_conda()
 
   else
     test ! ${CONDA_CMOR_PATH} \
-        && CONDA_CMOR_PATH=${QA_HOME}/miniconda/bin/conda
+        && CONDA_CMOR_PATH=${QA_TABLES}/miniconda/bin/conda
 
     # e.g. for a conda-less instantiation;
     # sets CONDA_CMOR_PATH
     action=create
-#    ges_make_miniconda ${QA_HOME}/miniconda
+#    ges_make_miniconda ${QA_TABLES}/miniconda
 
 #    isNewConda=t
   fi
@@ -343,7 +343,7 @@ ges_cmip6_conda()
        echo    "    <b> environment of qa-dkrz " > ${TTY}
        echo    "    <c> a separate miniconda instantiated in the user-space" > ${TTY}
        echo    "    <no> exit"
-       prompt_text="Select: <a, b, c: in [${QA_HOME}/miniconda], or user-defined-path, [no]>: "
+       prompt_text="Select: <a, b, c: in [${QA_TABLES}/miniconda], or user-defined-path, [no]>: "
      fi
 
      local quest
@@ -355,7 +355,7 @@ ges_cmip6_conda()
          ( n |  '') exit 41  ;;
          (       a) conda_env=cmor  ;;
          (       b) conda_env=qa-dkrz  ;;
-         (       c) CONDA_CMOR_PATH=${QA_HOME}/miniconda
+         (       c) CONDA_CMOR_PATH=${QA_TABLES}/miniconda
                     conda_env=cmor
                     isNewConda=t
                     ;;
@@ -394,8 +394,8 @@ ges_cmip6_mip()
 {
    local last now
 
-   mkdir -p ${QA_HOME}/tables/projects/CMIP6
-   cd ${QA_HOME}/tables/projects/CMIP6 &> /dev/null
+   mkdir -p ${QA_TABLES}/tables/projects/CMIP6
+   cd ${QA_TABLES}/tables/projects/CMIP6 &> /dev/null
 
    ges_checkDate init CMIP6_MIP_tables.xlsx
 
@@ -413,7 +413,7 @@ ges_cmip6_mip()
      echo "CMIP6 - last update:" > README.txt
      echo "  CMIP6_MIP_tables.xlsx: $( date +'%F %T' )" > README.txt
 
-     # location of extracted csv table sheets: [QA_HOME/tables/projects/CMIP6]
+     # location of extracted csv table sheets: [QA_TABLES/tables/projects/CMIP6]
      ${XLSX2CSV} -a -d '|' -l '\n' CMIP6_MIP_tables.xlsx CMIP6_MIP_tables
    fi
 
@@ -443,12 +443,12 @@ ges_cordex()
 {
    local status
 
-   if ! mkdir -p $QA_HOME/tables/projects/$prj ; then
+   if ! mkdir -p $QA_TABLES/tables/projects/$prj ; then
      mkdir -p $1
      return 41
    fi
 
-   cd $QA_HOME/tables/projects/$prj &> /dev/null
+   cd $QA_TABLES/tables/projects/$prj &> /dev/null
 
    if [ -d IS-ENES-Data.github.io ] ; then
      cd IS-ENES-Data.github.io
@@ -459,7 +459,7 @@ ges_cordex()
 
      local remote
      declare -a remote
-     
+
      remote=( $( git remote -v ) )
      if [ ${remote[1]##*/} = 'IS-ENES-Data.github.io' ] ; then
        git fetch &>> log_cordex_tables.txt \
@@ -546,14 +546,14 @@ EOF
 
 ges_xlsx2csv()
 {
-   local xc=$QA_HOME/xlsx2csv/xlsx2csv.py
+   local xc=$QA_TABLES/xlsx2csv/xlsx2csv.py
 
    if [ ! -f $xc ] ; then
-      if ! mkdir -p $QA_HOME ; then
+      if ! mkdir -p $QA_TABLES ; then
         mkdir -p $1
         return 41
       fi
-      cd $QA_HOME &> /dev/null
+      cd $QA_TABLES &> /dev/null
 
       git clone http://github.com/dilshod/xlsx2csv &>> log_install_xlsx2csv.txt
 
@@ -588,8 +588,8 @@ do
          forceUpdate=t
        elif [ ${OPTARG:0:2} == 'update' ] ; then
          isUpdate=t
-       elif [ ${OPTARG%=*} = "qa-home" ] ; then
-         QA_HOME=${OPTARG#*=}
+       elif [ ${OPTARG%=*} = "qa-tables" -o ${OPTARG%=*} = "qa-home" ] ; then
+         QA_TABLES=${OPTARG#*=}
        elif [ ${OPTARG%=*} = "qa-src" ] ; then
          QA_SRC=${OPTARG##*=}
        fi
@@ -599,13 +599,13 @@ do
   esac
 done
 
-if [ ! ${QA_HOME} ] ; then
+if [ ! ${QA_TABLES} ] ; then
   echo "could not cd ${HOME}"
   return 41
 fi
 
 currPWD=$(pwd)
-cd $QA_HOME &> /dev/null
+cd $QA_TABLES &> /dev/null
 
 # Note that CF may-be stand-alone or together with another project
 if ! . $QA_SRC/scripts/parseConfigFile NEXT_CF_UPDATE --inquire \

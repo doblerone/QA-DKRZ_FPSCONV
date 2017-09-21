@@ -6,7 +6,7 @@ descript()
   echo " -v            Verbose on multiple lines"
   echo " --debug"
   echo " --get-branch  Get the current git branch"
-  echo " --qa-home     Path to the tables"
+  echo " --qa-tables   Path to the tables"
   echo " --verbose     Verbose on multiple lines"
   echo " string        Currrent project"
   exit 0
@@ -16,14 +16,14 @@ getGitBranch()
 {
    #git -C $1 branch | grep '*' | awk '{print $2}'
    cd $1 &> /dev/null
-   
+
    # produces output
    branch=$( git branch | grep '*' | awk '{print $2}' )
-   
+
    currIdent=$(git log --pretty=format:'%h' -n 1)
-   
+
    cd - &> /dev/null
-   
+
    return
 }
 
@@ -40,7 +40,7 @@ getFromConda()
 
 getQA_Version()
 {
-  
+
   # get current revision number; this determines whether it is
   # before a change of defaults happened.
 
@@ -53,7 +53,7 @@ getQA_Version()
     local f=${QA_SRC%/scripts}/conda-recipes/qa-dkrz/meta.yaml
 
     getGitBranch $QA_SRC
-    
+
     tag=$( grep 'name:' $f | awk '{print $(NF)}' )
     tmp2=$( grep 'version:' $f | awk '{print $(NF)}' )
     tmp2=${tmp2:1}
@@ -63,7 +63,7 @@ getQA_Version()
   fi
 
   QA_REVISION="${branch}-${currIdent}${tag:+,${tag}}"
-  
+
   if [ ${isVerbose} ] ; then
     vStr="QA version:"
     vStr="${vStr}\n   branch: ${branch}"
@@ -80,7 +80,7 @@ getExternalVersion()
 {
   local prjs
   declare -a prjs
-  
+
   test ${prj} != CF && prjs[0]=CF
   prjs[${#prjs[*]}]=${prj}
 
@@ -90,15 +90,15 @@ getExternalVersion()
   else
     sep0='|'
   fi
-  
-  local pprj=${QA_HOME}/tables/projects
+
+  local pprj=${QA_TABLES}/tables/projects
   local branch currIdent
-  
+
   for prj in ${prjs[*]} ; do
     if [ ${prj} = CMIP6 ] ; then
        getGitBranch $pprj/CMIP6/CMIP6_CVs
-       
-       #git -C ${QA_HOME}/CMIP6/CMIP6_CVs log --oneline --decorate\
+
+       #git -C ${QA_TABLES}/CMIP6/CMIP6_CVs log --oneline --decorate\
        vStr="${vStr}${sep0}CMIP6_CVs:${sep1}"
        vStr="${vStr}${branch}-${currIdent}"
 
@@ -120,7 +120,7 @@ getExternalVersion()
 		   vStr="${vStr}${sep0}CMOR:${sep1}${i%.json}"
 
          getGitBranch $pprj/CMIP6/cmip6-cmor-tables
-         #git -C ${QA_HOME}/CMIP6/CMIP6_CVs log --oneline --decorate\
+         #git -C ${QA_TABLES}/CMIP6/CMIP6_CVs log --oneline --decorate\
          vStr="${vStr}${sep0}cmip6-cmor-tables:${sep1}${branch}-${currIdent}"
 		fi
     elif [ ${prj} = CORDEX ] ; then
@@ -131,7 +131,7 @@ getExternalVersion()
 
        vStr="${vStr}${sep0}CORDEX/IS-ENES-Data.github.io:${sep1}"
        vStr="${vStr}${branch}-${currIdent}"
-       cd - &> /dev/null       
+       cd - &> /dev/null
     elif [ ${prj} = CF ] ; then
        if [ ${CF_STD_NAME_VERSION} ] ; then
          vStr="${vStr}${sep0}CF_STD_NAME_VERSION:${sep1}"
@@ -171,8 +171,8 @@ do
          exit 0
        elif [ ${OPTARG} == 'help' ] ; then
          descript
-       elif [ ${OPTARG%=*} == 'qa-home' ] ; then
-         QA_HOME=${OPTARG#*=}
+       elif [ ${OPTARG%=*} == 'qa-tables' -o ${OPTARG%=*} == 'qa-home' ] ; then
+         QA_TABLES=${OPTARG#*=}
        elif [ ${OPTARG} == 'verbose' ] ; then
          isVerbose=t
        fi
