@@ -9,6 +9,7 @@
 # return 1 for a new/updated parameter, a mismatch, disable, a set variable, not defined,
 #          or when today is older than the scheduled next time
 
+set -x
 isNextDate()
 {
    local t_conf_day t_conf_date
@@ -77,18 +78,14 @@ readCF()
    uCF_blkBeg=0
    sz=0 # number in the file, not in the block
    local uCF_is=f
-   local noSection=t
 
    while read line ; do
-       if [ "${uCF_is}" = t -a ! "${line}" ] ; then
-          noSection=f
-          break
-       fi
-
        sz=$((sz + 1))
 
-       if expr match "$line" '^[[:space:]]*#' > /dev/null ; then
-         continue
+       if [ "${uCF_is}" = t ] ; then
+          test ! "${line}" && break
+       elif expr match "$line" '^[[:space:]]*#' > /dev/null ; then
+          continue
        fi
 
        if [ "${line}" = ${QA_SRC}: ] ; then
@@ -104,50 +101,38 @@ readCF()
                line=${line/==/=}
            done
 
+           # backward-comp.: QA_HOME --> QA_TABLES
+           test "${line/QA_HOME/}" != "${line}" && line="${line/QA_HOME/QA_TABLES}"
+
            uCF_lines[${#uCF_lines[*]}]="${line}"
            export eval ${line}
        fi
 
    done < ${CONFIG_FILE}
 
-   test ${sz} -gt 0 && uCF_blkEnd=${sz}
-
    # append a new section and a particular default for auto-update
-   local n=1
+   local n=0
    if [ ${uCF_blkBeg} -eq 0 ] ; then
-       if [ ${#line} -eq 0 -o ${noSection} = t ] ; then
-          echo ''                            >> $CONFIG_FILE
+       if [ ${sz} -gt 0 ] ; then
           n=2
+          echo ''         >> $CONFIG_FILE
+       else
+          n=1
        fi
-       echo "${QA_SRC}:"                     >> $CONFIG_FILE
 
-#      echo AUTO_UPDATE=enabled              >> $CONFIG_FILE
-#      uCF_lines[${#uCF_lines[*]}]="AUTO_UPDATE=enabled"
-
-#      echo DEFAULT_PROJECT=$defaultProject  >> $CONFIG_FILE
-#      uCF_lines[${#uCF_lines[*]}]=DEFAULT_PROJECT="${defaultProject}"
-
-       local n=2
-#       if [ ${CONDA_QA_PATH} ] ; then
-#         local today=$( date '+%Y%m%d' )
-#         echo NEXT_QA_UPDATE=${today} >> $CONFIG_FILE
-#         last=$(( $(date -d ${today} '+%s') - 1 ))
-#         uCF_lines[${#uCF_lines[*]}]=NEXT_QA_UPDATE="${today}"
-#         n=$((n+1))
-#       fi
-
-      uCF_blkBeg=$((sz+n))
-      uCF_blkEnd=$uCF_blkBeg
+       echo "${QA_SRC}:"  >> $CONFIG_FILE
    fi
+
+   export uCF_blkBeg=$(( uCF_blkBeg + n ))
+
+   #first line after the block
+   export uCF_blkEnd=$(( uCF_blkBeg + ${#uCF_lines[*]} ))
 
    # export array as single lines
    local i
    for(( i=0 ; i < ${#uCF_lines[*]} ; ++i )) ; do
       export uCF_line_${i}="${uCF_lines[i]}"
    done
-
-   export uCF_blkBeg
-   export uCF_blkEnd
 
    return 0
 }
@@ -231,7 +216,7 @@ updateConfFile()
        fi
        # else: match
      elif [ "${param_value}" ] ; then
-       lineNum=$((uCF_blkBeg+i+2))
+       lineNum=$((uCF_blkBeg+i+1))
        sed -i "${lineNum} c${param}" $CONFIG_FILE &> /dev/null
        uCF_lines[i]="${param_name}=${param_value}"
        status=1
