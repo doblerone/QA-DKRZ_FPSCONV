@@ -33,7 +33,7 @@ getHomePath()
 
       test ! ${QA_TABLES} && QA_TABLES=${dpath}
 
-      local i
+      local i j
       for i in 1 2 3 ; do
         if [ ${i} -eq 3 ] ; then
           echo "Could not mkdir QA_TABLES=${QA_TABLES}."
