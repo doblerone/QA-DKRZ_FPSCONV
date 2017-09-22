@@ -190,6 +190,7 @@ def clearInq(qa_var_path, fBase, logfile):
 
 
 def final():
+
     # only the summary of previous runs
     if not ( qaOpts.isOpt('NO_SUMMARY') or qaOpts.isOpt('SHOW') ):
         # remove duplicates
@@ -241,6 +242,9 @@ def final():
 
 def get_all_logfiles():
     f_logs=[]
+    if qaOpts.isOpt('SHOW_EXP'):
+        isShowExp=True
+        lfn_var={}
 
     while True:
         try:
@@ -253,8 +257,25 @@ def get_all_logfiles():
             break
         else:
             sub_path = data_path[g_vars.prj_dp_len+1:]
-            f_logs.append( qa_util.get_experiment_name(g_vars, qaOpts, fB=fBase,
-                                            sp=sub_path) )
+            f_log = qa_util.get_experiment_name(g_vars, qaOpts, fB=fBase,
+                                            sp=sub_path)
+            if isShowExp:
+                if f_log in lfn_var.keys():
+                    if not sub_path in lfn_var[f_log]:
+                        lfn_var[f_log].append(sub_path)
+                else:
+                    lfn_var[f_log] = [ sub_path ]
+
+            f_logs.append( f_log )
+
+    if isShowExp:
+        for key in lfn_var.keys():
+            print '\nLogfile-name: ' + key
+
+            for p in lfn_var[key]:
+                print '   Variable: ' + p
+
+        sys.exit(0)
 
     return f_logs
 
@@ -371,6 +392,11 @@ def get_version():
     sys.exit(0)
 
 def run():
+
+    if qaOpts.isOpt("SHOW_EXP"):
+        f_log = get_all_logfiles()
+        sys.exit(0)
+
     if qaOpts.isOpt('SHOW') or qaOpts.isOpt('NEXT'):
         g_vars.thread_num = 1
 
@@ -394,7 +420,19 @@ def run():
 
     isNoPath=True
 
+    is_next_var=False
+    if qaOpts.isOpt('NEXT_VAR'):
+        is_next_var=True
+        next_var=qaOpts.getOpt('NEXT_VAR')
+        count_next_var=0
+
     while True:
+
+        if is_next_var:
+            if count_next_var == next_var:
+                break
+
+            count_next_var += 1
 
         try:
             # fBase: list of filename bases corresponding to variables;
@@ -432,6 +470,8 @@ def run():
 
     if g_vars.thread_num > 1:
         queue.join()
+
+    launch_list[0].printStatusLine()
 
     return
 

@@ -170,6 +170,9 @@ class QaOptions(object):
                 if key == 'NEXT' and val == True:
                     args.NEXT = 1
                     val = 1
+                if key == 'NEXT_VAR' and val == True:
+                    args.NEXT_VAR = 1
+                    val = 1
 
                 if key == 'QA_TABLES':
                     self.qa_tables=val
@@ -216,6 +219,7 @@ class QaOptions(object):
         if args.DISPLAY_VERSION:   _ldo['DISPLAY_VERSION']   = args.DISPLAY_VERSION
         if args.DRYRUN:            _ldo['DRY_RUN']           = True
         if args.NEXT  > 0:         _ldo['NEXT']              = args.NEXT
+        if args.NEXT_VAR > 0: _ldo['NEXT_VAR']     = args.NEXT_VAR
         if args.QA_EXAMPLE:        _ldo['QA_EXAMPLE']        = args.QA_EXAMPLE
         if args.STATUS_LINE:       _ldo['STATUS_LINE']       = args.STATUS_LINE
         if args.SHOW_CALL:         _ldo['SHOW_CALL']         = args.SHOW_CALL
@@ -335,6 +339,10 @@ class QaOptions(object):
             help="display: next atomic variable (#done/#all).")
 
         parser.add_argument('-n', '--next', dest='NEXT',
+            type=int, nargs='?', default=0, const=1,
+            help="Proceed for a limited number of variables, unlimited by default.")
+
+        parser.add_argument('-nv', '--next_variable', dest='NEXT_VAR',
             type=int, nargs='?', default=0, const=1,
             help="Proceed for a limited number of variables, unlimited by default.")
 
@@ -624,7 +632,7 @@ class QaOptions(object):
                             if pos == -1:
                                 key=line.upper()
                                 val='t'
-                                if key == 'NEXT':
+                                if key == 'NEXT' or key == 'NEXT_VAR':
                                     val=1
                                 elif key == 'SHOW_NEXT':
                                     val=1

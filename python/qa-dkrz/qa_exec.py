@@ -42,6 +42,11 @@ class QaExec(object):
         self.len_beg  = len(self.beg)
         self.len_end  = len(self.end)
 
+        self.max_sz_status_line=0
+
+        self.isStatusLine=False
+        if self.qaOpts.isOpt('STATUS_LINE'):
+            self.isStatusLine=True
 
     def getParamStr(self, t_vars, show=''):
         par =  ' -p ' + t_vars.data_path
@@ -452,6 +457,25 @@ class QaExec(object):
         return check_output
 
 
+    def printStatusLine(self, nc=''):
+        if self.isStatusLine:
+            if len(nc):
+                void, f = os.path.split(nc)
+
+                if len(f) > self.max_sz_status_line:
+                    self.max_sz_status_line = len(f)
+                else:
+                    print '\r' + (6+self.max_sz_status_line)*' ',
+
+                print '\rNEXT: ' + f ,
+            else:
+                print '\r' + (6+self.max_sz_status_line)*' ' ,
+
+            sys.stdout.flush()
+
+        return
+
+
     def run(self, t_vars):
 
         qa_lock = os.path.join(t_vars.var_path,
@@ -460,6 +484,8 @@ class QaExec(object):
             return False
 
         self.nc_file = os.path.join(t_vars.data_path, t_vars.fName)
+
+        self.printStatusLine(nc=self.nc_file)
 
         if self.qaOpts.isOpt('DRY_RUN'):
             print self.nc_file
