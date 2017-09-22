@@ -4578,9 +4578,10 @@ QA_Exp::getMIP_tableName(std::string tName)
 
       (void) notes->operate(capt) ;
       pQA->setExitState( notes->getExitState() ) ;
+
+      QA::tableID.clear();
     }
 
-    QA::tableID.clear();
     return QA::tableID;
   }
 

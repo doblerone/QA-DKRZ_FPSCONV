@@ -1202,20 +1202,23 @@ cpTables()
    if [ ${key/CHECK_LIST/} != ${key} ] ; then
       # Concatenate (may-be just a copy of a single file) existing check-lists.
       # Is any of the files newer than the destination?
-      dest=$TABLE_PATH/$pTable
-      #local dest_mT
-      #dest_mT=$( $QA_SRC/bin/fModTime.x ${dest} )
-
-      #local dest_modTime=$($QA_SRC/bin/fModTime.x ${dest} 2> /dev/null )
-
       local pD
       for pD in ${pDir[*]} ; do
          src=$pD/$fTable
 
          if [ -f ${src}  ] ; then
-            #local src_modTime=$($QA_SRC/bin/fModTime.x ${src} )
-            #test ${src_modTime} -gt ${dest_modTime} 2> /dev/null && cat $src >> $dest
-            cat $src >> $dest
+            if [ ${prj_from} = ${prj_to} ] ; then
+               dest=$TABLE_PATH/$pTable
+            else
+               dest=$TABLE_PATH/$fTable
+               mv $TABLE_PATH/$pTable $dest
+
+               # exchange properties of corresponding project file
+               setKWL ${key}=${fTable}
+            fi
+
+            cat $src $dest > $dest.$$
+            mv $dest.$$ $dest
             break
          fi
       done
@@ -1231,6 +1234,7 @@ cpTables()
                dest=$TABLE_PATH/$pTable
             else
                dest=$TABLE_PATH/$fTable
+               rm -f  $TABLE_PATH/$pTable
 
                # exchange properties of corresponding project file
                setKWL ${key}=${fTable}
