@@ -67,7 +67,6 @@ checkInstallation()
 }
 
 # -------  main -----
-
 if tty -s ; then TTY=$(tty) ; fi
 
 test $# -eq 0 && descript
