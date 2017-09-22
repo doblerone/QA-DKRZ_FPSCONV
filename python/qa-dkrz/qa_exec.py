@@ -113,7 +113,7 @@ class QaExec(object):
         par += ':f=' + t_vars.qaFN
         par += ':fS=' + t_vars.seq_pos
 
-        if qaOpts.isOpt('APPLY_MAXIMUM_DATE_RANGE', inq_bool=True):
+        if qaOpts.isOpt('APPLY_MAXIMUM_DATE_RANGE'):
             par += ':aMDR'
         elif qaOpts.isOpt('APPLY_MAXIMUM_DATE_RANGE'):
             par += ':aMDR=' + qaOpts.getOpt('APPLY_MAXIMUM_DATE_RANGE')

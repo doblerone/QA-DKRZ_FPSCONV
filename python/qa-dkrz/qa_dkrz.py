@@ -33,9 +33,9 @@ from qa_summary import LogSummary
 # for options on the command-line as well as in configuration files
 qaOpts=QaOptions(QA_SRC)
 
-if not qaOpts.isOpt('PROJECT') and not qaOpts.isOpt('ONLY_SUMMARY'):
-    print 'PROJECT option is missing'
-    sys.exit(1)
+#if not qaOpts.isOpt('PROJECT') and not qaOpts.isOpt('ONLY_SUMMARY'):
+#    print 'PROJECT option is missing'
+#    sys.exit(1)
 
 # struct like classes containing variables
 class GlobalVariables(object):
@@ -149,12 +149,12 @@ def clearInq(qa_var_path, fBase, logfile):
             # only pass those that are locked; redo erroneous cases
             if len( glob.glob(os.path.join(qa_var_path, fBase + '.clear') )):
                 isClear = True
-        elif qa_util.s_rstrip(f, sep='=') == 'level':
+        elif qa_util.rstrip(f, sep='=') == 'level':
             # clear specified level
-            f=qa_util.s_lstrip(f, sep='=') + '-'
-        elif f.find('=') > -1 and qa_util.s_rstrip(f, '=') == 'tag':
+            f=qa_util.lstrip(f, sep='=') + '-'
+        elif f.find('=') > -1 and qa_util.rstrip(f, '=') == 'tag':
             # e.g. 'L1-${tag}: where tag=CF_12 would match CF_12, CF_12x etc.
-            f='[\w]*-*' + qa_util.s_lstrip(f, sep='=') + '.*: '
+            f='[\w]*-*' + qa_util.lstrip(f, sep='=') + '.*: '
 
             fls = glob.glob(os.path.join(qa_var_path, 'qa_note_' + fBase +'*') )
             fls.extend(glob.glob(os.path.join(qa_var_path, 'qa_lock_' + fBase +'*') ))
@@ -343,6 +343,33 @@ def get_next_variable(data_path, fBase, fNames):
     return lst
 
 
+def get_version():
+    if not qaOpts.isOpt('DISPLAY_VERSION'):
+        return
+
+    com_line_opts={}
+
+    # this is mandatory
+    com_line_opts["SECTION"] = qaOpts.getOpt("QA_SRC")
+
+    if qaOpts.isOpt('CFG_FILE'):
+        com_line_opts["CONFIG_FILE"]=qaOpts.getOpt('CFG_FILE')
+
+    if not qaOpts.dOpts['DISPLAY_VERSION'] == 't':
+        com_line_opts["VERBOSE"] = True
+
+    if qaOpts.isOpt('PROJECT'):
+        com_line_opts["PROJECT"] = qaOpts.getOpt("PROJECT")
+
+    if qaOpts.isOpt('CONDA_PATH'):
+        com_line_opts["IS_CONDA"] = True
+
+    import qa_version
+    rev = qa_version.get_version( qaOpts.dOpts, com_line_opts)
+
+    print rev
+    sys.exit(0)
+
 def run():
     if qaOpts.isOpt('SHOW') or qaOpts.isOpt('NEXT'):
         g_vars.thread_num = 1
@@ -529,6 +556,8 @@ def testLock(t_vars, fBase):
 if 'QA_EXAMPLE' in qaOpts.dOpts:
     runExample()
     sys.exit(0)
+
+get_version()
 
 qa_init.run(log, g_vars, qaOpts)
 

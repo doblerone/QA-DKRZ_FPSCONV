@@ -909,7 +909,7 @@ def split(s,ssep):
     return splts
 
 
-def s_lstrip(s, sep='/', pat='', max=1):
+def lstrip(s, sep='/', pat='', max=1):
     if len(pat):
         if pat == '##':
             max=1000
@@ -930,7 +930,7 @@ def s_lstrip(s, sep='/', pat='', max=1):
     return s
 
 
-def s_rstrip(s, sep=' ', pat='', max=1):
+def rstrip(s, sep=' ', pat='', max=1):
     if len(pat):
         if pat == '%%':
             max=1000

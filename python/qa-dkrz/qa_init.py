@@ -16,7 +16,7 @@ import qa_util
 
 def cpTables(key, fTable, tTable, tTable_path, qaOpts, prj_from, prj_to, pDir):
 
-    qaHome = qaOpts.getOpt('QA_HOME')
+    qaTables = qaOpts.getOpt('QA_TABLES')
 
     if len(pDir) == 0:
         if prj_from == prj_to:
@@ -52,16 +52,33 @@ def cpTables(key, fTable, tTable, tTable_path, qaOpts, prj_from, prj_to, pDir):
         dest_modTime = qa_util.f_get_mod_time(dest)
 
         for pD in pDir:
-            src = os.path.join(qaHome, pD, fTable)
+            src = os.path.join(qaTables, pD, fTable)
             if os.path.isfile(src):
-                if qa_util.f_get_mod_time(src) > dest_modTime:
-                    qa_util.cat(src, dest)
-                    break
+                if prj_from == prj_to:
+                    dest= os.path.join(tTable_path, tTable)
+                else:
+                    dest= os.path.join(tTable_path, fTable)
+                    tmp=os.path.join(tTable_path, tTable)
+
+                    try:
+                        os.rename(tmp, dest)
+                    except:
+                        print 'qa_init.cpTables(): could not rename(tmp, dest)'
+                    else:
+                        # the file of PROJECT_VIRT first
+                        d = [src, dest]
+                        qa_util.cat(d, dest)
+
+                    # exchange properties of a corresponding project file
+                    qaOpts.addOpt(key, fTable)
+
+                break
+
     else:
         # just copy the file with highest precedence; there should only
         # be a single one for each kind of table
         for pD in pDir:
-            src = os.path.join(qaHome, pD, fTable)
+            src = os.path.join(qaTables, pD, fTable)
 
             if os.path.isfile(src):
                 if prj_from == prj_to:
@@ -169,7 +186,7 @@ def init_tables(g_vars, qaOpts):
 
         # find corresponding tables in the virtual project
         vTables={}
-        pHT=os.path.join(qaOpts.getOpt('QA_HOME'), 'tables', prj_from)
+        pHT=os.path.join(qaOpts.getOpt('QA_TABLES'), 'tables', prj_from)
         for key in tables.keys():
             name = tables[key]
             if name.find(prj_to) > -1:
@@ -192,7 +209,7 @@ def rsync_default_tables(g_vars, qaOpts):
    if not os.path.isdir(g_vars.table_path):
       qa_util.mkdirP(g_vars.table_path)
 
-   src_0=os.path.join(qaOpts.getOpt('QA_HOME'), 'tables')
+   src_0=os.path.join(qaOpts.getOpt('QA_TABLES'), 'tables')
    if not src_0:
       src_0=os.path.join(qaOpts.getOpt('QA_SRC'), 'tables')
 
@@ -335,22 +352,6 @@ def run_install(qaOpts, g_vars):
    if qaOpts.isOpt("PROJECT"):
       prj = qaOpts.getOpt("PROJECT")
 
-   if qaOpts.isOpt('DISPLAY_VERSION'):
-      v_arg = '--config-file=' + qaOpts.getOpt('CFG_FILE')
-
-      if len(qaOpts.getOpt('DISPLAY_VERSION')):
-         v_arg += ' --verbose'
-
-      p = os.path.join(g_vars.qa_src, 'scripts', 'getVersion')
-      p += ' ' + v_arg
-
-      try:
-         subprocess.check_call(p, shell=True)
-      except:
-         sys.exit(41)
-      else:
-         sys.exit(0)
-
    if qaOpts.isOpt('install_args'):
       # extract project item(s)
       if not len(prj):
@@ -369,6 +370,8 @@ def run_install(qaOpts, g_vars):
       p = os.path.join(g_vars.qa_src, 'install')
       if qaOpts.isOpt('install_args'):
          p += ' ' + qaOpts.getOpt('install_args')
+      if not (p.find('up') > -1 or p.find('UP') > -1):
+          p += ' up'
       if len(prj):
          p += ' ' + prj
 
@@ -400,8 +403,8 @@ def run_install(qaOpts, g_vars):
          text += ' up '
          if len(prj):
             text +=  prj
-         #for arg in sys.argv[1:]:
-         #   text += ' ' + arg
+         else:
+            text += ' your-project'
 
          print text
          sys.exit(1)

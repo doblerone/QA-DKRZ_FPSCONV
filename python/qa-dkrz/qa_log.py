@@ -243,7 +243,7 @@ class Log(object):
             blk.append(self.blk_last_line)
 
         for line in fd:
-            line = qa_util.s_rstrip(line, sep='\n')
+            line = qa_util.rstrip(line, sep='\n')
             if len(line) == 0:
                 continue
 

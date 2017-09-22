@@ -48,57 +48,8 @@ class QaOptions(object):
         self.cfg_file=os.path.join(self.home, 'qa.cfg')
 
         self.cfg = CfgFile()
-        self.cfg.read_file( self.cfg_file, section=qa_src)
-        self.cfg_opts = self.getCFG_opts(qa_src) # (multiple) ..._qa.conf files
 
-        # dictionaries with options( precedence: high --> low)
-        self.commandLineOpts( self.create_parser() )
-        self.ldOpts.append( self.cfg_opts )  # config file in HOME/.qa-conf
-        self.readQA_CONF_files()
-        self.setDefault()
-
-        self.backward_compat()
-        self.mergeOptions()
-
-        self.finalSelLoc()
-
-        # modify definitions if P_AS is set: P_AS --> P and P --> P_DRVD
-        if 'PROJECT_AS' in self.dOpts:
-            if 'PROJECT' in self.dOpts:
-                # sequence matters
-                self.addOpt('PROJECT_VIRT', self.dOpts['PROJECT'])
-                self.addOpt('PROJECT', self.dOpts['PROJECT_AS'])
-            else:
-                self.addOpt('PROJECT_VIRT', self.dOpts['PROJECT'])
-                self.addOpt('PROJECT', self.dOpts['DEFAULT_PROJECT'])
-
-            self.project_virt = self.dOpts['PROJECT_VIRT']
-            self.delOpt('PROJECT_AS')
-
-        if not self.isOpt('PROJECT'):
-            self.addOpt('PROJECT', self.dOpts['DEFAULT_PROJECT'])
-
-        self.project = self.dOpts['PROJECT']
-
-        # the location of tables must be known before config files are analysed.
-        self.copyDefaultTables()
-
-        # find valid projects
-        self.definedProjects=[]
-        lst=[]
-        if not len(self.definedProjects):
-            p_prj = os.path.join(qa_src, 'tables', 'projects')
-            lst = os.listdir(p_prj)
-
-            for itm in lst:
-               if os.path.isdir(os.path.join(p_prj, itm)):
-                  self.definedProjects.append(itm)
-
-        # if any opt is a SHOW_...
-        for key in self.dOpts.keys():
-            if key[:4] == 'SHOW':
-                self.dOpts['SHOW'] = True
-                break
+        self.run()
 
         self.ldOpts=[] # free mem
         self.lSelect=[]
@@ -220,8 +171,10 @@ class QaOptions(object):
                     args.NEXT = 1
                     val = 1
 
+                if key == 'QA_TABLES':
+                    self.qa_tables=val
                 if key == 'QA_HOME':
-                    self.qa_home=val
+                    self.qa_tables=val
 
                 # convert comma-sep val to list
                 #if repr(type(val)).find('str') > -1:
@@ -254,18 +207,13 @@ class QaOptions(object):
         if args.PROJECT_AS != None: _ldo['PROJECT_AS'] = args.PROJECT_AS
         if args.TASK       != None: _ldo['TASK']       = args.TASK
         if args.UPDATE     != None: _ldo['UPDATE']     = args.UPDATE
-        if args.QA_HOME    != None: _ldo['QA_HOME']    = args.QA_HOME
+        if args.QA_TABLES    != None: _ldo['QA_TABLES']    = args.QA_TABLES
 
         if args.SHOW_NEXT > 0:
             _ldo['NEXT']      = args.SHOW_NEXT
             args.SHOW_CALL = True
 
-        if args.DISPLAY_VERSION != None:
-            if args.DISPLAY_VERSION == 'brief':
-               _ldo['DISPLAY_VERSION'] = ''
-            elif len(args.DISPLAY_VERSION):
-               _ldo['DISPLAY_VERSION'] = args.DISPLAY_VERSION
-
+        if args.DISPLAY_VERSION:   _ldo['DISPLAY_VERSION']   = args.DISPLAY_VERSION
         if args.DRYRUN:            _ldo['DRY_RUN']           = True
         if args.NEXT  > 0:         _ldo['NEXT']              = args.NEXT
         if args.QA_EXAMPLE:        _ldo['QA_EXAMPLE']        = args.QA_EXAMPLE
@@ -298,8 +246,8 @@ class QaOptions(object):
            if args.AUTO_UP == 'enable':
                str0 += '--force' + ','
                _ldo['AUTO_UPDATE'] = 'enable'
-        if args.QA_HOME != None:
-            str0 += '--qa_home=' + args.QA_HOME + ','
+        if args.QA_TABLES != None:
+            str0 += '--qa_tables=' + args.QA_TABLES + ','
         if args.INSTALL:
             lst = args.INSTALL.split(',')
             if args.AUTO_UP == None:
@@ -324,8 +272,8 @@ class QaOptions(object):
         3. User applications will wget external tables.
         Solution: the tables are copied to another location writable by the user.
             i) The home directory by default.
-           ii) A directory QA_HOME. If i) is not possible or other persons
-               should share the same set of tables, then use option --qa-home=path.
+           ii) A directory QA_TABLES. If i) is not possible or other persons
+               should share the same set of tables, then use option --qa-tables=path.
                When there is no tables, yet --> copy from QA_SRC:
         '''
 
@@ -333,7 +281,7 @@ class QaOptions(object):
         src=os.path.join(self.qaSrc, 'tables')
 
         if os.path.isdir(src):
-            dest=self.getOpt('QA_HOME')
+            dest=self.getOpt('QA_TABLES')
 
             if not dest:
                dest=os.path.join(self.home, 'tables')
@@ -396,7 +344,8 @@ class QaOptions(object):
         parser.add_argument('--project_as', '--project-as', dest = 'PROJECT_AS',
             help= "Use assigned project for processing but PROJECT name is kept.")
 
-        parser.add_argument( '--qa_home', '--QA_HOME',  dest='QA_HOME',
+        parser.add_argument( '--qa_tables', '--QA_TABLES', '--qa_home', '--QA_HOME',
+            dest='QA_TABLES',
             help='''Path to tables, HOME/.qa-dkrz/tables by default.''')
 
         parser.add_argument('-S', '--select', dest='CL_S',
@@ -423,7 +372,7 @@ class QaOptions(object):
             help="Passed to install")
 
         parser.add_argument('--version',
-            nargs='?',  const='brief', dest='DISPLAY_VERSION',
+            nargs='?',  const='t', dest='DISPLAY_VERSION',
             help='Display version information of QA_DKRZ and tables.')
 
         parser.add_argument( '--work', dest='QA_RESULTS',
@@ -569,9 +518,9 @@ class QaOptions(object):
         return ( lp, lv)
 
 
-    def isOpt(self, key, inq_bool=False, dct={}):
+    def isOpt(self, key, dct={}):
         # a) an option exists, then return True, but,
-        # b) the type is bool and inq_bool isTrue, return the value
+        # b) if the type is bool, then return the value
         if len(dct):
             curr_dct = dct
         else:
@@ -582,13 +531,10 @@ class QaOptions(object):
             _type = str(type(val))
 
             if _type.find('bool') > -1:
-               # is bool
-               if inq_bool:
-                  return val
-               else:
-                  return True
+                return val
             else:
-               return True
+                if not val == 'f':
+                    return True
 
         return False
 
@@ -619,6 +565,7 @@ class QaOptions(object):
 
 
     def readQA_CONF_files(self):
+
         # list config files, if any.
         lCfgFiles=[]
 
@@ -640,6 +587,10 @@ class QaOptions(object):
             _ldo = self.ldOpts[len(self.ldOpts)-1]
 
             if len(cfg):
+                if not os.path.isfile(cfg):
+                    print 'no such file'+cfg
+                    sys.exit(1)
+
                 with open(cfg, 'r') as f:
                     select=''
                     lock=''
@@ -739,6 +690,75 @@ class QaOptions(object):
         return
 
 
+    def run(self):
+        self.cfg.read_file( self.cfg_file, section=self.qaSrc)
+        self.cfg_opts = self.getCFG_opts(self.qaSrc) # (multiple) ..._qa.conf files
+
+        # dictionaries with options( precedence: high --> low)
+        self.commandLineOpts( self.create_parser() )
+        self.ldOpts.append( self.cfg_opts )  # config file in HOME/.qa-conf
+
+        # backward-compatibility
+        if not self.isOpt("QA_TABLES", dct=self.cfg_opts):
+            if self.isOpt("QA_HOME", dct=self.cfg_opts):
+                self.cfg_opts["QA_TABLES"] = self.cfg_opts["QA_HOME"]
+                self.cfg.entry("QA_HOME", value='d')
+                self.cfg.entry("QA_TABLES", value=self.cfg_opts["QA_TABLES"])
+
+        if self.isOpt("QA_TABLES", dct=self.cfg_opts):
+            self.readQA_CONF_files()
+
+        self.setDefault()
+
+        self.backward_compat()
+        self.mergeOptions()
+
+        self.finalSelLoc()
+
+        # modify definitions if P_AS is set: P_AS --> P and P --> P_DRVD
+        if 'PROJECT_AS' in self.dOpts:
+            if 'PROJECT' in self.dOpts:
+                # sequence matters
+                self.addOpt('PROJECT_VIRT', self.dOpts['PROJECT'])
+                self.addOpt('PROJECT', self.dOpts['PROJECT_AS'])
+            else:
+                self.addOpt('PROJECT_VIRT', self.dOpts['PROJECT'])
+                self.addOpt('PROJECT', self.dOpts['DEFAULT_PROJECT'])
+
+            self.project_virt = self.dOpts['PROJECT_VIRT']
+            self.delOpt('PROJECT_AS')
+
+        if not self.isOpt('PROJECT') and self.isOpt('DEFAULT_PROJECT'):
+            self.addOpt('PROJECT', self.dOpts['DEFAULT_PROJECT'])
+
+        self.project = self.getOpt('PROJECT')
+
+        if not self.isOpt("QA_TABLES", dct=self.cfg_opts):
+            return  # ramifications are caught later
+
+        # the location of tables must be known before config files are analysed.
+        self.copyDefaultTables()
+
+        # find valid projects
+        self.definedProjects=[]
+        lst=[]
+        if not len(self.definedProjects):
+            p_prj = os.path.join(self.qaSrc, 'tables', 'projects')
+            lst = os.listdir(p_prj)
+
+            for itm in lst:
+                if os.path.isdir(os.path.join(p_prj, itm)):
+                    self.definedProjects.append(itm)
+
+        # if any opt is a SHOW_...
+        for key in self.dOpts.keys():
+            if key[:4] == 'SHOW':
+                self.dOpts['SHOW'] = True
+                break
+
+        return
+
+
     def searchQA_CONF_chain(self, fName, lCfgFiles):
         if len(fName) == 0:
             # note that project_as is among the default table names
@@ -753,7 +773,7 @@ class QaOptions(object):
                 self.dOpts['PROJECT'] = self.project
 
         lCfg=[]
-        prfx=os.path.join(self.cfg_opts["QA_HOME"], 'tables')
+        prfx=os.path.join(self.cfg_opts["QA_TABLES"], 'tables')
 
         if len(self.project_as):
             prj=self.project_as
@@ -790,7 +810,7 @@ class QaOptions(object):
         _ldo['MAIL']='mailx'
         _ldo['NUM_EXEC_THREADS']=1
         _ldo['PROJECT_DATA']='./'
-        _ldo['QA_HOME']=os.path.join(self.home, 'tables')
+        _ldo['QA_TABLES']=os.path.join(self.home, 'tables')
         _ldo['QA_HOST']=socket.gethostname()
         _ldo['QA_RESULTS']=os.getcwd()
         _ldo['REATTEMPT_LIMIT']=5
@@ -902,34 +922,57 @@ class CfgFile(object):
       if len(file):
          self.file = file
 
-      # any valid conf-file written by a ConfigParser?
-      (path, tail)=os.path.split(self.file)
+      # for .qa.cfg formatted (new)
+      (path, new)=os.path.split(self.file)
+
+      # as long as installation/update stuf is done by bash scripts,
+      # the old config file format has precedence
+      old = os.path.join(path, 'config.txt' )
+      isOld2New=False
+      isOld=False
+      isNew=False
+
+      if os.path.isfile(old):
+        isOld=True
 
       if os.path.isfile(self.file):
+        isNew=True
+      else:
+        isOld2New=True
+
+      if isNew and isOld:
+        old_modTime = qa_util.f_get_mod_time(old)
+        new_modTime = qa_util.f_get_mod_time(self.file)
+
+        if old_modTime > new_modTime:
+            isOld2New=True
+
+      if isOld2New:
+         # conversion
+         with open(old) as r:
+            self.isModified=True
+
+            for line in r:
+                line = qa_util.clear_line(line)
+                if len(line):
+                    sz1=len(line)-1
+
+                    if line[sz1] == ':' :
+                        ny_sect=line[0:sz1] # rm ':'
+                        self.rCP.add_section(ny_sect)
+                    else:
+                        k, v = line.split('=')
+
+                        # some backward compatibility
+                        if k == "QA_HOME":
+                            k = "QA_TABLES"
+
+                        self.rCP.set(ny_sect, k, repr(v))
+      else:
          # read a file created by a self.rCP instance
          self.rCP.read(self.file)
          self.isModified=False
 
-      else:
-         old = os.path.join(path, 'config.txt' )
-
-         if os.path.isfile(old):
-         # note config.txt is a file not created  by self.rCP,
-         # conversion.
-            with open(old) as r:
-               self.isModified=True
-
-               for line in r:
-                  line = qa_util.clear_line(line)
-                  if len(line):
-                     sz1=len(line)-1
-
-                     if line[sz1] == ':' :
-                        ny_sect=line[0:sz1] # rm ':'
-                        self.rCP.add_section(ny_sect)
-                     else:
-                        k, v = line.split('=')
-                        self.rCP.set(ny_sect, k, repr(v))
       return
 
 
