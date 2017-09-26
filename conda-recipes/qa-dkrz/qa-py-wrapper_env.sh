@@ -4,4 +4,4 @@ SCRIPTPATH=`dirname ${SCRIPT}`
 
 export QA_PATH=`cd "${SCRIPTPATH}/../opt/qa-dkrz" && pwd -P`
 
-exec ${QA_PATH}/python/qa-dkrz.py $*
+exec ${QA_PATH}/python/qa-dkrz/qa-dkrz.py $*
