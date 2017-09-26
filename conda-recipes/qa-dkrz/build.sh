@@ -22,6 +22,7 @@ cp -r ./example ${QA_SRC}
 cp -r ./src ${QA_SRC}
 cp -r ./include ${QA_SRC}
 cp -r ./scripts ${QA_SRC}
+cp -r ./python ${QA_SRC}
 cp -r ./tables ${QA_SRC}
 cp install ${QA_SRC}
 cp Makefile ${QA_SRC}
