@@ -32,8 +32,8 @@ touch ${QA_SRC}/.ignore_GitHub # avoids git update!
 # run build
 #touch .ignore_GitHub # avoids git update!
 export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg -lssl -lcrypto"
-QA_HOME=/hdh/hdh/Test/HOME
-./install --debug --conda-build --net=no --cf --qa-src=$QA_SRC --qa-home="$QA_HOME" CF CMIP5 CMIP6 CORDEX
+QA_TABLES=/hdh/hdh/QA_HOME
+./install --debug --conda-build --net=no --cf --qa-src=$QA_SRC --qa-tables="$QA_TABLES" CF CMIP5 CMIP6 CORDEX
 
 # copy generated files to opt/qa-dkrz
 #cp -r ./bin ${QA_SRC}
@@ -59,5 +59,6 @@ done
 # install wrapper script in bin/ to call cfchecker and qa-dkrz
 cp $RECIPE_DIR/cfchecker-wrapper_env.sh $PREFIX/bin/dkrz-cf-checker
 cp $RECIPE_DIR/qa-wrapper_env.sh $PREFIX/bin/qa-dkrz
+cp $RECIPE_DIR/qa-py-wrapper_env.sh $PREFIX/bin/qa-dkrz.py
 
 chmod +x $PREFIX/bin
