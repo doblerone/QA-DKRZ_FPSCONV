@@ -45,21 +45,6 @@ class ThreadVariables(object):
     # determined at every get_next_variable() call
     pass
 
-g_vars = GlobalVariables()
-t_vars = ThreadVariables()
-
-g_vars.qa_src = QA_SRC
-g_vars.isConda = isCONDA
-g_vars.pid = str(os.getpid())
-
-log = Log(qaOpts.dOpts)
-
-if isCONDA:
-    qaOpts.addOpt('CONDA', True)
-
-# obj for getting and iteration next path
-getPaths = GetPaths(qaOpts.dOpts)
-
 def clear(qa_var_path, fBase, logfile):
 
     if qaOpts.isOpt('CLEAR_LOGFILE'):
@@ -590,26 +575,37 @@ def testLock(t_vars, fBase):
     return False
 
 
-
-# -------- main --------
-
-if 'QA_EXAMPLE' in qaOpts.dOpts:
-    runExample()
-    sys.exit(0)
-
-get_version()
-
-qa_init.run(log, g_vars, qaOpts)
-
-# the checks
-if not qaOpts.getOpt('ONLY_SUMMARY'):
-    run()
-
-final()
-
 if __name__ == '__main__':
+    g_vars = GlobalVariables()
+    t_vars = ThreadVariables()
+
+    g_vars.qa_src = QA_SRC
+    g_vars.isConda = isCONDA
+    g_vars.pid = str(os.getpid())
+
+    log = Log(qaOpts.dOpts)
+
+    if isCONDA:
+        qaOpts.addOpt('CONDA', True)
+
+    # obj for getting and iteration next path
+    getPaths = GetPaths(qaOpts.dOpts)
+
+    if 'QA_EXAMPLE' in qaOpts.dOpts:
+        runExample()
+        sys.exit(0)
+
+    get_version()
+
+    qa_init.run(log, g_vars, qaOpts)
+
+    # the checks
+    if not qaOpts.getOpt('ONLY_SUMMARY'):
+        run()
+
+    final()
+
     if 'SHOW_CONF' in qaOpts.dOpts:
         for opt in qa_util.get_sorted_options(qaOpts.dOpts):
             # opt: key=value
             print opt
-
