@@ -304,13 +304,14 @@ def run(log, g_vars, qaOpts):
             qaOpts.addOpt('CHECKSUM', True)
 
     # save current version id to the cfg-file
+    '''
     if qaOpts.isOpt('QA_REVISION'):
       qv=qaOpts.getOpt('QA_REVISION')
     else:
       qv = qa_util.get_curr_revision(g_vars.qa_src, g_vars.isConda)
       qaOpts.cfg.entry(key='QA_REVISION', value=qv)
-
     g_vars.qa_revision = qv
+    '''
 
     # table path and copy of tables for operational runs
     init_tables(g_vars, qaOpts)
@@ -361,7 +362,18 @@ def run_install(qaOpts, g_vars):
                prj = ia
                break
 
-   if qaOpts.isOpt("AUTO_UPDATE") or qaOpts.isOpt("UPDATE"):
+   isUp=False
+
+   if qaOpts.isOpt("AUTO_UP"):
+        if qaOpts.dOpts["AUTO_UP"][0] == 'e':
+            isUp=True
+   if qaOpts.isOpt("UPDATE"):
+        if qaOpts.dOpts["UPDATE"] == 'never':
+            isUp=False
+        else:
+            isUp=True
+
+   if isUp:
       # checksum of the current qa_dkrz.py
       # list of python scripts
       (p5, f) = os.path.split(sys.argv[0])
@@ -370,8 +382,9 @@ def run_install(qaOpts, g_vars):
       p = os.path.join(g_vars.qa_src, 'install')
       if qaOpts.isOpt('install_args'):
          p += ' ' + qaOpts.getOpt('install_args')
-      if not (p.find('up') > -1 or p.find('UP') > -1):
-          p += ' up'
+
+      if not (p.find('up') > -1 or p.find('UP') > -1 ):
+          p += ' --up'
       if len(prj):
          p += ' ' + prj
 
@@ -392,21 +405,21 @@ def run_install(qaOpts, g_vars):
       p = os.path.join(g_vars.qa_src, 'install')
       p += ' ' + '--inq-tables'
       if len(prj):
-         p += ' ' + prj
+          p += ' ' + prj
 
       try:
-         subprocess.check_call(p, shell=True)
+          subprocess.check_call(p, shell=True)
       except:
-         text = '\nExternal tables are missing or not up to date.'
-         text += '\nPlease, run: '
-         text += os.path.join(qaOpts.getOpt('QA_SRC'), 'install')
-         text += ' up '
-         if len(prj):
-            text +=  prj
-         else:
-            text += ' your-project'
+          text = '\nExternal tables are missing or not up to date.'
+          text += '\nPlease, run: '
+          text += os.path.join(qaOpts.getOpt('QA_SRC'), 'install')
+          text += ' up '
+          if len(prj):
+              text +=  prj
+          else:
+              text += ' your-project'
 
-         print text
-         sys.exit(1)
+          print text
+          sys.exit(1)
 
    return

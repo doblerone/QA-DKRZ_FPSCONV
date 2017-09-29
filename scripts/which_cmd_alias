@@ -22,7 +22,7 @@ this_which()
       lines=( $(grep alias ${f[i]}) )
       lines=( ${lines[*]} $(grep ' \. ' ${f[i]}) )
       lines=( ${lines[*]} $(grep ' source ' ${f[i]}) )
-      
+
       IFS="${saveIFS}"
 
       unset f[i]
@@ -76,7 +76,7 @@ this_which()
     done
 
     if [ ${#found[*]} -eq 0 ] ; then
-      echo "no such command or alias $1" > /dev/stderr
+      test ${isQuiet:-f} = f && echo "no such command or alias $1"
       return 1
     fi
 
@@ -84,7 +84,17 @@ this_which()
   return 0
 }
 
-this_which $*
+declare -a args
+
+for arg in $* ; do
+  if [ "${arg}" = '-q' ] ; then
+    isQuiet=t
+  else
+    args[${#args[*]}]="$arg"
+  fi
+done
+
+this_which ${args[*]}
 
 exit $?
 

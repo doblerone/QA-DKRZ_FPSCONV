@@ -1185,7 +1185,7 @@ run_CMOR_LLNL()
      --variable ${variable%%_*} \
      ${mip_table} \
      ${file} 2>&1 \
-     | python ${QA_SRC}/python/qa-dkrz/convertPipedCMOR_output.py )"
+     | python ${QA_SRC}/python/qa-dkrz/qa_convert_cmor_output.py)"
 
   local i
   local on=f

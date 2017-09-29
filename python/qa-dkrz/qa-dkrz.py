@@ -16,6 +16,7 @@ import copy
 
 import qa_util
 import qa_init
+import qa_version
 
 from Queue import Queue
 from threading import Thread
@@ -27,15 +28,6 @@ from qa_util import GetPaths
 from qa_launcher import QaLauncher
 from qa_exec import QaExec
 from qa_summary import LogSummary
-
-(isCONDA, QA_SRC) = qa_util.get_QA_SRC(sys.argv[0])
-
-# for options on the command-line as well as in configuration files
-qaOpts=QaOptions(QA_SRC)
-
-#if not qaOpts.isOpt('PROJECT') and not qaOpts.isOpt('ONLY_SUMMARY'):
-#    print 'PROJECT option is missing'
-#    sys.exit(1)
 
 # struct like classes containing variables
 class GlobalVariables(object):
@@ -349,15 +341,14 @@ def get_next_variable(data_path, fBase, fNames):
     return lst
 
 
-def get_version():
-    if not qaOpts.isOpt('DISPLAY_VERSION'):
-        return
+def get_version(qaOpts):
 
     com_line_opts={}
 
     # this is mandatory
     com_line_opts["SECTION"] = qaOpts.getOpt("QA_SRC")
 
+    '''
     if qaOpts.isOpt('CFG_FILE'):
         com_line_opts["CONFIG_FILE"]=qaOpts.getOpt('CFG_FILE')
 
@@ -369,12 +360,19 @@ def get_version():
 
     if qaOpts.isOpt('CONDA_PATH'):
         com_line_opts["IS_CONDA"] = True
+    '''
 
-    import qa_version
-    rev = qa_version.get_version( qaOpts.dOpts, com_line_opts)
+    rev = qa_version.get_version( opts=qaOpts.dOpts,
+                                  com_line_opts=com_line_opts)
 
-    print rev
-    sys.exit(0)
+    qaOpts.dOpts["QA_REVISION"] = rev
+
+    if qaOpts.isOpt('DISPLAY_VERSION'):
+        print rev
+        sys.exit(0)
+
+    return
+
 
 def run():
 
@@ -576,6 +574,11 @@ def testLock(t_vars, fBase):
 
 
 if __name__ == '__main__':
+    (isCONDA, QA_SRC) = qa_util.get_QA_SRC(sys.argv[0])
+
+    # for options on the command-line as well as in configuration files
+    qaOpts=QaOptions(QA_SRC)
+
     g_vars = GlobalVariables()
     t_vars = ThreadVariables()
 
@@ -595,9 +598,9 @@ if __name__ == '__main__':
         runExample()
         sys.exit(0)
 
-    get_version()
-
     qa_init.run(log, g_vars, qaOpts)
+
+    get_version(qaOpts)
 
     # the checks
     if not qaOpts.getOpt('ONLY_SUMMARY'):

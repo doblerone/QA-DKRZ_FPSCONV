@@ -434,6 +434,12 @@ THIS=${0%/*}
 # is it in a conda built?
 . ${QA_SRC}/scripts/getCondaPath
 
+# convert AUTO_UPDATE --> UPDATE=automatic
+if . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE ; then
+   . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=disable
+   . ${QA_SRC}/scripts/parseConfigFile UPDATE=automatic
+fi
+
 OPTIND=
 while getopts BdhT:-: option ${sArgs[*]}
 do
@@ -448,17 +454,25 @@ do
     T)  TTY="${OPTARG}" ;;
     -)  OPTVAL=${OPTARG#*=}
         OPTNAME=${UOPTARG%%=*}
+        test ${OPTARG/=/} = ${OPTARG} && OPTVAL=''
 
         if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
-          for OV in ${OPTVAL//,/ } ; do
-            tr_option OV
-            if [ ${OV:0:1} = D -o ${OV:0:1} = F -o ${OV:0:1} = S ] ; then
-              OV=disable
+           OV=$OPTVAL}
+           tr_option OV
+            . ${QA_SRC}/scripts/parseConfigFile UPDATE
+
+            if [ "${OV:0:1}" = D -o "${OV:0:1}" = F -o "${OV:0:1}" = S ] ; then
+              # disable
+              if [ "${UPDATE}" = 'automatic' ] ; then
+                 . ${QA_SRC}/scripts/parseConfigFile UPDATE=disable
+              fi
             else
-              OV=enable
+              # enable
+              if [ "${UPDATE}" != 'automatic' ] ; then
+                 . ${QA_SRC}/scripts/parseConfigFile UPDATE=automatic
+              fi
+              isUpdate=t
             fi
-            . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=${OV}
-          done
           continue
         elif [ "${OPTNAME}" = BUILD ] ; then
           isBuild=t
@@ -497,6 +511,8 @@ do
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
           isLink=t
         elif [ "${OPTNAME}" = NET ] ; then
+          test ! ${OPTVAL} && OPTVAL='E'
+
           OPTVAL=$( echo "${OPTVAL}" | tr "[:lower:]" "[:upper:]" )
           if [ ${OPTVAL:0:1} = Y -o ${OPTVAL:0:1} = E -o ${OPTVAL:0:1} = T ] ; then
              OPTVAL=t
@@ -520,7 +536,10 @@ do
           default_prj=${OPTVAL}
           continue
         elif [ "${OPTNAME:0:2}" = UP ] ; then
+          . ${QA_SRC}/scripts/parseConfigFile UPDATE=${OPTVAL:-schedule}
+
           isUpdate=t
+          test "${OPTVAL:0:1}" = 'd' -o "${OPTVAL:0:1}" = 'D' && isUpdate=f
           continue
         elif [ "${OPTNAME:0:1}" = U ] ; then
           name_0=${OPTNAME%%_*}
@@ -586,7 +605,9 @@ for pck in $* ; do
   fi
 done
 
-. ${QA_SRC}/scripts/getTablesPath
+if ! . ${QA_SRC}/scripts/getTablesPath ; then
+  exit 41
+fi
 
 . ${QA_SRC}/scripts/parseConfigFile DEFAULT_PROJECT${default_prj:+=${default_prj}}
 test ${#projects[*]} -eq 0 && projects=(${default_prj})

@@ -206,11 +206,12 @@ class QaOptions(object):
                 _ldo[key] = val
 
         # special: long-opts
+        if args.AUTO_UP    != None: _ldo['AUTO_UP']    = args.AUTO_UP
         if args.PROJECT    != None: _ldo['PROJECT']    = args.PROJECT
         if args.PROJECT_AS != None: _ldo['PROJECT_AS'] = args.PROJECT_AS
         if args.TASK       != None: _ldo['TASK']       = args.TASK
         if args.UPDATE     != None: _ldo['UPDATE']     = args.UPDATE
-        if args.QA_TABLES    != None: _ldo['QA_TABLES']    = args.QA_TABLES
+        if args.QA_TABLES  != None: _ldo['QA_TABLES']  = args.QA_TABLES
 
         if args.SHOW_NEXT > 0:
             _ldo['NEXT']      = args.SHOW_NEXT
@@ -243,28 +244,31 @@ class QaOptions(object):
 
             _ldo['SELECT'] = str0
 
-        # collect for passing to install.py
+        # collect for passing to QA-DKRZ/install.
         str0=''
-        if args.AUTO_UP    != None:
-           self.cfg.entry('AUTO_UPDATE', args.AUTO_UP)
-           if args.AUTO_UP == 'enable':
-               str0 += '--force' + ','
-               _ldo['AUTO_UPDATE'] = 'enable'
-        if args.QA_TABLES != None:
-            str0 += '--qa_tables=' + args.QA_TABLES + ','
         if args.INSTALL:
             lst = args.INSTALL.split(',')
-            if args.AUTO_UP == None:
-               _ldo['UPDATE'] = 'enable'
-            for st in lst:
-               str0 += '--' + st + ','
-        if args.UPDATE:
-            if args.AUTO_UP == None:
-               str0 += '--up' + ','
-            _ldo['UPDATE'] = 'enable'
 
-        if len(str0): # with trailing ',' deleted
-            _ldo['install_args']=str0[0:len(str0)-1]
+            for l in lst:
+                ll = l.lower()
+                if len(str0) > 0:
+                    str0 += ','
+
+                if l[0:2] != '--':
+                    str0 += '--'
+                str0 += l
+
+        if args.QA_TABLES != None:
+            if len(str0) > 0:
+                str0 += ','
+            str0 += '--qa_tables=' + args.QA_TABLES
+
+        if args.AUTO_UP != None:
+            if len(str0) > 0:
+                str0 += ','
+            str0 += '--auto=' + args.AUTO_UP
+
+        _ldo['install_args']=str0
 
         return
 
@@ -309,7 +313,7 @@ class QaOptions(object):
             )
 
         parser.add_argument( '--auto-up', '--auto_up','--auto-update',
-            '--auto_update',
+            '--auto_update', '--auto',
             nargs='?', const='enable', dest='AUTO_UP',
             help="Passed to install")
 
@@ -375,9 +379,15 @@ class QaOptions(object):
             type=int, nargs='?', default=0, const=1, dest='SHOW_NEXT',
             help="Show the N next path/file for executaion [N=1].")
 
+        '''
         parser.add_argument( '--up', '--update',
             dest='UPDATE', action="store_true",
             help="Passed to install")
+        '''
+
+        parser.add_argument('--up', '--update', dest='UPDATE',
+            nargs='?',  const='schedule',
+            help='auto | [schedule] | force | never: Run with QA_DKRZ/install.')
 
         parser.add_argument('--version',
             nargs='?',  const='t', dest='DISPLAY_VERSION',
@@ -818,7 +828,7 @@ class QaOptions(object):
         _ldo['MAIL']='mailx'
         _ldo['NUM_EXEC_THREADS']=1
         _ldo['PROJECT_DATA']='./'
-        _ldo['QA_TABLES']=os.path.join(self.home, 'tables')
+        # _ldo['QA_TABLES']=os.path.join(self.home, 'tables')
         _ldo['QA_HOST']=socket.gethostname()
         _ldo['QA_RESULTS']=os.getcwd()
         _ldo['REATTEMPT_LIMIT']=5
@@ -947,6 +957,9 @@ class CfgFile(object):
         isNew=True
       else:
         isOld2New=True
+
+      if not isNew and not isOld:
+          return  #from scratch
 
       if isNew and isOld:
         old_modTime = qa_util.f_get_mod_time(old)

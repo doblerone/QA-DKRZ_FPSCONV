@@ -101,7 +101,9 @@ readCF()
            done
 
            # backward-comp.: QA_HOME --> QA_TABLES
-           test "${line/QA_HOME/}" != "${line}" && line="${line/QA_HOME/QA_TABLES}"
+           if [ "${line%%=*}" = "QA_HOME" ] ; then
+              line=QA_TABLES="${line#*=}"
+           fi
 
            uCF_lines[${#uCF_lines[*]}]="${line}"
            export eval ${line}

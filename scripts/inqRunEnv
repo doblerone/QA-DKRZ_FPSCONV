@@ -147,11 +147,11 @@ iRE_findLatestPrePARE()
 {
   local i cc pp pp_all pp_no_pkgs latest_conda
   declare -a cc pp pp_all pp_no_pkgs
-  pp_all=( $(. ${QA_SRC}/scripts/which_cmd_alias PrePARE ) )
+  pp_all=( $(. ${QA_SRC}/scripts/which_cmd_alias -q PrePARE ) )
 
   if [ ${#pp_all[*]} -eq 0 ] ; then
     # try with existing conda(s)
-    cc=( $(. ${QA_SRC}/scripts/which_cmd_alias conda ) )
+    cc=( $(. ${QA_SRC}/scripts/which_cmd_alias -q conda ) )
     if [ ${#cc[*]} -gt 1 ] ; then
        iRE_findLatestFile latest_conda ${cc[*]}
     else
@@ -186,6 +186,7 @@ iRE_findLatestPrePARE()
   fi
 
   # does PrePARE work?
+  export UVCDAT_ANONYMOUS_LOG=no
   $PrePARE -h &> /dev/null
 
   if [ $? -gt 1 ] ; then
@@ -215,6 +216,7 @@ iRE_inqState()
          -NEXT_QA_UPDATE \
          +QA_TABLES \
          -QA_REVISION \
+         -UPDATE \
        )
 
 if [ ! ${NO_CONDA_INSTALL} ] ; then
@@ -432,7 +434,7 @@ iRE_inqRunEnv()
              exit 1
           fi
 
-          PrePARE=$( which PrePARE 2> /dev/null )
+          PrePARE=$( which -q PrePARE 2> /dev/null )
 
           . ${QA_SRC}/scripts/parseConfigFile PrePARE=$PrePARE
           . ${CONDA_CMOR_PATH%/conda}/deactivate

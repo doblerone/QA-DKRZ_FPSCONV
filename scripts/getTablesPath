@@ -1,5 +1,7 @@
 getTablesPath()
 {
+  retVal=0
+
   export CONFIG_FILE
 
   if [ ! ${CONFIG_FILE} ] ; then
@@ -21,6 +23,8 @@ getTablesPath()
   else
     # take QA_TABLES from the config file, if it exists.
     if ! . $QA_SRC/scripts/parseConfigFile QA_TABLES ; then
+      retVal=41
+
       local dpath
       if [ ${CONDA_QA_PATH} ] ; then
          dpath="~/.qa_home/QA_TABLES"
@@ -60,9 +64,10 @@ getTablesPath()
     fi
   fi
 
-  return
+  return $retVal
 }
 
 # main
 
 getTablesPath
+return $retVal

@@ -2798,14 +2798,30 @@ init()
   fi
 
   # package update requested and required?
-  if [ ! ${UPDATE} ] ; then
+  if [ ! "${UPDATE}" ] ; then
     if . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE${AUTO_UP:+=}${AUTO_UP} ; then
-      UPDATE=t
+      isUp=t
+    fi
+
+    if . $QA_SRC/scripts/parseConfigFile UPDATE ; then
+      if [ "${UPDATE}" = 'never' ] ; then
+        isUp=''
+      else
+        isUp=t
+      fi
     fi
   fi
 
+  isInq=t
+  if ! . $QA_SRC/scripts/parseConfigFile QA_TABLES ; then
+    isInq=''
+  elif ! . $QA_SRC/scripts/parseConfigFile QA_HOME ; then
+    isInq=''
+  fi
+
   local prj=${PROJECT}
-  if [ ${#installArgs} -gt 0 ] ; then
+
+  if [ "${installArgs}" ] ; then
     local iA_args iA_arg
     declare -a iA_args
     iA_args=(${installArgs//,/ })
@@ -2818,7 +2834,7 @@ init()
     done
   fi
 
-  if [ ${UPDATE} ] ; then
+  if [ ${isUp} ] ; then
     # checksum of current qa-dkrz
     local md5_0
     md5_0=$( md5sum ${QA_SRC}/scripts/qa-dkrz | awk '{print $1}' )
@@ -2838,8 +2854,9 @@ init()
        std_out flush "could not install ${prj}"
        exit 1
     fi
-  elif ! . $QA_SRC/scripts/inqRunEnv --read-only ${prj} ; then
-      # get the state of the current installation: read config-file
+  elif ${isInq} ; then
+      if ! . $QA_SRC/scripts/inqRunEnv --read-only ${prj} ; then
+        # get the state of the current installation: read config-file
         local installArg
         if [ ${INSTALL_ARGS} ] ; then
            installArg="${INSTALL_ARGS}up${prj:+,${prj}}"
@@ -2850,6 +2867,7 @@ init()
         echo -e "\nMissing external tables/executabels."  > $TTY
         echo "Please, run: $0 --install=${installArg} ${comLineArgs[*]}"  > $TTY
         exit 1
+      fi
   fi
 
   test ${STOP_AFTER_INSTALL} && exit 0

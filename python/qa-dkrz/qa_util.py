@@ -41,8 +41,8 @@ class GetPaths(object):
         # may contain several RegExp expressions.
 
         # SELECT
-        self.selVar  = dOpts['SELECT_VAR_LIST']
-        self.selPath = dOpts['SELECT_PATH_LIST']
+        self.selVar  = copy.deepcopy(dOpts['SELECT_VAR_LIST'])
+        self.selPath = copy.deepcopy(dOpts['SELECT_PATH_LIST'])
 
         # maximum non-regExp path to data for each SELECTion;
         # starting point for walking
@@ -136,13 +136,13 @@ class GetPaths(object):
 
 
     def getBasePaths(self, pd):
-        self.base_path = []
+        base_path = []
         pp_ix=-1
         sz = len(self.selPath)
         if sz:
             for i in range(sz):
-                self.base_path.append(pd)
-                pp_len = len(self.base_path[i])
+                base_path.append(pd)
+                pp_len = len(base_path[i])
                 pp_ix += 1
 
                 # split into path components
@@ -157,8 +157,8 @@ class GetPaths(object):
                         if re_obj:
                             if re_obj.group(0) == item:
                                 # extend the base path
-                                self.base_path[pp_ix] = os.path.join(
-                                        self.base_path[pp_ix], item)
+                                base_path[pp_ix] = os.path.join(
+                                        base_path[pp_ix], item)
                             else:
                                 # found item with a regExp (or glob) component
                                 isCont=False
@@ -166,16 +166,17 @@ class GetPaths(object):
                     else:
                         recomb = os.path.join(recomb, item)
 
-                if len(self.base_path[i]) != pp_len:
+                if len(base_path[i]) < pp_len:
                     # adjust the SELECTion path; it is shorter
                     self.selPath[i] = recomb
         else:
             h, t = os.path.split(pd)
 
-            self.base_path.append(h)
+            base_path.append(h)
             self.selPath = [t]
             self.selVar  = ['.*']
 
+        self.base_path = base_path
 
         return
 
@@ -729,75 +730,49 @@ def get_str_tail(str0, sep='/'):
 
 
 def get_QA_SRC(path):
-    p, discard = os.path.split(path)
-    pp, discard = os.path.split(p)
+    # the root of QA_SRC contains
+    #   a) scripts/qa-dkrz
+    #   b) python/qa-dkrz/qa-dkrz.py
 
-    if os.access( os.path.join(pp, 'conda-meta'), os.F_OK):
-        return (True, os.path.join(p, 'qa-dkrz') )  # true: installed by CONDA
+    # is argv[0] called by a plain name?
+    head, tail = os.path.split(path)
+    if len(head) == 0:
+        target=os.path.join(os.getcwd(), tail)
+        return get_QA_SRC(target)
 
-    target=''
+    p, name = os.path.split(path)
+    pp, tail_b = os.path.split(p)
+    ppp, tail_p = os.path.split(pp)
 
-    if path[0] == '/':
-        target = path
-    else:
-        target=os.getcwd()
+    if not p[0] == '.':
+        if tail_b == 'scripts':
+            return (False, pp)
+        elif tail_p == 'python':
+            return (True, ppp)
+
+    target=path
+
+    if target[0] == '.' or target.find('/.') > -1:
+        old_path=os.getcwd()
+        os.chdir(p)     # remove . and .. anywhere in the path
+        target=os.path.join(os.getcwd(), tail)
+        os.chdir(old_path)
 
     if os.path.islink(target):
-        link=os.readlink(target)
+        target=os.readlink(target)
 
         # link is relative, so make it absolute
-        if link[0] != '/':
-            link = os.path.join(os.path.dirname(target),link)
+        if target[0] != '/':
+            target = os.path.join(os.path.dirname(target),target)
 
-        get_QA_SRC(link)
-    elif os.access(target, os.R_OK):
-        # a real instance, at first resolve .. and .
-        # works also for . or .. in the middle of the path
-        (target, tail) = os.path.split(target)
-
-        if target[0] == '/':
-            arr=target[1:].split('/')
-        else:
-            arr=target.split('/')
-
-        for i in range(1,len(arr)):
-            if arr[i] == '.':
-                arr[i]=''
-            elif arr[i] == '..':
-                j = i-1
-                while not len(arr[j]):
-                    j -= 1
-
-                arr[i]=''
-                arr[j]=''
-
-        # get rid of empty items
-        brr=[]
-        for i in range(0,len(arr)):
-            if len(arr[i]):
-                brr.append(arr[i])
-
-        tmp=''
-        count=0
-        for i in range(0,len(brr)):
-            count+=1
-            tmp += '/' + brr[i]
-
-            if os.path.isfile(tmp + '/.install_configure'):
-                return (False, tmp)
-
-        if count == len(brr):
-            isInvalid=True
-    else:
-        isInvalid=True
-
-    if isInvalid:
-        if os.path.islink(target):
-            print 'broken link ' + path
-        else:
-            print 'invalid path=' + path
-
+        if not os.path.exists(target):
+            print 'broken link ' + target
+            sys.exit(1)
+    elif not os.path.exists(target):
+        print 'invalid path=' + target
         sys.exit(1)
+
+    return get_QA_SRC(target)
 
     return (False, '')
 
