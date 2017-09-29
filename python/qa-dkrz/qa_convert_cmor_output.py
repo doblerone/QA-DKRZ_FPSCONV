@@ -1,4 +1,3 @@
-#! /hdh/local/miniconda/bin/python
 
 import sys
 

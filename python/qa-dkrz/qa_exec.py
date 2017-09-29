@@ -631,7 +631,8 @@ class QaExec(object):
 
 #        convert = os.path.join(self.g_vars.qa_src, "python",
 #                               "qa-dkrz", "convertPipedCMOR_output.py")
-        convert = os.path.join(self.g_vars.qa_src, "python",
+        convert="python "
+        convert += os.path.join(self.g_vars.qa_src, "python",
                                "qa-dkrz", "qa_convert_cmor_output.py")
 
         try:
