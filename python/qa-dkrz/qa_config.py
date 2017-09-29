@@ -217,10 +217,10 @@ class QaOptions(object):
             _ldo['NEXT']      = args.SHOW_NEXT
             args.SHOW_CALL = True
 
-        if args.DISPLAY_VERSION:   _ldo['DISPLAY_VERSION']   = args.DISPLAY_VERSION
+        if args.SHOW_VERSION:      _ldo['SHOW_VERSION']      = True
         if args.DRYRUN:            _ldo['DRY_RUN']           = True
         if args.NEXT  > 0:         _ldo['NEXT']              = args.NEXT
-        if args.NEXT_VAR > 0: _ldo['NEXT_VAR']     = args.NEXT_VAR
+        if args.NEXT_VAR > 0:      _ldo['NEXT_VAR']          = args.NEXT_VAR
         if args.QA_EXAMPLE:        _ldo['QA_EXAMPLE']        = args.QA_EXAMPLE
         if args.STATUS_LINE:       _ldo['STATUS_LINE']       = args.STATUS_LINE
         if args.SHOW_CALL:         _ldo['SHOW_CALL']         = args.SHOW_CALL
@@ -390,7 +390,7 @@ class QaOptions(object):
             help='auto | [schedule] | force | never: Run with QA_DKRZ/install.')
 
         parser.add_argument('--version',
-            nargs='?',  const='t', dest='DISPLAY_VERSION',
+            action="store_true", dest='SHOW_VERSION',
             help='Display version information of QA_DKRZ and tables.')
 
         parser.add_argument( '--work', dest='QA_RESULTS',

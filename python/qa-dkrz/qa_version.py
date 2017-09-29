@@ -39,7 +39,7 @@ class GetVersion(object):
 
 
     def get_external_version(self, prj):
-        if self.isOpt("VERBOSE"):
+        if self.isOpt("SHOW_VERSION"):
             sep0='\n'
             sep1='\n   '
         else:
@@ -197,7 +197,7 @@ class GetVersion(object):
                             break
 
 
-        if self.isOpt("VERBOSE"):
+        if self.isOpt("SHOW_VERSION"):
             rev = "QA version:"
             if len(tag):
                 rev += '\n   tag: ' + tag
@@ -311,7 +311,7 @@ def commandLineOpts(parser):
     if args.is_get_branch:       _ldo['GET_BRANCH']    = True
     if args.PROJECT    != None:  _ldo['PROJECT']       = args.PROJECT.split(',')
     if args.SECTION    != None:  _ldo['SECTION']       = args.SECTION
-    if args.is_verbose:          _ldo['VERBOSE']       = True
+    if args.SHOW_VERSION:        _ldo['SHOW_VERSION']  = True
 
     return _ldo
 
@@ -339,7 +339,7 @@ def create_parser():
         action="store_true",
         help="The config-file of QA-DKRZ")
 
-    parser.add_argument( '--verbose' , '-v', dest='is_verbose',
+    parser.add_argument( '--verbose' , '-v', dest='SHOW_VERSION',
         action="store_true", help="verbose")
 
     return parser

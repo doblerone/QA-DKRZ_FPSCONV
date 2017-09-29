@@ -348,11 +348,11 @@ def get_version(qaOpts):
     # this is mandatory
     com_line_opts["SECTION"] = qaOpts.getOpt("QA_SRC")
 
-    '''
-    if qaOpts.isOpt('CFG_FILE'):
-        com_line_opts["CONFIG_FILE"]=qaOpts.getOpt('CFG_FILE')
+    if qaOpts.isOpt('SHOW_VERSION'):
+        com_line_opts["SHOW_VERSION"]=True
 
-    if not qaOpts.dOpts['DISPLAY_VERSION'] == 't':
+    '''
+    if not qaOpts.dOpts['SHOW_VERSION'] == 't':
         com_line_opts["VERBOSE"] = True
 
     if qaOpts.isOpt('PROJECT'):
@@ -367,7 +367,7 @@ def get_version(qaOpts):
 
     qaOpts.dOpts["QA_REVISION"] = rev
 
-    if qaOpts.isOpt('DISPLAY_VERSION'):
+    if qaOpts.isOpt('SHOW_VERSION'):
         print rev
         sys.exit(0)
 
