@@ -251,11 +251,9 @@ ges_cmip6()
       status=$?
    fi
 
-if [ ! ${NO_CONDA_INSTALL} ] ; then
    if ! ges_cmip6_conda ; then
       status=$?
    fi
-fi
 
    if ! ges_cmip6_cmor ; then
       status=$?

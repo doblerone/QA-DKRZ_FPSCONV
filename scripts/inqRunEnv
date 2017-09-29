@@ -219,13 +219,10 @@ iRE_inqState()
          -UPDATE \
        )
 
-if [ ! ${NO_CONDA_INSTALL} ] ; then
   # extend for CONDA installation
   if [ ${CONDA_QA_PATH} ] ; then
-    rname[${#rname[*]}]=-CONDA_QA_PATH
-    #rname[${#rname[*]}]=+CONDA_QA_ENV
+     rname[${#rname[*]}]=-CONDA_QA_PATH
   fi
-fi
 
   # extend for current projects
   for(( i=0 ; i < ${#prj[*]} ; ++i )) ; do
@@ -234,13 +231,11 @@ fi
     if [ ${prj[i]} = CMIP6 ] ; then
       isCMIP6=t
 
-if [ ! ${NO_CONDA_INSTALL} ] ; then
       rname[${#name[*]}]=+PrePARE
-#      rname[${#rname[*]}]=+UDUNITS2_XML_PATH
-      rname[${#rname[*]}]=+CONDA_CMOR_ENV
-      rname[${#rname[*]}]=+CONDA_CMOR_PATH
-      rname[${#rname[*]}]=+XLSX2CSV
-fi
+#     rname[${#rname[*]}]=+UDUNITS2_XML_PATH
+      #rname[${#rname[*]}]=+CONDA_CMOR_ENV
+      #rname[${#rname[*]}]=+CONDA_CMOR_PATH
+       rname[${#rname[*]}]=+XLSX2CSV
     fi
   done
 
@@ -263,11 +258,9 @@ fi
 
   test ${isRO:-f} = t -o ${upCount} = 0 && return ${upCount}
 
-  if [ ! ${NO_CONDA_INSTALL} ] ; then
-    iRE_scanCondaEnv qa-dkrz
-    iRE_scanCondaEnv PrePARE
+  iRE_scanCondaEnv qa-dkrz
+  iRE_scanCondaEnv PrePARE
 #   iRE_scanCondaEnv udunits2.xml
-  fi
 
   return
 }
@@ -314,16 +307,6 @@ iRE_scanCondaEnv()
     fi
   fi
 
-#  if [ $1 = udunits2.xml ] ; then
-#    if [ ! ${CMIP6} -o "${UDUNITS2_XML_PATH}" ] ; then
-#       return
-#    else
-#      paths=( $( find ${PrePARE%/bin/PrePARE} -type f -name "udunits2.xml" ) )
-#      . ${QA_SRC}/scripts/parseConfigFile UDUNITS2_XML_PATH=${paths[0]}
-#      return
-#    fi
-#  fi
-
   if [ $1 = qa-dkrz ] ; then
      CONDA_QA_ENV=${env}
      . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=${CONDA_QA_ENV}
@@ -332,10 +315,10 @@ iRE_scanCondaEnv()
         . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_PATH=${CONDA_QA_PATH}
   elif [ $1 = PrePARE ] ; then
      CONDA_CMOR_ENV=${env}
-     . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${CONDA_CMOR_ENV}
+     # . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${CONDA_CMOR_ENV}
 
-     test ${CONDA_CMOR_PATH} && \
-     . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_PATH=${CONDA_CMOR_PATH}
+     #test ${CONDA_CMOR_PATH} && \
+     #. ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_PATH=${CONDA_CMOR_PATH}
 
      PrePARE=$path
      . ${QA_SRC}/scripts/parseConfigFile PrePARE=${PrePARE}
@@ -362,8 +345,6 @@ iRE_inqRunEnv()
   done
 
   iRE_inqState ${prj[*]}
-
-#  if [ ! ${NO_CONDA_INSTALL} ] ; then
 
   for pprj in ${prj[*]} ; do
     if [ ${pprj} != CMIP6 ] ; then
@@ -396,6 +377,14 @@ iRE_inqRunEnv()
                   if [ ! -d ${CONDA_CMOR_PATH} ] ; then
                      echo "no such directory ${CONDA_CMOR_PATH}"
                      continue
+                  else
+                     # is the end-point already the cmor name?
+                     last_dir=${CONDA_CMOR_PATH##*/}
+                     if [ "${last_dir}" = 'cmor' ] ; then
+                       CONDA_CMOR_ENV=cmor
+                     elif [ -d ${CONDA_CMOR_PATH}/cmor ] ; then
+                       CONDA_CMOR_ENV=cmor
+                     fi
                   fi
                   ;;
            esac
@@ -412,20 +401,22 @@ iRE_inqRunEnv()
            fi
         done
 
-        while : ; do
-           read -p "Provide your environment name for cmor: STOP: <ENTER>, env: <string>: " \
-                CONDA_CMOR_ENV 2> ${TTY}
+        if [ ${CONDA_CMOR_ENV} ] ; then
+          while : ; do
+             read -p "Provide your environment name for cmor: STOP: <ENTER>, env: <string>: " \
+                  CONDA_CMOR_ENV 2> ${TTY}
 
-           case ${CONDA_CMOR_ENV:0:1} in
-            '') exit 1  ;;
-             *) test ${CONDA_CMOR_ENV} = STOP && exit 0
-                CONDA_CMOR_ENV=${CONDA_CMOR_ENV#*=}
-                ;;
-           esac
+             case ${CONDA_CMOR_ENV:0:1} in
+              '') exit 1  ;;
+               *) test ${CONDA_CMOR_ENV} = STOP && exit 0
+                  CONDA_CMOR_ENV=${CONDA_CMOR_ENV#*=}
+                  ;;
+             esac
 
-           test ${upCount} -gt 0 && upCount=$(( upCount - 1 ))
-           break
-        done
+             test ${upCount} -gt 0 && upCount=$(( upCount - 1 ))
+             break
+          done
+        fi
 
         if [ -f "${CONDA_CMOR_PATH}" ] ; then
           # try the environment

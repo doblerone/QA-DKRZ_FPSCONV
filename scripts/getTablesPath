@@ -23,8 +23,6 @@ getTablesPath()
   else
     # take QA_TABLES from the config file, if it exists.
     if ! . $QA_SRC/scripts/parseConfigFile QA_TABLES ; then
-      retVal=41
-
       local dpath
       if [ ${CONDA_QA_PATH} ] ; then
          dpath="~/.qa_home/QA_TABLES"
@@ -53,6 +51,8 @@ getTablesPath()
         QA_TABLES=${HOME}/.qa-dkrz
         read -p "Do you want to try: ${QA_TABLES} " QA_TABLES 2> ${TTY}
       done
+
+      retVal=0
     fi
 
     if [ -d $QA_TABLES ] ; then

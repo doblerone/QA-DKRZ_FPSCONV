@@ -2768,13 +2768,6 @@ init()
 
   basic_args=( ${basic_args[*]} -E_QA_TABLES=${QA_TABLES} )
 
-  # configuration
-  export NO_CONDA_INSTALL=t
-
-  if [ ! ${NO_CONDA_INSTALL} ] ; then
-    test ${CONDA_QA_ENV} && basic_args=( ${basic_args[*]} -E_CONDA_QA_ENV=${CONDA_QA_ENV} )
-  fi
-
   # check whether tables have been initially copied from QA_SRC to QA_TABLES;
   # if not, then do it.
   if [ ! -d $QA_TABLES/tables ] ; then

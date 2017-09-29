@@ -152,9 +152,8 @@ update()
     isForceUpdate=t  # look for updates
   fi
 
-  # search updates after some days; default: once a day
+  # search updates after a specified number of days; default: once a day
   if [ ${CONDA_QA_PATH} ] ; then
-    if [ ! ${NO_CONDA_INSTALL} ] ; then
       test ! ${CONDA_QA_ENV} && \
         . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV
 
@@ -162,13 +161,12 @@ update()
            ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire
       then
         if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
-                      "${CONDA_QA_PATH}"    "${CONDA_QA_ENV}" ; then
+                      "${CONDA_QA_PATH}"    "${}" ; then
 
           . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
           . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
         fi
       fi
-    fi
   elif [ -d ${QA_SRC}/.git ] ; then
      update_QA_SRC
   fi
@@ -334,7 +332,6 @@ update_QA_SRC()
 
 zeroArg=$0
 initialArgs=($*)
-export NO_CONDA_INSTALL=t
 
 if [ $# -gt 0 ] ; then
   # safe arguments

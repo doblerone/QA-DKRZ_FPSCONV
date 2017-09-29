@@ -1107,22 +1107,6 @@ run_CMOR_LLNL()
 {
   export UVCDAT_ANONYMOUS_LOG=no
 
-#  NO_CONDA_INSTALL=t
-
-#  if [ ${NO_CONDA_INSTALL} ] ; then
-#    source activate ${CONDA_CMOR_ENV} &> /dev/null
-
-#    if which PrePARE &> /dev/null ; then
-#      PrePARE=PrePARE
-#    fi
-#  else
-#    . $QA_SRC/scripts/parseConfigFile PrePARE
-#    if ! source ${PrePARE%/*}/bin/activate ${CONDA_CMOR_ENV:-place_holder} &> /dev/null ; then
-#       PrePARE=
-#    fi
-#    export PATH=${PrePARE%/*}:${PATH}
-#  fi
-
   if [ ! ${PrePARE} ] ; then
     . $QA_SRC/scripts/parseConfigFile PrePARE
     export PATH=${PrePARE%/*}:${PATH}

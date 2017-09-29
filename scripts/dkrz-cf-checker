@@ -50,8 +50,6 @@ checkInstallation()
     touch $CONFIG_FILE
   fi
 
-  export NO_CONDA_INSTALL=t
-
   if ! . $QA_SRC/scripts/inqRunEnv --read-only CF ; then
       # get the state of the current installation: read config-file
         local installArg="--install=force${prj:+,${prj}}"
