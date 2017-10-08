@@ -14,9 +14,9 @@ import re
 
 import qa_util
 
-def cpTables(key, fTable, tTable, tTable_path, qaOpts, prj_from, prj_to, pDir):
+def cpTables(key, fTable, tTable, tTable_path, qaConf, prj_from, prj_to, pDir):
 
-    qaTables = qaOpts.getOpt('QA_TABLES')
+    qaTables = qaConf.getOpt('QA_TABLES')
 
     if len(pDir) == 0:
         if prj_from == prj_to:
@@ -30,7 +30,7 @@ def cpTables(key, fTable, tTable, tTable_path, qaOpts, prj_from, prj_to, pDir):
                 if os.path.isfile( os.path.join(pwd, fTable) ):
                     pDir.append(os.path.join(pwd, fTable))
 
-            if qaOpts.isOpt('USE_STRICT') and prj_from == prj_to:
+            if qaConf.isOpt('USE_STRICT') and prj_from == prj_to:
                 # USE_STRICT: only the project's default directory
                 pDir.append(os.path.join('tables', 'projects', prj_from) )
             else:
@@ -70,7 +70,7 @@ def cpTables(key, fTable, tTable, tTable_path, qaOpts, prj_from, prj_to, pDir):
                         qa_util.cat(d, dest)
 
                     # exchange properties of a corresponding project file
-                    qaOpts.addOpt(key, fTable)
+                    qaConf.addOpt(key, fTable)
 
                 break
 
@@ -87,7 +87,7 @@ def cpTables(key, fTable, tTable, tTable_path, qaOpts, prj_from, prj_to, pDir):
                     dest= os.path.join(tTable_path, fTable)
 
                     # exchange properties of a corresponding project file
-                    qaOpts.addOpt(key, fTable)
+                    qaConf.addOpt(key, fTable)
 
                 if qa_util.f_get_mod_time(src) > qa_util.f_get_mod_time(dest):
                     shutil.copyfile(src,dest)
@@ -97,16 +97,16 @@ def cpTables(key, fTable, tTable, tTable_path, qaOpts, prj_from, prj_to, pDir):
     return
 
 
-def init_session(g_vars, qaOpts):
+def init_session(g_vars, qaConf):
     g_vars.curr_date = qa_util.date()
     g_vars.session   = g_vars.curr_date
     g_vars.session_logdir = os.path.join(g_vars.res_dir_path,
                                 'session_logs', g_vars.curr_date)
 
-    qaOpts.addOpt('SESSION', g_vars.session)
-    qaOpts.addOpt('SESSION_LOGDIR', g_vars.session_logdir)
+    qaConf.addOpt('SESSION', g_vars.session)
+    qaConf.addOpt('SESSION_LOGDIR', g_vars.session_logdir)
 
-    if qaOpts.isOpt('SHOW'):
+    if qaConf.isOpt('SHOW'):
         return
 
     qa_util.mkdirP(g_vars.session_logdir) # error --> exit
@@ -121,10 +121,10 @@ def init_session(g_vars, qaOpts):
     return
 
 
-def init_tables(g_vars, qaOpts):
+def init_tables(g_vars, qaConf):
     TP='TABLE_PATH'
 
-    g_vars.table_path = qaOpts.getOpt(TP)
+    g_vars.table_path = qaConf.getOpt(TP)
     tp_sz = len(g_vars.table_path)
 
     if tp_sz:
@@ -135,7 +135,7 @@ def init_tables(g_vars, qaOpts):
         g_vars.table_path = os.path.join(g_vars.res_dir_path, 'tables')
 
     qa_util.mkdirP(g_vars.table_path)
-    qaOpts.addOpt(TP, g_vars.table_path)
+    qaConf.addOpt(TP, g_vars.table_path)
 
     # Precedence of path search for tables:
     #
@@ -149,44 +149,44 @@ def init_tables(g_vars, qaOpts):
     # 4) option USE_STRICT discards non-default tables.
 
     # rsync of default tables
-    rsync_default_tables(g_vars, qaOpts)
+    rsync_default_tables(g_vars, qaConf)
 
     # collect all table names in a list
     tables={}
 
-    for key in qaOpts.dOpts.keys():
+    for key in qaConf.dOpts.keys():
         tName = ''
 
         # project tables
         if key.find('TABLE') > -1:
-            tName = qaOpts.getOpt(key)
+            tName = qaConf.getOpt(key)
         elif key.find('CHECK_LIST') > -1:
-            tName = qaOpts.getOpt(key)
+            tName = qaConf.getOpt(key)
         elif key.find('CF_') > -1 and key[3] != 'F':
-            tName = qaOpts.getOpt(key)
+            tName = qaConf.getOpt(key)
 
         if len(tName):
             regExp = re.match(r'^[a-zA-Z0-9\._-]*$', tName)
             if regExp:
                 tables[key] = tName
 
-    qaOpts.addOpt('TABLES', tables)
+    qaConf.addOpt('TABLES', tables)
 
-    prj_to=qaOpts.getOpt('PROJECT')
+    prj_to=qaConf.getOpt('PROJECT')
 
     pDir=[]
     for key in tables.keys():
         # for genuine projects
-        cpTables( key, tables[key], tables[key], g_vars.table_path, qaOpts,
+        cpTables( key, tables[key], tables[key], g_vars.table_path, qaConf,
                   prj_to, prj_to, pDir)
 
 
-    if qaOpts.isOpt('PROJECT_VIRT'):
-        prj_from = qaOpts.getOpt('PROJECT_VIRT')
+    if qaConf.isOpt('PROJECT_VIRT'):
+        prj_from = qaConf.getOpt('PROJECT_VIRT')
 
         # find corresponding tables in the virtual project
         vTables={}
-        pHT=os.path.join(qaOpts.getOpt('QA_TABLES'), 'tables', prj_from)
+        pHT=os.path.join(qaConf.getOpt('QA_TABLES'), 'tables', prj_from)
         for key in tables.keys():
             name = tables[key]
             if name.find(prj_to) > -1:
@@ -197,29 +197,30 @@ def init_tables(g_vars, qaOpts):
 
         pDir=[pHT]
         for key in vTables.keys():
-            cpTables( key, vTables[key], tables[key], g_vars.table_path, qaOpts,
+            cpTables( key, vTables[key], tables[key], g_vars.table_path, qaConf,
                       prj_from, prj_to, pDir )
 
     return
 
 
-def rsync_default_tables(g_vars, qaOpts):
+def rsync_default_tables(g_vars, qaConf):
    # copy the default tables to the current session location
 
    if not os.path.isdir(g_vars.table_path):
       qa_util.mkdirP(g_vars.table_path)
 
-   src_0=os.path.join(qaOpts.getOpt('QA_TABLES'), 'tables')
+   src_0=os.path.join(qaConf.getOpt('QA_TABLES'), 'tables')
    if not src_0:
-      src_0=os.path.join(qaOpts.getOpt('QA_SRC'), 'tables')
+      src_0=os.path.join(qaConf.getOpt('QA_SRC'), 'tables')
 
-   if qaOpts.isOpt('PROJECT'):
-      prj=qaOpts.getOpt('PROJECT')
-   elif qaOpts.isOpt('DEFAULT_PROJECT'):
-      prj=qaOpts.getOpt('DEFAULT_PROJECT')
+   if qaConf.isOpt('PROJECT'):
+      prj=qaConf.getOpt('PROJECT')
+   elif qaConf.isOpt('DEFAULT_PROJECT'):
+      prj=qaConf.getOpt('DEFAULT_PROJECT')
    else:
       prj=''
 
+   src=''  # prevent a fatal state below
    if prj:
       # with trailing '/'
       src=os.path.join(src_0, 'projects', prj, '')
@@ -256,82 +257,82 @@ def rsync_default_tables(g_vars, qaOpts):
    return
 
 
-def run(log, g_vars, qaOpts):
+def run(log, g_vars, qaConf):
     #g_vars.TTY = os.ttyname(0)
 
     # update external tables and in case of running qa_dkrz.py from
     # sources update C++ executables
-    run_install(qaOpts, g_vars)
+    run_install(qaConf)
 
-    if qaOpts.isOpt('NUM_EXEC_THREADS'):
+    if qaConf.isOpt('NUM_EXEC_THREADS'):
         g_vars.thread_num = \
-            sum( qa_util.mk_list(qaOpts.getOpt('NUM_EXEC_THREADS')) )
+            sum( qa_util.mk_list(qaConf.getOpt('NUM_EXEC_THREADS')) )
     else:
         g_vars.thread_num = 1
 
-    g_vars.res_dir_path = qaOpts.getOpt('QA_RESULTS')
-    g_vars.project_data_path = qaOpts.getOpt('PROJECT_DATA')
+    g_vars.res_dir_path = qaConf.getOpt('QA_RESULTS')
+    g_vars.project_data_path = qaConf.getOpt('PROJECT_DATA')
     g_vars.prj_dp_len = len(g_vars.project_data_path)
 
-    init_session(g_vars, qaOpts)
+    init_session(g_vars, qaConf)
 
     g_vars.check_logs_path = os.path.join(g_vars.res_dir_path, 'check_logs')
 
     g_vars.cs_enable = False
-    if qaOpts.isOpt('CHECKSUM'):
+    if qaConf.isOpt('CHECKSUM'):
         g_vars.cs_enable = True
-        if qaOpts.isOpt('CHECKSUM', True):
+        if qaConf.isOpt('CHECKSUM', True):
             g_vars.cs_type = 'md5'
         else:
-            g_vars.cs_type = qaOpts.getOpt('CHECKSUM')
+            g_vars.cs_type = qaConf.getOpt('CHECKSUM')
 
-        cs_dir = qaOpts.getOpt('CS_DIR')
+        cs_dir = qaConf.getOpt('CS_DIR')
         if len(cs_dir) == 0:
             cs_dir='cs_table'
         g_vars.cs_dir = os.path.join(g_vars.res_dir_path, cs_dir)
 
-    qaOpts.addOpt('LOG_FNAME_DIR', g_vars.check_logs_path)
+    qaConf.addOpt('LOG_FNAME_DIR', g_vars.check_logs_path)
     qa_util.mkdirP(g_vars.check_logs_path) # error --> exit
 
     qa_util.mkdirP(os.path.join(g_vars.res_dir_path, 'data')) # error --> exit
 
     # some more settings
-    if not qaOpts.isOpt('ZOMBIE_LIMIT'):
-        qaOpts.addOpt('ZOMBIE_LIMIT', 3600)
+    if not qaConf.isOpt('ZOMBIE_LIMIT'):
+        qaConf.addOpt('ZOMBIE_LIMIT', 3600)
 
-    if not qaOpts.isOpt('CHECKSUM'):
-        if qaOpts.isOpt('CS_STAND_ALONE') or qaOpts.isOpt('CS_DIR'):
-            qaOpts.addOpt('CHECKSUM', True)
+    if not qaConf.isOpt('CHECKSUM'):
+        if qaConf.isOpt('CS_STAND_ALONE') or qaConf.isOpt('CS_DIR'):
+            qaConf.addOpt('CHECKSUM', True)
 
     # save current version id to the cfg-file
     '''
-    if qaOpts.isOpt('QA_REVISION'):
-      qv=qaOpts.getOpt('QA_REVISION')
+    if qaConf.isOpt('QA_REVISION'):
+      qv=qaConf.getOpt('QA_REVISION')
     else:
       qv = qa_util.get_curr_revision(g_vars.qa_src, g_vars.isConda)
-      qaOpts.cfg.entry(key='QA_REVISION', value=qv)
+      qaConf.cfg.entry(key='QA_REVISION', value=qv)
     g_vars.qa_revision = qv
     '''
 
     # table path and copy of tables for operational runs
-    init_tables(g_vars, qaOpts)
+    init_tables(g_vars, qaConf)
 
     # unique exp_name and table_names are defined by indices of path components
-    g_vars.drs_path_base = qaOpts.getOpt('DRS_PATH_BASE')
+    g_vars.drs_path_base = qaConf.getOpt('DRS_PATH_BASE')
 
-    qa_util.get_experiment_name(g_vars, qaOpts, isInit=True)
-    qa_util.get_project_table_name(g_vars, qaOpts, isInit=True)
+    qa_util.get_experiment_name(g_vars, qaConf, isInit=True)
+    qa_util.get_project_table_name(g_vars, qaConf, isInit=True)
 
     # enable clearance of logfile entries by the CLEAR option
-    if qaOpts.isOpt('CLEAR_LOGFILE'):
+    if qaConf.isOpt('CLEAR_LOGFILE'):
         g_vars.clear_logfile = True
     else:
         g_vars.clear_logfile = False
 
-    g_vars.ignore_temp_files = qaOpts.isOpt('IGNORE_TEMP_FILES')
+    g_vars.ignore_temp_files = qaConf.isOpt('IGNORE_TEMP_FILES')
     g_vars.syncFilePrg = os.path.join(g_vars.qa_src, 'bin', 'syncFiles.x')
     g_vars.checkPrg = os.path.join(g_vars.qa_src, 'bin',
-                                     'qA-' + qaOpts.getOpt('PROJECT') + '.x')
+                                     'qA-' + qaConf.getOpt('PROJECT') + '.x')
 
     if not os.access(g_vars.syncFilePrg, os.X_OK):
         print g_vars.syncFilePrg + ' is not executable'
@@ -345,33 +346,43 @@ def run(log, g_vars, qaOpts):
     return
 
 
-def run_install(qaOpts, g_vars):
+def run_install(qaConf):
+   # check read-only mode
+   if os.path.isfile( os.path.join(qaConf.qa_src, '.qa-config.txt') ):
+        return
+   if os.path.isfile( os.path.join(qaConf.qa_src, '.qa.cfg') ):
+        return
+
    # update external tables and in case of running qa_dkrz.py from
    # sources update C++ executables
    prj=''
 
-   if qaOpts.isOpt("PROJECT"):
-      prj = qaOpts.getOpt("PROJECT")
+   if qaConf.isOpt("PROJECT"):
+      prj = qaConf.getOpt("PROJECT")
 
-   if qaOpts.isOpt('install_args'):
+   if qaConf.isOpt('install_args'):
       # extract project item(s)
       if not len(prj):
-         l_ia = qaOpts.getOpt('install_args').split(',')
+         l_ia = qaConf.getOpt('install_args').split(',')
          for ia in l_ia:
             if ia[0:2] != '--':
                prj = ia
                break
 
    isUp=False
+   isInq=False
 
-   if qaOpts.isOpt("AUTO_UP"):
-        if qaOpts.dOpts["AUTO_UP"][0] == 'e':
-            isUp=True
-   if qaOpts.isOpt("UPDATE"):
-        if qaOpts.dOpts["UPDATE"] == 'never':
-            isUp=False
-        else:
-            isUp=True
+   if not qaConf.cfg.is_read_only:
+        if qaConf.isOpt("UPDATE"):
+            if qaConf.dOpts["UPDATE"][0] == 'automatic':
+                isUp=True
+        if qaConf.isOpt("UPDATE"):
+            if qaConf.dOpts["UPDATE"] == 'never':
+                isUp=False
+            else:
+                isUp=True
+
+        isInq=True
 
    if isUp:
       # checksum of the current qa_dkrz.py
@@ -379,9 +390,9 @@ def run_install(qaOpts, g_vars):
       (p5, f) = os.path.split(sys.argv[0])
       md5_0 = qa_util.get_md5sum( glob.glob(p5 + '/*.py'))
 
-      p = os.path.join(g_vars.qa_src, 'install')
-      if qaOpts.isOpt('install_args'):
-         p += ' ' + qaOpts.getOpt('install_args')
+      p = os.path.join(qaConf.qa_src, 'install')
+      if qaConf.isOpt('install_args'):
+         p += ' ' + qaConf.getOpt('install_args')
 
       if not (p.find('up') > -1 or p.find('UP') > -1 ):
           p += ' --up'
@@ -400,26 +411,28 @@ def run_install(qaOpts, g_vars):
          text = '\nAt least one of the py scripts was updated; please, restart.'
          print text
          sys.exit(1)
-   else:
-      # inquire whether the state of tables is ok
-      p = os.path.join(g_vars.qa_src, 'install')
-      p += ' ' + '--inq-tables'
-      if len(prj):
-          p += ' ' + prj
+   elif isInq:
+        # inquire whether the state of tables is ok
+        p = os.path.join(qaConf.qa_src, 'install')
+        p += ' ' + '--inq-tables'
+        if qaConf.isOpt("QA_TABLES"):
+            p += ' --qa_tables=' + qaConf.getOpt("QA_TABLES")
+        if len(prj):
+            p += ' ' + prj
 
-      try:
-          subprocess.check_call(p, shell=True)
-      except:
-          text = '\nExternal tables are missing or not up to date.'
-          text += '\nPlease, run: '
-          text += os.path.join(qaOpts.getOpt('QA_SRC'), 'install')
-          text += ' up '
-          if len(prj):
-              text +=  prj
-          else:
-              text += ' your-project'
+        try:
+            subprocess.check_call(p, shell=True)
+        except:
+            text = '\nExternal tables are missing or not up to date.'
+            text += '\nPlease, run: '
+            text += os.path.join(qaConf.getOpt('QA_SRC'), 'install')
+            text += ' up '
+            if len(prj):
+                text +=  prj
+            else:
+                text += ' your-project'
 
-          print text
-          sys.exit(1)
+            print text
+            sys.exit(1)
 
    return

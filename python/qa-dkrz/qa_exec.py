@@ -20,20 +20,20 @@ class QaExec(object):
     classdocs
     '''
 
-    def __init__(self, log, qaOpts, g_vars):
+    def __init__(self, log, qaConf, g_vars):
         # instances for logging results, provided options and a 'python struct'
         self.log = log
-        self.qaOpts = qaOpts
+        self.qaConf = qaConf
         self.g_vars = g_vars
 
         self.is_show_call=False
-        if qaOpts.isOpt('SHOW_CALL'):
+        if qaConf.isOpt('SHOW_CALL'):
             self.is_show_call=True
 
         self.is_next=False
-        if qaOpts.isOpt('NEXT'):
+        if qaConf.isOpt('NEXT'):
             self.is_next=True
-            self.next=qaOpts.getOpt('NEXT')
+            self.next=qaConf.getOpt('NEXT')
 
         self.capt     = 'CAPT'
         self.capt_len = len(self.capt)
@@ -45,7 +45,7 @@ class QaExec(object):
         self.max_sz_status_line=0
 
         self.isStatusLine=False
-        if self.qaOpts.isOpt('STATUS_LINE'):
+        if self.qaConf.isOpt('STATUS_LINE'):
             self.isStatusLine=True
 
     def getParamStr(self, t_vars, show=''):
@@ -62,169 +62,169 @@ class QaExec(object):
         par += show + self.get_CF_par(t_vars)
         par += show + self.get_IN_par(t_vars)
         par += show + self.get_QA_par(t_vars)
-        if self.qaOpts.isOpt('TIME_LIMIT'):
+        if self.qaConf.isOpt('TIME_LIMIT'):
             par += show + self.get_TC_par(t_vars)
-        if self.qaOpts.isOpt('FREQ_DIST'):
+        if self.qaConf.isOpt('FREQ_DIST'):
             par += show + self.get_FD_par(t_vars)
 
         return par
 
 
     def get_CF_par(self, t_vars, inst_ix=0):
-        qaOpts = self.qaOpts
+        qaConf = self.qaConf
 
         # combine objects; the space is important
         par = 'CF::0:IN::0:X::1'
 
-        if qaOpts.isOpt('CF'):
-            par += ':cF=' + qaOpts.getOpt('CF')
+        if qaConf.isOpt('CF'):
+            par += ':cF=' + qaConf.getOpt('CF')
 
-        if qaOpts.isOpt('CF_AREA_TYPES'):
-            par += ':cFAT=' + qaOpts.getOpt('CF_AREA_TYPES')
+        if qaConf.isOpt('CF_AREA_TYPES'):
+            par += ':cFAT=' + qaConf.getOpt('CF_AREA_TYPES')
 
-        if qaOpts.isOpt('CF_STANDARD_NAMES'):
-            par += ':cFSN=' + qaOpts.getOpt('CF_STANDARD_NAMES')
+        if qaConf.isOpt('CF_STANDARD_NAMES'):
+            par += ':cFSN=' + qaConf.getOpt('CF_STANDARD_NAMES')
 
-        if qaOpts.isOpt('CF_STD_REGION_NAMES'):
-            par += ':cFSRN=' + qaOpts.getOpt('CF_STD_REGION_NAMES')
+        if qaConf.isOpt('CF_STD_REGION_NAMES'):
+            par += ':cFSRN=' + qaConf.getOpt('CF_STD_REGION_NAMES')
 
-        if qaOpts.isOpt('CF_FOLLOW_RECOMMENDATIONS'):
+        if qaConf.isOpt('CF_FOLLOW_RECOMMENDATIONS'):
             par += ':fR'
 
         return par
 
 
     def get_IN_par(self, t_vars, inst_ix=0):
-        qaOpts = self.qaOpts
+        qaConf = self.qaConf
 
         par = 'IN::0:X::0'
 
-        if qaOpts.isOpt('ARITHMETIC_MEAN'):
+        if qaConf.isOpt('ARITHMETIC_MEAN'):
             par += ':aM'
 
-        if qaOpts.isOpt('DISABLE_INF_NAN'):
+        if qaConf.isOpt('DISABLE_INF_NAN'):
             par += ':dIN'
 
-        if qaOpts.isOpt('EXCLUDE_VARIABLE'):
-            par += ':eV=' + qa_util.join(qaOpts.getOpt('EXCLUDE_VARIABLE'), sep=',')
+        if qaConf.isOpt('EXCLUDE_VARIABLE'):
+            par += ':eV=' + qa_util.join(qaConf.getOpt('EXCLUDE_VARIABLE'), sep=',')
 
         return par
 
 
     def get_QA_par(self, t_vars, inst_ix=0):
-        qaOpts = self.qaOpts
+        qaConf = self.qaConf
 
         par = 'QA::0:IN::0:CF::0:X::0'
         par += ':f=' + t_vars.qaFN
         par += ':fS=' + t_vars.seq_pos
 
-        if qaOpts.isOpt('APPLY_MAXIMUM_DATE_RANGE'):
+        if qaConf.isOpt('APPLY_MAXIMUM_DATE_RANGE'):
             par += ':aMDR'
-        elif qaOpts.isOpt('APPLY_MAXIMUM_DATE_RANGE'):
-            par += ':aMDR=' + qaOpts.getOpt('APPLY_MAXIMUM_DATE_RANGE')
+        elif qaConf.isOpt('APPLY_MAXIMUM_DATE_RANGE'):
+            par += ':aMDR=' + qaConf.getOpt('APPLY_MAXIMUM_DATE_RANGE')
 
-        if qaOpts.isOpt('CHECK_MODE'):
-            #val = qaOpts.getOpt('CHECK_MODE')
+        if qaConf.isOpt('CHECK_MODE'):
+            #val = qaConf.getOpt('CHECK_MODE')
             #val = qa_util.join(val, sep=',')
             #par += ':cM=' + val
-            par += ':cM=' + qa_util.join(qaOpts.getOpt('CHECK_MODE'), sep=',')
+            par += ':cM=' + qa_util.join(qaConf.getOpt('CHECK_MODE'), sep=',')
 
-        if qaOpts.isOpt('DATA_IN_PRODUCTION'):
+        if qaConf.isOpt('DATA_IN_PRODUCTION'):
             par += ':dIP'
 
-        if qaOpts.isOpt('DEFAULT_VALID_MAX'):
+        if qaConf.isOpt('DEFAULT_VALID_MAX'):
             par += ':dVMX'
 
-        if qaOpts.isOpt('DEFAULT_VALID_MIN'):
+        if qaConf.isOpt('DEFAULT_VALID_MIN'):
             par += ':dVMN'
 
-        if qaOpts.isOpt('DISABLE_CONSISTENCY_CHECK'):
+        if qaConf.isOpt('DISABLE_CONSISTENCY_CHECK'):
             par += ':dCC'
 
-        if qaOpts.isOpt('DISABLE_TIME_BOUNDS_CHECK'):
+        if qaConf.isOpt('DISABLE_TIME_BOUNDS_CHECK'):
             par += ':dTB'
 
-        if qaOpts.isOpt('EXCLUDE_ATTRIBUTE'):
-            par += ':eA=' + qa_util.join(qaOpts.getOpt('EXCLUDE_ATTRIBUTE'), sep=',')
+        if qaConf.isOpt('EXCLUDE_ATTRIBUTE'):
+            par += ':eA=' + qa_util.join(qaConf.getOpt('EXCLUDE_ATTRIBUTE'), sep=',')
 
-        if qaOpts.isOpt('FILE_NAME_FREQ_INDEX'):
-            par += ':fNFI=' + qaOpts.getOpt('FILE_NAME_FREQ_INDEX', bStr=True)
+        if qaConf.isOpt('FILE_NAME_FREQ_INDEX'):
+            par += ':fNFI=' + qaConf.getOpt('FILE_NAME_FREQ_INDEX', bStr=True)
 
-        if qaOpts.isOpt('FILE_NAME_VAR_INDEX'):
-            par += ':fNVI=' + qaOpts.getOpt('FILE_NAME_VAR_INDEX', bStr=True)
+        if qaConf.isOpt('FILE_NAME_VAR_INDEX'):
+            par += ':fNVI=' + qaConf.getOpt('FILE_NAME_VAR_INDEX', bStr=True)
 
-        if qaOpts.isOpt('FILE_SEQUENCE'):
-            par += ':fS=' + qaOpts.getOpt('FILE_SEQUENCE')
+        if qaConf.isOpt('FILE_SEQUENCE'):
+            par += ':fS=' + qaConf.getOpt('FILE_SEQUENCE')
 
-        if qaOpts.isOpt('FREQUENCY'):
-            par += ':fq=' + qaOpts.getOpt('FREQUENCY')
+        if qaConf.isOpt('FREQUENCY'):
+            par += ':fq=' + qaConf.getOpt('FREQUENCY')
 
-        if qaOpts.isOpt('IGNORE_REF_DATE_ACROSS_EXP'):
-            par += ':iRDAE=' + qaOpts.getOpt('IGNORE_REF_DATE_ACROSS_EXP')
+        if qaConf.isOpt('IGNORE_REF_DATE_ACROSS_EXP'):
+            par += ':iRDAE=' + qaConf.getOpt('IGNORE_REF_DATE_ACROSS_EXP')
 
-        if qaOpts.isOpt('IGNORE_REFERENCE_DATE'):
+        if qaConf.isOpt('IGNORE_REFERENCE_DATE'):
             par += ':iRD'
 
-        if qaOpts.isOpt('NEXT_RECORDS'):
-            par += ':nextRecords=' + qaOpts.getOpt('NEXT_RECORDS', bStr=True)
+        if qaConf.isOpt('NEXT_RECORDS'):
+            par += ':nextRecords=' + qaConf.getOpt('NEXT_RECORDS', bStr=True)
 
-        if qaOpts.isOpt('NON_REGULAR_TIME_STEP'):
-            par += ':nRTS=' + qaOpts.getOpt('NON_REGULAR_TIME_STEP')
+        if qaConf.isOpt('NON_REGULAR_TIME_STEP'):
+            par += ':nRTS=' + qaConf.getOpt('NON_REGULAR_TIME_STEP')
 
-        if qaOpts.isOpt('OUTLIER_TEST'):
+        if qaConf.isOpt('OUTLIER_TEST'):
             s=','
-            par += ':oT=' + qa_util.convert2brace(qaOpts.getOpt('OUTLIER_TEST'))
+            par += ':oT=' + qa_util.convert2brace(qaConf.getOpt('OUTLIER_TEST'))
 
-        if qaOpts.isOpt('PARENT_EXP_ID'):
-            par += ':pEI=' + qaOpts.getOpt('PARENT_EXP_ID')
+        if qaConf.isOpt('PARENT_EXP_ID'):
+            par += ':pEI=' + qaConf.getOpt('PARENT_EXP_ID')
 
-        if qaOpts.isOpt('PARENT_EXP_RIP'):
-            par += ':pER=' + qaOpts.getOpt('PARENT_EXP_RIP')
+        if qaConf.isOpt('PARENT_EXP_RIP'):
+            par += ':pER=' + qaConf.getOpt('PARENT_EXP_RIP')
 
         if t_vars.post_proc:
             par += ':pP'
 
-        if qaOpts.isOpt('PRINT_GREP_MARK'):
+        if qaConf.isOpt('PRINT_GREP_MARK'):
             par += ':pGM'
 
         # PROJECT_TABLE
         par += ':tPr=' + t_vars.pt_name
 
-        if qaOpts.isOpt('QA_NCFILE_FLAGS'):
-            par += ':qNF=' + qaOpts.getOpt('QA_NCFILE_FLAGS')
+        if qaConf.isOpt('QA_NCFILE_FLAGS'):
+            par += ':qNF=' + qaConf.getOpt('QA_NCFILE_FLAGS')
 
-        if qaOpts.isOpt('REPLICATED_RECORD'):
+        if qaConf.isOpt('REPLICATED_RECORD'):
             s=','
-            par += ':rR=' + qa_util.convert2brace(qaOpts.getOpt('REPLICATED_RECORD'))
+            par += ':rR=' + qa_util.convert2brace(qaConf.getOpt('REPLICATED_RECORD'))
 
-        if qaOpts.isOpt('TABLE_DRS_CV'):
-            par += ':tCV=' + qaOpts.getOpt('TABLE_DRS_CV')
+        if qaConf.isOpt('TABLE_DRS_CV'):
+            par += ':tCV=' + qaConf.getOpt('TABLE_DRS_CV')
 
-        if qaOpts.isOpt('TABLE_GCM_NAME'):  # CORDEX
-            par += ':tGCM=' + qaOpts.getOpt('TABLE_GCM_NAME')
+        if qaConf.isOpt('TABLE_GCM_NAME'):  # CORDEX
+            par += ':tGCM=' + qaConf.getOpt('TABLE_GCM_NAME')
 
-        if qaOpts.isOpt('TABLE_RCM_NAME'):  # CORDEX
-            par += ':tRCM=' + qaOpts.getOpt('TABLE_RCM_NAME')
+        if qaConf.isOpt('TABLE_RCM_NAME'):  # CORDEX
+            par += ':tRCM=' + qaConf.getOpt('TABLE_RCM_NAME')
 
-        if qaOpts.isOpt('TABLE_ATT_REQ'):  # CMIP5
-            par += ':tAR=' + qaOpts.getOpt('TABLE_ATT_REQ')
+        if qaConf.isOpt('TABLE_ATT_REQ'):  # CMIP5
+            par += ':tAR=' + qaConf.getOpt('TABLE_ATT_REQ')
 
-        if qaOpts.isOpt('TABLE_EXPERIMENT'):
-            par += ':tX=' + qaOpts.getOpt('TABLE_EXPERIMENT')
+        if qaConf.isOpt('TABLE_EXPERIMENT'):
+            par += ':tX=' + qaConf.getOpt('TABLE_EXPERIMENT')
 
-        if qaOpts.isOpt('TABLE_FORCING_DESCRIPT'):
-            par += ':tFD=' + qaOpts.getOpt('TABLE_FORCING_DESCRIPT')
+        if qaConf.isOpt('TABLE_FORCING_DESCRIPT'):
+            par += ':tFD=' + qaConf.getOpt('TABLE_FORCING_DESCRIPT')
 
-        if qaOpts.isOpt('TABLE_TIME_SCHEDULE'):
-            par += ':tTR=' + qaOpts.getOpt('TABLE_TIME_SCHEDULE')
+        if qaConf.isOpt('TABLE_TIME_SCHEDULE'):
+            par += ':tTR=' + qaConf.getOpt('TABLE_TIME_SCHEDULE')
 
-        if qaOpts.isOpt('TABLE_VAR_REQ'):
-            par += ':tVR=' + qaOpts.getOpt('TABLE_VAR_REQ')
+        if qaConf.isOpt('TABLE_VAR_REQ'):
+            par += ':tVR=' + qaConf.getOpt('TABLE_VAR_REQ')
 
-        if qaOpts.isOpt('TABLE_RELAXED_DIM_CONSTRAINT'):
-            par += ':tRDC=' + qaOpts.getOpt('TABLE_RELAXED_DIM_CONSTRAINT')
+        if qaConf.isOpt('TABLE_RELAXED_DIM_CONSTRAINT'):
+            par += ':tRDC=' + qaConf.getOpt('TABLE_RELAXED_DIM_CONSTRAINT')
 
-        if qaOpts.isOpt('TABLE_RELAXED_DIM_CONSTRAINT'):
+        if qaConf.isOpt('TABLE_RELAXED_DIM_CONSTRAINT'):
             par += ':uS'
 
         return par
@@ -234,15 +234,15 @@ class QaExec(object):
         par = 'X::' + str(inst_ix)
 
         if inst_ix == 0:
-            note             = self.qaOpts.getOpt('NOTE')
-            note_always      = self.qaOpts.getOpt('NOTE_ALWAYS')
-            note_level_limit = self.qaOpts.getOpt('NOTE_LEVEL_LIMIT')
-            checklist        = self.qaOpts.getOpt('QA_CHECK_LIST')
+            note             = self.qaConf.getOpt('NOTE')
+            note_always      = self.qaConf.getOpt('NOTE_ALWAYS')
+            note_level_limit = self.qaConf.getOpt('NOTE_LEVEL_LIMIT')
+            checklist        = self.qaConf.getOpt('QA_CHECK_LIST')
         else:
-            note             = self.qaOpts.getOpt('CF_NOTE')
-            note_always      = self.qaOpts.getOpt('CF_NOTE_ALWAYS')
-            note_level_limit = self.qaOpts.getOpt('CF_NOTE_LEVEL_LIMIT')
-            checklist        = self.qaOpts.getOpt('CF_CHECK_LIST')
+            note             = self.qaConf.getOpt('CF_NOTE')
+            note_always      = self.qaConf.getOpt('CF_NOTE_ALWAYS')
+            note_level_limit = self.qaConf.getOpt('CF_NOTE_LEVEL_LIMIT')
+            checklist        = self.qaConf.getOpt('CF_CHECK_LIST')
 
             # suppress printing of check results
             par += ':nCR'
@@ -262,25 +262,25 @@ class QaExec(object):
 
     def get_TC_par(self, t_vars, inst_ix=0):
         par = 'TC::' + str(inst_ix)
-        par += ":e=" + self.qaOpts.getOpt('TIME_LIMIT', bStr=True)
+        par += ":e=" + self.qaConf.getOpt('TIME_LIMIT', bStr=True)
 
         return par
 
 
     def get_FD_par(self, t_vars, inst_ix=0):
-        qaOpts = self.qaOpts
+        qaConf = self.qaConf
 
         par = 'FD::' + str(inst_ix)
         par += 'useAreaWeight'
 
-        if qaOpts.isOpt('FD_PLAIN'):
+        if qaConf.isOpt('FD_PLAIN'):
             par += ':printPlain'
 
-        if qaOpts.isOpt('FD_BARS'):
+        if qaConf.isOpt('FD_BARS'):
             par += ':printBars'
 
-        #if qaOpts.isOpt(''):
-        #    par += ':=' + qaOpts.getOpt('')
+        #if qaConf.isOpt(''):
+        #    par += ':=' + qaConf.getOpt('')
 
         # A fd-build-file of the same variable at destination has priority.
         # Second choice is a fd-build-file or fd-prop-file in a specified
@@ -292,29 +292,29 @@ class QaExec(object):
         fName = 'fd_' + t_vars.fBase
         par += ':s=' + fName + '.build'
 
-        if qaOpts.isOpt('FD_TIME_PART'):
-            par += ':part=' + qaOpts.getOpt('FD_TIME_PART')
+        if qaConf.isOpt('FD_TIME_PART'):
+            par += ':part=' + qaConf.getOpt('FD_TIME_PART')
 
         # Properties of the freq. dist. Note: current dir is destination.
         files = glob.glob(fName + '*.build')
         if len(files):
             # Rule 1: rebuild, i.e continue a FD
             par += ':r=' + files[0]  # read properties
-        elif qaOpts.isOpt('FD_PROPERTY_PATH'):
-            files = glob.glob(os.path.join( qaOpts.getOpt('FD_PROPERTY_PATH'),
+        elif qaConf.isOpt('FD_PROPERTY_PATH'):
+            files = glob.glob(os.path.join( qaConf.getOpt('FD_PROPERTY_PATH'),
                                             fName + '*.build'))
 
             if len(files):
                 # Rule 2a
                 par += ':r=' + files[0]
             else:
-                files = glob.glob(os.path.join( qaOpts.getOpt('FD_PROPERTY_PATH'),
+                files = glob.glob(os.path.join( qaConf.getOpt('FD_PROPERTY_PATH'),
                                                 fName + '*.prop'))
                 if len(files):
                     # Rule 2b  read properties
                     par += ':rp=' + files[0]
-        elif qaOpts.isOpt('FD_EXPLICIT_PROPS'):
-            props = qaOpts.getOpt('FD_EXPLICIT_PROPS').split('/')
+        elif qaConf.isOpt('FD_EXPLICIT_PROPS'):
+            props = qaConf.getOpt('FD_EXPLICIT_PROPS').split('/')
             par += ':w=' + props[0] + '@i=' + props[1]
 
         return par
@@ -487,7 +487,7 @@ class QaExec(object):
 
         self.printStatusLine(nc=self.nc_file)
 
-        if self.qaOpts.isOpt('DRY_RUN'):
+        if self.qaConf.isOpt('DRY_RUN'):
             print self.nc_file
             return True
 
@@ -546,7 +546,7 @@ class QaExec(object):
         else:
             istatus = 0
 
-        if self.qaOpts.isOpt('RUN_CMOR3_LLNL'):
+        if self.qaConf.isOpt('RUN_CMOR3_LLNL'):
             # run and append output
             check_output += self.run_CMOR_LLNL(t_vars)
 
@@ -619,7 +619,7 @@ class QaExec(object):
         # run PrePARE and pipe output to convertPipedCMOR_output
         #pp_run = "/hdh/local/miniconda/envs/cmor/bin/python "
 
-        pp_run = self.qaOpts.getOpt("PrePARE")
+        pp_run = self.qaConf.getOpt("PrePARE")
         pp_run += ' --variable ' + x_file[0]
         pp_run += ' ' + mip_table + ' ' + self.nc_file
         pp_run += ' 2>&1'

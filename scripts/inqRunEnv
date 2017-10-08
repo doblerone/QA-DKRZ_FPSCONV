@@ -235,7 +235,7 @@ iRE_inqState()
 #     rname[${#rname[*]}]=+UDUNITS2_XML_PATH
       #rname[${#rname[*]}]=+CONDA_CMOR_ENV
       #rname[${#rname[*]}]=+CONDA_CMOR_PATH
-       rname[${#rname[*]}]=+XLSX2CSV
+    rname[${#rname[*]}]=+XLSX2CSV
     fi
   done
 
@@ -442,9 +442,10 @@ iRE_inqRunEnv()
 
 if [ ${1%%=*} = funct ] ; then
   # run a function
+  funct=${1#*=}
   shift 1
 
-  ${1#funct=} $*
+  ${funct=} $*
   return $?
 fi
 

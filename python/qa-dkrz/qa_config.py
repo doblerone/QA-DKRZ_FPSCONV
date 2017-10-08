@@ -15,7 +15,7 @@ import ConfigParser
 
 import qa_util
 
-class QaOptions(object):
+class QaConfig(object):
     '''
     classdocs
     '''
@@ -24,7 +24,7 @@ class QaOptions(object):
         '''
         Constructor
         '''
-        self.qaSrc = qa_src
+        self.qa_src = qa_src
         self.home = os.path.join( os.environ['HOME'], '.qa-dkrz')
 
         # dictionary for the final result
@@ -40,20 +40,31 @@ class QaOptions(object):
         # a list of dicts, first for the command-line options,
         # then those from successive QA_CONF files.
         self.ldOpts=[]
+        self.curr_dir = os.getcwd()
 
         if len(qa_src):
             self.ldOpts.append({})
             self.ldOpts[0]['QA_SRC']=qa_src
 
-        self.cfg_file=os.path.join(self.home, 'qa.cfg')
+        # is it defined in QA_SRC/.qa-conf ? Else: try home
+        if os.path.isfile( os.path.join(qa_src, '.qa-config.txt') ):
+           self.cfg_file=os.path.join(qa_src, '.qa-config.txt')
+        elif os.path.isfile( os.path.join(qa_src, '.qa.cfg') ):
+           self.cfg_file=os.path.join(qa_src, '.qa.cfg')
+        elif os.path.isfile( os.path.join(self.home, 'qa.cfg') ):
+           self.cfg_file=os.path.join(self.home, '.qa-config.txt')
+        else:
+           self.cfg_file=os.path.join(self.home, 'qa.cfg')
 
-        self.cfg = CfgFile()
+        self.cfg = CfgFile(self)
 
         self.run()
 
         self.ldOpts=[] # free mem
         self.lSelect=[]
         self.lLock=[]
+
+        self.addOpt("CURR_DIR", self.curr_dir)
 
 
     def addOpt(self, key, val, dct={}):
@@ -207,8 +218,12 @@ class QaOptions(object):
 
         # special: long-opts
         if args.AUTO_UP    != None: _ldo['AUTO_UP']    = args.AUTO_UP
-        if args.PROJECT    != None: _ldo['PROJECT']    = args.PROJECT
-        if args.PROJECT_AS != None: _ldo['PROJECT_AS'] = args.PROJECT_AS
+        if args.PROJECT    != None:
+            _ldo['PROJECT']    = args.PROJECT
+            self.project = args.PROJECT
+        if args.PROJECT_AS != None:
+            _ldo['PROJECT_AS'] = args.PROJECT_AS
+            self.project_as = args.PROJECT_AS
         if args.TASK       != None: _ldo['TASK']       = args.TASK
         if args.UPDATE     != None: _ldo['UPDATE']     = args.UPDATE
         if args.QA_TABLES  != None: _ldo['QA_TABLES']  = args.QA_TABLES
@@ -236,13 +251,14 @@ class QaOptions(object):
                 s= 'SELECT ' + args.CL_S
                 self.lSelect.append(self.setSelLock(s.replace(' ','') ) )
         else:
-            str0='SELECT='
-            for i in range(len(args.NC_FILE)):
-                if i > 0:
-                    str0 += ','
-                str0 += args.NC_FILE[i]
-
-            _ldo['SELECT'] = str0
+            #str0='SELECT'
+            #for i in range(len(args.NC_FILE)):
+            #    if i > 0:
+            #        str0 += ','
+            #    str0 += args.NC_FILE[i]
+            #h,t = os.path.split(args.NC_FILE[0])
+            #_ldo['SELECT'] = str0 + h + '=' + t
+            self.lSelect.append(args.NC_FILE[0])
 
         # collect for passing to QA-DKRZ/install.
         str0=''
@@ -286,7 +302,7 @@ class QaOptions(object):
         '''
 
         # rsync the default tables
-        src=os.path.join(self.qaSrc, 'tables')
+        src=os.path.join(self.qa_src, 'tables')
 
         if os.path.isdir(src):
             dest=self.getOpt('QA_TABLES')
@@ -420,6 +436,27 @@ class QaOptions(object):
         self.dOpts['SELECT_PATH_LIST'] = []
         self.dOpts['SELECT_VAR_LIST']  = []
 
+        if not self.isOpt("PROJECT_DATA"):
+            if len(self.lSelect):
+                h,t = os.path.split(self.lSelect[0])
+                if not (h or t):
+                    print 'missing NetCDF file or directory'
+                    sys.exit(1)
+
+                #if h:
+                #    h1,h2 = os.path.split(h)
+                #    self.dOpts["PROJECT_DATA"] = h1
+
+                x_t = t.split('_')
+                str0=''
+                if h:
+                    str0 = h + '='
+                if t:
+                    str0 += x_t[0] + '_'
+
+                self.lSelect[0]=str0
+                self.dOpts["NEXT"] = 1
+
         for sel in self.lSelect:
             (p,v)=self.getSelLock('S', sel)
 
@@ -443,7 +480,7 @@ class QaOptions(object):
 
     def getCFG_opts(self, qa_src):
         # read the config file; may also convert an old plain text file;
-        # cfg assignments are also appended to qaOpts
+        # cfg assignments are also appended to qaConf
         #self.ldOpts.append( self.cfg.getOpts() )
 
         return self.cfg.getOpts()
@@ -464,6 +501,19 @@ class QaOptions(object):
             return val
 
         return ''
+
+
+    def get_qa_tables(self):
+        qtc = []  # QA_TABLES candidates
+
+        sects = self.cfg.rCP.sections()
+        qt="QA_TABLES"
+
+        for sect in sects:
+            if self.cfg.rCP.has_option(sect, qt):
+                qtc.append( self.cfg.rCP.get(sect, qt) )
+
+        return qtc
 
 
     def getSelLock(self, key, line):
@@ -488,8 +538,8 @@ class QaOptions(object):
 
         # special: a fully qualified file
         if os.path.isfile(line):
-            (h, t)=os.path.split(line)
-            if len(h) and len(t):
+            h, t=os.path.split(line)
+            if h and t:
                 line = h + '=' + t
             elif len(h):
                 line = h+'='
@@ -535,7 +585,6 @@ class QaOptions(object):
 
         return ( lp, lv)
 
-
     def isOpt(self, key, dct={}):
         # a) an option exists, then return True, but,
         # b) if the type is bool, then return the value
@@ -580,7 +629,6 @@ class QaOptions(object):
 
 
         return
-
 
     def readQA_CONF_files(self):
 
@@ -709,21 +757,50 @@ class QaOptions(object):
 
 
     def run(self):
-        self.cfg.read_file( self.cfg_file, section=self.qaSrc)
-        self.cfg_opts = self.getCFG_opts(self.qaSrc) # (multiple) ..._qa.conf files
+        self.cfg.read_file( self.cfg_file, section=self.qa_src)
+
+        self.cfg_opts = self.getCFG_opts(self.qa_src) # (multiple) ..._qa.conf files
 
         # dictionaries with options( precedence: high --> low)
         self.commandLineOpts( self.create_parser() )
         self.ldOpts.append( self.cfg_opts )  # config file in HOME/.qa-conf
 
-        # backward-compatibility
-        if not self.isOpt("QA_TABLES", dct=self.cfg_opts):
-            if self.isOpt("QA_HOME", dct=self.cfg_opts):
+        #if self.getOpt("QA_TABLES", dct=self.cfg_opts):
+        qa_tables=''
+        for i in range(len(self.ldOpts)):
+            if 'QA_TABLES' in self.ldOpts[i].keys():
+                qa_tables = self.ldOpts[i]["QA_TABLES"]
+                break
+            elif 'QA_HOME' in self.ldOpts[i].keys():
+                # backward-compatibility
+                qa_tables = self.ldOpts[i]["QA_HOME"]
                 self.cfg_opts["QA_TABLES"] = self.cfg_opts["QA_HOME"]
                 self.cfg.entry("QA_HOME", value='d')
                 self.cfg.entry("QA_TABLES", value=self.cfg_opts["QA_TABLES"])
+                break
 
-        if self.isOpt("QA_TABLES", dct=self.cfg_opts):
+        while not qa_tables:
+            # QA_TABLES: is it defined?
+            # Any QA_TABLES defined in another section?
+            qtc = self.get_qa_tables()
+            isSame=False
+            if len(qtc):
+                isSame=True
+                for i in range(1,len(qtc)):
+                    if qtc[0] != qtc[i]:
+                        isSame=False
+                        break
+
+            if isSame:
+                qa_tables = qtc[0]
+                self.cfg.entry("QA_TABLES", qa_tables)
+                self.cfg_opts["QA_TABLES"] = qa_tables
+            else:
+                qa_tables = raw_input("QA_TABLES: ")
+                self.cfg.entry("QA_TABLES", qa_tables)
+                self.cfg_opts["QA_TABLES"] = qa_tables
+
+        if len(qa_tables):
             self.readQA_CONF_files()
 
         self.setDefault()
@@ -732,6 +809,10 @@ class QaOptions(object):
         self.mergeOptions()
 
         self.finalSelLoc()
+
+        # backward compatibility
+        if "AUTO_UP" in self.dOpts.keys() or "AUTO_UPDATE" in self.dOpts.keys():
+            self.dOpts["UPDATE"] = "automatic"
 
         # modify definitions if P_AS is set: P_AS --> P and P --> P_DRVD
         if 'PROJECT_AS' in self.dOpts:
@@ -761,7 +842,7 @@ class QaOptions(object):
         self.definedProjects=[]
         lst=[]
         if not len(self.definedProjects):
-            p_prj = os.path.join(self.qaSrc, 'tables', 'projects')
+            p_prj = os.path.join(self.qa_src, 'tables', 'projects')
             lst = os.listdir(p_prj)
 
             for itm in lst:
@@ -827,10 +908,10 @@ class QaOptions(object):
         _ldo['HARD_SLEEP_PERIOD']=10
         _ldo['MAIL']='mailx'
         _ldo['NUM_EXEC_THREADS']=1
-        _ldo['PROJECT_DATA']='./'
+        #_ldo['PROJECT_DATA']=''
         # _ldo['QA_TABLES']=os.path.join(self.home, 'tables')
         _ldo['QA_HOST']=socket.gethostname()
-        _ldo['QA_RESULTS']=os.getcwd()
+        _ldo['QA_RESULTS']=os.path.join(self.curr_dir, "QA_Results")
         _ldo['REATTEMPT_LIMIT']=5
         _ldo['SLEEP_PERIOD']=300
         _ldo['QA_EXEC_HOSTS']=_ldo['QA_HOST']
@@ -870,7 +951,7 @@ class CfgFile(object):
    # read,write, modify a configuration file
    '''
 
-   def __init__(self):
+   def __init__(self, qaConf):
       '''
       Constructor
       '''
@@ -879,7 +960,9 @@ class CfgFile(object):
       self.rCP = ConfigParser.RawConfigParser()
       self.rCP.optionxform = str # thus, case-sensitive
 
+      self.qaConf = qaConf
       self.isModified = False
+      self.is_read_only=False
 
 
    def entry(self, key='', value=''):
@@ -901,7 +984,7 @@ class CfgFile(object):
          if len(value) and not (value == 'd' or value == 'disable'):
                self.rCP.set(self.section, key, value)
                self.isModified=True
-               self.qaOpts.addOpt(key,value)
+               self.qaConf.addOpt(key,value)
       else:
          # section and key exist
          if len(value):
@@ -941,63 +1024,83 @@ class CfgFile(object):
          self.file = file
 
       # for .qa.cfg formatted (new)
-      (path, new)=os.path.split(self.file)
-
-      # as long as installation/update stuf is done by bash scripts,
-      # the old config file format has precedence
-      old = os.path.join(path, 'config.txt' )
-      isOld2New=False
+      isConvert=False
       isOld=False
       isNew=False
 
-      if os.path.isfile(old):
-        isOld=True
+      (path, fname)=os.path.split(self.file)
 
-      if os.path.isfile(self.file):
-        isNew=True
+      if fname == '.qa-config.txt':
+          old = self.file
+          isConvert=True
+          isOld=True
+          self.is_read_only=True
+      elif fname == '.qa.cfg':
+          new = self.file
+          isNew=True
+          self.is_read_only=True
       else:
-        isOld2New=True
+          self.is_read_only=True
+
+          # as long as installation/update stuff is done by bash scripts,
+          # the old config file format has precedence
+          old = os.path.join(path, 'config.txt' )
+          if os.path.isfile(old):
+            isConvert=True
+            isOld=True
+
+          new = os.path.join(path, 'qa.cfg' )
+          if os.path.isfile(new):
+            isNew=True
 
       if not isNew and not isOld:
+          self.rCP.add_section(section)
           return  #from scratch
 
-      if isNew and isOld:
-        old_modTime = qa_util.f_get_mod_time(old)
-        new_modTime = qa_util.f_get_mod_time(self.file)
+      if isConvert:
+        if not self.is_read_only:
+            # at this point old exists
+            if isNew:
+                old_modTime = qa_util.f_get_mod_time(old)
+                new_modTime = qa_util.f_get_mod_time(new)
 
-        if old_modTime > new_modTime:
-            isOld2New=True
+                if old_modTime > new_modTime:
+                    isConvert=True
+                else:
+                    isConvert=False
 
-      if isOld2New:
-         # conversion
-         with open(old) as r:
-            self.isModified=True
+        if isConvert:
+            # conversion
+            with open(old) as r:
+                self.isModified=True
 
-            for line in r:
-                line = qa_util.clear_line(line)
-                if len(line):
-                    sz1=len(line)-1
+                for line in r:
+                    line = qa_util.clear_line(line)
+                    if len(line):
+                        sz1=len(line)-1
 
-                    if line[sz1] == ':' :
-                        ny_sect=line[0:sz1] # rm ':'
-                        self.rCP.add_section(ny_sect)
-                    else:
-                        k, v = line.split('=')
+                        if line[sz1] == ':' :
+                            ny_sect=line[0:sz1] # rm ':'
+                            self.rCP.add_section(ny_sect)
+                        else:
+                            k, v = line.split('=')
 
-                        # some backward compatibility
-                        if k == "QA_HOME":
-                            k = "QA_TABLES"
+                            # some backward compatibility
+                            if k == "QA_HOME":
+                                k = "QA_TABLES"
 
-                        self.rCP.set(ny_sect, k, repr(v))
-      else:
-         # read a file created by a self.rCP instance
-         self.rCP.read(self.file)
-         self.isModified=False
+                            self.rCP.set(ny_sect, k, repr(v))
+        else:
+            # read a file created by a self.rCP instance
+            self.rCP.read(self.file)
+            self.isModified=False
 
       return
 
 
    def write_file(self):
+      if self.is_read_only:
+          return
 
       if self.isModified:
          with open(self.file,'wb') as cfg:

@@ -20,7 +20,7 @@ import qa_version
 from Queue import Queue
 from threading import Thread
 
-from qa_config import QaOptions
+from qa_config import QaConfig
 #from qa_config import CfgFile
 from qa_log import Log
 from qa_util import GetPaths
@@ -36,9 +36,9 @@ class ThreadVariables(object):
     # determined at every get_next_variable() call
     pass
 
-def clear(qa_var_path, fBase, logfile):
 
-    if qaOpts.isOpt('CLEAR_LOGFILE'):
+def clear(qa_var_path, fBase, logfile):
+    if qaConf.isOpt('CLEAR_LOGFILE'):
         try:
             g_vars.clear_fBase
         except:
@@ -93,7 +93,7 @@ def clear(qa_var_path, fBase, logfile):
 
 def clearInq(qa_var_path, fBase, logfile):
 #    isFollowLink = False
-    v_clear = qaOpts.getOpt('CLEAR')
+    v_clear = qaConf.getOpt('CLEAR')
 
     if repr(type(v_clear)).find('bool') > -1:
         return clear(qa_var_path, fBase, logfile)
@@ -106,7 +106,7 @@ def clearInq(qa_var_path, fBase, logfile):
 
         '''
         if f == 'follow_links':
-            if not getOpts.isOpt('DEREFERENCE_SYM_LINKS'):
+            if not getOpt.isOpt('DEREFERENCE_SYM_LINKS'):
 
                 isFollowLink = True
             isClear = True
@@ -168,7 +168,7 @@ def clearInq(qa_var_path, fBase, logfile):
 def final():
 
     # only the summary of previous runs
-    if not ( qaOpts.isOpt('NO_SUMMARY') or qaOpts.isOpt('SHOW') ):
+    if not ( qaConf.isOpt('NO_SUMMARY') or qaConf.isOpt('SHOW') ):
         # remove duplicates
         for log_fname in g_vars.log_fnames:
             tmp_log = os.path.join(g_vars.check_logs_path,
@@ -180,7 +180,7 @@ def final():
                 continue  # nothing new
 
             if os.path.isfile(dest_log):
-                if qaOpts.isOpt('CLEAR_LOGFILE'):
+                if qaConf.isOpt('CLEAR_LOGFILE'):
                     ix = g_vars.log_fnames.index(log_fname)
                     fBase = g_vars.clear_fBase[ix]
 
@@ -209,16 +209,27 @@ def final():
                 # first time that a check was done for this log-file
                 os.rename(tmp_log, dest_log)
 
+    # special: if no project but a single file, then display log-file
+    if not qaConf.isOpt("PROJECT_DATA"):
+        fname = os.path.join(qaConf.dOpts["QA_RESULTS"], 'check_logs', t_vars.log_fname+'.log')
+
+        with open(fname, 'r') as f:
+            print f.read()
+
+        shutil.rmtree(qaConf.dOpts["QA_RESULTS"])
+
+        return
+
     summary()
 
-    qaOpts.cfg.write_file()
+    qaConf.cfg.write_file()
 
     return
 
 
 def get_all_logfiles():
     f_logs=[]
-    if qaOpts.isOpt('SHOW_EXP'):
+    if qaConf.isOpt('SHOW_EXP'):
         isShowExp=True
         lfn_var={}
 
@@ -233,7 +244,7 @@ def get_all_logfiles():
             break
         else:
             sub_path = data_path[g_vars.prj_dp_len+1:]
-            f_log = qa_util.get_experiment_name(g_vars, qaOpts, fB=fBase,
+            f_log = qa_util.get_experiment_name(g_vars, qaConf, fB=fBase,
                                             sp=sub_path)
             if isShowExp:
                 if f_log in lfn_var.keys():
@@ -268,10 +279,10 @@ def get_next_variable(data_path, fBase, fNames):
 
     # experiment_name
     t_vars.log_fname = \
-        qa_util.get_experiment_name(g_vars, qaOpts, fB=fBase,
+        qa_util.get_experiment_name(g_vars, qaConf, fB=fBase,
                                     sp=t_vars.sub_path)
     t_vars.pt_name = \
-        qa_util.get_project_table_name(g_vars, qaOpts, fB=fBase,
+        qa_util.get_project_table_name(g_vars, qaConf, fB=fBase,
                                        sp=t_vars.sub_path)
 
     # Any locks? Any clearance of previous results?
@@ -283,8 +294,8 @@ def get_next_variable(data_path, fBase, fNames):
     if os.path.exists(qaNc):
         syncCall += ' -p ' + qaNc
 
-    if qaOpts.isOpt('TIME_LIMIT'):
-        syncCall += ' -l ' + qaOpts.getOpts('TIME_LIMIT')
+    if qaConf.isOpt('TIME_LIMIT'):
+        syncCall += ' -l ' + qaConf.getOpt('TIME_LIMIT')
 
     syncCall += ' -P ' + data_path
     for f in fNames:
@@ -340,33 +351,33 @@ def get_next_variable(data_path, fBase, fNames):
     return lst
 
 
-def get_version(qaOpts):
+def get_version(qaConf):
 
     com_line_opts={}
 
     # this is mandatory
-    com_line_opts["SECTION"] = qaOpts.getOpt("QA_SRC")
+    com_line_opts["SECTION"] = qaConf.getOpt("QA_SRC")
 
-    if qaOpts.isOpt('SHOW_VERSION'):
+    if qaConf.isOpt('SHOW_VERSION'):
         com_line_opts["SHOW_VERSION"]=True
 
     '''
-    if not qaOpts.dOpts['SHOW_VERSION'] == 't':
+    if not qaConf.dOpts['SHOW_VERSION'] == 't':
         com_line_opts["VERBOSE"] = True
 
-    if qaOpts.isOpt('PROJECT'):
-        com_line_opts["PROJECT"] = qaOpts.getOpt("PROJECT")
+    if qaConf.isOpt('PROJECT'):
+        com_line_opts["PROJECT"] = qaConf.getOpt("PROJECT")
 
-    if qaOpts.isOpt('CONDA_PATH'):
+    if qaConf.isOpt('CONDA_PATH'):
         com_line_opts["IS_CONDA"] = True
     '''
 
-    rev = qa_version.get_version( opts=qaOpts.dOpts,
+    rev = qa_version.get_version( opts=qaConf.dOpts,
                                   com_line_opts=com_line_opts)
 
-    qaOpts.dOpts["QA_REVISION"] = rev
+    qaConf.dOpts["QA_REVISION"] = rev
 
-    if qaOpts.isOpt('SHOW_VERSION'):
+    if qaConf.isOpt('SHOW_VERSION'):
         print rev
         sys.exit(0)
 
@@ -375,11 +386,11 @@ def get_version(qaOpts):
 
 def run():
 
-    if qaOpts.isOpt("SHOW_EXP"):
+    if qaConf.isOpt("SHOW_EXP"):
         f_log = get_all_logfiles()
         sys.exit(0)
 
-    if qaOpts.isOpt('SHOW') or qaOpts.isOpt('NEXT'):
+    if qaConf.isOpt('SHOW') or qaConf.isOpt('NEXT'):
         g_vars.thread_num = 1
 
     # the queue is two items longer than the number of threads
@@ -389,11 +400,11 @@ def run():
 
     if g_vars.thread_num < 2:
         # a single thread
-        qaExec = QaExec(log, qaOpts, g_vars)
+        qaExec = QaExec(log, qaConf, g_vars)
         launch_list.append( qaExec )
     else:
         for i in range(g_vars.thread_num):
-            launch_list.append( QaLauncher(log, qaOpts, g_vars) )
+            launch_list.append( QaLauncher(log, qaConf, g_vars) )
 
         for i in range(g_vars.thread_num):
             t = Thread(target=launch_list[i].start, args=(queue,))
@@ -403,9 +414,9 @@ def run():
     isNoPath=True
 
     is_next_var=False
-    if qaOpts.isOpt('NEXT_VAR'):
+    if qaConf.isOpt('NEXT_VAR'):
         is_next_var=True
-        next_var=qaOpts.getOpt('NEXT_VAR')
+        next_var=qaConf.getOpt('NEXT_VAR')
         count_next_var=0
 
     while True:
@@ -424,7 +435,7 @@ def run():
 
         except StopIteration:
             if isNoPath:
-                print "PROJECT_DATA: " + qaOpts.getOpt("PROJECT_DATA") + " not found."
+                print "PROJECT_DATA: " + qaConf.getOpt("PROJECT_DATA") + " not found."
 
             queue.put( ('---EOQ---', '', t_vars), block=True)
             break
@@ -453,14 +464,17 @@ def run():
     if g_vars.thread_num > 1:
         queue.join()
 
-    launch_list[0].printStatusLine()
+    if g_vars.thread_num < 2:
+        launch_list[0].printStatusLine()
+    else:
+        launch_list[0].qa_exec.printStatusLine()
 
     return
 
 
 def runExample():
-    if qaOpts.isOpt('EXAMPLE_PATH'):
-        currdir = os.path.join( qaOpts.getOpt('EXAMPLE_PATH'), 'example')
+    if qaConf.isOpt('EXAMPLE_PATH'):
+        currdir = os.path.join( qaConf.getOpt('EXAMPLE_PATH'), 'example')
         if currdir[0] != '/':
             currdir = os.path.join(os.getcwd(), currdir)
     else:
@@ -471,7 +485,7 @@ def runExample():
         sys.exit(1)
 
     os.chdir(currdir)
-    qa_util.rmR( 'results', 'config.txt', 'data', 'tables', 'qa-test.task' )
+    qa_util.rm_r( 'results', 'config.txt', 'data', 'tables', 'qa-test.task' )
 
     print 'make examples in ' + currdir
     print 'make qa_test.task'
@@ -510,7 +524,7 @@ def runExample():
 
                 subprocess.call(["ncgen", "-k", "3", "-o", nc_f, f])
 
-                qa_util.rmR(f)
+                qa_util.rm_r(f)
         else:
             print "building data in example requires the ncgen utility"
 
@@ -526,12 +540,12 @@ def runExample():
 
 def summary():
     # preparation to call a summary object
-    if qaOpts.isOpt('NO_SUMMARY'):
+    if qaConf.isOpt('NO_SUMMARY'):
        return
 
-    if qaOpts.isOpt('ONLY_SUMMARY'):
+    if qaConf.isOpt('ONLY_SUMMARY'):
         # build only the summary of previously written log-files.
-        f_log = qaOpts.getOpt('ONLY_SUMMARY')
+        f_log = qaConf.getOpt('ONLY_SUMMARY')
         if repr(type(f_log)).find('str') > -1:
             f_log = [f_log]
 
@@ -549,14 +563,14 @@ def summary():
     for i in range( len(f_log) ):
         log_sum.run(f_log[i])
 
-    if qaOpts.isOpt('ONLY_SUMMARY'):
+    if qaConf.isOpt('ONLY_SUMMARY'):
         sys.exit(0)
 
     return
 
 
 def testLock(t_vars, fBase):
-    if qaOpts.isOpt('CLEAR'):
+    if qaConf.isOpt('CLEAR'):
         # note that the logfile is temporary, finished in final()
         logfile = os.path.join(g_vars.check_logs_path,
                                     'tmp_' + t_vars.log_fname + '.log')
@@ -576,7 +590,10 @@ if __name__ == '__main__':
     (isCONDA, QA_SRC) = qa_util.get_QA_SRC(sys.argv[0])
 
     # for options on the command-line as well as in configuration files
-    qaOpts=QaOptions(QA_SRC)
+    qaConf=QaConfig(QA_SRC)
+
+    if not qaConf.isOpt("QA_TABLES"):
+        qa_init.run_inq_tables()
 
     g_vars = GlobalVariables()
     t_vars = ThreadVariables()
@@ -585,29 +602,29 @@ if __name__ == '__main__':
     g_vars.isConda = isCONDA
     g_vars.pid = str(os.getpid())
 
-    log = Log(qaOpts.dOpts)
+    log = Log(qaConf.dOpts)
 
     if isCONDA:
-        qaOpts.addOpt('CONDA', True)
+        qaConf.addOpt('CONDA', True)
 
     # obj for getting and iteration next path
-    getPaths = GetPaths(qaOpts.dOpts)
+    getPaths = GetPaths(qaConf)
 
-    if 'QA_EXAMPLE' in qaOpts.dOpts:
+    if 'QA_EXAMPLE' in qaConf.dOpts:
         runExample()
         sys.exit(0)
 
-    qa_init.run(log, g_vars, qaOpts)
+    qa_init.run(log, g_vars, qaConf)
 
-    get_version(qaOpts)
+    get_version(qaConf)
 
     # the checks
-    if not qaOpts.getOpt('ONLY_SUMMARY'):
+    if not qaConf.getOpt('ONLY_SUMMARY'):
         run()
 
     final()
 
-    if 'SHOW_CONF' in qaOpts.dOpts:
-        for opt in qa_util.get_sorted_options(qaOpts.dOpts):
+    if 'SHOW_CONF' in qaConf.dOpts:
+        for opt in qa_util.get_sorted_options(qaConf.dOpts):
             # opt: key=value
             print opt

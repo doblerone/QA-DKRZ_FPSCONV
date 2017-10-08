@@ -106,6 +106,8 @@ readCF()
            fi
 
            uCF_lines[${#uCF_lines[*]}]="${line}"
+
+           # Note that this makes config assignments to genuine variables
            export eval ${line}
        fi
 
@@ -216,7 +218,7 @@ updateConfFile()
          eval ${param_name}=t
        fi
        # else: match
-     elif [ "${param_value}" ] ; then
+     elif [ ${#param_value} -gt 0 -a ${CONFIG_READ_ONLY:-f} = f ] ; then
        lineNum=$((uCF_blkBeg+i+1))
        sed -i "${lineNum} c${param}" $CONFIG_FILE &> /dev/null
        uCF_lines[i]="${param_name}=${param_value}"
@@ -230,7 +232,7 @@ updateConfFile()
 
      test ${param_name:0:5} = NEXT_ && isNextDate
 
-     if [ ${param_value} ] ; then
+     if [ ${#param_value} -gt 0 -a ${CONFIG_READ_ONLY:-f} = f ] ; then
        # new
        sed -i "${uCF_blkEnd} a${param}" $CONFIG_FILE &> /dev/null
 

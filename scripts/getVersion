@@ -108,7 +108,7 @@ getExternalVersion()
 		           | awk '{print $6}')
 
 		 if [ ! ${PrePARE} ] ; then
-	      if ! Prepare=${QA_SRC}/scripts/which_cmd_alias PrePARE ; then
+	      if ! Prepare=${QA_SRC}/scripts/which_cmd_alias -q PrePARE ; then
 	 	      . ${QA_SRC}/scripts/parseConfigFile PrePARE
 			fi
 		 fi

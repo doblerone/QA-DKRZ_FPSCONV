@@ -21,7 +21,8 @@ class GetPaths(object):
     '''
     classdocs
     '''
-    def __init__(self, dOpts):
+    def __init__(self, qaConf):
+        dOpts = qaConf.dOpts
         self.dOpts = dOpts
 
         # list of lists containing sub-paths to selected data sets.
@@ -32,7 +33,7 @@ class GetPaths(object):
         self.fBase=[]
         self.fNames=[]
 
-        prj_data_path = dOpts['PROJECT_DATA']
+        prj_data_path = qaConf.getOpt('PROJECT_DATA')
 
         self.is_only_ncfiles = False if 'QUERY_NON_NC_FILE' in dOpts.keys() else True
         self.is_empty_dir    = False if 'QUERY_EMPTY_DIR'   in dOpts.keys() else True
@@ -151,6 +152,12 @@ class GetPaths(object):
                 isCont = True
 
                 for item in x_selPath:
+                    if not item:
+                        if not base_path[pp_ix]:
+                            base_path[pp_ix] = '/'
+
+                        continue
+
                     if isCont:
                         re_obj = re.match(r'([a-zA-Z0-9_-]*)', item)
 
@@ -176,7 +183,21 @@ class GetPaths(object):
             self.selPath = [t]
             self.selVar  = ['.*']
 
-        self.base_path = base_path
+        self.base_path=[]
+        for i in range(len(base_path)):
+            if base_path[i]:
+                if base_path[i][0:2] == './':
+                    self.base_path.append(self.dOpts["CURR_DIR"]+base_path[i][1:])
+                elif base_path[i][0:3] == '../':
+                    str0 = rstrip(self.dOpts["CURR_DIR"], '/')
+                    self.base_path.append(str0+base_path[i][2:])
+                elif base_path[i][0] != '/':
+                    # a relative path
+                    self.base_path.append(self.dOpts["CURR_DIR"]+'/'+base_path[i])
+                else:
+                    self.base_path.append(base_path[i])
+            else:
+                self.base_path.append(self.dOpts["CURR_DIR"])
 
         return
 
@@ -199,9 +220,8 @@ class GetPaths(object):
             else:
                 if self.is_only_ncfiles:
                     if f[-3:] != '.nc':
+                        # todo: annotation --> log-file
                         continue
-                    else:
-                        f = f[0:len(f)-3]
 
                 # t_r contains ( fBase, StartTime, EndTime )
                 t_r = f_time_range(f)
@@ -525,28 +545,28 @@ def get_curr_revision(src, is_CONDA):
     return d['branch'] + '-' + d['hexa']
 
 
-def get_experiment_name(g_vars, qaOpts, fB='', sp='', isInit=False):
+def get_experiment_name(g_vars, qaConf, fB='', sp='', isInit=False):
 
     if isInit:
         # precedence for provided LOG_NAME
         g_vars.log_fname = ''
-        if qaOpts.isOpt('LOG_FNAME'):
-            g_vars.log_fname = qaOpts.getOpt('LOG_FNAME')
+        if qaConf.isOpt('LOG_FNAME'):
+            g_vars.log_fname = qaConf.getOpt('LOG_FNAME')
 
-            qaOpts.delOpt('LOG_FNAME_INDEX')
-            qaOpts.delOpt('LOG_PATH_INDEX')
+            qaConf.delOpt('LOG_FNAME_INDEX')
+            qaConf.delOpt('LOG_PATH_INDEX')
 
-        elif qaOpts.isOpt('LOG_PATH_INDEX'):
-            g_vars.log_path_index = qaOpts.getOpt('LOG_PATH_INDEX')
-            qaOpts.addOpt('LOG_INDEX_MAX', max(g_vars.log_path_index))
+        elif qaConf.isOpt('LOG_PATH_INDEX'):
+            g_vars.log_path_index = qaConf.getOpt('LOG_PATH_INDEX')
+            qaConf.addOpt('LOG_INDEX_MAX', max(g_vars.log_path_index))
 
-        elif qaOpts.isOpt('LOG_FNAME_INDEX'):
-            g_vars.log_fname_index = qaOpts.getOpt('LOG_PATH_INDEX')
-            qaOpts.addOpt('LOG_INDEX_MAX', max(g_vars.log_fname_index))
+        elif qaConf.isOpt('LOG_FNAME_INDEX'):
+            g_vars.log_fname_index = qaConf.getOpt('LOG_PATH_INDEX')
+            qaConf.addOpt('LOG_INDEX_MAX', max(g_vars.log_fname_index))
 
         else:
             g_vars.log_fname = 'all-scope'
-            qaOpts.addOpt('LOG_NAME', g_vars.log_fname)
+            qaConf.addOpt('LOG_NAME', g_vars.log_fname)
 
         g_vars.log_fnames = []
 
@@ -655,7 +675,7 @@ def get_name_from_path(path, drs_path_base, path_index):
     return name
 
 
-def get_project_table_name(g_vars, qaOpts, fB='', sp='', isInit=False):
+def get_project_table_name(g_vars, qaConf, fB='', sp='', isInit=False):
 
     if isInit:
         # identical to experiment_name
@@ -664,16 +684,16 @@ def get_project_table_name(g_vars, qaOpts, fB='', sp='', isInit=False):
         g_vars.pt_name = ''
         g_vars.ct_path_index = []
 
-        if qaOpts.isOpt('PROJECT_TABLE'):
-            g_vars.pt_name = qaOpts.getOpt('PROJECT_TABLE')
+        if qaConf.isOpt('PROJECT_TABLE'):
+            g_vars.pt_name = qaConf.getOpt('PROJECT_TABLE')
 
-            qaOpts.delOpt('PT_PATH_INDEX')
-            qaOpts.delOpt('PROJECT_TABLE_PREFIX')
+            qaConf.delOpt('PT_PATH_INDEX')
+            qaConf.delOpt('PROJECT_TABLE_PREFIX')
             g_vars.pt_prefix = ''
 
-        elif qaOpts.isOpt('CT_PATH_INDEX'):
-            g_vars.ct_path_index = qaOpts.getOpt('CT_PATH_INDEX')
-            qaOpts.addOpt('CT_PATH_INDEX_MAX', max(g_vars.ct_path_index))
+        elif qaConf.isOpt('CT_PATH_INDEX'):
+            g_vars.ct_path_index = qaConf.getOpt('CT_PATH_INDEX')
+            qaConf.addOpt('CT_PATH_INDEX_MAX', max(g_vars.ct_path_index))
 
             if len(g_vars.ct_path_index):
                 g_vars.ct_path_index_max = max(g_vars.ct_path_index)
@@ -682,11 +702,11 @@ def get_project_table_name(g_vars, qaOpts, fB='', sp='', isInit=False):
 
         else:
             g_vars.pt_name = 'pt_all-scope'
-            qaOpts.addOpt('PROJECT_TABLE', g_vars.pt_name)
+            qaConf.addOpt('PROJECT_TABLE', g_vars.pt_name)
             g_vars.pt_prefix = ''
 
-        if qaOpts.isOpt('PROJECT_TABLE_PREFIX'):
-            g_vars.pt_prefix = qaOpts.getOpt('PROJECT_TABLE_PREFIX') + '_'
+        if qaConf.isOpt('PROJECT_TABLE_PREFIX'):
+            g_vars.pt_prefix = qaConf.getOpt('PROJECT_TABLE_PREFIX') + '_'
         else:
             g_vars.pt_prefix = 'ct_'
 
@@ -842,21 +862,7 @@ def mk_list(items):
    return [items]
 
 
-def rmdirP(*args):
-    status=True
-    for a in args:
-        if os.path.isdir(a):
-            for rs, ds, fs in os.walk(a):
-                if len(fs):
-                    try:
-                        os.removedirs(rs)
-                    except:
-                        pass
-
-    return
-
-
-def rmR(*args):
+def rm_r(*args):
     status=True
     for a in args:
         if os.path.isdir(a) or os.path.isfile(a):
@@ -924,10 +930,6 @@ def rstrip(s, sep=' ', pat='', max=1):
         count += 1
 
     return s
-
-
-def update_tables():
-    return
 
 
 def which(items):

@@ -1,18 +1,16 @@
 getTablesPath()
 {
-  retVal=0
+  #export CONFIG_FILE
 
-  export CONFIG_FILE
-
-  if [ ! ${CONFIG_FILE} ] ; then
-     if [ -w ~/.qa-dkrz/config.txt ] ; then
-        CONFIG_FILE=~/.qa-dkrz/config.txt
-     elif [ -w ${QA_TABLES}/.qa-dkrz/config.txt ] ; then
-        CONFIG_FILE=QA_TABLES/.qa-dkrz/config.txt
-     else
-        CONFIG_FILE=~/.qa-dkrz/config.txt
-     fi
-  fi
+  #if [ ! ${CONFIG_FILE} ] ; then
+  #   if [ -w ~/.qa-dkrz/config.txt ] ; then
+  #      CONFIG_FILE=~/.qa-dkrz/config.txt
+  #   elif [ -w ${QA_TABLES}/.qa-dkrz/config.txt ] ; then
+  #      CONFIG_FILE=QA_TABLES/.qa-dkrz/config.txt
+  #   else
+  #      CONFIG_FILE=~/.qa-dkrz/config.txt
+  #   fi
+  #fi
 
   # path to the current user's home
   export QA_TABLES
@@ -20,54 +18,82 @@ getTablesPath()
   if [ ${QA_TABLES} ] ; then
     # if it is a new path, then adjust the config file
     . $QA_SRC/scripts/parseConfigFile QA_TABLES=${QA_TABLES}
-  else
-    # take QA_TABLES from the config file, if it exists.
-    if ! . $QA_SRC/scripts/parseConfigFile QA_TABLES ; then
-      local dpath
-      if [ ${CONDA_QA_PATH} ] ; then
-         dpath="~/.qa_home/QA_TABLES"
-      else
-         dpath=${QA_SRC}/QA_Tables
-      fi
-
-      echo -e "\nPlease, specify variable QA_TABLES [default: ${dpath}], " > ${TTY}
-      read -p "the spot for external tables and programs: " QA_TABLES 2> ${TTY}
-
-      test ! ${QA_TABLES} && QA_TABLES=${dpath}
-
-      local i j
-      for i in 1 2 3 ; do
-        if [ ${i} -eq 3 ] ; then
-          echo "Could not mkdir QA_TABLES=${QA_TABLES}."
-          exit 41
-        fi
-
-        if mkdir -p ${QA_TABLES} &> /dev/null ; then
-          . $QA_SRC/scripts/parseConfigFile QA_TABLES=${QA_TABLES}
+  elif ! . $QA_SRC/scripts/parseConfigFile QA_TABLES ; then
+     # take QA_TABLES from other config file sections, if any.
+     local i qt qts
+     declare -a qts
+     qts=( $( grep 'QA_TABLES[[:space:]]*=' $CONFIG_FILE ) )
+     # remove effect of blanks between QA_TABLES and '=';
+     # take only the first one
+     for(( i=0 ;  i < ${#qts[*]} ; ++i )) ; do
+        if [ "${qts[i]}" = QA_TABLES= ] ; then
+          :
+        elif [ "${qts[i]#QA_TABLES=}" != ${qts[i]} ] ; then
+          QA_TABLES=${qts[i]#QA_TABLES=}
+          break
+        elif [ "${qts[i]}" = QA_TABLES ] ; then
+          :
+        elif [ "${qts[i]}" = '=' ] ; then
+          i=$((i+1))
+          QA_TABLES=${qts[i]}
+          break
+        elif [ "${#qts[i]}" -gt 1 -a ${qts[i][0]} = '=' ] ; then
+          QA_TABLES=${qts[i]:1}
+          break
+        else
+          QA_TABLES=${qts[i]}
           break
         fi
+     done
+     qts=()
 
-        echo "Could not mkdir QA_TABLES=${QA_TABLES}."
-        QA_TABLES=${HOME}/.qa-dkrz
-        read -p "Do you want to try: ${QA_TABLES} " QA_TABLES 2> ${TTY}
-      done
+     if [ ${QA_TABLES} ] ; then
+        . $QA_SRC/scripts/parseConfigFile QA_TABLES=${QA_TABLES}
 
-      retVal=0
-    fi
+     elif [ ${#TTY} -gt 0 ] ; then
+        local  dpath=${QA_SRC}/QA_Tables
 
-    if [ -d $QA_TABLES ] ; then
-      if [ ! -w $QA_TABLES ] ; then
-        echo "directory $QA_TABLES without write permissions,"
-        echo "please, restart with added option --qa-tables=path"
-        exit 41
-      fi
-    fi
+        echo -e "\nPlease, specify variable QA_TABLES [default: ${dpath}], " > ${TTY}
+        read -p "the spot for external tables and programs: " QA_TABLES 2> ${TTY}
+
+        test ! ${QA_TABLES} && QA_TABLES=${dpath}
+
+        local i
+        for i in 1 2 3 ; do
+           if [ ${i} -eq 3 ] ; then
+             echo "Could not mkdir QA_TABLES=${QA_TABLES}."
+             exit 41
+           fi
+
+           if mkdir -p ${QA_TABLES} &> /dev/null ; then
+             . $QA_SRC/scripts/parseConfigFile QA_TABLES=${QA_TABLES}
+             break
+           fi
+
+           echo "Could not mkdir QA_TABLES=${QA_TABLES}."
+           dpath=${HOME}/.qa-dkrz
+           read -p "Do you want to try ${dpath} ? " QA_TABLES # 2> ${TTY}
+        done
+
+        if [ -d $QA_TABLES ] ; then
+           if [ ! -w $QA_TABLES ] ; then
+             echo "directory $QA_TABLES without write permissions,"
+             echo "please, restart with added option --qa-tables=path"
+             exit 41
+           fi
+        else
+           echo "no such directory QA_TABLES,"
+           echo "please, restart with added option --qa-tables=path"
+           exit 41
+        fi
+     fi
   fi
 
-  return $retVal
+  return 0
 }
 
 # main
 
-getTablesPath
-return $retVal
+getTablesPath $1
+
+return 0

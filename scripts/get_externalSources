@@ -52,7 +52,7 @@ ges_cf_html()
       return $?
     fi
 
-     . $QA_SRC/scripts/parseConfigFile NEXT_CF_UPDATE=${NEXT_CF_UPDATE}
+     . $QA_SRC/scripts/parseConfigFile NEXT_CF_UPDATE
 #  fi
 
   return 0
@@ -267,10 +267,9 @@ ges_cmip6_cmor()
    # Clone the CMIP6 table to your working directory.
    # Disable SSL verification (firewall only).
 
-   cd ${QA_TABLES}/tables/projects/CMIP6/cmip6-cmor-tables &> /dev/null
-
    if [ -d ${QA_TABLES}/tables/projects/CMIP6/cmip6-cmor-tables ] ; then
      #look for an update
+     cd ${QA_TABLES}/tables/projects/CMIP6/cmip6-cmor-tables &> /dev/null
 
      local remote
      declare -a remote
@@ -279,8 +278,10 @@ ges_cmip6_cmor()
        git fetch &> log_cmip6-cmor-tables.txt \
        && git reset --hard origin/master &> log_cmip6-cmor-tables.txt
      fi
-   else
-     git clone https://github.com/PCMDI/cmip6-cmor-tables.git &> log_cmip6-cmor.txt
+   elif [ -d ${QA_TABLES}/tables/projects/CMIP6 ] ; then
+     cd ${QA_TABLES}/tables/projects/CMIP6 &> /dev/null
+
+     git clone https://github.com/PCMDI/cmip6-cmor-tables.git &> log_cmip6-cmor-tables.txt
    fi
 
    local status=$?
@@ -297,7 +298,18 @@ ges_cmip6_conda()
   local conda_env
   local action isNewConda
 
+  # at least PrePARE could be set in the config file
+  local isAvail
   if . $QA_SRC/scripts/parseConfigFile CONDA_CMOR_PATH ; then
+    isAvail=t
+  elif . $QA_SRC/scripts/parseConfigFile PrePARE ; then
+    CONDA_CMOR_PATH=${PrePARE%/bin/PrePARE}
+    . $QA_SRC/scripts/parseConfigFile CONDA_CMOR_PATH=${CONDA_CMOR_PATH}
+    CONDA_CMOR_ENV=${CONDA_CMOR_PATH##*/}
+    isAvail=t
+  fi
+
+  if [ ${isAvail} ] ; then
     if [ ${PrePARE} ] ; then
        action=update
     else
@@ -307,9 +319,10 @@ ges_cmip6_conda()
   elif [ ${CONDA_QA_PATH:-f} != f -a ${CONDA_CMOR_PATH:-f} = f ] ; then
     # look for existing miniconda with a cmor installation
     . ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv PrePARE
-    . ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv udunits2.xml
+    # . ${QA_SRC}/scripts/inqRunEnv funct=iRE_scanCondaEnv udunits2.xml
 
-    if [ ${#PrePARE} -gt 0 -a ${#UDUNITS2_XML_PATH} -gt 0 ] ; then
+    #if [ ${#PrePARE} -gt 0 -a ${#UDUNITS2_XML_PATH} -gt 0 ] ; then
+    if [ ${#PrePARE} -gt 0 ] ; then
       action=update
       conda_env=${CONDA_CMOR_ENV}
     else
@@ -379,8 +392,6 @@ ges_cmip6_conda()
     if update_CONDA "${CONDA_CMOR_NAME}" "${CONDA_CMOR_CHANNELS}" \
                     "${CONDA_CMOR_PATH}" ${conda_env:-cmor} ${action} ; then
 
-      . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${conda_env:-cmor}
-      echo
       return 0
     fi
   fi

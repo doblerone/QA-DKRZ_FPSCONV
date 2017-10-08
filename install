@@ -53,6 +53,7 @@ descript()
   echo "                    directories in 'your-path/${package}/local'."
   echo "                    Shared by all hdf, netcdf, udunits  and zlib."
   echo "  --link_type=path  Same as for 'link' but just for type=netcdf, hdf, zlib, or udunits"
+  echo "  --make-read-only  prevent any updating by cp config-file --> QA_SRC."
   echo "  --net=no          Disable internet access."
   echo "  --qa-tables=path  Location of the projects tables and external programs."
   echo "                    Also for user-modified QA tables."
@@ -161,7 +162,7 @@ update()
            ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire
       then
         if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
-                      "${CONDA_QA_PATH}"    "${}" ; then
+                      "${CONDA_QA_PATH}"    "${CONDA_QA_ENV}" ; then
 
           . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
           . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
@@ -507,6 +508,9 @@ do
           continue
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
           isLink=t
+        elif [ "${UOPTARG}" = MAKE_READ_ONLY \
+                 -o "${UOPTARG}" = MAKE_RO ] ; then
+          isMakeRO=t
         elif [ "${OPTNAME}" = NET ] ; then
           test ! ${OPTVAL} && OPTVAL='E'
 
@@ -533,10 +537,15 @@ do
           default_prj=${OPTVAL}
           continue
         elif [ "${OPTNAME:0:2}" = UP ] ; then
-          . ${QA_SRC}/scripts/parseConfigFile UPDATE=${OPTVAL:-schedule}
-
           isUpdate=t
-          test "${OPTVAL:0:1}" = 'd' -o "${OPTVAL:0:1}" = 'D' && isUpdate=f
+
+          if [ "${OPTVAL:0:4}" = auto ] ; then
+             . ${QA_SRC}/scripts/parseConfigFile UPDATE=automatic
+
+          elif [ "${OPTVAL:0:1}" = 'd' -o "${OPTVAL:0:1}" = 'D' ] ; then
+             . ${QA_SRC}/scripts/parseConfigFile UPDATE=d
+             isUpdate=
+          fi
           continue
         elif [ "${OPTNAME:0:1}" = U ] ; then
           name_0=${OPTNAME%%_*}
@@ -609,7 +618,7 @@ fi
 . ${QA_SRC}/scripts/parseConfigFile DEFAULT_PROJECT${default_prj:+=${default_prj}}
 test ${#projects[*]} -eq 0 && projects=(${default_prj})
 
-# inquire from ~/.qa-dkrz/config.txt;
+# inquire usually from ~/.qa-dkrz/config.txt;
 if [ ${isInqTables} ] ; then
   if . ${QA_SRC}/scripts/inqRunEnv --read-only ${projects[0]} ; then
     exit 0
@@ -648,6 +657,14 @@ if [ ! ${isCondaBuild} ] ; then
   fi
 
   test ${CONDA_QA_PATH} && exit  # miniconda built executables
+fi
+
+if [ ${isMakeRO} ] ; then
+   if [ -f ~/.qa-dkrz/config.txt ] ; then
+      cp ~/.qa-dkrz/config.txt ${QA_SRC}/.qa-config.txt 2> /dev/null
+   elif [ -f ~/.qa-dkrz/qa.cfg ] ; then
+      cp ~/.qa-dkrz/qa.cfg     ${QA_SRC}/.qa.cfg 2> /dev/null
+   fi
 fi
 
 pcks="--zlib=$zlib --hdf5=$hdf5 --netcdf=$netcdf --udunits=$udunits"

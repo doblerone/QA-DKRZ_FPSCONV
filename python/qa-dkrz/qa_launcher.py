@@ -13,16 +13,16 @@ class QaLauncher(object):
     '''
     task_finished = False
 
-    def __init__(self, log, qaOpts, g_vars):
+    def __init__(self, log, qaConf, g_vars):
         # connection of any executing entity, here for QA-DKRZ
-        self.qa_exec = QaExec(log, qaOpts, g_vars)
+        self.qa_exec = QaExec(log, qaConf, g_vars)
 
         self.g_vars = g_vars
 
         self.is_next=False
-        if qaOpts.isOpt('NEXT'):
+        if qaConf.isOpt('NEXT'):
             self.is_next=True
-            self.next=qaOpts.getOpt('NEXT')
+            self.next=qaConf.getOpt('NEXT')
 
 
     def run(self, data_path, fName, t_vars):
