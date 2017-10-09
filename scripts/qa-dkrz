@@ -2915,7 +2915,7 @@ init()
        std_out flush "could not install ${prj}"
        exit 1
     fi
-  elif ${isInq} ; then
+  elif [ ${isInq} ] ; then
       if ! . $QA_SRC/scripts/inqRunEnv --read-only ${prj} ; then
         # get the state of the current installation: read config-file
         #local installArg
