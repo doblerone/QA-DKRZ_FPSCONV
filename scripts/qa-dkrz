@@ -465,7 +465,12 @@ callQaConfig()
   done
   set +f
 
-# invoked by option -E_DEBUG_MANAGER
+  if [ -f ${QA_SRC}/.qa-config.txt ] ; then
+     export CONFIG_READ_ONLY=t
+     export CONFIG_FILE=${QA_SRC}/.qa-config.txt
+  fi
+
+  # invoked by option -E_DEBUG_MANAGER
   if [ ${#DEBUG_MANAGER} -gt 1 ] ; then
     exec 7<&2
     dbgCycle=0
@@ -1371,14 +1376,13 @@ finally()
   \rm -f $QA_RESULTS/session_logs/PID/pid.$rootPID
 
   # directory containing files with PIDs of current qa-DKRZ runs.
-  rmdir $SESSION_LOG/PID &> /dev/null # only if empty
+  rmdir $QA_RESULTS/session_logs/PID &> /dev/null # only if empty
 
   test ${FLOW_TRACE:-f} = t && tracePrint
 
-  # Note: there could be 2 sub-dirs and files in PROC_POOL during operation.
+  # Note: there could be 2 sub-dirs and files in PROC_POOL during operation
   local f fs
   declare -a fs
-
   fs=( $( ls -d $PROC_POOL/* 2> /dev/null) )
 
   local count=0
@@ -1407,6 +1411,15 @@ finally()
   # rm PROC_POOL
   \rmdir ${PROC_POOL}/* 2> /dev/null
   \rmdir ${PROC_POOL}   2> /dev/null
+
+  if [ ${IS_SINGLE_FILE_MODE} ] ; then
+     if [ -f $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log ] ; then
+        cat $LOG_FNAME_DIR/${CURR_LOG_FNAME}.log
+
+        \rm -r ${QA_RESULTS}
+        exit 0
+     fi
+  fi
 
   # rm pid-saving file
   \rm -f ${SESSION_LOGDIR}/pid.$rootPID
@@ -1561,7 +1574,7 @@ getExperimentName()
 
   local iex
   for(( iex=0 ; iex < ${#LOG_FNAMES[*]} ; ++iex )) ; do
-    if [ ${LOG_FNAMES[iex]} = ${CURR_LOG_FNAME} ] ; then
+    if [ "${LOG_FNAMES[iex]}" = "${CURR_LOG_FNAME}" ] ; then
       return 0
     fi
   done
@@ -2250,7 +2263,7 @@ getNextSubPath()
 
     subPath=${line[1]}
     explFName=${line[2]}  # available only for a single file selection
-    PROJECT_DATA=${PROJECT_DATAV[${line[0]}]}
+    test ${line[0]} -gt -1 && PROJECT_DATA=${PROJECT_DATAV[${line[0]}]}
 
     # if read returned true, although there was currently no more entry
     test "${prevLine}" = "${subPath}" && break
@@ -2314,6 +2327,47 @@ getPaths()
 
   # filename
   pathListFile=${SESSION_LOGDIR}/path-list.txt
+
+  # special: only a file is provided for a single check
+  if [ ! ${PROJECT_DATAV} ] ; then
+     # split filename
+     local fname x_pf
+     declare -a x_pf
+     x_pf=(${PROVIDED_FILES//,/ })
+
+     if [ ${#x_pf[*]} -eq 1 ] ; then
+       if [ ${x_pf:0:2} = './' ] ; then
+         x_pf=${PWD}${x_pf:1}
+         echo "-1 ${PWD} ${x_pf##*/}" > $pathListFile
+       elif [ ${x_pf:0:3} = '../' ] ; then
+         x_pf=${PWD%/*}${x_pf:2}
+         echo "-1 ${PWD%/*} ${x_pf##*/}" > $pathListFile
+       elif [ ${x_pf:0:1} != '/' ] ; then
+         # relative path
+         echo "-1 ${PWD} ${x_pf##*/}" > $pathListFile
+         x_pf=${PWD}/${x_pf}
+       else
+         # abosulte path
+         echo "-1 ${x_pf%/*} ${x_pf##*/}" > $pathListFile
+       fi
+       echo "---EOF---" >> $pathListFile
+
+       # assumption that there is no file on root '/'
+       x_pf=${x_pf:1} # strip leading /
+       PROJECT_DATAV=/${x_pf%/*}
+       SELECT_VAR_LIST[0]=${x_pf##*/}
+       SELECT_VAR_LIST[0]=${SELECT_VAR_LIST[0]%%_*}_
+       SELECT_PATH_LIST[0]='.*'
+       #SELECT_PATH_LIST[0]=${SELECT_PATH_LIST[0]%/*}=
+       NO_SUMMARY=t
+       unset QUERY_NON_NC_FILE
+       IS_SINGLE_FILE_MODE=t
+       set +f
+       return
+     else
+       exit 1
+     fi
+  fi
 
   PROJECT_DATAV=( ${PROJECT_DATAV[*]//,/ } )
 
@@ -2790,41 +2844,55 @@ init()
     fi
   fi
 
-  # package update requested and required?
-  if [ ! "${UPDATE}" ] ; then
-    if . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE${AUTO_UP:+=}${AUTO_UP} ; then
-      isUp=t
+  # this file acts a show stopper for any update
+  if [ ! -f $QA_SRC/.qa-config.txt ] ; then
+    # convert AUTO_UPDATE --> UPDATE=automatic
+    if . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE ; then
+       . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE=d
+       . $QA_SRC/scripts/parseConfigFile UPDATE=automatic
+    else
+       . $QA_SRC/scripts/parseConfigFile UPDATE
     fi
 
-    if . $QA_SRC/scripts/parseConfigFile UPDATE ; then
-      if [ "${UPDATE}" = 'never' ] ; then
-        isUp=''
-      else
-        isUp=t
-      fi
+    # 'never' can only be disabled by install
+    if [ "${UPDATE}" = never ] ; then
+       CMD_UP=
+       UPDATE=
     fi
-  fi
+    if [ "${CMD_UP}" = never ] ; then
+       . $QA_SRC/scripts/parseConfigFile UPDATE=${CMD_UP}
+       CMD_UP=
+       UPDATE=
+    fi
 
-  isInq=t
-  if ! . $QA_SRC/scripts/parseConfigFile QA_TABLES ; then
-    isInq=''
-  elif ! . $QA_SRC/scripts/parseConfigFile QA_HOME ; then
-    isInq=''
-  fi
+    if [ ${CMD_UP} ] ; then
+       test "${CMD_UP}" != t && \
+          . $QA_SRC/scripts/parseConfigFile UPDATE=${CMD_UP}
 
-  local prj=${PROJECT}
+       isUp=t
+    elif [ ${UPDATE} ] ; then
+       test "${CMD_UP:0:4}" = auto && \
+          . $QA_SRC/scripts/parseConfigFile UPDATE=automatic
 
-  if [ "${installArgs}" ] ; then
-    local iA_args iA_arg
-    declare -a iA_args
-    iA_args=(${installArgs//,/ })
+       isUp=t
+    fi
 
-    for iA_arg in ${iA_args[*]} ; do
-      if [ ${iA_arg:0:2} != '--' ] ; then
-        prj=${iA_arg}
-        break
-      fi
-    done
+    isInq=t
+
+    local prj=${PROJECT}
+
+    if [ "${installArgs}" ] ; then
+      local iA_args iA_arg
+      declare -a iA_args
+      iA_args=(${installArgs//,/ })
+
+      for iA_arg in ${iA_args[*]} ; do
+        if [ ${iA_arg:0:2} != '--' ] ; then
+          prj=${iA_arg}
+          break
+        fi
+      done
+    fi
   fi
 
   if [ ${isUp} ] ; then
@@ -2850,15 +2918,16 @@ init()
   elif ${isInq} ; then
       if ! . $QA_SRC/scripts/inqRunEnv --read-only ${prj} ; then
         # get the state of the current installation: read config-file
-        local installArg
-        if [ ${INSTALL_ARGS} ] ; then
-           installArg="${INSTALL_ARGS}up${prj:+,${prj}}"
-        else
-           installArg="up${prj:+,${prj}}"
-        fi
+        #local installArg
+        #if [ ${INSTALL_ARGS} ] ; then
+        #   installArg="${INSTALL_ARGS}up${prj:+,${prj}}"
+        #else
+        #   installArg="up${prj:+,${prj}}"
+        #fi
 
+        local p=${0%/*}
         echo -e "\nMissing external tables/executabels."  > $TTY
-        echo "Please, run: $0 --install=${installArg} ${comLineArgs[*]}"  > $TTY
+        echo "Please, run: ${p%/*}/install up PROJECT"  > $TTY
         exit 1
       fi
   fi
@@ -4359,6 +4428,7 @@ std_out()
 terminate()
 {
   isTERM=t
+
   finally
   exit
 }
@@ -4435,8 +4505,13 @@ testFileLink()
   fi
 
   # qa the genuine data
-  tryCom \
-  mkdir -p ${QA_RESULTS}/data/${subPath}
+  if [ ${subPath:0:1} = '/' ] ; then
+     tryCom \
+        mkdir -p ${QA_RESULTS}/data/${subPath:1}
+  else
+     tryCom \
+        mkdir -p ${QA_RESULTS}/data/${subPath}
+  fi
 
 # point to the genuine filename from here
   local ix=0
@@ -5028,17 +5103,23 @@ wait_fnct()
 ##main()
 ##{
 ######## main ############
+setKWL CURR_DIR=$PWD
 
 comLineArgs=( $* )
 
 test $# -eq 1 -a "${1:0:9}" = '--install' && STOP_AFTER_INSTALL=t
 umask 002
-export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
 
 THIS=${0%/*}
 
 # resolve symbolic links
 . ${THIS}/getSrcPath $THIS
+
+if [ -f ${QA_SRC}/.qa-config.txt ] ; then
+    export CONFIG_FILE=$QA_SRC/.qa-config.txt
+else
+    export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
+fi
 
 # is it in a conda built?
 . ${QA_SRC}/scripts/getCondaPath
@@ -5102,7 +5183,11 @@ if [ ${isLCF} ] ; then
     fi
   fi
 else
-  setKWL CONFIG_FILE=${HOME}/.qa-dkrz/config.txt
+  if [ -f ${QA_SRC}/.qa-config.txt ] ; then
+    setKWL CONFIG_FILE=${QA_SRC}/.qa-config.txt
+  else
+    setKWL CONFIG_FILE=${HOME}/.qa-dkrz/config.txt
+  fi
 fi
 
 init $*

@@ -42,8 +42,8 @@ setDefaults()
   # to the calling qaDirector
 
   # you should not leave this unchanged in the config file
-  test ! ${QA_RESULTS} && setKWL QA_RESULTS=./QA_Results
-  test ! ${PROJECT_DATA} && setKWL PROJECT_DATA=./
+  test ! ${QA_RESULTS} && setKWL QA_RESULTS=$PWD/QA_Results
+  # test ! ${PROJECT_DATA} && setKWL PROJECT_DATA=$PWD
 
   setKWL QA_HOST=$HOSTNAME
 
@@ -609,25 +609,27 @@ loadSetting()
     exit 1
   fi
 
-  tmp=(${PROJECT_DATA[*]//,/ })
-  tmp=(${tmp[*]%/})  # rm trailing '/'
+  if [ "${PROJECT_DATA}" ] ; then
+     tmp=(${PROJECT_DATA[*]//,/ })
+     tmp=(${tmp[*]%/})  # rm trailing '/'
 
-  # completion of relative paths
-  for(( i=0 ; i < ${#tmp[*]} ; ++i )) do
-    test ${tmp[i]:0:1} = '/' && continue
+     # completion of relative paths
+     for(( i=0 ; i < ${#tmp[*]} ; ++i )) do
+       test ${tmp[i]:0:1} = '/' && continue
 
-    if [ ${tmp[i]:0:1} = '.'  ] ; then
-      tmp[${i}]=$(pwd)${tmp[i]:1}
-    elif [ ${tmp[i]:0:2} = '..'  ] ; then
-      myPwd=$(pwd)
-      tmp[${i}]=${myPwd%/*}${tmp[i]:2}
-    else
-      tmp[${i}]=$(pwd)/${tmp[i]}
-    fi
-  done
+       if [ ${tmp[i]:0:1} = '.'  ] ; then
+         tmp[${i}]=$(pwd)${tmp[i]:1}
+       elif [ ${tmp[i]:0:2} = '..'  ] ; then
+         myPwd=$(pwd)
+         tmp[${i}]=${myPwd%/*}${tmp[i]:2}
+       else
+         tmp[${i}]=$(pwd)/${tmp[i]}
+       fi
+     done
 
-  tmp="${tmp[*]}"
-  PROJECT_DATA=${tmp// /,}
+     tmp="${tmp[*]}"
+     PROJECT_DATA=${tmp// /,}
+  fi
 
   QA_SRC=${QA_SRC%/}  # rm trailing '/'
 
@@ -661,28 +663,28 @@ loadSetting()
   done
 
 
-  if [ ! ${PROJECT_DATA} ]  ; then
-    local isRoot=t
-    for(( i=0 ; i < ${#pathList[*]} ; ++i )) ; do
-      test ${pathList[i]:0:1} != '/' && isRoot=f && break
-    done
+  #if [ ! ${PROJECT_DATA} ]  ; then
+  #  local isRoot=t
+  #  for(( i=0 ; i < ${#pathList[*]} ; ++i )) ; do
+  #    test ${pathList[i]:0:1} != '/' && isRoot=f && break
+  #  done
 
-    if [ ${isRoot} = t ] ; then
-      # get it from SELECT with absolute path
-      for(( i=0 ; i < ${#pathList[*]} ; ++i )) ; do
-        test ${PROJECT_DATA} && PROJECT_DATA="${PROJECT_DATA},"
+  #  if [ ${isRoot} = t ] ; then
+  #    # get it from SELECT with absolute path
+  #    for(( i=0 ; i < ${#pathList[*]} ; ++i )) ; do
+  #      test ${PROJECT_DATA} && PROJECT_DATA="${PROJECT_DATA},"
 
-        PROJECT_DATA="${PROJECT_DATA}${pathList[i]%/*}"
-        pathList[i]=${pathList[i]##*/}
-      done
+  #      PROJECT_DATA="${PROJECT_DATA}${pathList[i]%/*}"
+  #      pathList[i]=${pathList[i]##*/}
+  #    done
 
-      setKWL PROJECT_DATA=${PROJECT_DATA}
-    else
-      std_out "missing PROJECT_DATA assignment."
-      std_out flush
-      exit 1
-    fi
-  fi
+  #    setKWL PROJECT_DATA=${PROJECT_DATA}
+  #  else
+  #    std_out "missing PROJECT_DATA assignment."
+  #    std_out flush
+  #    exit 1
+  #  fi
+  #fi
 
   # Naming and placement of the base dirs in QA_RESULTS.
   # Inits also session-logs
@@ -1858,6 +1860,11 @@ if [ ${isHelp:-f} = t ] ; then
   . $QA_SRC/scripts/qa-help
 fi
 
+if [ -f ${QA_SRC}/.qa-config.txt ] ; then
+  export CONFIG_READ_ONLY=t
+  export CONFIG_FILE=${QA_SRC}/.qa-config.txt
+fi
+
 if [ ${isConfigFile} ] ; then
   if [ ! "${CONFIG_FILE_LOCATION}" ] ; then
     if [ ${QA_TABLES} ] ; then
@@ -1966,17 +1973,7 @@ do
         setKWL DEBUG_EXECUTOR=t
         ;;  # already done for this script
     -)  if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
-          . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE${OPTVAL:-=t}
-          setKWL UPDATE=t
-
-        elif [ "${OPTNAME:0:5}" = DEBUG ] ; then
-          : # done before
-
-        elif [ "${OPTNAME}" = EXAMPLE ] ; then
-          : # done before
-
-        elif [ "${OPTNAME}" = HOME ] ; then
-          : # done before
+          setKWL CMD_UP=automatic
 
         elif [ "${OPTNAME}" = INSTALL ] ; then
           opts=( ${OPTVAL//,/ } )
@@ -1996,7 +1993,7 @@ do
           done
 
 #          test ${installArgs//--up/} = ${installArgs} && installArgs+="up,"
-          setKWL UPDATE=t
+          setKWL CMD_UP=t
 
         elif [ "${OPTNAME}" = NET ] ; then
           installArgs+="${OPTARG},"
@@ -2018,14 +2015,11 @@ do
           installArgs+="set_default_project=${OPTVAL},"
 
         elif [ "${OPTNAME:0:2}" = UP ] ; then
-          setKWL UPDATE=t
+          setKWL CMD_UP=t
           installArgs+="up,"
 
         elif [ "${OPTNAME}" = VERSION ] ; then
             setKWL DISPLAY_VERSION${OPTVAL:+=}${OPTVAL}
-
-        elif [ "${OPTNAME:0:4}" = WORK ] ; then
-          : # done before
 
         fi
         ;;
@@ -2037,6 +2031,8 @@ done
 test ${installArgs} && setKWL INSTALL_ARGS="${installArgs}"
 
 shift $(( $OPTIND - 1 ))
+PROVIDED_FILES="$*"
+setKWL PROVIDED_FILES=${PROVIDED_FILES// /,}
 
 # for downward compatibility
 test ${QA_DATA_ROOT} && setKWL QA_RESULTS=${QA_DATA_ROOT}

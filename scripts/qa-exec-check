@@ -66,8 +66,8 @@ However, the check was successful."
     local s_out="${ans}qA-${PROJECT}.x: run-time error"
 
     s_out="${s_out}\nfile: ${NEXT_FILE}"
-    s_out="${s_out}\ndata_path: ${PROJECT_DATA}/${SUB_PATH}"
-    s_out="${s_out}\nresult_path: ${QA_RESULTS}/data/${SUB_PATH}"
+    s_out="${s_out}\ndata_path: ${PROJECT_DATA}${PROJECT_DATA:+/}${SUB_PATH}"
+    s_out="${s_out}\nresult_path: ${QA_RESULTS}/data${PROJECT_DATA:+/}${SUB_PATH}"
     s_out="${s_out}\n\nTried:\n$(cat param_file_$$.txt)"
 
     local nm=${ncFile##*/}
@@ -202,7 +202,8 @@ clearProcPool()
   # clear the blocking by the message file in ProcPool
   if [ -d  $PROC_POOL/session ] ; then
     if [ ${DISTRIBUTED_FS:-f} = f ] ; then
-       tryCom mv $PROC_POOL/$PROC_FILE.lock $PROC_POOL/$PROC_FILE.closed
+       cp $PROC_POOL/$PROC_FILE.lock $PROC_POOL/$PROC_FILE.closed
+       \rm -f $PROC_POOL/$PROC_FILE.lock
     else
        tryRemote ssh ${QA_HOST}  \
          mv $PROC_POOL/$PROC_FILE.lock $PROC_POOL/$PROC_FILE.closed
@@ -215,7 +216,7 @@ clearProcPool()
 runQA()
 {
   # this is the ultimately last check
-  if [ "$QA_RESULTS/data/${SUB_PATH}" = "${PROJECT_DATA}$SUB_PATH" ] ; then
+  if [ "$QA_RESULTS/data${PROJECT_DATA:+/}${SUB_PATH}" = "${PROJECT_DATA}${PROJECT_DATA:+/}$SUB_PATH" ] ; then
     sTxt[0]="3qaExecution: Path of QA_RESULTS/data/SUB_PATH \
 and PROJECT_DATA/SUB_PATH must not be identical"
     log
@@ -225,7 +226,11 @@ and PROJECT_DATA/SUB_PATH must not be identical"
   fi
 
   # destination for results
-  test ${SHOW_CALL:-f} = f && tryCom cd $QA_RESULTS/data/${SUB_PATH}
+  if [ ${SHOW_CALL:-f} = f ] ; then
+     local sp=${SUB_PATH}
+     test ${sp:0:1} = '/' && sp=${sp:1}
+     tryCom cd $QA_RESULTS/data/${sp}
+  fi
 
   if [ ! -s ${ncFile} ] ; then  # no file found
     # this might happen, if someone has deleted
@@ -422,8 +427,8 @@ formatText()
   # date and host
   str0="$( date +'%F %T' ) ${HOSTNAME%%.*}:qaExecutor.${where}"
   str0="${str0}\nFile:\t\t${NEXT_FILE}"
-  str0="${str0}\nData path:\t$PROJECT_DATA/${SUB_PATH}"
-  str0="${str0}\nQA result path: $QA_RESULTS/data/${SUB_PATH}"
+  str0="${str0}\nData path:\t$PROJECT_DATA${PROJECT_DATA:+/}${SUB_PATH}"
+  str0="${str0}\nQA result path: $QA_RESULTS/data${PROJECT_DATA:+/}${SUB_PATH}"
 #  str0="${str0}DRS tree:\t${SUB_PATH#/}\n"
 
   str0="${str0}\n$*"
@@ -601,7 +606,7 @@ init()
   fi
 
   # path to the netCDF file
-  ncFile=${PROJECT_DATA}/${SUB_PATH}/${NEXT_FILE}
+  ncFile=${PROJECT_DATA}${PROJECT_DATA:+/}${SUB_PATH}/${NEXT_FILE}
 
   # execution log-file
   EXEC_LOG=${NEXT_FILE%.nc}.log
@@ -701,7 +706,7 @@ log()
     if [ "${sTxt[i]}" = '--standard' ] ; then
       s_out="${s_out}\n${sp[3]}file: ${NEXT_FILE}"
       s_out="${s_out}\n${sp[3]}data_path: ${PROJECT_DATA}/${SUB_PATH}"
-      s_out="${s_out}\n${sp[3]}result_path: ${QA_RESULTS}/data/${SUB_PATH}"
+      s_out="${s_out}\n${sp[3]}result_path: ${QA_RESULTS}/data${PROJECT_DATA:+/}${SUB_PATH}"
       break
     fi
   done
@@ -1230,7 +1235,7 @@ EOF
 setParameter()
 {
   # path to the netCDF file
-  par_str="-p ${PROJECT_DATA}/${SUB_PATH}"
+  par_str="-p ${PROJECT_DATA}${PROJECT_DATA:+/}${SUB_PATH}"
 
   # all files of the family
 #  for ncFile in ${ncFiles[*]} ; do
