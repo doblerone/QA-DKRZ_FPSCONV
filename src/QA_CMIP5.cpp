@@ -1282,13 +1282,13 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
 
   int len ;
 
-  size_t sz = QA_Exp::MIP_tableNames.size() ;
+  size_t sz = pQA->qaExp.MIP_tableNames.size() ;
   size_t i;
   for( i=0 ; i < sz ; ++i )
   {
-     if( QA::tableID == QA_Exp::MIP_tableNames[i] )
+     if( QA::tableID == pQA->qaExp.MIP_tableNames[i] )
      {
-        len = QA_Exp::MIP_FNameTimeSz[i] ;
+        len = pQA->qaExp.MIP_FNameTimeSz[i] ;
         break;
      }
   }
@@ -1300,7 +1300,7 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
 
   // a) yyyy
   if( len_sd == 4 && len_sd != len )
-      text =", expected yyyy, found " + sd[0] + "-" + sd[1] ;
+      text =", expected YYYY, found " + sd[0] + "-" + sd[1] ;
 
   // b) ...mon, aero, Oclim, and cfOff
   else if( len_sd == 6 && len_sd != len )
@@ -4361,6 +4361,30 @@ QA_Exp::applyOptions(std::vector<std::string>& optStr)
        continue;
      }
 
+     if( split[0] == "mFNTS" || split[0] == "MIP_fname_time_size" )
+     {
+       if( split.size() == 2 )
+       {
+          Split csv (split[1],',') ;
+          for( size_t i=0 ; i < csv.size() ; ++i )
+             MIP_FNameTimeSz.push_back( stoi(csv[i]) );
+       }
+
+       continue;
+     }
+
+     if( split[0] == "mTN" || split[0] == "MIP_table_name" )
+     {
+       if( split.size() == 2 )
+       {
+          Split csv (split[1],',') ;
+          for( size_t i=0 ; i < csv.size() ; ++i )
+            MIP_tableNames.push_back(csv[i]) ;
+       }
+
+       continue;
+     }
+
      if( split[0] == "tVR"
           || split[0] == "table_variable_requirements" )
      {
@@ -4660,8 +4684,7 @@ QA_Exp::getMIP_tableName(std::string tName)
 
   if( x_tSz > 1 )
   {
-    if(  x_tableID[0].substr(1,4) == "able"
-        || x_tableID[0].substr(1,4) == "ABLE" )
+    if(  x_tableID[0] == "Table" )
       QA::tableID = x_tableID[1] ;
   }
   else if( x_tableID.size() )
@@ -4682,7 +4705,7 @@ QA_Exp::getMIP_tableName(std::string tName)
   {
     std::string key("7_7a");
 
-    if( notes->inq( key, CMOR::n_global) )
+    if( notes->inq( key, CMOR::n_global, "NO_MT") )
     {
       std::string capt("invalid MIP table name in global ") ;
       capt += hdhC::tf_att(hdhC::empty, CMOR::n_table_id, x_tableID.getStr()) ;
@@ -4813,6 +4836,20 @@ QA_Exp::initDefaults(void)
   frequencyPosition=-1;  // not set
   mipPosition=-1;
   varnamePosition=-1;
+
+  MIP_tableNames =
+      {
+           "fx",       "Oyr",    "Oclim",    "Amon",      "Omon",     "Lmon",
+        "LImon",     "OImon",     "aero",     "day",    "6hrLev",  "6hrPlev",
+          "3hr",     "cfMon",    "cfDay",    "cf3hr",  "cfSites",     "cfOff"
+      };
+
+  MIP_FNameTimeSz =
+      {
+              0,           4,          6,         6,           6,          6,
+              6,           6,          6,         8,          10,         10,
+             10,           6,          8,        10,          12,          -1
+      };
 
   return;
 }

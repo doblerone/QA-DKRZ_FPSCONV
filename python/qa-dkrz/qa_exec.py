@@ -165,6 +165,12 @@ class QaExec(object):
         if qaConf.isOpt('IGNORE_REFERENCE_DATE'):
             par += ':iRD'
 
+        # these two denote same index in their respective vector
+        if qaConf.isOpt('MIP_TABLE_NAME'):
+            par += ':mTN=' + qaConf.getOpt('MIP_TABLE_NAME')
+        if qaConf.isOpt('MIP_FNAME_TIME_SZ'):
+            par += ':mFNTS=' + qaConf.getOpt('MIP_FNAME_TIME_SZ')
+
         if qaConf.isOpt('NEXT_RECORDS'):
             par += ':nextRecords=' + qaConf.getOpt('NEXT_RECORDS', bStr=True)
 

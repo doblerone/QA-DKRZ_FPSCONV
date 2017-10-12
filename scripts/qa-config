@@ -1804,9 +1804,9 @@ do
         elif [ ${OPTNAME:0:7} = 'DEBUG_C' ] ; then
           DEBUG_CONF=t
           set -x
-        elif [ ${OPTNAME} = 'PROJECT=' ] ; then
+        elif [ ${OPTNAME} = 'PROJECT' ] ; then
           setKWL ${OPTARG}
-        elif [ ${OPTNAME} = 'QA_CONFIG' ] ; then
+        elif [ ${OPTNAME} = 'QA_CONF' ] ; then
           localQAC=${OPTVAL}
         elif [ ${OPTNAME} = 'QA_TABLES' ] ; then
           setKWL QA_TABLES=${OPTVAL}

@@ -530,8 +530,8 @@ public:
   std::string cfStndNames;
   std::string currMIP_tableName;
   std::string frequency;
-  static std::vector<std::string> MIP_tableNames;
-  static std::vector<int>         MIP_FNameTimeSz;
+  std::vector<std::string> MIP_tableNames ;
+  std::vector<int>         MIP_FNameTimeSz ;
 
   std::string experiment_id;
   std::string fVarname;
@@ -545,22 +545,6 @@ public:
   bool        not_equal(double x1, double x2, double epsilon);
   void        pushBackVarMeDa(Variable*);
 };
-
-const char* CMIP5_MIPS[] = {
-  "fx",       "Oyr",      "Oclim",    "Amon",      "Omon",     "Lmon",
-  "LImon",    "OImon",    "aero",     "day",       "6hrLev",   "6hrPlev",
-  "3hr",      "cfMon",    "cfDay",    "cf3hr",     "cfSites",  "cfOff"
-};
-
-std::vector<std::string> QA_Exp::MIP_tableNames(CMIP5_MIPS, CMIP5_MIPS + 18);
-
-const int FNameTimeSz[] = {
-  0,       4,      6,    6,      6,     6,
-  6,    6,    6,     8,       10,   10,
-  10,      6,    8,    10,     12,  -1
-};
-
-std::vector<int> QA_Exp::MIP_FNameTimeSz(FNameTimeSz, FNameTimeSz + 18);
 
 #endif
 

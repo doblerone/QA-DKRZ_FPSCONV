@@ -615,6 +615,8 @@ callQaExecutor()
           IGNORE_REF_DATE_ACROSS_EXP \
           LOG_CPU_TIME \
           MAIL \
+          MIP_FNAME_TIME_SZ \
+          MIP_TABLE_NAME \
           NEVER_BREAK_SESSION \
           NEXT_RECORDS \
           NICE \
