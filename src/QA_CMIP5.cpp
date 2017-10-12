@@ -1606,6 +1606,160 @@ CMOR::applyOptions(std::vector<std::string>& optStr)
   return;
 }
 
+bool
+CMOR::checkDateFormat(std::string rV, std::string aV)
+{
+    // a) return true for: does not match
+    // b) leading and/or trailing '*' indicate that any corresponding
+    //    non-digits are expected
+    // c) leading and/or trailing non-digits are mandatory in val_is
+
+    if( rV.size() == 0 || aV.size() == 0 )
+        return true;
+
+    // [DATE: ]request
+    size_t i;
+    if( rV.substr(0,5) == "DATE:" )
+    {
+       // skip following blanks
+       for( i=5 ; i < rV.size() ; ++i )
+          if( rV[i] != ' ' )
+             break;
+
+       rV = rV.substr(i);
+    }
+
+    // a prefix is separated by '|'
+    size_t pos;
+    std::string prefix;
+    if( (pos=rV.find('|')) < std::string::npos )
+    {
+        prefix = rV.substr(0,pos) ;
+        rV = rV.substr(pos+1);
+    }
+
+    size_t prefix_width = 0;
+
+    if( prefix.size() )
+    {
+       size_t p_ast;
+       if( (p_ast=prefix.find('*')) < std::string::npos )
+       {
+          if( prefix.size() == 1 )
+             prefix_width=1;
+          else
+          {
+              // non-static prefix (also with digits) of fixed size
+              int sz = std::stoi(prefix.substr(0,p_ast)) ;
+              if( rV.substr(0,sz) != aV.substr(0,sz) )
+                 return true;
+              else
+                 prefix_width=sz;
+          }
+       }
+       else
+       {
+          size_t sz = prefix.size();
+          if( prefix != aV.substr(0, sz) )
+             // prefix has to be identical
+             return true;
+          else
+             prefix_width=sz;
+       }
+    }
+
+    if( prefix_width > 0 )
+        aV = aV.substr(prefix_width);
+
+    // pure digits are requested, the available one should have the same size
+    if( aV.size() && hdhC::isDigit(aV) )
+    {
+       if( rV.find('*') < std::string::npos )
+          return false;
+       else
+          return aV.size() == rV.size() ? false : true ;
+    }
+
+    // a valid date format may have T substituted by a blank
+    // and Z omitted or the latter be lower case.
+    Split x_aV(aV, " T", true);
+    Split x_rV(rV, " T", true);
+
+    // '*' at any position inicates omissioni of leading 0
+    bool isLeadingZero=true;
+    if( rV.find('*') < std::string::npos )
+    {
+        isLeadingZero = false;
+        size_t sz = rV.size()-1;
+        if( rV[sz] == '*' )
+            rV = rV.substr(0,sz);
+    }
+
+    Split x_aV_dt(x_aV[0], '-');
+    Split x_rV_dt(x_rV[0], '-');
+
+    if( x_aV.size() )
+    {
+        // the date
+        if( x_aV_dt.size() != x_rV_dt.size() )
+            return true;
+
+        if( isLeadingZero )
+        {
+            for( size_t i=0 ; i < x_rV_dt.size() ; ++i )
+                if( x_rV_dt[i].size() != x_aV_dt[i].size() )
+                    return true;
+        }
+    }
+
+    if( x_aV.size() < 3 )
+    {
+        // the time
+        x_aV_dt.setSeparator(':');
+        x_rV_dt.setSeparator(':');
+        x_aV_dt=x_aV[1] ;
+        x_rV_dt=x_rV[1] ;
+
+        // time zone by an appending letter
+        size_t last = x_rV_dt.size() -1 ;
+        bool is_TZ_rV = false;
+        if( x_rV_dt.size() == 3 && hdhC::isAlpha(x_rV_dt[2][last]) )
+        {
+            x_rV_dt[2] = x_rV_dt[2].substr(0,last);
+            is_TZ_rV = true;
+        }
+
+        last = x_aV_dt.size() -1 ;
+        bool is_TZ_aV = false;
+        if( x_aV_dt.size() == 3 && hdhC::isAlpha(x_aV_dt[2][last]) )
+        {
+            x_aV_dt[2] = x_aV_dt[2].substr(0,last);
+            is_TZ_aV = true;
+        }
+        else
+        {
+            // time-zone may be omitted for Z
+            if( is_TZ_rV )
+                return false;
+        }
+
+        if( is_TZ_aV != is_TZ_rV )
+            return true;
+
+        if( x_aV_dt.size() != x_rV_dt.size() )
+            return true;
+
+        if( isLeadingZero )
+        {
+            for( size_t i=0 ; i < x_rV_dt.size() ; ++i )
+                if( x_rV_dt[i].size() != x_aV_dt[i].size() )
+                    return true;
+        }
+    }
+
+    return false;
+}
+
 void
 CMOR::checkEnsembleMemItem(std::string& rqName, std::string& attVal)
 {
@@ -1740,68 +1894,6 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
 
 
   return;
-}
-
-void
-CMOR::checkFullDate(std::string& rqName, std::string& aV)
-{
-   // a valid date format may have T substituted by a blank
-   // and Z omitted or the latter be lower case.
-   bool is=false;
-   if( aV.size() > 18 )
-   {
-      if( aV[4] == '-' && aV[7] == '-' )
-      {
-         if( aV[10] == 'T' || aV[10] == ' ' )
-         {
-            if( aV[13] == ':' && aV[16] == ':' )
-            {
-               if( aV.size() == 20 )
-               {
-                  if( !(aV[19] == 'Z' || aV[19] == 'z' ) )
-                     is=true;
-               }
-
-               if( ! hdhC::isDigit( aV.substr(0, 4) ) )
-                  is=true ;
-               else if( ! hdhC::isDigit( aV.substr(5, 2) ) )
-                  is=true ;
-               else if( ! hdhC::isDigit( aV.substr(8, 2) ) )
-                  is=true ;
-               else if( ! hdhC::isDigit( aV.substr(11, 2) ) )
-                  is=true ;
-               else if( ! hdhC::isDigit( aV.substr(14, 2) ) )
-                  is=true ;
-               else if( ! hdhC::isDigit( aV.substr(17, 2) ) )
-                  is=true ;
-            }
-            else
-               is=true;
-         }
-         else
-            is=true;
-      }
-      else
-         is=true;
-   }
-
-   if( is )
-   {
-      std::string key("2_4");
-      if( notes->inq( key, pQA->s_global) )
-      {
-         std::string capt(pQA->s_global);
-         capt += hdhC::blank;
-         capt += hdhC::tf_att(rqName);
-         capt += "does not comply with YYYY-MM-DDThh:mm:ssZ, found: " ;
-         capt += aV ;
-
-         (void) notes->operate(capt) ;
-         notes->setCheckStatus("CV",  pQA->n_fail );
-      }
-   }
-
-   return;
 }
 
 bool
@@ -3111,8 +3203,27 @@ CMOR::checkReqAtt_global(void)
                          || rqName == "realization" )
             checkEnsembleMemItem(rqName, aV) ;
 
-          else if( x_rqValue[0] == "YYYY-MM-DDTHH:MM:SSZ" )
-            checkFullDate(rqName, aV);
+          else if( rqValue.substr(0,5) == "DATE:" || rqValue.substr(0,4) == "YYYY" )
+          {
+            if( checkDateFormat(rqValue, aV) )
+            {
+               std::string key("2_4");
+               if( notes->inq( key, pQA->s_global) )
+               {
+                 std::string capt(pQA->s_global);
+                 capt += hdhC::blank;
+                 capt += hdhC::tf_att(hdhC::empty, rqName, aV);
+                 capt += "does not comply with DRS_CV request ";
+                 if( rqValue.substr(0,5) == "DATE:" )
+                   capt += rqValue.substr(5);
+                 else
+                   capt += rqValue ;
+
+                 (void) notes->operate(capt) ;
+                 notes->setCheckStatus("CV", pQA->n_fail );
+               }
+            }
+          }
 
           else if( !hdhC::isAmong(aV, vs_rqValue) )
           {

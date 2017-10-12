@@ -97,7 +97,7 @@ global:
    contact
    Conventions
    CORDEX_domain
-   creation_date                   = DATE: YYYY-MM-DDThh:mm:ssZ
+   creation_date                   = YYYY-MM-DDThh:mm:ssZ
    driving_model_id
    driving_model_ensemble_member
    driving_experiment_name

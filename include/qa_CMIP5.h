@@ -34,10 +34,11 @@ struct CMOR
    each variable at first time encounter in the CMIP Project ensuring
    conformance.*/
 
+  bool   checkDateFormat(std::string requested, std::string available) ;
+
   void   checkEnsembleMemItem(std::string& rqName, std::string& attVal);
   void   checkForcing(std::vector<std::string>&, std::string&);
-  void   checkFullDate(std::string& rqName, std::string& aV);
-  
+
   void   checkMIPT_dim(std::vector<std::string>&,
             VariableMetaData&,
             std::map<std::string, size_t>& col, std::string& CMORdimName);
@@ -519,7 +520,7 @@ public:
   int frequencyPosition;
   int mipPosition;
   int varnamePosition;
-  
+
   std::vector<std::string> excludedAttribute;
   std::vector<std::string> overruleAllFlagsOption;
 

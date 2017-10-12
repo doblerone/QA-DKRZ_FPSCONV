@@ -1861,6 +1861,12 @@ QA_Exp::checkDateFormat(std::string rV, std::string aV)
             x_aV_dt[2] = x_aV_dt[2].substr(0,last);
             is_TZ_aV = true;
         }
+        else
+        {
+            // time-zone may be omitted for Z
+            if( is_TZ_rV )
+                return false;
+        }
 
         if( is_TZ_aV != is_TZ_rV )
             return true;
@@ -1874,8 +1880,6 @@ QA_Exp::checkDateFormat(std::string rV, std::string aV)
                 if( x_rV_dt[i].size() != x_aV_dt[i].size() )
                     return true;
         }
-
-
     }
 
     return false;
