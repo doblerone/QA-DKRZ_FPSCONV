@@ -9040,7 +9040,7 @@ CF::chap74b(Variable& var,
     {
       std::string capt("The value of ");
       capt += hdhC::tf_att(var.name, n_cell_methods);
-      capt += " entails" ;
+      capt += " suggests" ;
       capt += hdhC::tf_val(timeName) ;
       capt += ":" + n_climatology ;
       capt += " instead of" ;
