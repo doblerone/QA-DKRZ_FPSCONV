@@ -29,6 +29,10 @@ descript()
 checkInstallation()
 {
   # sets: QA_TABLES, CONFIG_FILE
+  if [ -f ~/.qa-dkrz/config.txt ] ; then
+     export CONFIG_FILE=~/.qa-dkrz/config.txt
+  fi
+
   . ${QA_SRC}/scripts/getTablesPath
 
   if [ ${isLCF} ] ; then
