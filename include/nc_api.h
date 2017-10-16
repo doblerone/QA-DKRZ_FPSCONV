@@ -606,7 +606,7 @@ void
 //! Is the name obf the attribute valid?
     bool
       isAttValid(std::string aName, std::string vName="")
-         { return (getAttID(aName) == -2) ? false : true ; }
+         { return (getAttID(aName, vName) == -2) ? false : true ; }
 
 //! Return true, if dimension 'dName' is unlimited.
     bool
