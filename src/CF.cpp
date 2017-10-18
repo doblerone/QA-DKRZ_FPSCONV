@@ -2216,6 +2216,7 @@ CF::initDefaults()
   n_NC_GLOBAL="NC_GLOBAL";
   n_number_of_observations="number_of_observations";
   n_positive="positive";
+  n_reco="Recommendation";
   n_sample_dimension="sample_dimension";
   n_standard_name="standard_name";
   n_time="time";
@@ -3892,10 +3893,10 @@ CF::chap23_reco(void)
    {
       if( notes->inq(tag) )
       {
-        std::string capt("Reco ");
+        std::string capt(n_reco);
 
         if( *(type[i]) == n_dimension )
-          capt += "for dimensions" ;
+          capt += " for dimensions" ;
         else if( *(type[i]) == n_variable )
           capt += "for variables" ;
         else
@@ -7807,7 +7808,7 @@ CF::chap73(void)
            {
              if( notes->inq(bKey + "731a", var.name) )
              {
-               std::string capt("Reco for ");
+               std::string capt(n_reco + " for ");
                capt += hdhC::tf_att(var.name, n_cell_methods, hdhC::colon) ;
                capt += "Names" + hdhC::tf_val(pIn->variable[i0].name) + " and" ;
                capt += hdhC::tf_val(pIn->variable[i1].name, hdhC::blank) ;
@@ -9661,7 +9662,7 @@ CF::chap9(void)
         {
           if( notes->inq(bKey + "9h", n_global) )
           {
-            std::string capt("Reco: Variable");
+            std::string capt(n_reco + ": Variable");
             capt += hdhC::tf_val(var_l.name, hdhC::blank);
             capt += "should have " + hdhC::tf_att(n_cf_role);
 
@@ -9758,7 +9759,7 @@ CF::chap9(void)
       {
         if( notes->inq(bKey + "94a", n_global, NO_MT) )
         {
-          std::string capt("Reco: File with orthogonal multi-dimensional array ");
+          std::string capt(n_reco + ": File with orthogonal multi-dimensional array ");
           capt += hdhC::tf_var(var_dv.name) + "should have global " ;
           capt += hdhC::tf_att(n_featureType) ;
 

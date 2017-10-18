@@ -276,6 +276,7 @@ template <typename T>
   std::string n_NC_GLOBAL;
   std::string n_number_of_observations;
   std::string n_positive;
+  std::string n_reco;
   std::string n_standard_name;
   std::string n_sample_dimension;
   std::string n_time;
