@@ -68,6 +68,35 @@ descript()
   echo "  projects-name(s)   At present CF, CMIP5/6, [CORDEX] and HAPPI."
 }
 
+getSrcPath()
+{
+   local i items p
+   declare -a items
+
+   p=$0
+
+   while [ -h $p ] ; do
+      # resolve symbolic links: cumbersome but robust,
+      items=( $(ls -l $p) )
+      i=$((${#items[*]}-1))
+      p=${items[i]}
+   done
+
+   # only the directory
+   p=${p%/*}
+
+   # resolve relative path
+   if [ ${p:0:1} != '/' ] ; then
+     cd $p &> /dev/null
+     p=$(pwd)
+     cd - &> /dev/null
+   fi
+
+   export QA_SRC=$p
+
+   return
+}
+
 log()
 {
   if [ ${isContinueLog:-f} = f ] ; then
@@ -334,6 +363,9 @@ update_QA_SRC()
 zeroArg=$0
 initialArgs=($*)
 
+# resolve symbolic links and realtive paths
+getSrcPath
+
 if [ $# -gt 0 ] ; then
   # safe arguments
   sArgs=($*)
@@ -423,12 +455,6 @@ if [ ! -f $displacedConfigFile/.qa-dkrz/config.txt ] ; then
   touch $CONFIG_FILE
 fi
 
-THIS=${0%/*}
-#test ${THIS##*/} = scripts && THIS=${THIS%/*}
-
-# resolve symbolic links if any
-. ${THIS}/scripts/getSrcPath $THIS
-
 # is it in a conda built?
 . ${QA_SRC}/scripts/getCondaPath
 
@@ -495,9 +521,17 @@ do
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
           DEBUG='--debug'
           set -x
-        elif [ "${OPTNAME:0:5}" = FORCE ] ; then
+        elif [ "${OPTNAME}" = FORCE ] ; then
+          \rm -f ${QA_SRC}/.qa-config.txt
+          . $QA_SRC/scripts/parseConfigFile UPDATE=d
+
           isForceUpdate=t
           isUpdate=t
+        elif [ "${OPTNAME}" = FREEZE ] ; then
+          if cp ~/.qa-dkrz/config.txt ${QA_SRC}/.qa-config.txt ; then
+             . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
+          fi
+          exit
         elif [ "${OPTNAME}" = HELP ] ; then
           descript
           exit 41
@@ -508,9 +542,6 @@ do
           continue
         elif [ "${UOPTARG:0:4}" = LINK ] ; then
           isLink=t
-        elif [ "${UOPTARG}" = MAKE_READ_ONLY \
-                 -o "${UOPTARG}" = MAKE_RO ] ; then
-          isMakeRO=t
         elif [ "${OPTNAME}" = NET ] ; then
           test ! ${OPTVAL} && OPTVAL='E'
 
@@ -578,6 +609,11 @@ do
 done
 
 shift $(( $OPTIND - 1 ))
+
+if [ -f $QA_SRC/.qa-config.txt ] ; then
+  echo "currently frozen; use install --force ... to thaw"
+  exit
+fi
 
 if [ ! "${TTY}" ] ; then
   if tty -s ; then TTY=$(tty) ; fi
@@ -657,14 +693,6 @@ if [ ! ${isCondaBuild} ] ; then
   fi
 
   test ${CONDA_QA_PATH} && exit  # miniconda built executables
-fi
-
-if [ ${isMakeRO} ] ; then
-   if [ -f ~/.qa-dkrz/config.txt ] ; then
-      cp ~/.qa-dkrz/config.txt ${QA_SRC}/.qa-config.txt 2> /dev/null
-   elif [ -f ~/.qa-dkrz/qa.cfg ] ; then
-      cp ~/.qa-dkrz/qa.cfg     ${QA_SRC}/.qa.cfg 2> /dev/null
-   fi
 fi
 
 pcks="--zlib=$zlib --hdf5=$hdf5 --netcdf=$netcdf --udunits=$udunits"

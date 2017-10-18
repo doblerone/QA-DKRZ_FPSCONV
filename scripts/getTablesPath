@@ -1,16 +1,17 @@
 getTablesPath()
 {
-  #export CONFIG_FILE
+  export CONFIG_FILE
 
-  #if [ ! ${CONFIG_FILE} ] ; then
-  #   if [ -w ~/.qa-dkrz/config.txt ] ; then
-  #      CONFIG_FILE=~/.qa-dkrz/config.txt
-  #   elif [ -w ${QA_TABLES}/.qa-dkrz/config.txt ] ; then
-  #      CONFIG_FILE=QA_TABLES/.qa-dkrz/config.txt
-  #   else
-  #      CONFIG_FILE=~/.qa-dkrz/config.txt
-  #   fi
-  #fi
+  if [ ! ${CONFIG_FILE} ] ; then
+     if [ -w $QA_SRC/.qa-config.txt ] ; then
+        export CONFIG_FILE=$QA_SRC/.qa-config.txt
+     elif [ -w ~/.qa-dkrz/config.txt ] ; then
+        export CONFIG_FILE=~/.qa-dkrz/config.txt
+     else
+        echo "Please, run $QA_SRC/install up CF"
+        exit
+     fi
+  fi
 
   # path to the current user's home
   export QA_TABLES

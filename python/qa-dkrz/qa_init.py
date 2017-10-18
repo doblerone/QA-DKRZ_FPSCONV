@@ -377,7 +377,7 @@ def run_install(qaConf):
             if qaConf.dOpts["UPDATE"][0] == 'automatic':
                 isUp=True
         if qaConf.isOpt("UPDATE"):
-            if qaConf.dOpts["UPDATE"] == 'never':
+            if qaConf.dOpts["UPDATE"] == 'frozen':
                 isUp=False
             else:
                 isUp=True

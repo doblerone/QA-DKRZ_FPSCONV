@@ -51,8 +51,8 @@ class QaConfig(object):
            self.cfg_file=os.path.join(qa_src, '.qa-config.txt')
         elif os.path.isfile( os.path.join(qa_src, '.qa.cfg') ):
            self.cfg_file=os.path.join(qa_src, '.qa.cfg')
-        elif os.path.isfile( os.path.join(self.home, 'qa.cfg') ):
-           self.cfg_file=os.path.join(self.home, '.qa-config.txt')
+        elif os.path.isfile( os.path.join(self.home, 'config.txt') ):
+           self.cfg_file=os.path.join(self.home, 'config.txt')
         else:
            self.cfg_file=os.path.join(self.home, 'qa.cfg')
 
@@ -282,7 +282,7 @@ class QaConfig(object):
         if args.AUTO_UP != None:
             if len(str0) > 0:
                 str0 += ','
-            str0 += '--auto=' + args.AUTO_UP
+            str0 += '--up=automatic'
 
         _ldo['install_args']=str0
 
@@ -395,15 +395,9 @@ class QaConfig(object):
             type=int, nargs='?', default=0, const=1, dest='SHOW_NEXT',
             help="Show the N next path/file for executaion [N=1].")
 
-        '''
-        parser.add_argument( '--up', '--update',
-            dest='UPDATE', action="store_true",
-            help="Passed to install")
-        '''
-
         parser.add_argument('--up', '--update', dest='UPDATE',
             nargs='?',  const='schedule',
-            help='auto | [schedule] | force | never: Run with QA_DKRZ/install.')
+            help='auto | [schedule] | force | freeze: Run with QA_DKRZ/install.')
 
         parser.add_argument('--version',
             action="store_true", dest='SHOW_VERSION',

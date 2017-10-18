@@ -1975,6 +1975,9 @@ do
     -)  if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
           setKWL CMD_UP=automatic
 
+        elif [ "${OPTNAME}" = FREEZE ] ; then
+            setKWL CMD_UP=freeze
+
         elif [ "${OPTNAME}" = INSTALL ] ; then
           opts=( ${OPTVAL//,/ } )
 

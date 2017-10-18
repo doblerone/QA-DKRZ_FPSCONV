@@ -603,7 +603,7 @@ class QaExec(object):
 
         # get the table_id
         getNC_run = os.path.join( self.g_vars.qa_src, "bin", "getNC_att.x " )
-        getNC_run +=  self.nc_file + " --only-value table_id"
+        getNC_run +=  self.nc_file + " --only-value --no-newline table_id"
 
         try:
             table_id = subprocess.check_output(getNC_run, shell=True)
@@ -617,7 +617,7 @@ class QaExec(object):
                                  "Tables", "CMIP6_" + table_id + ".json")
 
         if not os.path.isfile(mip_table):
-            print 'Invalid MIP Table for' + mip_table
+            print 'Invalid MIP Table for ' + mip_table
             print 'Cancel run of PrePARE'
             return
 

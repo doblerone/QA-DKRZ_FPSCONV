@@ -1,4 +1,3 @@
-#include <iostream>
 #include <fstream>
 #include <map>
 #include <sstream>
@@ -8,8 +7,6 @@
 
 #include "iobj.h"
 #include "brace_op.h"
-//#include "date.h"
-//#include "matrix_array.h"
 #include "nc_api.h"
 #include "annotation.h"
 #include "split.h"
@@ -35,13 +32,13 @@
 
 std::string getAttVal(NcAPI&, std::string attName, std::string varName="");
 
-void  exceptionError(std::string );
 void  usage(void);
 
 int main(int argc,char *argv[])
 {
   NcAPI nc;
 
+  bool isNotOpen=true;
   bool isOnlyValue=false;
   bool isNewline=true;
   bool skipInvalid=false;
@@ -61,16 +58,12 @@ int main(int argc,char *argv[])
       return 0;
     }
 
-    if( i==1 )
+    if( isNotOpen )
     {
       if( nc.open( att, "", false) )
-         continue;
-      else
       {
-        std::ostringstream ostr(std::ios::app);
-        ostr << "getNC_att: netCDF NcAPI::open()\n" ;
-        ostr << "Could not open file " << argv[1] ;
-        exceptionError( ostr.str() );  // exits
+         isNotOpen=false;
+         continue;
       }
     }
 
@@ -106,6 +99,13 @@ int main(int argc,char *argv[])
     }
 
     vs_att.push_back(att);
+  }
+
+  if(isNotOpen)
+  {
+     std::cerr << "getNC_att: netCDF NcAPI::open()\n" ;
+     std::cerr << "Could not open file " << argv[1]  << std::endl;
+     exit(1);
   }
 
   int retValue=0 ;
@@ -180,20 +180,6 @@ int main(int argc,char *argv[])
     std::cout << std::endl ;
 
   return retValue;
-}
-
-void
-exceptionError(std::string str)
-{
-  std::string name = "error_getNC_att.txt";
-
-  // open file for writing
-  std::ofstream ofsError(name.c_str());
-
-  ofsError << str << std::endl;
-
-  exit(1);
-  return ;
 }
 
 void

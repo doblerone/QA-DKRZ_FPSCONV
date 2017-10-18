@@ -1,36 +1,31 @@
 getSrcPath()
 {
-   local src
-   cd $1 &> /dev/null
-   src=$PWD
-   cd - &> /dev/null
-   
-  # resolve sym-links: path to the root of the QA package
-   test ${src##*/} = scripts && src=${src%/scripts}
-   
-   if [ -h $src ] ; then
-     while [ "$( ls -l $src | awk '{print $(NF-1)}')" = '->' ] ; do
-       src=$( ls -l $src | awk '{print $(NF)}' )
-     done
+   local i items p
+   declare -a items
 
-     src=${src%/*} # ignore the filename
-     cd ${src} &> /dev/null
-     src=$PWD
-     cd - &> /dev/null
+   p=$0
 
-     test ${src##*/} = scripts && src=${src%/*}
+   while [ -h $p ] ; do
+      # resolve symbolic links: cumbersome but robust,
+      items=( $(ls -l $p) )
+      i=$((${#items[*]}-1))
+      p=${items[i]}
+   done
+
+   # only the directory
+   p=${p%/*}
+
+   # resolve relative path
+   if [ ${p:0:1} != '/' ] ; then
+     cd $p
+     p=$(pwd)
+     cd -
    fi
 
-   if [ ${src:0:2} = '..' ] ; then
-     src=${PWD%/*}
-   elif [ ${src:0:1} = '.' ] ; then
-     src=$PWD
-   fi
-
-   export QA_SRC=$src
+   export QA_SRC=$p
 
    return
 }
 
 # main
-getSrcPath $*
+getSrcPath

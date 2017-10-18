@@ -87,9 +87,7 @@ fi
 #export CXX=/usr/bin/g++
 #export CXXFLAGS='-static -O2'
 
-./configure ${prefix} --enable-cxx --enable-hl \
-  --disable-fortran --disable-parallel \
-  --with-zlib=$installPath  >>${out} 2>&1
+./configure ${prefix} --enable-cxx >>${out} 2>&1
 
 test $? -gt 0 && exit 1
 

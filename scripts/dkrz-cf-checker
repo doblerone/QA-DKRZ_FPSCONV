@@ -68,21 +68,45 @@ checkInstallation()
   return
 }
 
+getSrcPath()
+{
+   local i items p
+   declare -a items
+
+   p=$0
+
+   while [ -h $p ] ; do
+      # resolve symbolic links: cumbersome but robust,
+      items=( $(ls -l $p) )
+      i=$((${#items[*]}-1))
+      p=${items[i]}
+   done
+
+   # only the directory
+   p=${p%/*}
+
+   # resolve relative path
+   if [ ${p:0:1} != '/' ] ; then
+     cd $p &> /dev/null
+     p=$(pwd)
+     cd - &> /dev/null
+   fi
+
+   export QA_SRC=$p
+
+   return
+}
+
 # -------  main -----
 if tty -s ; then TTY=$(tty) ; fi
 
 test $# -eq 0 && descript
 
-THIS=${0%/*}
-cd ${THIS} &> /dev/null
-THIS=$(pwd)
-cd - &> /dev/null
+# resolve symbolic links and relative paths
+getSrcPath
+test ${QA_SRC##*/} = scripts && QA_SRC=${QA_SRC%/scripts}
 
-test ${THIS##*/} = scripts && THIS=${THIS%/*}
-# resolve symbolic links
-. ${THIS}/scripts/getSrcPath $THIS
-
-# get execution path of QA scripts
+# process recommendations
 RC=t
 
 while getopts C:F:hp:R-: option ${args[*]}

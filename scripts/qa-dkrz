@@ -2743,6 +2743,35 @@ getSelectedPaths()
   return
 }
 
+getSrcPath()
+{
+   local i items p
+   declare -a items
+
+   p=$0
+
+   while [ -h $p ] ; do
+      # resolve symbolic links: cumbersome but robust,
+      items=( $(ls -l $p) )
+      i=$((${#items[*]}-1))
+      p=${items[i]}
+   done
+
+   # only the directory
+   p=${p%/*}
+
+   # resolve relative path
+   if [ ${p:0:1} != '/' ] ; then
+     cd $p &> /dev/null
+     p=$(pwd)
+     cd - &> /dev/null
+   fi
+
+   export QA_SRC=$p
+
+   return
+}
+
 has()
 {
   local c i j t
@@ -2856,13 +2885,11 @@ init()
        . $QA_SRC/scripts/parseConfigFile UPDATE
     fi
 
-    # 'never' can only be disabled by install
-    if [ "${UPDATE}" = never ] ; then
-       CMD_UP=
-       UPDATE=
-    fi
-    if [ "${CMD_UP}" = never ] ; then
-       . $QA_SRC/scripts/parseConfigFile UPDATE=${CMD_UP}
+    # 'frozen' can only be disabled by install --force ...
+    if [ "${CMD_UP}" = freeze ] ; then
+       ${QA_SRC}/install --freeze
+       test ! -f $QA_SRC/.qa-config.txt && exit
+
        CMD_UP=
        UPDATE=
     fi
@@ -5112,10 +5139,9 @@ comLineArgs=( $* )
 test $# -eq 1 -a "${1:0:9}" = '--install' && STOP_AFTER_INSTALL=t
 umask 002
 
-THIS=${0%/*}
-
-# resolve symbolic links
-. ${THIS}/getSrcPath $THIS
+# resolve symbolic links and relative paths
+getSrcPath
+test ${QA_SRC##*/} = scripts && QA_SRC=${QA_SRC%/scripts}
 
 if [ -f ${QA_SRC}/.qa-config.txt ] ; then
     export CONFIG_FILE=$QA_SRC/.qa-config.txt

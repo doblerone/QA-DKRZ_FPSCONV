@@ -1,7 +1,37 @@
 #!/bin/bash
-SCRIPT=$(cd ${0%/*} && echo $PWD/${0##*/})
-SCRIPTPATH=`dirname ${SCRIPT}`
 
-export QA_PATH=`cd "${SCRIPTPATH}/../opt/qa-dkrz" && pwd -P`
+get_QA_path()
+{
+   local i items p src
+   declare -a items
 
-exec ${QA_PATH}/scripts/qa-dkrz $*
+   p=$0
+
+   while [ -h $p ] ; do
+      # resolve symbolic links: cumbersome but robust,
+      # because I am not sure that ls -l $p | awk '{print $11}'
+      # works for any OS
+
+      items=( $(ls -l $p) )
+      i=$((${#items[*]}-1))
+      p=${items[i]}
+   done
+       
+   p=${p%/*}
+
+   # resolve relative path
+   if [ ${p:0:1} != '/' ] ; then
+     cd $p
+     p=$(pwd)
+     cd -
+   fi
+
+   QA_PATH=${p%/*}
+
+   return
+}
+
+get_QA_path
+
+exec ${QA_PATH}/opt/qa-dkrz/scripts/qa-dkrz $*
+
