@@ -1,4 +1,4 @@
-ls -l #!/bin/bash
+#!/bin/bash
 
 get_QA_path()
 {

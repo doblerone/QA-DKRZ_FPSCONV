@@ -362,7 +362,7 @@ update_QA_SRC()
 }
 
 # ----- main ------
-set  -x
+
 zeroArg=$0
 initialArgs=($*)
 
