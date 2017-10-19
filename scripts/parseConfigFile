@@ -54,24 +54,6 @@ readCF()
 
    local sz
 
-   # arrays cannot be exported, but a single line may be.
-   # this work-around prevents repeatedly reading of the config file
-   if [ "${uCF_line_0}" ] ; then
-     local i
-     sz=$(( ${uCF_blkEnd:-0} - ${uCF_blkBeg:-0} ))
-
-     for(( i=0 ; i < sz ; ++i )) ; do
-       eval uCF_lines[${i}]="\${uCF_line_${i}}"
-
-#       if [ "${#uCF_lines[i]}" -eq 0 ] ; then
-#         unset uCF_lines[i]
-#         break
-#       fi
-     done
-
-     return 0
-   fi
-
    test ${uCF_blkBeg} && return 0
 
    uCF_blkBeg=0
@@ -131,12 +113,6 @@ readCF()
    #first line after the block
    export uCF_blkEnd=$(( uCF_blkBeg + ${#uCF_lines[*]} ))
 
-   # export array as single lines
-   local i
-   for(( i=0 ; i < ${#uCF_lines[*]} ; ++i )) ; do
-      export uCF_line_${i}="${uCF_lines[i]}"
-   done
-
    return 0
 }
 
@@ -157,19 +133,14 @@ updateConfFile()
    local param_name=${param%=*}
    local param_value=${param#*=}
 
-   if [ "${param_value}" = disable -o "${param_value}" = f ] ; then
+   if [ "${param_value}" = f ] ; then
        param=${param_name}=disable
        param_value=disable
    elif [ "${param_value}" = t ] ; then
-       param=${param_name}=enable
-       param_value=enable
+       param=${param_name}=enabled
+       param_value=enabled
    elif [ "${param_value}" = ${param_name} ] ; then
        param_value=
-   fi
-
-   if [ ! ${pC_todate} ] ; then
-     pC_todate=$(date '+%Y%m%d')
-     pC_today=$(( $(date -d ${pC_todate} '+%s') / 3600 / 24 ))
    fi
 
    local i
@@ -184,6 +155,10 @@ updateConfFile()
    if [ $i -lt ${#uCF_lines[*]} ] ; then
      if [ ${param_name:0:5} = NEXT_ ] ; then
         # entries with time comparison in a destinct work-flow
+        if [ ! ${pC_todate} ] ; then
+           pC_todate=$(date '+%Y%m%d')
+           pC_today=$(( $(date -d ${pC_todate} '+%s') / 3600 / 24 ))
+        fi
 
         # now >= limit: param_value is set
         local line=${uCF_lines[i]}
@@ -213,16 +188,25 @@ updateConfFile()
          # disable
          eval ${param_name}=f
          status=1
-       elif [ ${param_value} = enable ] ; then
+       elif [ ${param_value} = enabled ] ; then
          # enable or unchanged (matched).
          eval ${param_name}=t
+       elif [ ${param_value} = delete ] ; then
+         isDelete=t
        fi
        # else: match
-     elif [ ${#param_value} -gt 0 -a ${CONFIG_READ_ONLY:-f} = f ] ; then
-       lineNum=$((uCF_blkBeg+i+1))
-       sed -i "${lineNum} c${param}" $CONFIG_FILE &> /dev/null
-       uCF_lines[i]="${param_name}=${param_value}"
-       status=1
+     elif [ ${CONFIG_READ_ONLY:-f} = f ] ; then
+        if [ ${#param_value} -gt 0 ] ; then
+           if [ ${param_value} = delete ] ; then
+             isDelete=t
+           else
+             lineNum=$((uCF_blkBeg+i+1))
+             sed -i "${lineNum} c${param}" $CONFIG_FILE &> /dev/null
+             uCF_lines[i]="${param_name}=${param_value}"
+           fi
+
+           status=1
+        fi
      fi
 
      test ${status:-0} -eq 1 && status=1
@@ -237,12 +221,18 @@ updateConfFile()
        sed -i "${uCF_blkEnd} a${param}" $CONFIG_FILE &> /dev/null
 
        local sz=${#uCF_lines[*]}
-
        uCF_lines[sz]="${param}"
-       export uCF_line_${i}="${uCF_lines[sz]}"
-
        uCF_blkEnd=$(( uCF_blkEnd + 1 ))
      fi
+   fi
+
+   if [ ${isDelete} ] ; then
+        lineNum=$((uCF_blkBeg+i+1))
+        sed -i "${lineNum} d" $CONFIG_FILE &> /dev/null
+        uCF_blkEnd=$(( uCF_blkEnd -1 ))
+        unset uCF_lines[i]
+        uCF_lines=( ${uCF_lines[*]} )
+        isDelete=
    fi
 
    return $status

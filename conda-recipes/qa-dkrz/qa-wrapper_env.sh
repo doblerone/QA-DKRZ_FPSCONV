@@ -16,14 +16,14 @@ get_QA_path()
       i=$((${#items[*]}-1))
       p=${items[i]}
    done
-       
+
    p=${p%/*}
 
    # resolve relative path
    if [ ${p:0:1} != '/' ] ; then
-     cd $p
+     cd $p &> /dev/null
      p=$(pwd)
-     cd -
+     cd - &> /dev/null
    fi
 
    QA_PATH=${p%/*}

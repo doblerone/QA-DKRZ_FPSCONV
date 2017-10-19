@@ -490,14 +490,7 @@ callQaConfig()
   fi
 
   if [ ${DISPLAY_VERSION} ] ; then
-    local dv_args
-    declare -a dv_args
-    dv_args[0]=--config-file=${CONFIG_FILE}
-
-    # brief, i.e. one-line version, is the default
-    test ${DISPLAY_VERSION} != t && dv_args[1]=--verbose
-
-    ${QA_SRC}/scripts/getVersion ${dv_args[*]} ${PROJECT}
+    ${QA_SRC}/scripts/getVersion --verbose --config-file=${CONFIG_FILE} ${PROJECT}
     exit 0
   fi
 
@@ -2879,7 +2872,6 @@ init()
   if [ ! -f $QA_SRC/.qa-config.txt ] ; then
     # convert AUTO_UPDATE --> UPDATE=automatic
     if . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE ; then
-       . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE=d
        . $QA_SRC/scripts/parseConfigFile UPDATE=automatic
     else
        . $QA_SRC/scripts/parseConfigFile UPDATE
@@ -3019,11 +3011,6 @@ init()
   local i
 
 #  set -f
-  # revison num of the package
-  local currVersion
-  declare -a currVersion
-  currVersion=( $( ${QA_SRC}/scripts/getVersion ${prj} ) )
-
   maxNumExecThreads=0
   local nET
   for nET in ${NUM_EXEC_THREADS[*]} ; do

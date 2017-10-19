@@ -195,6 +195,7 @@ update()
 
           . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
           . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
+          $QA_SRC/scripts/getVersion &> /dev/null
         fi
       fi
   elif [ -d ${QA_SRC}/.git ] ; then
@@ -351,6 +352,8 @@ update_QA_SRC()
         test ${isRestart} -eq 1 && exec ${QA_SRC}/install ${initialArgs[*]}
 
         . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
+
+        $QA_SRC/scripts/getVersion &> /dev/null
       fi
     fi
   fi
@@ -359,7 +362,7 @@ update_QA_SRC()
 }
 
 # ----- main ------
-
+set  -x
 zeroArg=$0
 initialArgs=($*)
 
@@ -460,7 +463,7 @@ fi
 
 # convert AUTO_UPDATE --> UPDATE=automatic
 if . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE ; then
-   . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=disable
+   . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=delete
    . ${QA_SRC}/scripts/parseConfigFile UPDATE=automatic
 fi
 
@@ -481,14 +484,14 @@ do
         test ${OPTARG/=/} = ${OPTARG} && OPTVAL=''
 
         if [ "${UOPTARG:0:7}" = AUTO_UP ] ; then
-           OV=$OPTVAL}
-           tr_option OV
+            OV=$OPTVAL}
+            tr_option OV
             . ${QA_SRC}/scripts/parseConfigFile UPDATE
 
             if [ "${OV:0:1}" = D -o "${OV:0:1}" = F -o "${OV:0:1}" = S ] ; then
               # disable
               if [ "${UPDATE}" = 'automatic' ] ; then
-                 . ${QA_SRC}/scripts/parseConfigFile UPDATE=disable
+                 . ${QA_SRC}/scripts/parseConfigFile UPDATE=enabled
               fi
             else
               # enable
@@ -523,7 +526,7 @@ do
           set -x
         elif [ "${OPTNAME}" = FORCE ] ; then
           \rm -f ${QA_SRC}/.qa-config.txt
-          . $QA_SRC/scripts/parseConfigFile UPDATE=d
+          . $QA_SRC/scripts/parseConfigFile UPDATE=enabled
 
           isForceUpdate=t
           isUpdate=t
@@ -574,8 +577,10 @@ do
              . ${QA_SRC}/scripts/parseConfigFile UPDATE=automatic
 
           elif [ "${OPTVAL:0:1}" = 'd' -o "${OPTVAL:0:1}" = 'D' ] ; then
-             . ${QA_SRC}/scripts/parseConfigFile UPDATE=d
+             . ${QA_SRC}/scripts/parseConfigFile UPDATE=delete
              isUpdate=
+          else
+             . $QA_SRC/scripts/parseConfigFile UPDATE=enabled
           fi
           continue
         elif [ "${OPTNAME:0:1}" = U ] ; then

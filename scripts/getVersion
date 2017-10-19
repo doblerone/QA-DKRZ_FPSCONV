@@ -45,12 +45,16 @@ getQA_Version()
   # before a change of defaults happened.
 
   # this is always brief
+  . ${QA_SRC}/scripts/parseConfigFile QA_REVISION=delete
 
-  if [ $CONDA_QA_PATH ] ; then
+  if [ ! -d $QA_SRC/.git ] ; then
     getFromConda
+
+    QA_REVISION="${tag}${branch:+,}${branch}-${currIdent}"
+    . ${QA_SRC}/scripts/parseConfigFile QA_CONDA_REVISION=${QA_REVISION}
   else
     local branch currIdent
-    local f=${QA_SRC%/scripts}/conda-recipes/qa-dkrz/meta.yaml
+    local f=${QA_SRC}/conda-recipes/qa-dkrz/meta.yaml
 
     getGitBranch $QA_SRC
 
@@ -60,9 +64,11 @@ getQA_Version()
     tag=${tag}-${tmp2:0:$((${#tmp2}-1))}
     tmp2=$( grep 'number:' $f | awk '{print $(NF)}' )
     tag=${tag}-${tmp2}
+
+    QA_REVISION="${tag}${branch:+,}${branch}-${currIdent}"
+    . ${QA_SRC}/scripts/parseConfigFile QA_GitHub_REVISION=${QA_REVISION}
   fi
 
-  QA_REVISION="${branch}-${currIdent}${tag:+,${tag}}"
 
   if [ ${isVerbose} ] ; then
     vStr="QA version:"
@@ -151,10 +157,48 @@ getExternalVersion()
   return
 }
 
+getSrcPath()
+{
+   local p
+   p=$0
+
+   if [ ! -h ${p%/getVersion} ] ; then
+     if [ ${p:0:1} = '/' ] ; then
+       QA_SRC=${0%/getVersion}
+       QA_SRC=${QA_SRC%/scripts}
+     fi
+   fi
+
+   local i items p
+   declare -a items
+
+   while [ -h $p ] ; do
+      # resolve symbolic links: cumbersome but robust,
+      items=( $(ls -l $p) )
+      i=$((${#items[*]}-1))
+      p=${items[i]}
+   done
+
+   # only the directory
+   p=${p%/*}
+
+   # resolve relative path
+   if [ ${p:0:1} != '/' ] ; then
+     cd $p &> /dev/null
+     p=$(pwd)
+     cd - &> /dev/null
+   fi
+
+   QA_SRC=$p
+   test ${QA_SRC##*/} = scripts && QA_SRC=${QA_SRC%/scripts}
+
+   return
+}
+
+
 # --- main ---
 
-QA_SRC=${0%/getVersion}
-QA_SRC=${QA_SRC%/scripts}
+getSrcPath
 
 while getopts h:v-: option
 do
@@ -188,9 +232,6 @@ test $# -gt 0 && prj=$1
 
 getQA_Version
 test ${prj} && getExternalVersion
-
-# if newer, then update
-. ${QA_SRC}/scripts/parseConfigFile QA_REVISION=${QA_REVISION}
 
 # print
 if [ ${isVerbose} ] ; then
