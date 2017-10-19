@@ -11,6 +11,12 @@
 
 isNextDate()
 {
+   # entries with time comparison in a destinct work-flow
+   if [ ! ${pC_todate} ] ; then
+      pC_todate=$(date '+%Y%m%d')
+      pC_today=$(( $(date -d ${pC_todate} '+%s') / 3600 / 24 ))
+   fi
+
    local t_conf_day t_conf_date
    declare -a t_config_date
 
@@ -154,12 +160,6 @@ updateConfFile()
 
    if [ $i -lt ${#uCF_lines[*]} ] ; then
      if [ ${param_name:0:5} = NEXT_ ] ; then
-        # entries with time comparison in a destinct work-flow
-        if [ ! ${pC_todate} ] ; then
-           pC_todate=$(date '+%Y%m%d')
-           pC_today=$(( $(date -d ${pC_todate} '+%s') / 3600 / 24 ))
-        fi
-
         # now >= limit: param_value is set
         local line=${uCF_lines[i]}
         if [ "${line}" = "${line#*=}" ] ; then
