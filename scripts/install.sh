@@ -163,12 +163,8 @@ getRevNum()
 {
   # get current revision number; this determines whether it is
   # before a change of defaults happened.
-  local arg=$1
 
-  local branch=$(git branch | grep '*' | awk '{print $2}')
-  local currIdent=$(git log --pretty=format:'%h' -n 1)
-
-  eval ${arg}=${branch}-${currIdent}
+  export REVISION=$QA_SRC/scripts/getVersion &> /dev/null
 
   return
 }
@@ -372,9 +368,6 @@ makeProject()
   PROJECT=$1
   local cxxFlags="${CXXFLAGS}"
   local CXXFLAGS
-  test "${PROJECT_AS}" && PROJECT=${PROJECT_AS}
-
-  export PROJECT=$PROJECT
 
   if [ ${PROJECT} = CF ] ; then
     local cfc=CF-checker
@@ -548,7 +541,7 @@ showInst()
 
    local j typ kind
    declare -a typ kind
-   
+
    typ=( a so )
    kind=( static shared )
 
@@ -631,7 +624,7 @@ store_LD_LIB_PATH()
   # current -L paths
   local i j lib
   declare -a libh
-  
+
   lib=( ${LIB[*]//-L/} )
   lib=( ${lib[*]//:/ } )
 
@@ -704,12 +697,8 @@ do
           isCompilation=f
         elif [ "${OPTNAME}" = PACKAGE ] ; then
            package=${OPTVAL}
-        elif [ "${OPTNAME}" = PROJECT_AS ] ; then
-          PROJECT_AS="${OPTVAL}"
         elif [ "${OPTNAME}" = QA_SRC ] ; then
           QA_SRC=${OPTVAL}
-        elif [ "${OPTNAME}" = DEFAULT_PROJECT ] ; then
-           defaultProject=${OPTVAL}
         elif [ "${OPTNAME}" = SHOW-INST ] ; then
            isShowInst=t
            test "${OPTVAL}" = FULL && isShowInstFull
@@ -725,6 +714,8 @@ do
 done
 
 shift $(( $OPTIND - 1 ))
+
+projects=( $* )
 
 cd ${QA_SRC}
 
@@ -759,26 +750,16 @@ test ${#QA_LIBS} -eq 0 && \
 test ${#QA_LIBS_ADD} -gt 0 && \
   export QA_LIBS="${QA_LIBS} ${QA_LIBS_ADD}"
 
-
 makeUtilities
 
 # check projects' qa executables
-if [ $# -eq 0 ] ; then
-  projects=( ${defaultProject:-CORDEX} )
-else
-  projects=( $* )
-fi
-
-# the revision number is inserted in Makefile via -DREVISION
-getRevNum REVISION
-export REVISION
 
 # list of all QA C++ source files and project key-words; the latter
 # are given as pseudo file name
 prj_cpp=( $(ls $QA_SRC/src/QA_*.cpp ) QA_CF.cpp QA_MODIFY.cpp )
 prj_cpp=( ${prj_cpp[*]##*/} )
 
-# rm those that are not project realted
+# rm those that are not project related
 non_prj_cpp=( QA_cnsty.cpp QA_data.cpp QA_DRS_CV_Table.cpp QA_main.cpp QA_time.cpp )
 
 for(( i=0 ; i < ${#prj_cpp[*]} ; ++i )) ; do
@@ -792,24 +773,21 @@ done
 
 prj_cpp=( ${prj_cpp[*]} )
 
-if [ ${#PROJECT_AS[*]} -gt 0 -a "${PROJECT_AS}" != "${projects[*]}" ] ; then
-  prjs=(${PROJECT_AS})
-else
-  prjs=( ${projects[*]} )
-fi
-
-for prj in ${prjs[*]} ; do
+for prj in ${projects[*]} ; do
   for(( i=0 ; i < ${#prj_cpp[*]} ; ++i )) ; do
     if [ QA_${prj}.cpp = ${prj_cpp[i]} ] ; then
+      # the revision number is inserted in Makefile via -DREVISION
+      export REVISION="$( $QA_SRC/scripts/getVersion $prj)"
+
       makeProject $prj
       continue 2
     fi
   done
 
-  undefPrj=${prj}
+  undefPrj[${#undefPrj[*]}]=${prj}
 done
 
-if [ "${undefPrj}" ] ; then
+if [ ${#undefPrj[*]} -gt 0 ] ; then
   echo "undefined project(s): ${undefPrj[*]}"
   exit 41
 fi

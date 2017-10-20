@@ -2892,10 +2892,10 @@ init()
 
        isUp=t
     elif [ ${UPDATE} ] ; then
-       test "${CMD_UP:0:4}" = auto && \
+       if [ "${CMD_UP:0:4}" = auto ] ; then
           . $QA_SRC/scripts/parseConfigFile UPDATE=automatic
-
-       isUp=t
+          isUp=t
+       fi
     fi
 
     isInq=t
@@ -2953,6 +2953,13 @@ init()
         echo -e "\nMissing external tables/executabels."  > $TTY
         echo "Please, run: ${p%/*}/install up PROJECT"  > $TTY
         exit 1
+      fi
+
+      if [ ! ${PROJECT} ] ; then
+         if [ ${#SELECT_PATH_LIST} -gt 0 -o ${#SELECT_VAR_LIST} -gt 0 ] ; then
+     echo "PROJECT name is required in a QA_CONF file or on the command-line."
+            exit 1
+         fi
       fi
   fi
 

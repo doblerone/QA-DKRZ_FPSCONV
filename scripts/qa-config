@@ -1995,7 +1995,6 @@ do
              installArgs+="${opt},"
           done
 
-#          test ${installArgs//--up/} = ${installArgs} && installArgs+="up,"
           setKWL CMD_UP=t
 
         elif [ "${OPTNAME}" = NET ] ; then
@@ -2013,9 +2012,6 @@ do
 
         elif [ "${OPTNAME}" = PROJECT_AS ] ; then
           setKWL PROJECT_AS=${OPTVAL}
-
-        elif [ "${OPTNAME}" = SET_DEFAULT_PROJECT ] ; then
-          installArgs+="set_default_project=${OPTVAL},"
 
         elif [ "${OPTNAME:0:2}" = UP ] ; then
           setKWL CMD_UP=t

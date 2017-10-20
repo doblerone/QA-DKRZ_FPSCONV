@@ -18,8 +18,6 @@ netcdf=netcdf-4.4.1
 zlib=zlib-1.2.8
 udunits=udunits-2.2.20
 
-default_prj=CORDEX
-
 # options with auto-update feature (option: --auto-up_feature)
 #   CMOR_LLNL:     the CMOR checker (D. Nadeau, LLNL)
 #   GIT_QA:         all QA updates touching write-protected locations
@@ -58,7 +56,6 @@ descript()
   echo "  --net=no          Disable internet access."
   echo "  --qa-tables=path  Location of the projects tables and external programs."
   echo "                    Also for user-modified QA tables."
-  echo "  --set-default-project=PROJECT "
   echo "  --show-inst       Display properties of the current installation."
   echo "  --up[date]        Update external packages from the repository."
   echo "                    Note: not for netCDF, HDF5, udunits2 or zlib."
@@ -197,6 +194,8 @@ update()
 
           . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
           . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=${CONDA_QA_ENV:_qa.dkrz}
+
+          # updates the QA_CONDA_REVISION entry in the config-file
           $QA_SRC/scripts/getVersion &> /dev/null
         fi
       fi
@@ -355,6 +354,7 @@ update_QA_SRC()
 
         . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
 
+        # update of the QA_GitHub_REVISION entry in the config-file
         $QA_SRC/scripts/getVersion &> /dev/null
       fi
     fi
@@ -404,8 +404,6 @@ if [ $# -gt 0 ] ; then
   done
 fi
 
-prj=${defaultProject}
-
 while getopts BdhT:-: option ${sArgs[*]}
 do
   UOPTARG="${OPTARG}"
@@ -422,15 +420,11 @@ do
           if [ "${OPTNAME}" = CF \
                -o \( "${name_0:0:1}" = C -a "${name_1:0:1}" = F \) ]
           then
-            isDisplacedConfigFile=t
-            if [ ${UOPTARG%=*} != ${OPTNAME} ] ; then
-              displacedConfigFile=${OPTVAL}
-            fi
+            isConfigFile=t
+            test ${UOPTARG%=*} != ${OPTNAME} && configFile=${OPTVAL}
           fi
         elif [ "${OPTNAME}" = HOME ] ; then
           export QA_TABLES=${OPTVAL}
-        elif [ "${OPTNAME}" = PROJECT ] ; then
-          prj="${OPTVAL}"
         elif [ "${OPTNAME}" = QA_TABLES ] ; then
           export QA_TABLES=${OPTVAL}
         elif [ "${OPTNAME}" = WORK ] ; then
@@ -441,22 +435,22 @@ do
   esac
 done
 
-if [ ${isDisplacedConfigFile} ] ; then
-  if [ ! "${displacedConfigFile}" ] ; then
+if [ ${isConfigFile} ] ; then
+  if [ ! "${configFile}" ] ; then
     if [ ${QA_TABLES} ] ; then
-      displacedConfigFile=${QA_TABLES}
+      configFile=${QA_TABLES}  # required for a conda-build
     else
       echo "option --cf requires provision of --qa-tables"
       exit 1
     fi
   fi
 else
-  displacedConfigFile=${HOME}
+  configFile=${HOME}
 fi
 
-export CONFIG_FILE=$displacedConfigFile/.qa-dkrz/config.txt
-if [ ! -f $displacedConfigFile/.qa-dkrz/config.txt ] ; then
-  mkdir -p ${displacedConfigFile}/.qa-dkrz
+export CONFIG_FILE=$configFile/.qa-dkrz/config.txt
+if [ ! -f $configFile/.qa-dkrz/config.txt ] ; then
+  mkdir -p ${configFile}/.qa-dkrz
   touch $CONFIG_FILE
 fi
 
@@ -561,17 +555,14 @@ do
 #          . ${QA_SRC}/scripts/parseConfigFile INTERNET=${OPTVAL}
         elif [ "${OPTNAME:0:6}" = ONLY_Q ] ; then
           :  # for backward compatibilty
-        elif [ "${OPTNAME}" = PROJECT ] ; then
-          PROJECT="${OPTVAL}"
+        elif [ "${OPTNAME}" = PROJECT -a ${#OPTVAL} -gt 0 ] ; then
+          projects[${#projects[*]}]="${OPTVAL}"
         elif [ "${OPTNAME}" = QA_SRC ] ; then
           export QA_SRC=${OPTVAL}
         elif [ "${OPTNAME}" = QA_TABLES ] ; then
           continue
         elif [ "${OPTNAME}" = SRC ] ; then
           :  # for backward compatibilty
-        elif [ "${OPTNAME}" = SET_DEFAULT_PROJECT ] ; then
-          default_prj=${OPTVAL}
-          continue
         elif [ "${OPTNAME:0:2}" = UP ] ; then
           isUpdate=t
 
@@ -640,15 +631,7 @@ for pck in $* ; do
     udunits=${pck}
   elif [ ${PCK:0:7} = QA_TABLES ] ; then
     QA_TABLES=${PCK:8}
-  elif [ ${PCK:0:10} = PROJECT ] ; then
-    PROJECT=${PCK:11}
   else
-#    if [ ${pck:0:1} = '-' ] ; then
-#      echo -e "\nFound PROJECT name=${pck}" > $TTY
-#      echo "Note that options must be provided first" > $TTY
-#      exit 1
-#    fi
-
     coll[${#coll[*]}]=$pck  # collect projects names
     projects[${#projects[*]}]=$pck
   fi
@@ -658,16 +641,17 @@ if ! . ${QA_SRC}/scripts/getTablesPath ; then
   exit 41
 fi
 
-. ${QA_SRC}/scripts/parseConfigFile DEFAULT_PROJECT${default_prj:+=${default_prj}}
-test ${#projects[*]} -eq 0 && projects=(${default_prj})
+test ${#projects[*]} -eq 0 && exit 0
 
 # inquire usually from ~/.qa-dkrz/config.txt;
 if [ ${isInqTables} ] ; then
-  if . ${QA_SRC}/scripts/inqRunEnv --read-only ${projects[0]} ; then
-    exit 0
-  else
-    exit 41
-  fi
+  for project in ${projects[*]} ; do
+    if ! . ${QA_SRC}/scripts/inqRunEnv --read-only ${project} ; then
+      exit 41
+    fi
+   done
+
+   exit 0
 fi
 
 # also ensures that all names in the config.files are defined in this program
@@ -702,23 +686,16 @@ if [ ! ${isCondaBuild} ] ; then
   test ${CONDA_QA_PATH} && exit  # miniconda built executables
 fi
 
-pcks="--zlib=$zlib --hdf5=$hdf5 --netcdf=$netcdf --udunits=$udunits"
-
 if [ ${isBuild:-f} = t -a ${isLink:-f} = t ] ; then
   echo "scripts/install.sh: options --build and --link exclude each other"
   exit 1
 elif [ ${isBuild:-f} = t -o ${isLink:-f} = t ] ; then
+  pcks="--zlib=$zlib --hdf5=$hdf5 --netcdf=$netcdf --udunits=$udunits"
   log ${initialArgs[*]}
 else
   pcks=
 fi
 
-if [ "${projects[0]}" = NONE ] ; then
-   echo "qa-dkrz requires PROJECT=name in the configuration or on the command-line"
-   exit
-fi
-
 exec ${QA_SRC}/scripts/install.sh ${debug} --pack=${package} \
 ${isContinueLog:+--continue_log} ${pcks} \
-${PROJECT:+--PROJECT=${PROJECT}} \
 --qa-src=${QA_SRC} ${coll[*]}
