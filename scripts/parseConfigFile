@@ -178,6 +178,8 @@ updateConfFile()
          status=1
        elif [ "${uCF_lines[i]#*=}" = enable ] ; then
          eval ${param_name}=t
+       elif [ "${uCF_lines[i]#*=}" = delete ] ; then
+         isDelete=t
        else
          # read value from the config file and set variable
          eval ${uCF_lines[i]}

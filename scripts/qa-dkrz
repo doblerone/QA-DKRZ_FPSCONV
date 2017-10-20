@@ -2868,7 +2868,7 @@ init()
     fi
   fi
 
-  # this file acts a show stopper for any update
+  # this file indicates freezing
   if [ ! -f $QA_SRC/.qa-config.txt ] ; then
     # convert AUTO_UPDATE --> UPDATE=automatic
     if . $QA_SRC/scripts/parseConfigFile AUTO_UPDATE ; then
@@ -2936,6 +2936,9 @@ init()
        std_out flush "could not install ${prj}"
        exit 1
     fi
+
+    test ! ${PROJECT} && exit 0
+
   elif [ ${isInq} ] ; then
       if ! . $QA_SRC/scripts/inqRunEnv --read-only ${prj} ; then
         # get the state of the current installation: read config-file

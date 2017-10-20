@@ -2,7 +2,7 @@
 
 package=QA-DKRZ
 
-export CONDA_CMOR_CHANNELS='-c,conda-forge,-c,pcmdi,-c,uvcdat'
+export CONDA_CMOR_CHANNELS='-c,conda-forge,-c,pcmdi'
 export CONDA_QA_CHANNELS='-c,conda-forge,-c,h-dh'
 #export CONDA_QA_CHANNELS='-c,birdhouse,-c,conda-forge,--channel birdhouse/label/dev'
 
@@ -12,6 +12,7 @@ export CONDA_CMOR_ENV
 export CONDA_QA_NAME=qa-dkrz
 export CONDA_CMOR_NAME=cmor
 
+# overruled by conda installation
 hdf5=hdf5-1.8.17
 netcdf=netcdf-4.4.1
 zlib=zlib-1.2.8
@@ -181,6 +182,7 @@ update()
   if ! . ${QA_SRC}/scripts/inqRunEnv ${prj} ; then
     isForceUpdate=t  # look for updates
   fi
+  test ${DEBUG} && end_of_inq=t  # just a mark
 
   # search updates after a specified number of days; default: once a day
   if [ ${CONDA_QA_PATH} ] ; then
@@ -191,10 +193,10 @@ update()
            ! . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE --inquire
       then
         if update_CONDA "${CONDA_QA_NAME}" "${CONDA_QA_CHANNELS}" \
-                      "${CONDA_QA_PATH}"    "${CONDA_QA_ENV}" ; then
+                      "${CONDA_QA_PATH}"   "${CONDA_QA_ENV:-qa-dkrz}" ; then
 
           . ${QA_SRC}/scripts/parseConfigFile NEXT_QA_UPDATE ${isForceUpdate:+--force}
-          . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=$CONDA_QA_ENV
+          . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_ENV=${CONDA_QA_ENV:_qa.dkrz}
           $QA_SRC/scripts/getVersion &> /dev/null
         fi
       fi
