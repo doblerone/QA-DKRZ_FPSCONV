@@ -466,7 +466,7 @@ callQaConfig()
   set +f
 
   if [ -f ${QA_SRC}/.qa-config.txt ] ; then
-     export CONFIG_READ_ONLY=t
+     CONFIG_READ_ONLY=t
      export CONFIG_FILE=${QA_SRC}/.qa-config.txt
   fi
 

@@ -109,6 +109,96 @@ iRE_checkTables()
   return
 }
 
+iRE_CMIP6()
+{
+    # check required paths or ENV
+    . ${QA_SRC}/scripts/parseConfigFile PrePARE
+
+    if [ ! -f "${PrePARE}" ] ; then
+      iRE_findLatestPrePARE
+
+      # try again
+      test -f ${PrePARE} && \
+         . ${QA_SRC}/scripts/parseConfigFile PrePARE=$PrePARE
+    fi
+
+    if [ ! -f "${PrePARE}" ] ; then
+        askStr="STOP: <ENTER>, <your-path>: "
+
+        while : ; do
+           echo -e "\nCMIP6 requires the cmor package of conda; installation e.g. by:" > ${TTY}
+           echo "   conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor ." > ${TTY}
+           echo "If cmor isn't installed, yet, please quit and do so, otherwise provide" > ${TTY}
+           echo "the path to the conda environment containing the CMOR package" > ${TTY}
+           read -p "$askStr" answ 2> ${TTY}
+
+           case ${answ:0:1} in
+              '') exit 0  ;;
+               y) ;;
+               *) CONDA_CMOR_PATH=${answ#*=}
+
+                  if [ ! -d ${CONDA_CMOR_PATH} ] ; then
+                     echo "no such directory ${CONDA_CMOR_PATH}"
+                     continue
+                  else
+                     # is the end-point already the cmor name?
+                     last_dir=${CONDA_CMOR_PATH##*/}
+                     if [ "${last_dir}" = 'cmor' ] ; then
+                       CONDA_CMOR_ENV=cmor
+                     elif [ -d ${CONDA_CMOR_PATH}/cmor ] ; then
+                       CONDA_CMOR_ENV=cmor
+                     fi
+                  fi
+                  ;;
+           esac
+
+           local fs
+           declare -a fs
+           fs=( $( find ${CONDA_CMOR_PATH} -type f -name "PrePARE" ) )
+           iRE_findLatestFile PrePARE ${fs[*]}
+
+           if [ -f ${PrePARE} ] ; then
+              . ${QA_SRC}/scripts/parseConfigFile PrePARE=$PrePARE
+              test ${upCount} -gt 0 && upCount=$(( upCount - 1 ))
+              break
+           fi
+        done
+
+        if [ ${CONDA_CMOR_ENV} ] ; then
+          while : ; do
+             read -p "Provide your environment name for cmor: STOP: <ENTER>, env: <string>: " \
+                  CONDA_CMOR_ENV 2> ${TTY}
+
+             case ${CONDA_CMOR_ENV:0:1} in
+              '') exit 1  ;;
+               *) test ${CONDA_CMOR_ENV} = STOP && exit 0
+                  CONDA_CMOR_ENV=${CONDA_CMOR_ENV#*=}
+                  ;;
+             esac
+
+             test ${upCount} -gt 0 && upCount=$(( upCount - 1 ))
+             break
+          done
+        fi
+
+        if [ -f "${CONDA_CMOR_PATH}" ] ; then
+          # try the environment
+          if ! . ${CONDA_CMOR_PATH%/conda}/activate ${CONDA_CMOR_ENV} ; then
+             echo "could not activate your cmor environment ${CONDA_CMOR_ENV}; Exit"
+             exit 1
+          fi
+
+          PrePARE=$( which -q PrePARE 2> /dev/null )
+
+          . ${QA_SRC}/scripts/parseConfigFile PrePARE=$PrePARE
+          . ${CONDA_CMOR_PATH%/conda}/deactivate
+        fi
+
+    fi
+
+    return
+}
+
 iRE_findLatestFile()
 {
   local back=$1
@@ -211,11 +301,9 @@ iRE_inqState()
   # Note that only one of QA_TABLES or QA_HOME has to exist.
   rname=(
          -AUTO_UPDATE \
-         -DEFAULT_PROJECT \
          -INTERNET \
          -NEXT_QA_UPDATE \
          +QA_TABLES \
-         -QA_REVISION \
          -UPDATE \
        )
 
@@ -346,94 +434,15 @@ iRE_inqRunEnv()
 
   iRE_inqState ${prj[*]}
 
-  for pprj in ${prj[*]} ; do
-    if [ ${pprj} != CMIP6 ] ; then
-      continue
-    fi
+  if [ ! ${isRO} ] ; then
+    for pprj in ${prj[*]} ; do
+      if [ ${pprj} != CMIP6 ] ; then
+        continue
+      fi
 
-    # check required paths or ENV
-    . ${QA_SRC}/scripts/parseConfigFile PrePARE
-
-    if [ ! -f "${PrePARE}" ] ; then
-      iRE_findLatestPrePARE
-      test -f ${PrePARE} && . ${QA_SRC}/scripts/parseConfigFile PrePARE=$PrePARE
-    fi
-
-    if [ ! -f "${PrePARE}" ] ; then
-        askStr="STOP: <ENTER>, <your-path>: "
-
-        while : ; do
-           echo -e "\nCMIP6 requires the cmor package of conda; installation e.g. by:" > ${TTY}
-           echo "   conda create -n cmor -c conda-forge -c pcmdi -c uvcdat cmor ." > ${TTY}
-           echo "If cmor isn't installed, yet, please quit and do so, otherwise provide" > ${TTY}
-           echo "the path to the conda environment containing the CMOR package" > ${TTY}
-           read -p "$askStr" answ 2> ${TTY}
-
-           case ${answ:0:1} in
-              '') exit 0  ;;
-               y) ;;
-               *) CONDA_CMOR_PATH=${answ#*=}
-
-                  if [ ! -d ${CONDA_CMOR_PATH} ] ; then
-                     echo "no such directory ${CONDA_CMOR_PATH}"
-                     continue
-                  else
-                     # is the end-point already the cmor name?
-                     last_dir=${CONDA_CMOR_PATH##*/}
-                     if [ "${last_dir}" = 'cmor' ] ; then
-                       CONDA_CMOR_ENV=cmor
-                     elif [ -d ${CONDA_CMOR_PATH}/cmor ] ; then
-                       CONDA_CMOR_ENV=cmor
-                     fi
-                  fi
-                  ;;
-           esac
-
-           local fs
-           declare -a fs
-           fs=( $( find ${CONDA_CMOR_PATH} -type f -name "PrePARE" ) )
-           iRE_findLatestFile PrePARE ${fs[*]}
-
-           if [ -f ${PrePARE} ] ; then
-              . ${QA_SRC}/scripts/parseConfigFile PrePARE=$PrePARE
-              test ${upCount} -gt 0 && upCount=$(( upCount - 1 ))
-              break
-           fi
-        done
-
-        if [ ${CONDA_CMOR_ENV} ] ; then
-          while : ; do
-             read -p "Provide your environment name for cmor: STOP: <ENTER>, env: <string>: " \
-                  CONDA_CMOR_ENV 2> ${TTY}
-
-             case ${CONDA_CMOR_ENV:0:1} in
-              '') exit 1  ;;
-               *) test ${CONDA_CMOR_ENV} = STOP && exit 0
-                  CONDA_CMOR_ENV=${CONDA_CMOR_ENV#*=}
-                  ;;
-             esac
-
-             test ${upCount} -gt 0 && upCount=$(( upCount - 1 ))
-             break
-          done
-        fi
-
-        if [ -f "${CONDA_CMOR_PATH}" ] ; then
-          # try the environment
-          if ! . ${CONDA_CMOR_PATH%/conda}/activate ${CONDA_CMOR_ENV} ; then
-             echo "could not activate your cmor environment ${CONDA_CMOR_ENV}; Exit"
-             exit 1
-          fi
-
-          PrePARE=$( which -q PrePARE 2> /dev/null )
-
-          . ${QA_SRC}/scripts/parseConfigFile PrePARE=$PrePARE
-          . ${CONDA_CMOR_PATH%/conda}/deactivate
-        fi
-
-    fi
-# fi
-  done
+      iRE_CMIP6
+    done
+  fi
 
   return $upCount
 }

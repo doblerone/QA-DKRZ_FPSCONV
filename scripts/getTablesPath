@@ -1,15 +1,13 @@
 getTablesPath()
 {
-  export CONFIG_FILE
-
   if [ ! ${CONFIG_FILE} ] ; then
      if [ -w $QA_SRC/.qa-config.txt ] ; then
-        export CONFIG_FILE=$QA_SRC/.qa-config.txt
+        CONFIG_FILE=$QA_SRC/.qa-config.txt
      elif [ -w ~/.qa-dkrz/config.txt ] ; then
-        export CONFIG_FILE=~/.qa-dkrz/config.txt
+        CONFIG_FILE=~/.qa-dkrz/config.txt
      else
-        echo "Please, run $QA_SRC/install up CF"
-        exit
+        echo "Please, run $QA_SRC/install up $PROJECT"
+        exit 41
      fi
   fi
 

@@ -40,12 +40,8 @@ getFromConda()
 
 getQA_Version()
 {
-
   # get current revision number; this determines whether it is
   # before a change of defaults happened.
-
-  # this is always brief
-  . ${QA_SRC}/scripts/parseConfigFile QA_REVISION=delete
 
   if [ ! -d $QA_SRC/.git ] ; then
     getFromConda

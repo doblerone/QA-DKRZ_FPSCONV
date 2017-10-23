@@ -40,7 +40,7 @@ isNextDate()
    else
      if [ ${pC_today} -lt ${t_config_day} ] ; then
         status=0  # means a match
-     elif [ ${pC_inquire} = t ] ; then
+     elif [ ${pC_read_only} = t ] ; then
         status=1
      else
         param_value="${pC_todate}+${t_config_date[1]:-1}"
@@ -197,7 +197,7 @@ updateConfFile()
          isDelete=t
        fi
        # else: match
-     elif [ ${CONFIG_READ_ONLY:-f} = f ] ; then
+     elif [ ${pC_read_only:-f} = f ] ; then
         if [ ${#param_value} -gt 0 ] ; then
            if [ ${param_value} = delete ] ; then
              isDelete=t
@@ -218,7 +218,7 @@ updateConfFile()
 
      test ${param_name:0:5} = NEXT_ && isNextDate
 
-     if [ ${#param_value} -gt 0 -a ${CONFIG_READ_ONLY:-f} = f ] ; then
+     if [ ${#param_value} -gt 0 -a ${pC_read_only:-f} = f ] ; then
        # new
        sed -i "${uCF_blkEnd} a${param}" $CONFIG_FILE &> /dev/null
 
@@ -245,11 +245,11 @@ updateConfFile()
 declare -a pC_Args
 pC_Args=()
 pC_freq=
-pC_inquire=f
+pC_read_only=f
 
 for arg in $* ; do
   if [ "${arg:0:9}" = '--inquire' ] ; then
-    pC_inquire=t
+    pC_read_only=t
   elif [ "${arg}" = '--force_reading' ] ; then
     unset uCF_lines
     unset uCF_blkBeg
@@ -259,6 +259,8 @@ for arg in $* ; do
     pC_Args[${#pC_Args[*]}]="$arg"
   fi
 done
+
+test ${CONFIG_READ_ONLY} && pC_read_only
 
 #if [ "$1" = --show_lines ] ; then
 #  show_lines

@@ -371,6 +371,10 @@ initialArgs=($*)
 # resolve symbolic links and realtive paths
 getSrcPath
 
+# Condition for frozen. However, here an exit would be wrong,
+# because --force would disable a frozen state.
+test -f $QA_SRC/.qa-config.txt && CONFIG_READ_ONLY=t
+
 if [ $# -gt 0 ] ; then
   # safe arguments
   sArgs=($*)
@@ -421,8 +425,11 @@ do
                -o \( "${name_0:0:1}" = C -a "${name_1:0:1}" = F \) ]
           then
             isConfigFile=t
-            test ${UOPTARG%=*} != ${OPTNAME} && configFile=${OPTVAL}
+            test ${UOPTARG%=*} != ${OPTNAME} && configDir=${OPTVAL}
           fi
+        elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
+          DEBUG='--debug'
+          set -x
         elif [ "${OPTNAME}" = HOME ] ; then
           export QA_TABLES=${OPTVAL}
         elif [ "${OPTNAME}" = QA_TABLES ] ; then
@@ -436,21 +443,23 @@ do
 done
 
 if [ ${isConfigFile} ] ; then
-  if [ ! "${configFile}" ] ; then
+  # passed by option; required for a conda-build
+
+  if [ ! "${configDir}" ] ; then
     if [ ${QA_TABLES} ] ; then
-      configFile=${QA_TABLES}  # required for a conda-build
+      configDir=${QA_TABLES}
     else
       echo "option --cf requires provision of --qa-tables"
       exit 1
     fi
   fi
 else
-  configFile=${HOME}
+  configDir=${HOME}
 fi
 
-export CONFIG_FILE=$configFile/.qa-dkrz/config.txt
-if [ ! -f $configFile/.qa-dkrz/config.txt ] ; then
-  mkdir -p ${configFile}/.qa-dkrz
+export CONFIG_FILE=$configDir/.qa-dkrz/config.txt
+if [ ! -f $configDir/.qa-dkrz/config.txt ] ; then
+  mkdir -p ${configDir}/.qa-dkrz
   touch $CONFIG_FILE
 fi
 
@@ -462,6 +471,10 @@ if . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE ; then
    . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=delete
    . ${QA_SRC}/scripts/parseConfigFile UPDATE=automatic
 fi
+
+# delete obsolete names
+. ${QA_SRC}/scripts/parseConfigFile QA_REVISION=delete
+. ${QA_SRC}/scripts/parseConfigFile DEFAULT_PROJECT=delete
 
 OPTIND=
 while getopts BdhT:-: option ${sArgs[*]}
@@ -517,9 +530,6 @@ do
           export CONDA_QA_PATH=${OPTVAL}
           . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_PATH=${OPTVAL}
 
-        elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
-          DEBUG='--debug'
-          set -x
         elif [ "${OPTNAME}" = FORCE ] ; then
           \rm -f ${QA_SRC}/.qa-config.txt
           . $QA_SRC/scripts/parseConfigFile UPDATE=enabled
@@ -641,15 +651,18 @@ if ! . ${QA_SRC}/scripts/getTablesPath ; then
   exit 41
 fi
 
-test ${#projects[*]} -eq 0 && exit 0
+if [ ${#projects[*]} -eq 0 ] ; then
+   echo 'install requires at least a PROJECT name'
+   exit 0
+fi
 
 # inquire usually from ~/.qa-dkrz/config.txt;
 if [ ${isInqTables} ] ; then
   for project in ${projects[*]} ; do
-    if ! . ${QA_SRC}/scripts/inqRunEnv --read-only ${project} ; then
+    if ! . ${QA_SRC}/scripts/inqRunEnv --inquire ${project} ; then
       exit 41
     fi
-   done
+  done
 
    exit 0
 fi
