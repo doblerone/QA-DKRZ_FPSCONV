@@ -33,5 +33,7 @@ get_QA_path()
 
 get_QA_path
 
+unset LD_LIBRARY_PATH
+
 exec ${QA_PATH}/opt/qa-dkrz/scripts/qa-dkrz $*
 
