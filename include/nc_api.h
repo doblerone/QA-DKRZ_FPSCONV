@@ -166,7 +166,6 @@ public:
       std::vector<size_t>  rec_leg_begin;
       std::vector<size_t>  rec_leg_sz;
       std::vector<size_t>  rec_leg_end;
-      std::vector<void*>   rec_prev_taker;
 
 //! NC4: Compression
       std::vector<int> varShuffle;
@@ -624,8 +623,7 @@ void
     bool isEmptyData(std::string vName)
          { return isEmptyData(getVarID(vName)) ;}
 
-    bool isEmptyData(int vid)
-         { return isLastDataEmpty[vid] ;}
+    bool isEmptyData(int vid);
 
 //! Return true if the type is index compatible
     bool
@@ -933,7 +931,8 @@ private:
     size_t effUnlimitedDimSize;
     std::vector<bool> hasEffVarUnlimitedDim;
     std::vector<std::string> pseudoUnlimitedDim;
-    std::vector<bool>        isLastDataEmpty;
+    std::vector<bool>        isDataEmpty;
+    std::vector<bool>        isDataEmptyChecked;
 
     int    numOfRecords;
     size_t max_read_sz;

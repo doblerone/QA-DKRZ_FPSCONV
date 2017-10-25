@@ -1491,15 +1491,15 @@ getUniqueString(std::vector<std::string>& vs, char sep)
 {
   std::vector<std::string> vs_unique(getUniqueVector(vs));
   std::string s;
-  
+
   for( size_t j=0 ; j < vs_unique.size() ; ++j )
   {
      if(j)
        s += sep;
-     
+
      s += vs_unique[j] ;
   }
-     
+
   return getUniqueString(s, sep);
 }
 
@@ -1608,11 +1608,12 @@ bool
 isAmong(std::string& item, std::vector<std::string>& set,
         size_t& i,std::string mode)
 {
-  //mode: ""     --> 1: exact
-  //      "beg"  --> 2: sub-str on the left
-  //      "end"  --> 3: sub-string to the right
-  //      "find" --> 2: find anywhere
+  //mode: ""     --> 0: exact
+  //      "beg"  --> 1: sub-str to the left of string
+  //      "end"  --> 2: sub-string to the right
+  //      "find" --> 3: find anywhere
   int imode=-1;
+
   if( ! mode.size() )
     imode=0;
   else if( mode == "beg" )
@@ -2374,22 +2375,22 @@ std::string
 clearEnclosures(std::string& str, char a, char b )
 {
    clearEnclosures_unpaired = false;
-   
+
    // example: str="one(two(three)four)five" --> "onefive
    if( str.size() == 0 )
      return str;
-     
+
    size_t p0=0;
 
    std::vector<size_t> pA;
    while( (p0=str.find(a, p0)) < std::string::npos )
       pA.push_back(p0++);
-  
+
    p0=0;
    std::vector<size_t> pB;
    while( (p0=str.find(b, p0)) < std::string::npos )
       pB.push_back(p0++);
-     
+
    std::string s;
 
    if( pA.size() == pB.size() )
@@ -2399,7 +2400,7 @@ clearEnclosures(std::string& str, char a, char b )
 
      pA.push_back(str.size()+1);
      pB.push_back(str.size());
-     size_t c=0 ;       
+     size_t c=0 ;
      size_t pBeg=0 ;
      size_t ixA=0;
      size_t ixB=0;
@@ -2410,7 +2411,7 @@ clearEnclosures(std::string& str, char a, char b )
         {
            if( pA[ixA] > pBeg )
              s += str.substr(pBeg, pA[ixA] - pBeg);
-             
+
            c=0;
            pBeg = pB[ixB+c] +1 ;
            ixA += c+1;
@@ -2425,7 +2426,7 @@ clearEnclosures(std::string& str, char a, char b )
      }
 
      if( pBeg < str.size() )
-        s+=str.substr(pBeg, str.size() - pBeg);       
+        s+=str.substr(pBeg, str.size() - pBeg);
    }
    else
       clearEnclosures_unpaired=true;

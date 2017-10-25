@@ -116,7 +116,6 @@ NcAPI::clearLayout(void)
   layout.rec_leg_begin.clear();
   layout.rec_leg_sz.clear() ;
   layout.rec_leg_end.clear();
-  layout.rec_prev_taker.clear();
 
   layout.varStorage.clear();
   layout.varChunkSize.clear();
@@ -1284,7 +1283,8 @@ NcAPI::defineVar(std::string vName, nc_type type,
   layout.noData.push_back(false) ;
   hasEffVarUnlimitedDim.push_back( false) ;
 
-  isLastDataEmpty.push_back(true);
+  isDataEmpty.push_back(true);
+  isDataEmptyChecked.push_back(false);
 
   for( size_t i=0 ; i < currDimName.size() ; ++i )
   {
@@ -1315,7 +1315,6 @@ NcAPI::defineVar(std::string vName, nc_type type,
   layout.rec_leg_begin.push_back( 0 );
   layout.rec_leg_sz.push_back( 0 );  // default for large multi-dim arrays
   layout.rec_leg_end.push_back( 0 );
-  layout.rec_prev_taker.push_back( 0 );  // pointer of the last data taker
 
   size_t sz=1;  // Set 1 for limited variables, not used.
 
@@ -1472,6 +1471,28 @@ NcAPI::disableDefMode(void)
   }
 
   return;
+}
+
+bool
+NcAPI::isEmptyData(int varid)
+{
+  if( isDataEmptyChecked[varid] )
+      return isDataEmpty[varid] ;
+
+  MtrxArr<double> ma;
+  size_t nrec=getNumOfRecords();
+
+  for( size_t rec=0 ; rec < nrec ; ++rec )
+  {
+    getData(ma, varid, rec);
+
+    isDataEmpty[varid] = ma.validRangeBegin.size() ? false : true ;
+
+    if( !isDataEmpty[varid] )
+        break;
+  }
+
+  return isDataEmpty[varid] ;
 }
 
 inline
@@ -2600,7 +2621,7 @@ NcAPI::getData(int varid, size_t rec, int leg)
   std::vector<size_t> dim ;
   size_t* curr_count = new size_t [rank] ;
 
-  // scalar defined as a 0-dimensional variable
+  // a scalar is defined as 0-dimensional variable
   if( rank == 0 )
     dim.push_back(1);
   else
@@ -2827,56 +2848,35 @@ NcAPI::getData(MtrxArr<ToT> &to, int varid, size_t rec, int leg)
   if( varid < 0 )
     return 0;
 
-/*
-  // note that the leg length is atomatically set to a single step
-  // for higher-dimensonal arrays.
-  if( ! layout.rec_leg_sz[varid] )
-     setRecLeg(layout.varidMap[varid]);
+  layout.rec_leg_begin[varid] = rec;
 
-  size_t currLeg = layout.rec_leg_sz[varid];
+  size_t lleg;
 
-  // read operation required
-  if( ! (rec > layout.rec_leg_begin[varid]
-             && rec < layout.rec_leg_end[varid]) )
+  if( isVarUnlimited(varid) )
   {
-*/
-    layout.rec_leg_begin[varid] = rec;
-
-    size_t lleg;
-
-    if( isVarUnlimited(varid) )
-    {
-        if( leg == -1 )
-          lleg = getNumOfRecords();
-        else
-          lleg = static_cast<size_t>(leg);
-
-        layout.rec_leg_end[varid] = rec + lleg ;
-
-        if( layout.rec_leg_end[varid] > layout.varDimSize[varid][0] )
-        {
-          // take into growth due to writing
-          std::vector<size_t> vs_vdSz( getVarDimSize(layout.varidMap[varid]) );
-
-          if( !vs_vdSz.size() )
-             vs_vdSz.push_back(1);  // scalar variable
-
-          layout.rec_leg_end[varid] = vs_vdSz[0];
-          lleg = vs_vdSz[0] - rec ;
-        }
-    }
+    if( leg == -1 )
+      lleg = getNumOfRecords();
     else
-      lleg=0;
+      lleg = static_cast<size_t>(leg);
 
-    (void) getData(varid, rec, lleg);
-/*
+    layout.rec_leg_end[varid] = rec + lleg ;
+
+    if( layout.rec_leg_end[varid] > layout.varDimSize[varid][0] )
+    {
+        // take into growth due to writing
+        std::vector<size_t> vs_vdSz( getVarDimSize(layout.varidMap[varid]) );
+
+        if( !vs_vdSz.size() )
+            vs_vdSz.push_back(1);  // scalar variable
+
+        layout.rec_leg_end[varid] = vs_vdSz[0];
+        lleg = vs_vdSz[0] - rec ;
+    }
   }
-  else if( (void*)to.arr == layout.rec_prev_taker[varid] )
-  {
-    // the taking object is the same as before
-    return to[ rec - layout.rec_leg_begin[varid] ] ;
-  }
-*/
+  else
+    lleg=0;
+
+  (void) getData(varid, rec, lleg);
 
   // the taking obj had been used in a different context
   size_t to_ix = rec - layout.rec_leg_begin[varid] ;
@@ -2932,11 +2932,6 @@ NcAPI::getData(MtrxArr<ToT> &to, int varid, size_t rec, int leg)
     }
     break;
   }
-
-  layout.rec_prev_taker[varid] = (void*) to.arr ;
-
-  // status of the last getData operation
-  isLastDataEmpty[varid] = to.validRangeBegin.size() ? false : true ;
 
   return to[to_ix];
 }
@@ -3487,7 +3482,8 @@ NcAPI::getLayout(void)
      layout.varidMap[id] = name_buf ;
      layout.varTypeMap[name_buf] = type ;
 
-     isLastDataEmpty.push_back(true);
+     isDataEmpty.push_back(true);
+     isDataEmptyChecked.push_back(false);
 
      // ATTRIBUTES of variables
      for( int j=0 ; j < attNum ; ++j )
@@ -3556,7 +3552,6 @@ NcAPI::getLayout(void)
      layout.rec_leg_sz.push_back( 0 );
      layout.rec_leg_sz.push_back( 0 );  // default for large multi-dim arrays
      layout.rec_leg_end.push_back( 0 );
-     layout.rec_prev_taker.push_back( 0 );  // pointer of the last data taker
 
      // compression
      int shuffle=0;

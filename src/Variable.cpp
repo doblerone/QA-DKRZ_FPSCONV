@@ -175,23 +175,6 @@ Variable::getCoordinateType(void)
   return i ;
 }
 
-/*
-template<typename T>
-std::pair<int,int>
-Variable::getData(MtrxArr<T>& ma, int rec, int leg )
-{
-  if( leg < 0 )
-    return;
-
-  bool is = pNc->getData(ma, name, rec, leg) ;
-  
-  if( isNoData_ )
-     isNoData_ = pNc->isEmptyData(name) ;
-  
-  return is;
-}
-*/
-
 bool
 Variable::getData(int rec)
 {
@@ -311,9 +294,6 @@ Variable::isNoData(void)
 {
    if( ! isNoData_ )
       return isNoData_ ;
-
-   MtrxArr<double> tma;
-   pIn->nc.getData(tma, name, 0);
 
    return ( isNoData_ = pNc->isEmptyData(name) );
 }
