@@ -171,6 +171,7 @@ template <typename T>
   void   finalAtt_coordinates_A(void);
   void   finalAtt_coordinates_B(void);
   void   finalAtt_coordinates_C(void);
+  void   finalAtt_coordinates_D(void);
   void   finalAtt_positive(void);
   void   finalAtt_units(void);
   void   final_dataVar(void);

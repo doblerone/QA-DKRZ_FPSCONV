@@ -1274,9 +1274,17 @@ CF::finalAtt_coordinates(void)
   // latitude, longitude, vertical, or time coordinates via the coordinates
   // attribute of the variable.
 
+  // find non-existing var contained in a coords att
   finalAtt_coordinates_A();
+
+  // auxiliary is missing in a coordinates attribute; pass when in doubt.
   finalAtt_coordinates_B();
+
+  // coordinate var must not have coordinates attribute
   finalAtt_coordinates_C();
+
+  // aux coordinate identified but nnot declared in any coordinates attribute
+  finalAtt_coordinates_D();
 
   return;
 }
@@ -1286,7 +1294,7 @@ CF::finalAtt_coordinates_A(void)
 {
   // find non-existing var contained in a coords att
 
-  // collect all vars in any coords att, which have been checked
+  // collection of all vars in any coords att, which have been checked
   std::vector<std::string> vs_cav;
 
   for(size_t i=0 ; i < ca_vvs.size() ; ++i )
@@ -1491,6 +1499,50 @@ CF::finalAtt_coordinates_C(void)
         notes->setCheckStatus( n_CF, fail );
       }
     }
+  }
+
+  return;
+}
+
+void
+CF::finalAtt_coordinates_D(void)
+{
+  // find aux coords not declared in attribute 'coordinates'
+
+  for( size_t ix=0 ; ix < pIn->varSz ; ++ix )
+  {
+     Variable& aux = pIn->variable[ix] ;
+
+     if( aux.coord.isCoordVar || aux.isLabel )
+         continue;
+
+     if( ! aux.isCoordinate() )
+         continue;
+
+     bool is=true;
+
+     for(size_t i=0 ; i < ca_vvs.size() ; ++i )
+     {
+         std::vector<std::string>& ca_vs = ca_vvs[i] ;
+
+         if( ca_vs.size() && ! hdhC::isAmong(aux.name, ca_vs) )
+         {
+           is=false;
+           break;
+         }
+     }
+
+     if(is)
+     {
+        if( notes->inq(bKey + "5k", aux.name, NO_MT ) )
+        {
+            std::string capt("Warning: auxiliary " + hdhC::tf_var(aux.name));
+            capt += " is not used in any coordinates attribute" ;
+
+            (void) notes->operate(capt) ;
+            notes->setCheckStatus( n_CF, fail );
+        }
+     }
   }
 
   return;

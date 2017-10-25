@@ -134,6 +134,14 @@ do
           fi
         elif [ "${OPTARG}" = "no-reco" ] ; then
           RC=f
+        elif [ "${OPTARG%%=*}" = "note" ] ; then
+           NOTE="${NOTE}${NOTE:+,}"
+           OPTVAL=${OPTARG#*=}
+           if [ ${OPTVAL:0:1} = '{' ] ; then
+             NOTE="${NOTE}${NOTE:+,}${OPTVAL}"
+           else
+             NOTE="${NOTE}${NOTE:+,}{${OPTVAL}}"
+           fi
         elif [ "${OPTARG}" = "param" ] ; then
           isParamFileOnly=t
         elif [ "${OPTARG}" = "test-suite" ] ; then
@@ -228,6 +236,9 @@ param_CF="${param_CF}:cFSRN=CF_standardized-region-names.txt"
 param_CF="${param_CF}${CF:+:cF=}${CF}${RC:+:fR}"
 
 param_X="${param_X}\\nX::cL=CF_check-list.conf:nCR:nLL=L1:oP:d"
+if [ ${NOTE} ] ; then
+   param_X="${param_X}:note=${NOTE}"
+fi
 #param_X="${param_X}:note={CF_12h,D}"  # data variable without any data
 
 
@@ -270,10 +281,10 @@ for(( i=0 ; i < ${#fs[*]} ; ++i )) ; do
   param="${param}${param_IN}"
   param="${param}${param_CF}"
 
-  param="${param}${param_X}:note="
+  param="${param}${param_X}"
   if [ ${isTestSuite:-f} = t ] ; then
     if [ ${f##*/} != cf_0f.nc ] ; then
-      param="${param},{CF_0d,D},{CF_0e,D},{CF_0f,D},{CF_12e,D}"
+      param="${param}:note={CF_0d,D},{CF_0e,D},{CF_0f,D},{CF_12e,D}"
     fi
   fi
 
