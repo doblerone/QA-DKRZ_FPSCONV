@@ -464,8 +464,8 @@ Outlier::test(QA_Data *pQAD)
   // read min / max from the qa-nc file
 
   std::vector<std::string> extStr;
-  extStr.push_back( "minima" );
-  extStr.push_back( "maxima" );
+  extStr.push_back( "record-wide minima" );
+  extStr.push_back( "record-wide maxima" );
 
   int errNum[2];
   errNum[0]=400;
@@ -505,7 +505,6 @@ Outlier::test(QA_Data *pQAD)
         for(size_t k=ma_d.validRangeBegin[j] ; k < ma_d.validRangeEnd[j] ; ++k )
           extr[recNum++] = ma_d[k] ;
 
-    // for preventing spurious minima slightly above zero.
     double extrMin = extr[0];
     double extrMax = extr[0];
     for( size_t j=1 ; j < recNum ; ++j )
@@ -626,6 +625,7 @@ Outlier::test(QA_Data *pQAD)
 
     if( isOut )
     {
+        // for preventing spurious minima slightly above zero.
         if( extrMin > 0. )
         {
           double th=(ave[i]-extrMin)/extrMin;
@@ -676,13 +676,14 @@ Outlier::test(QA_Data *pQAD)
 
         std::ostringstream ostr(std::ios::app);
         ostr.setf(std::ios::scientific, std::ios::floatfield);
-        ostr << "suspicion of outlier for " << extStr[i] ;
+        ostr << hdhC::tf_var(vMD->var->name, hdhC::colon) ;
+        ostr << " Suspicion of outlier for " << extStr[i] ;
 
         if(pQA->qaExp.varMeDa.size() > 1 )
         {
           ostr << " of " << name ;
         }
-        ostr << ", found strongest at rec# ";
+        ostr << " found at rec# ";
 
         ostr << outRec[0] ;
         ostr << ", value=" ;

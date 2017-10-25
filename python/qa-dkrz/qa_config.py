@@ -648,7 +648,7 @@ class QaConfig(object):
 
             if len(cfg):
                 if not os.path.isfile(cfg):
-                    print 'no such file'+cfg
+                    print 'no such file '+cfg
                     sys.exit(1)
 
                 with open(cfg, 'r') as f:

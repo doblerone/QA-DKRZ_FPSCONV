@@ -155,7 +155,18 @@ updateConfFile()
 
    # find a match between config.txt lines and current param_name
    for(( i=0 ; i < ${#uCF_lines[*]} ; ++i )) ; do
-       test ${uCF_lines[i]%=*} = ${param_name} && break
+       if [ ${uCF_lines[i]%=*} = ${param_name} ] ; then
+          if [ "${param_value}" = 'delete' ] ; then
+            lineNum=$((uCF_blkBeg+i+1))
+            sed -i "${lineNum} d" $CONFIG_FILE &> /dev/null
+            uCF_blkEnd=$(( uCF_blkEnd -1 ))
+            unset uCF_lines[i]
+            uCF_lines=( ${uCF_lines[*]} )
+            return 1
+          fi
+
+          break
+       fi
    done
 
    if [ $i -lt ${#uCF_lines[*]} ] ; then
@@ -178,8 +189,6 @@ updateConfFile()
          status=1
        elif [ "${uCF_lines[i]#*=}" = enable ] ; then
          eval ${param_name}=t
-       elif [ "${uCF_lines[i]#*=}" = delete ] ; then
-         isDelete=t
        else
          # read value from the config file and set variable
          eval ${uCF_lines[i]}
@@ -193,8 +202,6 @@ updateConfFile()
        elif [ ${param_value} = enabled ] ; then
          # enable or unchanged (matched).
          eval ${param_name}=t
-       elif [ ${param_value} = delete ] ; then
-         isDelete=t
        fi
        # else: match
      elif [ ${pC_read_only:-f} = f ] ; then
@@ -215,26 +222,18 @@ updateConfFile()
    else
      # current param not found in config.txt, yet
      status=1
+     if [ "${param_value}" != delete ] ; then
+       test ${param_name:0:5} = NEXT_ && isNextDate
 
-     test ${param_name:0:5} = NEXT_ && isNextDate
+       if [ ${#param_value} -gt 0 -a ${pC_read_only:-f} = f ] ; then
+         # new
+         sed -i "${uCF_blkEnd} a${param}" $CONFIG_FILE &> /dev/null
 
-     if [ ${#param_value} -gt 0 -a ${pC_read_only:-f} = f ] ; then
-       # new
-       sed -i "${uCF_blkEnd} a${param}" $CONFIG_FILE &> /dev/null
-
-       local sz=${#uCF_lines[*]}
-       uCF_lines[sz]="${param}"
-       uCF_blkEnd=$(( uCF_blkEnd + 1 ))
+         local sz=${#uCF_lines[*]}
+         uCF_lines[sz]="${param}"
+         uCF_blkEnd=$(( uCF_blkEnd + 1 ))
+       fi
      fi
-   fi
-
-   if [ ${isDelete} ] ; then
-        lineNum=$((uCF_blkBeg+i+1))
-        sed -i "${lineNum} d" $CONFIG_FILE &> /dev/null
-        uCF_blkEnd=$(( uCF_blkEnd -1 ))
-        unset uCF_lines[i]
-        uCF_lines=( ${uCF_lines[*]} )
-        isDelete=
    fi
 
    return $status
@@ -250,7 +249,7 @@ pC_read_only=f
 for arg in $* ; do
   if [ "${arg:0:9}" = '--inquire' ] ; then
     pC_read_only=t
-  elif [ "${arg}" = '--force_reading' ] ; then
+  elif [ "${arg}" = '--read' ] ; then
     unset uCF_lines
     unset uCF_blkBeg
   elif [ "${arg:0:15}" = '--set_frequency' ] ; then
@@ -277,6 +276,8 @@ if [ ${#uCF_lines[*]} -eq 0 ] ; then
   unset uCF_blkBeg
   readCF
 fi
+
+test ${#pC_Args[*]} -eq 0 && return 0
 
 updateConfFile ${pC_Args[*]}
 

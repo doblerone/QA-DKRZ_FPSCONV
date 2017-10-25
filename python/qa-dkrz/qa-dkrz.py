@@ -346,7 +346,10 @@ def get_next_variable(data_path, fBase, fNames):
 
             return []
 
-    lst = next_file_str.splitlines()
+    try:
+        lst = next_file_str.splitlines()
+    except:
+        lst=[]
 
     return lst
 

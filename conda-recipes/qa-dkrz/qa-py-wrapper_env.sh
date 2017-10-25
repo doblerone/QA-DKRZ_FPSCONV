@@ -33,5 +33,5 @@ get_QA_path()
 
 get_QA_path
 
-exec python ${QA_PATH}/opt/qa-dkrz/python/qa-dkrz/qa-dkrz.py $*
+exec ${QA_PATH%envs/*}/bin/python ${QA_PATH}/opt/qa-dkrz/python/qa-dkrz/qa-dkrz.py $*
 

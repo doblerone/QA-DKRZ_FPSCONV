@@ -20,6 +20,16 @@ compilerSetting()
   # Anything given in the install_configure file?
   if [ -f install_configure ] ; then
     . install_configure
+
+    #test ${LIB} && . ${QA_SRC}/scripts/parseConfigFile LD_LIBRARY_PATH=${LIB}
+    local i ll
+    declare -a ll
+    ll=( ${LIB//:/ } )
+    for(( i=0 ; i < ${#ll[*]} ; ++i )) ; do
+      test ! -d ${QA_SRC}/local/${ll[i]##*/} -o \
+             ! -h ${QA_SRC}/local/${ll[i]##*/} && \
+        ln -sf ${ll[i]} ${QA_SRC}/local
+    done
   fi
 
   if [ ${#locCC} -gt 0 ] ; then
@@ -309,7 +319,7 @@ libInclSetting()
 
 log()
 {
-  test ${isDebug:-f} = t && set +x
+  test ${DEBUG} && set +x
 
   # get status from last process
   local status=$?
@@ -358,7 +368,7 @@ log()
 
   echo "$str" >> ${logPwd}install.log
 
-  test ${isDebug:-f} = t && set -x
+  test ${DEBUG} && set -x
 
   return $status
 }
@@ -635,7 +645,7 @@ store_LD_LIB_PATH()
   done
 
   # store/update LD_LIBRARY_PATH in .conf
-  . $QA_SRC/scripts/updateConfigFile.txt LD_LIBRARY_PATH=${ldp}
+  # . $QA_SRC/scripts/updateConfigFile.txt LD_LIBRARY_PATH=${ldp}
 
   return
 }
@@ -687,7 +697,7 @@ do
            continue
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=install.sh' ] ; then
            set -x
-           isDebug=t
+           DEBUG='--debug'
         elif [ "${OPTNAME}" = DISPLAY_COMP ] ; then
            displayComp=t
            continue
@@ -719,7 +729,8 @@ projects=( $* )
 
 cd ${QA_SRC}
 
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QA_SRC}/local/lib64:${QA_SRC}/local/lib
+# export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QA_SRC}/local/lib64:${QA_SRC}/local/lib
+
 #export LD_LIBRARY_PATH=/home/hdh/miniconda/lib
 export LD_RUN_PATH=${LD_LIBRARY_PATH}
 
@@ -777,7 +788,7 @@ for prj in ${projects[*]} ; do
   for(( i=0 ; i < ${#prj_cpp[*]} ; ++i )) ; do
     if [ QA_${prj}.cpp = ${prj_cpp[i]} ] ; then
       # the revision number is inserted in Makefile via -DREVISION
-      export REVISION="$( $QA_SRC/scripts/getVersion $prj)"
+      export REVISION="$( $QA_SRC/scripts/getVersion ${DEBUG} $prj)"
 
       makeProject $prj
       continue 2

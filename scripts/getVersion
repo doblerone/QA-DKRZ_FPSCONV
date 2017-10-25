@@ -17,10 +17,11 @@ getGitBranch()
    #git -C $1 branch | grep '*' | awk '{print $2}'
    cd $1 &> /dev/null
 
-   # produces output
-   branch=$( git branch | grep '*' | awk '{print $2}' )
-
-   currIdent=$(git log --pretty=format:'%h' -n 1)
+   if which git &> /dev/null ; then
+     # produces output
+     branch=$( git branch | grep '*' | awk '{print $2}')
+     currIdent=$(git log --pretty=format:'%h' -n 1)
+   fi
 
    cd - &> /dev/null
 
@@ -43,11 +44,30 @@ getQA_Version()
   # get current revision number; this determines whether it is
   # before a change of defaults happened.
 
+  if [ ! ${isForce} ] ; then
+    if [[ ${#QA_VERSION} -gt 0 ]] || \
+            . ${QA_SRC}/scripts/parseConfigFile QA_VERSION ; then
+      local arr
+      declare -a arr
+      arr=( ${QA_VERSION//,/ } )
+      if [ ${#arr[*]} -eq 1 ] ; then
+        branch=${arr[0]%-*}
+        currIdent=${arr[0]##*-}
+      elif [ ${#arr[*]} -eq 2 ] ; then
+        tag=${arr[0]}
+        branch=${arr[1]%-*}
+        currIdent=${arr[1]##*-}
+      fi
+
+      if [ ${branch} ] ; then
+        totalStr="${tag}${tag:+,}${branch}-${currIdent}"
+        return
+      fi
+    fi
+  fi
+
   if [ ! -d $QA_SRC/.git ] ; then
     getFromConda
-
-    QA_REVISION="${tag}${branch:+,}${branch}-${currIdent}"
-    . ${QA_SRC}/scripts/parseConfigFile QA_CONDA_REVISION=${QA_REVISION}
   else
     local branch currIdent
     local f=${QA_SRC}/conda-recipes/qa-dkrz/meta.yaml
@@ -60,11 +80,12 @@ getQA_Version()
     tag=${tag}-${tmp2:0:$((${#tmp2}-1))}
     tmp2=$( grep 'number:' $f | awk '{print $(NF)}' )
     tag=${tag}-${tmp2}
-
-    QA_REVISION="${tag}${branch:+,}${branch}-${currIdent}"
-    . ${QA_SRC}/scripts/parseConfigFile QA_GitHub_REVISION=${QA_REVISION}
   fi
 
+  QA_VERSION="${tag}${tag:+,}${branch}-${currIdent}"
+  if . ${QA_SRC}/scripts/parseConfigFile QA_VERSION=${QA_VERSION} ; then
+    isUpdate=1
+  fi
 
   if [ ${isVerbose} ] ; then
     vStr="QA version:"
@@ -72,7 +93,7 @@ getQA_Version()
     vStr="${vStr}\n   commit-SHA: ${currIdent}"
     vStr="${vStr}\n   tag: ${tag:- -}"
   else
-   vStr="${QA_REVISION}"
+   vStr="${QA_VERSION}"
   fi
 
   return
@@ -98,54 +119,94 @@ getExternalVersion()
 
   for prj in ${prjs[*]} ; do
     if [ ${prj} = CMIP6 ] ; then
+       if [ ! ${isForce} ] ; then
+         if [[ ${#CMIP6_VERSION} -gt 0 ]] || \
+            . ${QA_SRC}/scripts/parseConfigFile CMIP6_VERSION ; then
+            totalStr="${totalStr}${sep0}${CMIP6_VERSION}"
+            continue
+         fi
+       fi
+
        getGitBranch $pprj/CMIP6/CMIP6_CVs
 
        #git -C ${QA_TABLES}/CMIP6/CMIP6_CVs log --oneline --decorate\
-       vStr="${vStr}${sep0}CMIP6_CVs:${sep1}"
+       vStr="CMIP6_CVs:${sep1}"
        vStr="${vStr}${branch}-${currIdent}"
 
-		 vStr="${vStr}${sep0}CMIP6_MIP_tables.xlsx:${sep1}"
-		 vStr="${vStr}"$(ls -l --time-style='+%FT%T' \
-		           $pprj/CMIP6/CMIP6_MIP_tables.xlsx \
-		           | awk '{print $6}')
+       vStr="${vStr}${sep0}CMIP6_MIP_tables.xlsx:${sep1}"
+       vStr="${vStr}"$(ls -l --time-style='+%FT%T' \
+                   $pprj/CMIP6/CMIP6_MIP_tables.xlsx \
+                   | awk '{print $6}')
 
-		 if [ ! ${PrePARE} ] ; then
-	      if ! Prepare=${QA_SRC}/scripts/which_cmd_alias -q PrePARE ; then
-	 	      . ${QA_SRC}/scripts/parseConfigFile PrePARE
-			fi
-		 fi
+       if [ ! ${PrePARE} ] ; then
+          if ! Prepare=${QA_SRC}/scripts/which_cmd_alias -q PrePARE ; then
+               . ${QA_SRC}/scripts/parseConfigFile PrePARE
+            fi
+       fi
 
-		if [ ${PrePARE} ] ; then
+       if [ ${PrePARE} ] ; then
+           i=$(ls ${PrePARE%/bin/PrePARE}/conda-meta/cmor-* 2> /dev/null)
+           i=${i##*/}
+           vStr="${vStr}${sep0}CMOR:${sep1}${i%.json}"
 
-			i=$(ls ${PrePARE%/bin/PrePARE}/conda-meta/cmor-* 2> /dev/null)
-			i=${i##*/}
-		   vStr="${vStr}${sep0}CMOR:${sep1}${i%.json}"
+           getGitBranch $pprj/CMIP6/cmip6-cmor-tables
 
-         getGitBranch $pprj/CMIP6/cmip6-cmor-tables
-         #git -C ${QA_TABLES}/CMIP6/CMIP6_CVs log --oneline --decorate\
-         vStr="${vStr}${sep0}cmip6-cmor-tables:${sep1}${branch}-${currIdent}"
-		fi
+           #git -C ${QA_TABLES}/CMIP6/CMIP6_CVs log --oneline --decorate\
+           vStr="${vStr}${sep0}cmip6-cmor-tables:${sep1}${branch}-${currIdent}"
+           if . ${QA_SRC}/scripts/parseConfigFile CMIP6_VERSION=${vStr} ; then
+              isUpdate=1
+           fi
+       fi
+
+       totalStr="${totalStr}${sep0}${vStr}"
+
     elif [ ${prj} = CORDEX ] ; then
-       local branch=$(getGitBranch $QA_SRC)
+       if [ ! ${isForce} ] ; then
+         if [[ ${#CORDEX_VERSION} -gt 0 ]] || \
+            . ${QA_SRC}/scripts/parseConfigFile CORDEX_VERSION ; then
+            totalStr=${totalStr}${sep0}${CORDEX_VERSION}
+            continue
+         fi
+       fi
+
+       getGitBranch $QA_SRC
+
        cd $pprj/CORDEX/IS-ENES-Data.github.io &>  /dev/null
        #currIdent=$(git -C ${QA_SRC} log --pretty=format:'%h' -n 1)
        local currIdent=$(git log --pretty=format:'%h' -n 1)
 
-       vStr="${vStr}${sep0}CORDEX/IS-ENES-Data.github.io:${sep1}"
+       vStr="IS-ENES-Data.github.io:${sep1}"
        vStr="${vStr}${branch}-${currIdent}"
+       totalStr="${totalStr}${sep0}${vStr}"
+
+       if . ${QA_SRC}/scripts/parseConfigFile CORDEX_VERSION=${vStr} ; then
+          isUpdate=1
+       fi
        cd - &> /dev/null
     elif [ ${prj} = CF ] ; then
-       if [ ${CF_STD_NAME_VERSION} ] ; then
-         vStr="${vStr}${sep0}CF_STD_NAME_VERSION:${sep1}"
-         vStr="${vStr}${CF_STD_NAME_VERSION}"
+       if [ ! ${isForce} ] ; then
+         if [[ ${#CF_VERSION} -gt 0 ]] || \
+            . ${QA_SRC}/scripts/parseConfigFile CF_VERSION ; then
+            totalStr=${totalStr}${sep0}${CF_VERSION}
+            continue
+         fi
+       fi
+
+       if [ ${CF_STD_NAME} ] ; then
+         vStr="CF_STD_NAME:${sep1}${CF_STD_NAME}"
        elif [ -f $pprj/CF/standard-names.html ] ; then
          local vd
          vd="$(grep 'Standard Name Table (.*)' $pprj/CF/standard-names.html)"
          vd="${vd#*(}"
          vd="${vd%)*}"
          vd="${vd// /}"
-         vStr="${vStr}${sep0}CF_STD_NAME_VERSION:${sep1}"
+         vStr="CF_STD_NAME:${sep1}"
          vStr="${vStr}${vd}"
+       fi
+       totalStr="${totalStr}${sep0}${vStr}"
+
+       if . ${QA_SRC}/scripts/parseConfigFile CF_VERSION=${vStr} ; then
+         isUpdate=1
        fi
     fi
   done
@@ -209,8 +270,12 @@ do
          getGitBranch ${QA_SRC}
          echo $branch
          exit 0
+       elif [ ${OPTARG} == 'force' ] ; then
+         isForce=t
        elif [ ${OPTARG} == 'help' ] ; then
          descript
+       elif [ ${OPTARG:0:7} == 'only-pr' ] ; then
+         isOnlyPRJ=t
        elif [ ${OPTARG%=*} == 'qa-tables' -o ${OPTARG%=*} == 'qa-home' ] ; then
          QA_TABLES=${OPTARG#*=}
        elif [ ${OPTARG} == 'verbose' ] ; then
@@ -224,16 +289,18 @@ done
 
 shift $(( $OPTIND - 1 ))
 
+isUpdate=0  # nothing changed
+
 test $# -gt 0 && prj=$1
 
-getQA_Version
+test ! ${isOnlyPRJ} && getQA_Version
 test ${prj} && getExternalVersion
 
 # print
 if [ ${isVerbose} ] ; then
-  echo -e "${vStr}"
+  echo -e "${totalStr}"
 else
-  echo -n "${vStr}"
+  echo -n "${totalStr}"
 fi
 
-exit 0
+exit ${isUpdate}

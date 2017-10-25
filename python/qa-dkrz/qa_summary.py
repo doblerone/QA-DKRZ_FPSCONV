@@ -396,6 +396,13 @@ class LogSummary(object):
                 del self.annot_fName_id[ix][jx]
                 del self.annot_path_id[ix][jx]
 
+                if len(self.annot_fName_dt_id[ix]) == 0:
+                    del self.annot_fName_dt_id[ix]
+                if len(self.annot_fName_id[ix]) == 0:
+                    del self.annot_fName_id[ix]
+                if len(self.annot_path_id[ix]) == 0:
+                    del self.annot_path_id[ix]
+
         return
 
     def annot_synthetic_tag(self):
@@ -938,10 +945,10 @@ class LogSummary(object):
         self.annot_capt=[]        # brief annotations
         self.annot_impact=[]      # corresponding  severity level
         self.annot_tag=[]         # corresponding tag
-        self.annot_scope=[]       # brief annotations
+        #self.annot_scope=[]       # brief annotations
         self.annot_fName_id=[]    # for each var involved
         self.annot_path_id=[]
-        self.annot_var_ix=[]      # only project variable names
+        # self.annot_var_ix=[]      # only project variable names
         self.annot_fName_dt_id=[] # for each time interval of each var involved
 
         # count total occurrences (good and bad)
@@ -949,6 +956,9 @@ class LogSummary(object):
         self.var_dt_count=[]  # for all frequencies
 
         # reading and processing of the logfile
+        if not os.path.isfile(f_log):
+            return
+
         with open(f_log, 'r') as fd:
             while True:
                 # read the lines of the next check

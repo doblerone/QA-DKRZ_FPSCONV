@@ -515,6 +515,14 @@ callQaConfig()
     SHOW_CLEAR=t
   fi
 
+  if [ ! ${CONDA_QA_PATH} ] ; then
+     local libs
+     libs="$( ls -d ${QA_SRC}/local/lib* 2> /dev/null )"
+     if [ "${libs}" ] ; then
+       export LD_LIBRARY_PATH=${libs// /:}
+     fi
+  fi
+
   return
 }
 
@@ -3590,7 +3598,7 @@ log()
   sp[8]='        '
 
   if [ "$1" = '--start' ] ; then
-    QA_REVISION="$(${QA_SRC}/scripts/getVersion ${PROJECT})"
+    QA_REVISION="$(${QA_SRC}/scripts/getVersion ${DEBUG_MANAGER:+--debug} ${PROJECT})"
 
     s_out="start:\n${sp[1]}date: $( date +'%FT%T' )"
     s_out="${s_out}\n${sp[1]}qa-revision: ${QA_REVISION}"

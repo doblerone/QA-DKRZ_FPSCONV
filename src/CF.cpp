@@ -9039,11 +9039,10 @@ CF::chap74b(Variable& var,
   {
     if( notes->inq(bKey + "74e", var.name) )
     {
-      std::string capt("The value of ");
-      capt += hdhC::tf_att(var.name, n_cell_methods);
-      capt += " suggests" ;
+      std::string capt(hdhC::tf_att(var.name, n_cell_methods, hdhC::colon));
+      capt += " The value " ;
       capt += hdhC::tf_val(timeName) ;
-      capt += ":" + n_climatology ;
+      capt += "suggests " + hdhC::tf_val(n_climatology) ;
       capt += " instead of" ;
       capt += hdhC::tf_val(timeName);
       capt += ":time_bnds" ;

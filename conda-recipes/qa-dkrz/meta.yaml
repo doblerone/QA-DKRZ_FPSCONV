@@ -3,7 +3,7 @@ package:
   version: '0.6.6'
 
 build:
-  number: 19
+  number: 20
 
 source:
 #   git_url: https://github.com/IS-ENES-Data/QA-DKRZ.git
@@ -31,6 +31,7 @@ requirements:
     - expat
     - curl
     - libgcc
+    - git
 #test:
 #  commands:
 #    - dkrz-cf-checker -h

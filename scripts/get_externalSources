@@ -7,7 +7,6 @@ ges_cf()
    cd $QA_TABLES/tables/projects/CF
 
    ges_cf_html
-
    local status=$?
 
    return $?
