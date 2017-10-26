@@ -1521,26 +1521,33 @@ CF::finalAtt_coordinates_D(void)
 
      bool is=true;
 
-     for(size_t i=0 ; i < ca_vvs.size() ; ++i )
+     for( size_t jx=0 ; jx < pIn->varSz ; ++jx )
      {
-         std::vector<std::string>& ca_vs = ca_vvs[i] ;
+        if( jx == ix )
+            continue;
 
-         if( ca_vs.size() && ! hdhC::isAmong(aux.name, ca_vs) )
-         {
-           is=false;
-           break;
-         }
-     }
+        Variable& var = pIn->variable[jx] ;
+        if( ! var.isDataVar() )
+            continue;
 
-     if(is)
-     {
-        if( notes->inq(bKey + "5k", aux.name, NO_MT ) )
+        std::vector<std::string>& ca_vs = ca_vvs[jx] ;
+
+        if( ca_vs.size() && hdhC::isAmong(aux.name, ca_vs) )
         {
-            std::string capt("Warning: auxiliary " + hdhC::tf_var(aux.name));
-            capt += " is not used in any coordinates attribute" ;
+            is=false;
+            break;
+        }
 
-            (void) notes->operate(capt) ;
-            notes->setCheckStatus( n_CF, fail );
+        if(is)
+        {
+           if( notes->inq(bKey + "5k", aux.name, NO_MT ) )
+           {
+              std::string capt("Warning: auxiliary " + hdhC::tf_var(aux.name));
+              capt += " is not used in any coordinates attribute" ;
+
+              (void) notes->operate(capt) ;
+              notes->setCheckStatus( n_CF, fail );
+           }
         }
      }
   }
