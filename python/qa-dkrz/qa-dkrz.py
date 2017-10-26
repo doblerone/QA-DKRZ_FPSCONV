@@ -598,7 +598,7 @@ if __name__ == '__main__':
     qaConf=QaConfig(QA_SRC)
 
     if not qaConf.isOpt("QA_TABLES"):
-        qa_init.run_inq_tables()
+        qa_init.run_install()
 
     g_vars = GlobalVariables()
     t_vars = ThreadVariables()
