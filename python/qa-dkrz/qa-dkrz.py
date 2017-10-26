@@ -46,6 +46,7 @@ def clear(qa_var_path, fBase, logfile):
 
         # mark for clearance of logfiles if enabled,
         # processing eventually in final().
+        # note that index() finds always a valid one.
         ix = g_vars.log_fnames.index(t_vars.log_fname)
         if ix == len( g_vars.clear_fBase):
             g_vars.clear_fBase.append([])
@@ -182,13 +183,14 @@ def final():
             if os.path.isfile(dest_log):
                 if qaConf.isOpt('CLEAR_LOGFILE'):
                     ix = g_vars.log_fnames.index(log_fname)
-                    fBase = g_vars.clear_fBase[ix]
+                    fBase = g_vars.clear_fBase[ix]  # list
 
                     clrdName='cleared_' + log_fname + '.log'
                     clrdFile=os.path.join(g_vars.check_logs_path, clrdName)
 
                     with open(clrdFile, 'w') as clrd_fd:
                         while True:
+                            # read from dest_log
                             blk = log.get_next_blk(dest_log,
                                                 skip_fBase=fBase,
                                                 skip_prmbl=False)
@@ -196,7 +198,7 @@ def final():
                             for b in blk:
                                 clrd_fd.write(b)
                             else:
-                                break
+                                break  # eof
 
                     if clrd_fd.errors == None:
                         os.rename(clrdFile, dest_log)

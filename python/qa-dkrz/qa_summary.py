@@ -382,7 +382,7 @@ class LogSummary(object):
         return
 
 
-    def annotation_reset(self, var_id):
+    def annotation_period_reset(self, var_id):
         # resets for a particular atomic variable
 
         for ix in range(len(self.annot_capt)-1,-1,-1):
@@ -393,15 +393,8 @@ class LogSummary(object):
             else:
                 # there is something to clear.
                 del self.annot_fName_dt_id[ix][jx]
-                del self.annot_fName_id[ix][jx]
-                del self.annot_path_id[ix][jx]
-
-                if len(self.annot_fName_dt_id[ix]) == 0:
-                    del self.annot_fName_dt_id[ix]
-                if len(self.annot_fName_id[ix]) == 0:
-                    del self.annot_fName_id[ix]
-                if len(self.annot_path_id[ix]) == 0:
-                    del self.annot_path_id[ix]
+                #del self.annot_fName_id[ix][jx]
+                #del self.annot_path_id[ix][jx]
 
         return
 
@@ -678,7 +671,7 @@ class LogSummary(object):
     def period_add(self, var_id, path_id, fse, blk, i):
         # Requires old-to-young sorted sub-temporal files of an atomic variable
         # the procedure takes a missing 'begin' but present 'end' into account;
-        # also missing of the two. Should never happen.
+        # also missing of the two what should never happen.
 
         beg = blk[i+1].split()
         if beg[0] == 'begin:':
@@ -692,8 +685,9 @@ class LogSummary(object):
             if end[1] > self.atomicEnd[var_id] :
                 self.atomicEnd[var_id] = end[1]
             else:
+
                 # suspecting a reset of an atomic variable
-                self.annotation_reset(var_id)
+                self.annotation_period_reset(var_id)
 
                 self.atomicBeg[var_id] = beg[1]
                 self.atomicEnd[var_id] = end[1]
@@ -913,6 +907,10 @@ class LogSummary(object):
 
 
     def run(self, f_log):
+        if not os.path.isfile(f_log):
+            print 'qa_summary: ' + f_log + ' : no such file'
+            return
+
         # extraction of annotations and atomic time ranges from log-files
         log_path, log_name = os.path.split(f_log)
         log_name = log_name[0:-4]
@@ -969,10 +967,10 @@ class LogSummary(object):
 
                 isMissPeriod=True  # fx or segmentation fault
 
-                i=-1
-                while i < sz :
-                    i = i+1
-                    words = blk[i].lstrip(' -').split(None,1)
+                line_num=-1
+                while line_num < sz :
+                    line_num = line_num+1
+                    words = blk[line_num].lstrip(' -').split(None,1)
                     if len(words) == 0:
                         # a string of just '-' would results in this
                         words=['-----------']
@@ -1024,7 +1022,7 @@ class LogSummary(object):
                     elif words[0] == 'period:':
                         # time ranges of atomic variables
                         # indexed by self.curr_dt within the function
-                        i = self.period_add(fName_id_ix, path_id, fse, blk, i)
+                        line_num = self.period_add(fName_id_ix, path_id, fse, blk, line_num)
                         isMissPeriod=False
 
                     elif words[0] == 'event:':
@@ -1033,7 +1031,7 @@ class LogSummary(object):
                             isMissPeriod=False
 
                         # annotation and associated indices of properties
-                        i = self.annotation_add(path_id, fName_id_ix, blk, i)
+                        line_num = self.annotation_add(path_id, fName_id_ix, blk, line_num)
 
                     elif words[0] == 'status:':
                         if isMissPeriod and len(fse[2]):

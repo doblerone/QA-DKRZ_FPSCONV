@@ -451,7 +451,9 @@ class Log(object):
                 # a logfile is available
 
                 log_file = os.path.join(log_dir, 'tmp_' + log_fname + '.log')
-                isResumed = os.path.isfile(log_file)
+
+                old_log_file = os.path.join(log_dir, log_fname + '.log')
+                isResumed = os.path.isfile(old_log_file)
 
                 with open(log_file, 'a') as fd:
 
