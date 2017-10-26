@@ -275,6 +275,9 @@ class GetVersion(object):
         # version of QA-DKRZ
         revision = self.get_QA_version()
 
+        if not self.isOpt('PROJECT'):
+            return revision
+
         # versions of external projects and tables
         lprj = []
 

@@ -380,11 +380,11 @@ def get_version(qaConf):
     rev = qa_version.get_version( opts=qaConf.dOpts,
                                   com_line_opts=com_line_opts)
 
-    qaConf.dOpts["QA_REVISION"] = rev
-
     if qaConf.isOpt('SHOW_VERSION'):
         print rev
         sys.exit(0)
+
+    qaConf.dOpts["QA_VERSION"] = rev
 
     return
 
@@ -619,9 +619,9 @@ if __name__ == '__main__':
         runExample()
         sys.exit(0)
 
-    qa_init.run(log, g_vars, qaConf)
-
     get_version(qaConf)
+
+    qa_init.run(log, g_vars, qaConf)
 
     # the checks
     if not qaConf.getOpt('ONLY_SUMMARY'):

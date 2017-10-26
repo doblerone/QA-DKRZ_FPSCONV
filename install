@@ -176,9 +176,12 @@ update()
 {
   local prj
 
-  if ! . ${QA_SRC}/scripts/inqRunEnv ${prj} ; then
-    isForceUpdate=t  # look for updates
-  fi
+  for prj in $* ; do
+    if ! . ${QA_SRC}/scripts/inqRunEnv ${prj} ; then
+      isForceUpdate=t  # look for updates
+      break
+    fi
+  done
   test ${DEBUG} && end_of_inq=t  # just a mark
 
   # search updates after a specified number of days; default: once a day
@@ -200,6 +203,9 @@ update()
         fi
       fi
   elif [ -d ${QA_SRC}/.git ] ; then
+     test ${isForceUpdate} && \
+          $QA_SRC/scripts/getVersion --force ${DEBUG} &> /dev/null
+
      update_QA_SRC
   fi
 
@@ -654,11 +660,6 @@ if ! . ${QA_SRC}/scripts/getTablesPath ; then
   exit 41
 fi
 
-if [ ${#projects[*]} -eq 0 ] ; then
-   echo 'install requires at least a PROJECT name'
-   exit 0
-fi
-
 # inquire usually from ~/.qa-dkrz/config.txt;
 if [ ${isInqTables} ] ; then
   for project in ${projects[*]} ; do
@@ -667,7 +668,7 @@ if [ ${isInqTables} ] ; then
     fi
   done
 
-   exit 0
+  exit 0
 fi
 
 # also ensures that all names in the config.files are defined in this program
@@ -701,6 +702,11 @@ if [ ! ${isCondaBuild} ] ; then
 
   test ${CONDA_QA_PATH} && exit  # miniconda built executables
 fi
+
+#if [ ${#projects[*]} -eq 0 ] ; then
+#   echo 'install requires at least a PROJECT name'
+#   exit 0
+#fi
 
 if [ ${isBuild:-f} = t -a ${isLink:-f} = t ] ; then
   echo "scripts/install.sh: options --build and --link exclude each other"

@@ -30,13 +30,17 @@ getGitBranch()
 
 getFromConda()
 {
-   if tmp=( $(cat ${QA_SRC}/install.log 2> /dev/null) ) ; then
-     branch=${tmp[0]#*=}
-     currIdent=${tmp[1]#*=}
-     test ${#tmp[*]} -gt 2 && tag=${tmp[2]#*=}
+   if [ ${CONDA_QA_PATH} ] ; then
+     if tmp=( $(cat ${QA_SRC}/install.log 2> /dev/null) ) ; then
+       branch=${tmp[0]#*=}
+       currIdent=${tmp[1]#*=}
+       test ${#tmp[*]} -gt 2 && tag=${tmp[2]#*=}
+     fi
+
+     return 0
    fi
 
-   return
+   return 1
 }
 
 getQA_Version()
@@ -66,10 +70,7 @@ getQA_Version()
     fi
   fi
 
-  if [ ! -d $QA_SRC/.git ] ; then
-    getFromConda
-  else
-    local branch currIdent
+  if ! getFromConda ; then
     local f=${QA_SRC}/conda-recipes/qa-dkrz/meta.yaml
 
     getGitBranch $QA_SRC
