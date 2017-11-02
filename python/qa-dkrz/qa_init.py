@@ -96,6 +96,19 @@ def cpTables(key, fTable, tTable, tTable_path, qaConf, prj_from, prj_to, pDir):
 
     return
 
+def ext_tables_dialog(QA_SRC, prj=''):
+
+    text = '\nExternal tables are missing or not up to date.'
+    text += '\nPlease, run: '
+    text += os.path.join(QA_SRC, 'install')
+    text += ' up '
+    if len(prj):
+        text +=  prj
+    else:
+        text += ' your-project'
+
+    print text
+    return
 
 def init_session(g_vars, qaConf):
     g_vars.curr_date = qa_util.date()
@@ -306,11 +319,11 @@ def run(log, g_vars, qaConf):
 
     # save current version id to the cfg-file
     '''
-    if qaConf.isOpt('QA_REVISION'):
-      qv=qaConf.getOpt('QA_REVISION')
+    if qaConf.isOpt('QA_VERSION'):
+      qv=qaConf.getOpt('QA_VERSION')
     else:
       qv = qa_util.get_curr_revision(g_vars.qa_src, g_vars.isConda)
-      qaConf.cfg.entry(key='QA_REVISION', value=qv)
+      qaConf.cfg.entry(key='QA_VERSION', value=qv)
     g_vars.qa_revision = qv
     '''
 
@@ -423,16 +436,7 @@ def run_install(qaConf):
         try:
             subprocess.check_call(p, shell=True)
         except:
-            text = '\nExternal tables are missing or not up to date.'
-            text += '\nPlease, run: '
-            text += os.path.join(qaConf.getOpt('QA_SRC'), 'install')
-            text += ' up '
-            if len(prj):
-                text +=  prj
-            else:
-                text += ' your-project'
-
-            print text
+            ext_tables_dialog(qaConf.getOpt("QA_SRC"), prj)
             sys.exit(1)
 
    return

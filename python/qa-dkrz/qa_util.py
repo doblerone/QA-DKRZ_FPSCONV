@@ -17,6 +17,8 @@ import sys
 import threading
 import time
 
+from types import *
+
 class GetPaths(object):
     '''
     classdocs
@@ -293,7 +295,7 @@ class GetPaths(object):
 
 def cat( srcs, dest, append=False):
     # convert a string into a list
-    if repr(type(srcs)).find('str') > -1:
+    if type(srcs) == StringType:
         dsrcs=[srcs]
     else:
         dsrcs = copy.deepcopy(srcs)
@@ -342,7 +344,7 @@ def clear_line(line):
 
 
 def convert2brace(lst):
-    if str(type(lst)).find('str') > -1:
+    if type(lst) == StringType:
         lst = lst.split(',')
 
     s=''
@@ -453,12 +455,12 @@ def f_str_replace(rFile, items, repls):
     #        If number of items > 1 and number of repls == 1, then replace each
     #        item by repls[0]
 
-    if 'str' in repr(type(items)):
+    if type(items) == StringType:
         items=[ items ]
 
     num=len(items)
 
-    if 'str' in repr(type(repls)):
+    if type(repls) == StringType:
         rpls=[repls]
         i=1
         while i < num:
@@ -592,7 +594,7 @@ def get_md5sum(arg):
    md5 = hashlib.md5()
 
     # try at first for a list, then a file and eventually a string
-   if str(type(arg)).find('list') > -1:
+   if type(arg) == ListType:
       for a in arg:
          md5.update(a)
    elif os.path.isfile(arg):
@@ -811,25 +813,18 @@ def isValid_var_name(name):
     return True
 
 
-def isAmong(lst0, lst1):
-    for l0 in lst0:
-        if not l0 in lst1:
-            return False
-    return True
-
-
 def join(val, sep=','):
    # In contrast to the str.join method: if val is not a list, but a single string,
    # then sep.join('asd') would not result in 'a,s,d'.
    # Additionally, a list of int is transformed to a csv string
 
-    if str(type(val)).find('list') > -1:
+    if type(val) == ListType:
        v=''
        for x in val:
           if v:
              v += sep
 
-          if str(type(x)).find('int') > -1:
+          if type(x) == IntType or type(x) == LongType:
              v += str(x)
           else:
              v += x
@@ -856,7 +851,7 @@ def mkdirP(path):
 
 
 def mk_list(items):
-   if repr(type(items)).find('list') > -1:
+   if type(items) == ListType:
        return items
 
    return [items]
@@ -888,6 +883,50 @@ def split(s,ssep):
         splts.extend(x.split(sep[1]))
 
     return splts
+
+
+def strip(s, sep=' '):
+    s = strip_l(s, sep=sep)
+    return strip_r(s, sep=sep)
+
+
+def strip_l(s, sep=' '):
+    seps=[]
+    seps.extend(sep)
+
+    sz=len(s)
+    pos=0
+    while True:
+        if pos < sz:
+            for sp in seps:
+                if s[pos:pos+1] == sp:
+                    pos += 1
+                    break
+            else:
+                break
+        else:
+            break
+
+    return s[pos:]
+
+
+def strip_r(s, sep=' '):
+    seps=[]
+    seps.extend(sep)
+
+    pos=len(s)-1
+    while True:
+        if pos > -1:
+            for sp in seps:
+                if s[pos:pos+1] == sp:
+                    pos -= 1
+                    break
+            else:
+                break
+        else:
+            break
+
+    return s[0:pos+1]
 
 
 def lstrip(s, sep='/', pat='', max=1):
@@ -931,10 +970,9 @@ def rstrip(s, sep=' ', pat='', max=1):
 
     return s
 
-
 def which(items):
     # items: list or str
-    if repr(type(items)).find('str') > -1:
+    if type(items) == StringType:
         items=[ items ]
 
     # note that the return value is strictly valid only for a single item

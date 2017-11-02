@@ -369,20 +369,31 @@ class QaExec(object):
     def parse_PERIOD(self, key, issue, log_entry):
         lst = issue.split()
         log_entry[key] = 'period:'
+        period=[]
 
         if len(lst) == 3:
             log_entry[key+self.beg] = 'begin: ' + lst[0]
             log_entry[key+self.end] = 'end: ' + lst[2]
+            period.append(lst[0])
+            period.append(lst[2])
         elif len(lst) == 2:
             if lst[0] == '-':
                 log_entry[key+self.beg] = 'begin: miss'
                 log_entry[key+self.end] = 'end: ' + lst[1]
+                period.append('')
+                period.append(lst[1])
             else:
                 log_entry[key+self.beg] = 'begin: ' + lst[1]
                 log_entry[key+self.end] = 'end: miss'
+                period.append(lst[1])
+                period.append('')
         else:
             log_entry[key+self.beg] = 'begin: miss'
             log_entry[key+self.end] = 'end: miss'
+            period.append('')
+            period.append('')
+
+        log_entry["period"] = period
 
         return
 
@@ -566,6 +577,7 @@ class QaExec(object):
                                         f           = t_vars.fName,
                                         d_path      = t_vars.data_path,
                                         r_path      = t_vars.var_path,
+                                        period      = log_entry['period'],
                                         conclusion  = log_entry['conclusion'],
                                         set_qa_lock = set_qa_lock)
 

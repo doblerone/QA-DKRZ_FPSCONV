@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import copy
+from type import *
 
 import qa_util
 import qa_init
@@ -96,7 +97,7 @@ def clearInq(qa_var_path, fBase, logfile):
 #    isFollowLink = False
     v_clear = qaConf.getOpt('CLEAR')
 
-    if repr(type(v_clear)).find('bool') > -1:
+    if type(v_clear) == BooleanType:
         return clear(qa_var_path, fBase, logfile)
 
     isClear=False
@@ -551,16 +552,16 @@ def summary():
     if qaConf.isOpt('ONLY_SUMMARY'):
         # build only the summary of previously written log-files.
         f_log = qaConf.getOpt('ONLY_SUMMARY')
-        if repr(type(f_log)).find('str') > -1:
+        if type(f_log) == StringType:
             f_log = [f_log]
 
-        if repr(type(f_log)).find('list') == -1:
+        if type(f_log) != ListType:
             # all the log-files corresponding to the current selection
             f_log = get_all_logfiles()
             f_log.append(g_vars.check_logs_path)
-
-    f_log = g_vars.log_fnames
-    f_log.append(g_vars.check_logs_path)
+    else:
+        f_log = g_vars.log_fnames
+        f_log.append(g_vars.check_logs_path)
 
     # summary object
     log_sum = LogSummary()
@@ -615,6 +616,12 @@ if __name__ == '__main__':
     # obj for getting and iteration next path
     getPaths = GetPaths(qaConf)
 
+    if 'SHOW_CONF' in qaConf.dOpts:
+        for opt in qa_util.get_sorted_options(qaConf.dOpts):
+            # opt: key=value
+            print opt
+        sys.exit(0)
+
     if 'QA_EXAMPLE' in qaConf.dOpts:
         runExample()
         sys.exit(0)
@@ -629,7 +636,3 @@ if __name__ == '__main__':
 
     final()
 
-    if 'SHOW_CONF' in qaConf.dOpts:
-        for opt in qa_util.get_sorted_options(qaConf.dOpts):
-            # opt: key=value
-            print opt

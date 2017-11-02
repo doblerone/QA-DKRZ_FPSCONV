@@ -9,11 +9,13 @@ import os
 import shutil
 import socket
 import subprocess
+from types import *
 
 import argparse
 import ConfigParser
 
 import qa_util
+from qa_init import ext_tables_dialog
 
 class QaConfig(object):
     '''
@@ -191,12 +193,10 @@ class QaConfig(object):
                     self.qa_tables=val
 
                 # convert comma-sep val to list
-                #if repr(type(val)).find('str') > -1:
-                #    val = val.split(',')
 
                 # comma-sep list --> python list, but protect
                 # those containing braces
-                if repr(type(val)).find('str') > -1:
+                if type(val) == StringType:
                     if val.find('{') == -1:
                         try:
                             # --> list of integers
@@ -284,7 +284,8 @@ class QaConfig(object):
                 str0 += ','
             str0 += '--up=automatic'
 
-        _ldo['install_args']=str0
+        if str0:
+            _ldo['install_args']=str0
 
         return
 
@@ -589,9 +590,8 @@ class QaConfig(object):
 
         if key in curr_dct.keys():
             val = curr_dct[key]
-            _type = str(type(val))
 
-            if _type.find('bool') > -1:
+            if type(val) == BooleanType:
                 return val
             else:
                 if not val == 'f':
@@ -790,9 +790,13 @@ class QaConfig(object):
                 self.cfg.entry("QA_TABLES", qa_tables)
                 self.cfg_opts["QA_TABLES"] = qa_tables
             else:
+                ext_tables_dialog(self.qa_src)
+                sys.exit(1)
+                '''
                 qa_tables = raw_input("QA_TABLES: ")
                 self.cfg.entry("QA_TABLES", qa_tables)
                 self.cfg_opts["QA_TABLES"] = qa_tables
+                '''
 
         if len(qa_tables):
             self.readQA_CONF_files()

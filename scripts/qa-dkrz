@@ -490,7 +490,8 @@ callQaConfig()
   fi
 
   if [ ${DISPLAY_VERSION} ] ; then
-    ${QA_SRC}/scripts/getVersion --verbose --config-file=${CONFIG_FILE} ${PROJECT}
+    ${QA_SRC}/scripts/getVersion --verbose \
+        --config-file=${CONFIG_FILE} ${PROJECT} ${DEBUG_MANAGER:+--debug}
     exit 0
   fi
 

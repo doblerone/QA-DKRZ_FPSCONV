@@ -6,7 +6,7 @@ Created on 21.03.2016
 
 import sys
 import os
-
+from types import *
 import qa_util
 
 class Log(object):
@@ -28,6 +28,7 @@ class Log(object):
         self.write_lock = ''
         self.line_wrap_sz = 80
         self.word_line_sz = 50
+        self.isResumedSession=False
 
         self.indent = [''] # indentations for yaml
         for i in range(9):
@@ -38,7 +39,7 @@ class Log(object):
                 f='', d_path=''  , r_path     =''   ,
                 start      =[]   , info       =[]   , txt  ='',
                 status     =-1   , set_qa_lock = False,
-                conclusion =''   , indent=-1,
+                period=[]        , conclusion =''   , indent=-1,
                 is_events  =False, caption    =''   , impact='', tag='',
                 qa_res     =''   , sub_path   =''):
 
@@ -56,6 +57,11 @@ class Log(object):
 
         if len(r_path):
             entry.append(self.indent[3] + 'result_path: ' + r_path)
+
+        if len(period):
+            entry.append(self.indent[3] + 'period: ')
+            entry.append(self.indent[4] + 'begin: ' + period[0])
+            entry.append(self.indent[4] + 'end: ' + period[1])
 
         if len(conclusion):
             entry.append(self.indent[3] + 'conclusion: ' + conclusion)
@@ -193,7 +199,7 @@ class Log(object):
     def get_next_blk(self, f_log='', get_prmbl=False, skip_fBase=[], fd=''):
         # read the next entry from a log-file or alternatively from provided fd
 
-        if 'str' in repr(type(fd)):
+        if type(fd) == StringType:
             is_fd_explicit=False
 
             # for having multiple log-files open
@@ -364,7 +370,7 @@ class Log(object):
 
         entry.append('start:')
         entry.append(self.indent[1] + 'date: ' + qa_util.date())
-        entry.append(self.indent[1] + 'qa-revision: ' + self.opts['QA_REVISION'])
+        entry.append(self.indent[1] + 'qa-revision: ' + self.opts['QA_VERSION'])
         entry.append('items:')
 
         return entry
@@ -452,13 +458,19 @@ class Log(object):
 
                 log_file = os.path.join(log_dir, 'tmp_' + log_fname + '.log')
 
-                old_log_file = os.path.join(log_dir, log_fname + '.log')
-                isResumed = os.path.isfile(old_log_file)
+                # decider whether a preamble has to be written
+                if not self.isResumedSession:
+                    self.isResumedSession = os.path.isfile(log_file)
+                    if not self.isResumedSession:
+                        old_log_file = os.path.join(log_dir, log_fname + '.log')
+                        self.isResumedSession = os.path.isfile(old_log_file)
 
                 with open(log_file, 'a') as fd:
 
                     # write the preamble
-                    if not isResumed:
+                    if not self.isResumedSession:
+                        self.isResumed=True
+
                         entry = self.set_preamble(self.opts)
                         for e in entry:
                             fd.write(e + '\n')
