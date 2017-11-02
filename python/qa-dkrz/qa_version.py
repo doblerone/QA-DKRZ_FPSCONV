@@ -4,6 +4,7 @@ import os
 import argparse
 import ConfigParser
 import subprocess
+from types import *
 
 from qa_config import CfgFile
 
@@ -223,9 +224,8 @@ class GetVersion(object):
 
         if key in curr_dct.keys():
             val = curr_dct[key]
-            _type = str(type(val))
 
-            if _type.find('bool') > -1:
+            if type(val) == BooleanType:
                return val
             else:
                if not val == 'f':
@@ -287,7 +287,7 @@ class GetVersion(object):
 
         if self.isOpt("PROJECT"):
             # convert string to []
-            if repr(type(self.opts["PROJECT"])).find('str') > -1:
+            if type(self.opts["PROJECT"])) == StringType:
                 lprj.append( self.opts["PROJECT"] )
             else:
                 lprj.extend( self.opts["PROJECT"].split() )
