@@ -674,24 +674,11 @@ Outlier::test(QA_Data *pQAD)
           }
         }
 
+        std::string capt(hdhC::tf_var(vMD->var->name, hdhC::colon)) ;
+        capt += " Suspected outlier for " << extStr[i] ;
+
         std::ostringstream ostr(std::ios::app);
         ostr.setf(std::ios::scientific, std::ios::floatfield);
-        ostr << hdhC::tf_var(vMD->var->name, hdhC::colon) ;
-        ostr << " Suspicion of outlier for " << extStr[i] ;
-
-        if(pQA->qaExp.varMeDa.size() > 1 )
-        {
-          ostr << " of " << name ;
-        }
-        ostr << " found at rec# ";
-
-        ostr << outRec[0] ;
-        ostr << ", value=" ;
-        ostr << std::setw(12) << std::setprecision(5) << outVal[0];
-
-        std::string capt(ostr.str());
-
-        ostr.str("");  // clear previous contents
 
         double cT;
         MtrxArr<int> ma_t;
