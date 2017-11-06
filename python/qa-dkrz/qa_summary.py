@@ -32,7 +32,7 @@ class LogSummary(object):
         self.prj_frq_ix = 1
 
 
-    def annotation_add(self, path_id, var_id, blk, i):
+    def annotation_add(self, var_id, path_id, blk, i):
         # annotation and associated indices of properties
         # fse contains ( var, StartTime, EndTime )
         # index i points to blk[i] == 'caption:'
@@ -531,7 +531,7 @@ class LogSummary(object):
         return
 
 
-    def period_add(self, var_id, path_id, fse, blk, i):
+    def period_add(self, fp_ix, fse, blk, i):
         # Requires old-to-young sorted sub-temporal files of an atomic variable
         # the procedure takes a missing 'begin' but present 'end' into account;
         # also missing of the two what should never happen.
@@ -539,21 +539,21 @@ class LogSummary(object):
         beg = blk[i+1].split()
         if beg[0] == 'begin:':
             i=i+1
-            if len(self.atomicBeg[var_id]) == 0:
-                self.atomicBeg[var_id] = beg[1]
+            if len(self.atomicBeg[fp_ix]) == 0:
+                self.atomicBeg[fp_ix] = beg[1]
 
         end = blk[i+1].split()
         if end[0] == 'end:':
             i=i+1
-            if end[1] > self.atomicEnd[var_id] :
-                self.atomicEnd[var_id] = end[1]
+            if end[1] > self.atomicEnd[fp_ix] :
+                self.atomicEnd[fp_ix] = end[1]
             else:
 
                 # suspecting a reset of an atomic variable
-                self.annotation_period_reset(var_id)
+                self.annotation_period_reset(fp_ix)
 
-                self.atomicBeg[var_id] = beg[1]
-                self.atomicEnd[var_id] = end[1]
+                self.atomicBeg[fp_ix] = beg[1]
+                self.atomicEnd[fp_ix] = end[1]
 
         return i
 
@@ -569,7 +569,6 @@ class LogSummary(object):
         sz_max=0
 
         for i in range(len(self.fName_ids)-1):
-            #if self.project == 'CORDEX':
             name = self.reassemble_name(self.f_items,
                                         self.fName_ids[i],
                                         self.prj_fName_sep)
@@ -615,8 +614,8 @@ class LogSummary(object):
 
                     line  = '  - variable: '
                     line += self.reassemble_name(self.f_items,
-                                                      self.fName_ids[ix],
-                                                      self.prj_fName_sep) + '\n'
+                                                 self.fName_ids[ix],
+                                                 self.prj_fName_sep) + '\n'
 
                     if self.atomicBeg[ix] == '':
                         line += '    begin:\n'
@@ -733,7 +732,7 @@ class LogSummary(object):
 
 
     def reassemble_name(self, items, lst_ix, sep):
-        # Assemble the name from the components, collected in lst_ix (path ar var)
+        # Assemble the name from the components, collected in lst_ix (path or var)
         # Note that for a path the leading '/' is represented by an empty list item,
         # which is here reassembled neatly.
 
@@ -773,28 +772,25 @@ class LogSummary(object):
         self.fName_ids=[]
         self.fName_dt_id={}  # each fName_id gets a list of dt ids
         self.path_ids=[]
+        self.fp_ids=[]
+
         self.f_items=[]
         self.p_items=['*']  # a placeholder
         self.p_drs=[]
 
-        self.var_ids={}  # contains all [ids] with the same variable name in {}
-
-        self.atomicBeg=[]         # atomic time interval
-        self.atomicEnd=[]         # atomic time interval
+        self.atomicBeg=[]         # atomic time interval: index by
+        self.atomicEnd=[]         #                       'var_id'_'path_id'
         self.dt=[]                # time intervals of sub-temp files
 
         self.annot_capt=[]        # brief annotations
         self.annot_impact=[]      # corresponding  severity level
         self.annot_tag=[]         # corresponding tag
-        #self.annot_scope=[]       # brief annotations
         self.annot_fName_id=[]    # for each var involved
         self.annot_path_id=[]
-        # self.annot_var_ix=[]      # only project variable names
         self.annot_fName_dt_id=[] # for each time interval of each var involved
 
         # count total occurrences (good and bad)
         self.file_count=0
-        self.var_dt_count=[]  # for all frequencies
 
         # reading and processing of the logfile
         if not os.path.isfile(f_log):
@@ -823,62 +819,52 @@ class LogSummary(object):
                         # times could be empty strings or EndTime could be empty
                         fse = qa_util.f_time_range(words[1])
                         self.set_curr_dt(fse)
-                        fName_id_ix = self.decomposition(words[1], self.f_items,
+                        file_id = self.decomposition(words[1], self.f_items,
                                                     self.fName_ids, self.prj_fName_sep)
                         self.file_count += 1
-
-                        # for counting atomic variable's sub_temps for all freqs
-                        try:
-                            self.fName_dt_id[fName_id_ix]
-                        except:
-                            self.fName_dt_id[fName_id_ix] = [self.dt_id]
-                        else:
-                            self.fName_dt_id[fName_id_ix].append(self.dt_id)
-
-                        try:
-                            vName = self.f_items[self.fName_ids[fName_id_ix][self.prj_var_ix]]
-                        except:
-                            pass
-                        else:
-                            # dict of varNames to contained var_ids
-                            try:
-                                self.var_ids[vName]
-                            except:
-                                self.var_ids[vName] = [fName_id_ix]
-                            else:
-                                try:
-                                    self.var_ids[vName].index(fName_id_ix)
-                                except:
-                                    self.var_ids[vName].append(fName_id_ix)
-
-
-                        if fName_id_ix > len(self.atomicBeg) - 1 :
-                            # init for a new variable
-                            self.atomicBeg.append('')  # greater than any date
-                            self.atomicEnd.append('')   # smaller than any date
 
                     elif words[0] == 'data_path:':
                         # used later
                         path_id = self.decomposition(words[1], self.p_items,
                                                      self.path_ids, self.prj_data_sep)
 
+                        fp_id = str(file_id) + '_' + str(path_id)
+                        try:
+                            fp_ix = self.fp_ids.index(fp_id)
+                        except:
+                            fp_ix = len(self.fp_ids)
+                            self.fp_ids.append(fp_id)
+
+                        # for counting atomic variable's sub_temps for all freqs
+                        try:
+                            self.fName_dt_id[fp_ix]
+                        except:
+                            self.fName_dt_id[fp_ix] = [self.dt_id]
+                        else:
+                            self.fName_dt_id[fp_ix].append(self.dt_id)
+
+                        if fp_ix > len(self.atomicBeg) - 1 :
+                            # init for a new variable
+                            self.atomicBeg.append('')  # greater than any date
+                            self.atomicEnd.append('')   # smaller than any date
+
                     elif words[0] == 'period:':
                         # time ranges of atomic variables
                         # indexed by self.curr_dt within the function
-                        line_num = self.period_add(fName_id_ix, path_id, fse, blk, line_num)
+                        line_num = self.period_add(fp_ix, fse, blk, line_num)
                         isMissPeriod=False
 
                     elif words[0] == 'event:':
                         if isMissPeriod and len(fse[2]):
-                            self.subst_period(fName_id_ix, path_id, fse)
+                            self.subst_period(fp_ix, fse)
                             isMissPeriod=False
 
                         # annotation and associated indices of properties
-                        line_num = self.annotation_add(path_id, fName_id_ix, blk, line_num)
+                        line_num = self.annotation_add(file_id, path_id, blk, line_num)
 
                     elif words[0] == 'status:':
                         if isMissPeriod and len(fse[2]):
-                            self.subst_period(fName_id_ix, path_id, fse)
+                            self.subst_period(fp_ix, fse)
 
         if self.file_count == 0:
             return
@@ -915,7 +901,7 @@ class LogSummary(object):
         return
 
 
-    def subst_period(self, var_id, path_id, fse):
+    def subst_period(self, fp_ix, fse):
         # convert DRS date to real date
         tmplt = '0000-01-01T00:00:00'
         dt = [ tmplt, tmplt ]
@@ -946,7 +932,7 @@ class LogSummary(object):
 
         fse = ( fse[0], dt[0], dt[1] )
 
-        self.period_add(var_id, path_id, fse, t_blk, 0)
+        self.period_add(fp_ix, fse, t_blk, 0)
 
         return
 
