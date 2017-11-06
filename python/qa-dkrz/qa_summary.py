@@ -27,7 +27,7 @@ class LogSummary(object):
         # defaults
         self.project=''
         self.prj_fName_sep = '_'
-        self.prj_path_sep = '/'
+        self.prj_data_sep = '/'
         self.prj_var_ix = 0
         self.prj_frq_ix = 1
 
@@ -140,7 +140,6 @@ class LogSummary(object):
         # find condensed scopes of annotations
 
         pItems=[]
-        pItems_aix=[]
         pMutable=[]
 
         annot_sz = len(self.annot_capt)
@@ -153,25 +152,38 @@ class LogSummary(object):
             fl = os.path.join(self.f_annot, self.log_name + '.json')
 
             with open(fl, 'w') as fd:
-                # pItems across ix are now all the same
-                self.write_no_annot(fd)
+                # just a PASS annotation
+                self.write_json_header(pItems, fd)
             return
 
         self.conclusion='FAIL'
-        p_sz=annot_sz
-
-        # there is not a single annotation
-        if annot_sz == 0:
-            return
 
         for ix in range(annot_sz):
             # get scope
             a, b = self.annotation_getItems(ix)
             pItems.append(copy.deepcopy(a))
-            pMutable.append(b)
+            pMutable.append(copy.deepcopy(b))
 
-        pItems_com=[] # independent on ix
+        # any component before pathBase is deleted.
+        for ix in range(len(pItems)):
+            jx=0
+            while jx < len(pItems[ix]):
+                item=self.p_items[pItems[ix][jx]]
 
+                if len(item):
+                    if item == self.pathBase:
+                        # found a starting point, adjust beginning. In case
+                        # of several identical pathBase items, take the last one
+                        for j in range(jx):
+                            del pItems[ix][0]
+                            del pMutable[ix][0]
+
+                        jx=0
+
+                jx += 1
+
+        # distinguish between static pItems elements and multiples,
+        # the latter combine to '*'
         sz_min=len(pMutable[0])
         sz_max=len(pMutable[0])
         for jx in range(1, annot_sz):
@@ -181,69 +193,25 @@ class LogSummary(object):
             if sz_max < sz:
                 sz_max=sz
 
-        # distinguish between static pItems elements and multiples,
-        # the latter combine to '*'
         for mx in range(sz_min):
             isAst=False
             for jx in range(1, annot_sz):
                 if jx < sz_min:
                     if pItems[jx][mx] != pItems[0][mx]:
                         isAst=True
-                else:
-                    isAst=True
             else:
                 if isAst:
-                    pItems_com.append(0)
-                else:
-                    pItems_com.append(pItems[0][mx])
+                    pItems[0][mx]=0
 
-        # the ragged tail items get '*', because of paths
-        # different in number of items
+        # ragged tails completed with '*'
         for mx in range(sz_min, sz_max):
-            pItems_com.append(0)
+            try:
+                pItems[0][mx]=0
+            except:
+                pItems[0].append(0)
 
-        # replace original pItems
-        for ix in range(annot_sz):
-            pItems[ix] = pItems_com
-
-        #delete empty items and start with basePath
-        self.pItems_eff_ix=[]  # set -1 for delete candidates
-        for i in range(len(pItems_com)):
-            item=self.p_items[pItems_com[i]]
-
-            if len(item):
-                if item == self.pathBase:
-                    # found a starting point, adjust beginning
-                    for j in range(i):
-                        self.pItems_eff_ix[j]=-1
-                else:
-                    self.pItems_eff_ix.append(i)
-            else:
-                self.pItems_eff_ix.append(-1)
-
-
-        # get rid of shallow copy properties of pItems
-        annot_sz_ixs = range(annot_sz)
-        ppItems=[]
-        for ix in annot_sz_ixs:
-            ppItems.append( copy.deepcopy(pItems[ix]) )
-
-        # get rid of empty elems or non DRS beginnings
-        pItems = ppItems
-        while True:
-            for j in range(len(self.pItems_eff_ix)):
-                if self.pItems_eff_ix[j] == -1:
-                    for ix in annot_sz_ixs:
-                        del pItems[ix][j]
-                    for ix in annot_sz_ixs:
-                        del pMutable[ix][j]
-
-                    del self.pItems_eff_ix[j]
-                    break
-            else:
-                break
-
-
+        # convert 2D --> 1D
+        pItems = pItems[0]
 
         # across annotations: combine almost identical ones whith a <sub-string>
         # appearing also in the path
@@ -254,14 +222,14 @@ class LogSummary(object):
 
         with open(fl, 'w') as fd:
             # pItems across ix are now all the same
-            self.write_json_header(pItems[0], fd)
+            self.write_json_header(pItems, fd)
 
             # write annotations for given path prefixes or a kind of MIP name
             isInit=True
 
             for ix in range(annot_sz):
                 self.write_json_annot(ix, fd,
-                        pItems=pItems[ix],
+                        pItems=pItems,
                         pMutable=pMutable[ix],
                         init=isInit )
 
@@ -272,7 +240,7 @@ class LogSummary(object):
         '''
         # write a file with annotation, path and file name for each tag
         for ix in range(len(self.annot_tag)):
-            # basePath = self.getPathPrefix(uniquePaths[jx], pItems[f0_ix][jx])
+            # pathBase = self.get_path_prefix(uniquePaths[jx], pItems[f0_ix][jx])
             tag = self.annot_tag[ix].strip("'")
 
             name = self.annot_impact[ix] + '_'+ tag
@@ -358,7 +326,7 @@ class LogSummary(object):
             sz -= 1
 
         # members of a the DRS components
-        if sep == self.prj_path_sep:
+        if sep == self.prj_data_sep:
             # init
             if len(self.p_drs) == 0:
                 for i in range(sz):
@@ -393,30 +361,26 @@ class LogSummary(object):
         if sep == '/':
             # basic path
             ref_ids = self.path_ids
-            ref_items = self.p_items
         else:
             # basic filename
             ref_ids = self.fName_ids
-            ref_items = self.f_items
 
         mutables=[]
 
         for i in range(len(a_item_ix)):
             aix=a_item_ix[i]
-            itm=ref_items[aix]
 
-            if len(itm):
-                for j in range(len(ref_ids[aix])):
-                    k = copy.deepcopy(ref_ids[aix][j])
+            for j in range(len(ref_ids[aix])):
+                k = ref_ids[aix][j]
 
-                    try:
-                        mutables[j]
-                    except:
-                        mutables.append([k])
-                    else:
-                        for m in range(1,len(mutables[j])):
-                            if mutables[j][m] != mutables[j][0]:
-                                mutables[j].append(k)
+                try:
+                    mutables[j]
+                except:
+                    mutables.append([k])
+                else:
+                    for m in range(1,len(mutables[j])):
+                        if mutables[j][m] != mutables[j][0]:
+                            mutables[j].append(k)
 
 
         #if sep == '/':
@@ -456,9 +420,6 @@ class LogSummary(object):
 
                # a few opts are used by this script
                self.get_preamble_opt(words)
-            else:
-               self.get_preamble_opt(words, final=True)
-
 
             # for logPathIndex, pathBase has also to be defined
             try:
@@ -511,7 +472,7 @@ class LogSummary(object):
         return blk
 
 
-    def getPathPrefix(self, path): #, astItems):
+    def get_path_prefix(self, path): #, astItems):
         # Default: turn a path into '_' separated string.
         # If given, use a project provided identification string instead.
         # If available, use LOG_PATH_INDEX for assembling a unique name
@@ -537,6 +498,37 @@ class LogSummary(object):
                 s += path[ix]
 
         return s
+
+
+    def get_preamble_opt(self, words):
+        if words[0] == 'PROJECT:' and len(self.project) == 0:
+            self.project = words[1]
+        elif words[0] == 'FILE_NAME_SEP':
+            self.prj_fName_sep = words[1]
+        elif words[0] == 'PATH_SEP':
+            self.prj_data_sep = words[1]
+        elif words[0] == 'FILE_NAME_VAR_INDEX':
+            self.prj_var_ix = words[1]
+        elif words[0] == 'FILE_NAME_FREQ_INDEX':
+            self.prj_frq_ix = words[1]
+        elif words[0] == 'DRS_PATH_BASE:' \
+               or words[0] == 'LOG_PATH_BASE:' \
+                     or words[0] == 'EXP_PATH_BASE:':
+            self.pathBase = words[1]
+        elif words[0] == 'LOG_PATH_INDEX:' \
+               or words[0] == 'EXP_PATH_INDEX:':
+            # the following does not seem to work, although it should
+            # self.logPathIndex = words[1].split('[, ]')
+            #so, a work-around
+            w2=words[1].replace('[','')
+            w2=w2.replace(']','')
+            self.logPathIndex = w2.split(', ')
+        elif words[0] == 'SELECT_PATH_LIST:':
+            self.spl = qa_util.split(words[1], ", []'")
+        elif words[0][0:12] == 'PROJECT_DATA':
+            self.prj_data = qa_util.split(words[1], ", []'")
+
+        return
 
 
     def period_add(self, var_id, path_id, fse, blk, i):
@@ -687,55 +679,6 @@ class LogSummary(object):
 
         return
 
-
-    def get_preamble_opt(self, words, final=False):
-         if final:
-             if self.pathBase:
-                pos=self.prj_data.find('/'+self.pathBase+'/')
-                if pos > -1:
-                    self.prj_data=self.prj_data[pos+1:]
-
-             for i in range(len(self.spl)):
-                self.spl[i] = self.prj_data + '/' + self.spl[i]
-
-             return
-
-         if words[0] == 'PROJECT:' and len(self.project) == 0:
-            self.project = words[1]
-         elif words[0] == 'FILE_NAME_SEP':
-            self.prj_fName_sep = words[1]
-         elif words[0] == 'PATH_SEP':
-            self.prj_path_sep = words[1]
-         elif words[0] == 'FILE_NAME_VAR_INDEX':
-            self.prj_var_ix = words[1]
-         elif words[0] == 'FILE_NAME_FREQ_INDEX':
-            self.prj_frq_ix = words[1]
-         elif words[0] == 'DRS_PATH_BASE:' \
-               or words[0] == 'LOG_PATH_BASE:' \
-                     or words[0] == 'EXP_PATH_BASE:':
-            self.pathBase = words[1]
-         elif words[0] == 'LOG_PATH_INDEX:' \
-               or words[0] == 'EXP_PATH_INDEX:':
-            # the following does not seem to work, although it should
-            # self.logPathIndex = words[1].split('[, ]')
-            #so, a work-around
-            w2=words[1].replace('[','')
-            w2=w2.replace(']','')
-            self.logPathIndex = w2.split(', ')
-         elif words[0] == 'SELECT_PATH_LIST:':
-            lst=words[1].split(',')
-            for l in lst:
-                try:
-                    self.spl.append(qa_util.strip(l," []'"))
-                except:
-                    self.spl=[qa_util.strip(l," []'")]
-         elif words[0][0:12] == 'PROJECT_DATA':
-            try:
-                self.prj_data.append(words[1])
-            except:
-                self.prj_data=[words[1]]
-
-         return
 
     def prelude(self, f_log):
         if type(f_log) == StringType:
@@ -917,7 +860,7 @@ class LogSummary(object):
                     elif words[0] == 'data_path:':
                         # used later
                         path_id = self.decomposition(words[1], self.p_items,
-                                                     self.path_ids, self.prj_path_sep)
+                                                     self.path_ids, self.prj_data_sep)
 
                     elif words[0] == 'period:':
                         # time ranges of atomic variables
@@ -1010,12 +953,42 @@ class LogSummary(object):
 
     def write_json_header(self, path, fd):
         # write header of QA results
+        # return True for PASS
 
         tab='    '
 
         fd.write('{\n')
         fd.write(tab + '"QA_conclusion": "' + self.conclusion + '",\n')
         fd.write(tab + '"project": "' +  self.project + '",\n')
+
+
+        fd.write(tab + '"data_path": [ ')
+        try:
+            self.prj_data
+        except:
+            self.prj_data=['-']
+
+        for ip in range(len(self.prj_data)):
+            if ip:
+                fd.write( ', ')
+            fd.write( '"' + self.prj_data[ip] + '"')
+
+        fd.write(' ],\n' + tab + '"selection": [ ')
+        try:
+            self.spl
+        except:
+            self.spl=['-']
+
+        for ip in range(len(self.spl)):
+            if ip:
+                fd.write( ', ')
+            fd.write( '"' + self.spl[ip] + '"')
+
+        if self.conclusion == 'PASS':
+            fd.write(' ]\n}')
+            return True
+        else:
+            fd.write(' ],\n')
 
         self.mutable_DRS=[]
 
@@ -1025,11 +998,11 @@ class LogSummary(object):
 
             if path[i] == 0:  # i.e. '*'
                 self.mutable_DRS.append(s)
-                fd.write('mutable",\n')
+                fd.write('*",\n')
             else:
                 fd.write(self.p_items[path[i]] + '",\n')
 
-        return
+        return False
 
 
     def write_json_annot(self, ix, fd,
@@ -1058,100 +1031,36 @@ class LogSummary(object):
         else:
             fd.write(',\n' + 2*tab + '{\n')
 
-        mutable=[]
+        mut_ix=[]
         for p in range(len(pItems)):
             if not pItems[p]:  # 0 --> '*'
-                mutable.append(pMutable[p])
+                mut_ix.append(p)
 
         for k in range(len(self.mutable_DRS)):
-            fd.write(3*tab + self.mutable_DRS[k] + '": ')
+            if mut_ix[k] < len(pMutable):
+                fd.write(3*tab + self.mutable_DRS[k] + '": ')
 
-            keys=''
-            for m in mutable[k]:
-                p_item=self.p_items[m]
+                keys=''
 
-                if len(keys):
-                    keys +=', '
-                keys += '"' + p_item + '"'
+                for m in pMutable[mut_ix[k]]:
+                    p_item=self.p_items[m]
 
-            fd.write(keys + ',\n')
+                    if len(keys):
+                        keys +=', '
+                    keys += '"' + p_item + '"'
+
+                fd.write(keys + ',\n')
 
         capt = self.annot_capt[ix].strip("'")
-        fd.write(3*tab + '"caption": "' + capt )
+        fd.write(3*tab + '"caption": "' + capt + '"')
 
         if len(self.annot_impact[ix]):
             impact = self.annot_impact[ix].strip("'")
-            fd.write(",\n" + 3*tab + '"severity": "' + impact + '"\n')
+            fd.write(',\n' + 3*tab + '"severity": "' + impact + '"\n')
         else:
             fd.write("\n")
 
         fd.write(2*tab + '}')
-
-        return
-
-
-    def write_no_annot(self, fd):
-        # write header of QA results
-
-        self.mutable_DRS=[]
-
-        tab='    '
-
-        fd.write('{\n')
-        fd.write(tab + '"QA_conclusion": "' + self.conclusion + '",\n')
-        fd.write(tab + '"project": "' +  self.project + '",\n')
-
-        paths=[]
-
-        for spl in self.spl:
-            paths.append(spl.split('/'))
-
-        sz=len(paths[0])
-        for i in range(1,len(paths)):
-            sz2=len(paths[i])
-            if sz2 < sz:
-                for j in range(sz2,sz):
-                    paths[i].append('*')
-
-        items=[]
-        for ip in range(sz):
-            items.append([])
-
-            for i in range(len(paths)):
-                if ip < len(paths[i]):
-                    if not paths[i][ip] in items[ip]:
-                        items[ip].append(paths[i][ip])
-
-
-        sz0=len(items)
-
-        for i in range(sz0):
-            sz=len(items[i])
-            if sz:
-                s = tab + '"DRS_' + str(i) + '": "'
-
-                if sz == 1:
-                    s += '"' + items[i][0] +'"'
-                else:
-                    # component is multiply set
-                    for m in range(len(items[i])):
-                        if m == 0:
-                            s += '[ '
-                        else:
-                            s += ', '
-
-                        s += '"' + items[i][m] + '"'
-
-                    s += ' ]'
-
-                if i < sz0-1:
-                    s += ','
-                s += '\n'
-
-                fd.write(s)
-
-
-        fd.write('}')
 
         return
 

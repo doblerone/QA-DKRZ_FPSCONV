@@ -871,18 +871,33 @@ def rm_r(*args):
     return
 
 
-def split(s,ssep):
+def split(s,ssep, str_sep=False, remove_empty=True):
+    # Split at a string (str_sep=True) or at the chars of
+    # of a separation string (be default).
+    # Empty items in the returned [] are removed by default.
+
     sep=[]
-    for x in ssep:
-        sep.extend(x)
+    if str_sep:
+        sep.append(ssep)
+    else:
+        for x in ssep:
+            sep.extend(x)
 
-    splts0=s.split(sep[0])
+    splt1=s.split(sep[0])
 
-    splts=[]
-    for x in splts0:
-        splts.extend(x.split(sep[1]))
+    for i in range(1,len(sep)):
+        splt0=splt1
+        splt1=[]
+        for x in splt0:
+            splt1.extend(x.split(sep[i]))
 
-    return splts
+    # remove empty items
+    if remove_empty:
+        for i in range(len(splt1)-1,-1,-1):
+            if len(splt1[i]) == 0:
+                del splt1[i]
+
+    return splt1
 
 
 def strip(s, sep=' '):
