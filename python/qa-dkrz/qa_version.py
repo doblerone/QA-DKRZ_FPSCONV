@@ -4,7 +4,7 @@ import os
 import argparse
 import ConfigParser
 import subprocess
-from types import *
+from   types import *
 
 from qa_config import CfgFile
 
@@ -287,7 +287,7 @@ class GetVersion(object):
 
         if self.isOpt("PROJECT"):
             # convert string to []
-            if type(self.opts["PROJECT"])) == StringType:
+            if type(self.opts["PROJECT"]) == StringType:
                 lprj.append( self.opts["PROJECT"] )
             else:
                 lprj.extend( self.opts["PROJECT"].split() )

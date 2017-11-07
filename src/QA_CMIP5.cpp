@@ -2357,16 +2357,20 @@ CMOR::checkMIPT_dim_positive(
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_positive));
     capt += hdhC::tf_att(n_positive);
     capt += "in the file does not match the request in the CMOR table";
+
+    std::string text;
     if( f_DMD.attMap[n_positive].size() )
     {
-      capt += ", found";
-      capt += hdhC::tf_val(f_DMD.attMap[n_positive]);
+      text = "Found ";
+      text += hdhC::tf_val(f_DMD.attMap[n_positive]);
+      text += ", expected ";
     }
+    else
+      text += "Expected ";
 
-    capt += ", expected";
-    capt += hdhC::tf_val(t_positive);
+    text += hdhC::tf_val(t_positive);
 
-    (void) notes->operate(capt) ;
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
     pQA->setExitState( notes->getExitState() ) ;
   }
@@ -3212,11 +3216,15 @@ CMOR::checkReqAtt_global(void)
                          || rqName == "realization" )
             checkEnsembleMemItem(rqName, aV) ;
 
-          else if( rqValue.substr(0,5) == "DATE:" || rqValue.substr(0,4) == "YYYY" )
+          else if( rqName == "tracking_id" )
+            checkTrackingID(rqName, aV) ;
+
+          else if( rqValue.substr(0,5) == "DATE:"
+                      || rqValue.substr(0,4) == "YYYY" )
           {
             if( checkDateFormat(rqValue, aV) )
             {
-               std::string key("2_4");
+               std::string key("2_4a");
                if( notes->inq( key, pQA->s_global) )
                {
                  std::string capt(pQA->s_global);
@@ -3650,6 +3658,78 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
   }
 
   return;
+}
+
+void
+CMOR::checkTrackingID(std::string& rV, std::string& aV)
+{
+    if( rV.size() == 0 && aV.size() == 0 )
+        return ;
+
+    int is=0;
+
+    if( rV.size() )
+    {
+        if( aV.size() )
+        {
+            if( aV.size() < rV.size() )
+            {
+                if( aV.substr(rV.size()) == rV )
+                   is=1; //prefix does not match
+            }
+        }
+        else
+          is=2; // missing
+    }
+
+    if( !is)
+    {
+       // check the uuid format, not the value; take into
+       // account a prefix given by rV
+       if( (rV.size()+36) != aV.size() )
+         is=3;
+       else
+       {
+           // check position of '-'
+           std::vector<size_t> pos;
+           pos.push_back(rV.size()+9);
+           pos.push_back(rV.size()+14);
+           pos.push_back(rV.size()+19);
+           pos.push_back(rV.size()+24);
+
+           for( size_t i=0 ; i < pos.size() ; ++i )
+           {
+              if( aV[pos[i]] != '-' )
+              {
+                  is=3;
+                  break;
+              }
+           }
+       }
+    }
+
+    if(is)
+    {
+        std::string key("2_4b");
+        if( notes->inq( key, pQA->s_global) )
+        {
+            std::string capt(pQA->s_global);
+            capt += hdhC::blank;
+            capt += hdhC::tf_att(hdhC::empty, n_tracking_id, aV);
+
+            if( is == 1 )
+                capt += " is missing";
+            else if( is == 2 )
+                capt += " does not match requested prefix " + hdhC::tf_val(rV);
+            else if( is == 3 )
+                capt += " with ill-formatted uuid";
+
+            (void) notes->operate(capt) ;
+            notes->setCheckStatus("CV", pQA->n_fail );
+        }
+    }
+
+    return ;
 }
 
 void
@@ -4542,38 +4622,29 @@ QA_Exp::getCaptionIntroDim(
 {
   std::string& t_DMD_outname = t_DMD.attMap[CMOR::n_output_dim_name] ;
 
-  std::string intro("table=");
-  intro += QA::tableID + ", var(file)=";
-  intro += f_DMD.var->name + ", CMOR-dim=";
-  intro += t_DMD.attMap[CMOR::n_CMOR_dimension] ;
-
-  if( t_DMD_outname == "basin" )
-    intro += ", region";
-  if( t_DMD_outname == "line" )
-    intro += ", passage";
-  if( t_DMD_outname == CMOR::n_type )
-    intro += ", type_description";
+  std::string intro ;
 
   if( att.size() )
-    intro += ", " + att ;
+    intro = hdhC::tf_att(f_DMD.var->name, att, hdhC::colon);
+  else
+    intro = hdhC::tf_var(f_DMD.var->name, hdhC::colon);
 
-  intro += ": ";
-  return intro;
+  return intro + " ";
 }
 
 std::string
 QA_Exp::getCaptionIntroVar( std::string table,
     struct VariableMetaData& f_VMD, std::string att)
 {
-  std::string intro("table=");
-  intro += table + ", var=";
-  intro += f_VMD.var->name ;
+  std::string intro;
+
 
   if( att.size() )
-    intro += ", " + att ;
+    intro = hdhC::tf_att(f_VMD.var->name, att,  hdhC::colon) ;
+  else
+    intro = hdhC::tf_var(f_VMD.var->name, hdhC::colon) ;
 
-  intro += ": ";
-  return intro;
+  return intro + " ";
 }
 
 std::string
@@ -5118,11 +5189,13 @@ VariableMetaData::verifyPercent(void)
         if( notes->inq( key, var->name) )
         {
           std::string capt( hdhC::tf_var(var->name, ":"));
-          capt += "Suspicion of fractional data range for units [%], found range ";
-          capt += "[" + hdhC::double2String(qaData.statMin.getSampleMin());
-          capt += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
+          capt += "Suspicion of fractional data range for units [%]";
 
-          (void) notes->operate(capt) ;
+          std::string text("Found range [");
+          text += hdhC::double2String(qaData.statMin.getSampleMin());
+          text += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
+
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus("CV",  pQA->n_fail );
         }
       }
@@ -5138,11 +5211,12 @@ VariableMetaData::verifyPercent(void)
         std::string key("6_9");
         if( notes->inq( key, var->name) )
         {
-          std::string capt( "Suspicion of percentage data range for units <1>, found range " ) ;
-          capt += "[" + hdhC::double2String(qaData.statMin.getSampleMin());
-          capt += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
+          std::string capt( "Suspicion of percentage data range for units <1>");
+          std::string text("Found range [" ) ;
+          text += hdhC::double2String(qaData.statMin.getSampleMin());
+          text += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
 
-          (void) notes->operate(capt) ;
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus("CV",  pQA->n_fail );
         }
       }

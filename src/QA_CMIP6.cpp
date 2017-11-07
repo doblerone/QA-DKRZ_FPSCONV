@@ -4284,6 +4284,79 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
 }
 
 void
+CMOR::checkTrackingID(std::string& rV, std::string& aV)
+{
+    if( rV.size() == 0 && aV.size() == 0 )
+        return true;
+
+    int is=0;
+
+    if( rV.size() )
+    {
+        if( aV.size() )
+        {
+            if( aV.size() < rV.size() )
+            {
+                if( aV.substr(rV.size()) == rV )
+                   is=1; //prefix does not match
+            }
+        }
+        else
+          is=2; // missing
+    }
+
+    if( !is)
+    {
+       // check the uuid format, not the value; take into
+       // account a prefix given by rV
+       if( (rV.size()+36) != aV.size() )
+         is=3;
+       else
+       {
+           // check position of '-'
+           std::vector<size_t> pos;
+           pos.push_back(rV.size()+9);
+           pos.push_back(rV.size()+14);
+           pos.push_back(rV.size()+19);
+           pos.push_back(rV.size()+24);
+
+           for( size_t i=0 ; i < pos.size() ; ++i )
+           {
+              if( aV[pos[i]] != '-' )
+              {
+                  is=3;
+                  break;
+              }
+           }
+       }
+    }
+
+    if(is)
+    {
+        std::string key("2_4b");
+        if( notes->inq( key, pQA->s_global) )
+        {
+            std::string capt(pQA->s_global);
+            capt += hdhC::blank;
+            capt += hdhC::tf_att(hdhC::empty, n_tracking_id, aV);
+
+            if( is == 1 )
+                capt += " is missing";
+            else if( is == 2 )
+                capt += " does not match requested prefix pwd
+                " + hdhC::tf_val(rV);
+            else if( is == 3 )
+                capt += " with ill-formatted uuid";
+
+            (void) notes->operate(capt) ;
+            notes->setCheckStatus("CV", pQA->n_fail );
+        }
+    }
+
+    return;
+}
+
+void
 CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
   struct DimensionMetaData& t_DMD,
   std::string& cName, size_t maxSz )

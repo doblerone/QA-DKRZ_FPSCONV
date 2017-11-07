@@ -642,7 +642,7 @@ Annotation::operate(std::string headline,
    capt += mp_capt[tag] ;
 
    if( !isDisplay )
-     printNotes( tag, capt, *passedText );
+     printNotes( tag, capt, passedText );
 
    // prepare email
    if( task[currIndex].find("EM") < std::string::npos )
@@ -1088,7 +1088,7 @@ Annotation::printHeader(std::ofstream *ofs)
 
 void
 Annotation::printNotes(std::string &tag, std::string &caption,
-   std::vector<std::string>& vs_text, bool enableStopAtErr)
+   std::vector<std::string>* vs_text, bool enableStopAtErr)
 {
   // str == message
 
@@ -1133,29 +1133,35 @@ Annotation::printNotes(std::string &tag, std::string &caption,
   if( mp_count[tag] == 1 )
       *ofsNotes << "\n" << caption << std::endl;
 
+  if( mp_txt[tag].size() )
+     mp_txt[tag] += ';' ;
+
+  if( ! vs_text )
+    return;
+
   std::string str;
-  for( size_t j=0 ; j < vs_text.size() ; ++j )
+  for( size_t j=0 ; j < vs_text->size() ; ++j )
   {
-     size_t sz=vs_text[j].size();
+     std::vector<std::string>& vs = *vs_text;
+     std::string& text = vs[j];
 
-     if( vs_text[j][sz-1] != '\n' )
-         vs_text[j] += '\n';
+     size_t sz=text.size();
 
-     *ofsNotes <<  vs_text[j] ;
+     if( text[sz-1] != '\n' )
+         text += '\n';
+
+     *ofsNotes <<  text ;
 
      // output the pure text with '\n' replaced by ';'
      // could be internally or eventually
      for( size_t i=0 ; i < sz ; ++i )
      {
-       if( vs_text[j][i] == '\n' )
+       if( text[i] == '\n' )
           str += ';' ;
        else
-          str += vs_text[j][i];
+          str += text[i];
      }
   }
-
-  if( mp_txt[tag].size() )
-     mp_txt[tag] += ';' ;
 
   mp_txt[tag] += str;
 

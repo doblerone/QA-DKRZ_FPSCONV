@@ -112,7 +112,7 @@ class Annotation : public IObj
   void printFlags(void);
   void printHeader(std::ofstream*);
   //! Detailed description of a condition raising an annotation.
-  void printNotes(std::string&, std::string&, std::vector<std::string>&,
+  void printNotes(std::string&, std::string&, std::vector<std::string>*,
                   bool is=false );
 
   //! Insert a directive internally aside a check-list file.

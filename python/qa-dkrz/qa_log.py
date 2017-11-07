@@ -6,7 +6,7 @@ Created on 21.03.2016
 
 import sys
 import os
-from types import *
+from   types import *
 import qa_util
 
 class Log(object):

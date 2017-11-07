@@ -197,6 +197,8 @@ struct CMOR
             struct DimensionMetaData& t_DMD,
             std::string&, size_t maxSz=0 );
 
+  void   checkTrackingID(std::string& requested, std::string& available) ;
+
   //! Apply the cross-check for the variable.
   void   checkVarReqTableEntry(
              VariableMetaData& ,
@@ -289,6 +291,7 @@ struct CMOR
   static std::string n_standard_name;
   static std::string n_table_id;
   static std::string n_tol_on_requests;
+  static std::string n_tracking_id;
   static std::string n_type;
   static std::string n_unformatted_units;
   static std::string n_units;
@@ -331,6 +334,7 @@ std::string CMOR::n_requested           ="requested";
 std::string CMOR::n_standard_name       ="standard_name";
 std::string CMOR::n_table_id            ="table_id";
 std::string CMOR::n_tol_on_requests     ="tol_on_requests";
+std::string CMOR::n_tracking_id         ="tracking_id";
 std::string CMOR::n_type                ="type";
 std::string CMOR::n_unformatted_units   ="unformatted_units";
 std::string CMOR::n_units               ="units";

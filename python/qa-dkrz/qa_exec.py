@@ -42,7 +42,7 @@ class QaExec(object):
         self.len_beg  = len(self.beg)
         self.len_end  = len(self.end)
 
-        self.max_sz_status_line=0
+        self.prev_status_line_sz=0
 
         self.isStatusLine=False
         if self.qaConf.isOpt('STATUS_LINE'):
@@ -431,6 +431,9 @@ class QaExec(object):
             front='' # frontal residuum
             back=''  # residuum of the back-side
 
+            log_entry['conclusion']=''
+            log_entry['period']=[]
+
             #p0 = check_output.find(key+self.beg)
             p0 = p_min
             p1 = check_output.find(key+self.end)
@@ -479,14 +482,12 @@ class QaExec(object):
             if len(nc):
                 void, f = os.path.split(nc)
 
-                if len(f) > self.max_sz_status_line:
-                    self.max_sz_status_line = len(f)
-                else:
-                    print '\r' + (6+self.max_sz_status_line)*' ',
-
+                print '\r' + (10+self.prev_status_line_sz)*' ',
                 print '\rNEXT: ' + f ,
+
+                self.prev_status_line_sz = len(f)
             else:
-                print '\r' + (6+self.max_sz_status_line)*' ' ,
+                print '\r' + (10+self.prev_status_line_sz)*' ' ,
 
             sys.stdout.flush()
 

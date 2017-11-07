@@ -197,6 +197,8 @@ class QA_Exp
   /*! For variables defined for a specific pressure level, eg.ta850*/
   void   checkPressureCoord(InFile&);
 
+  void   checkTrackingID(std::string& rV, std::string& aV);
+
   void   checkVarTableEntry(
              VariableMetaData &,
              VariableMetaData &tbl_entry);
@@ -398,6 +400,7 @@ class QA_Exp
   std::string n_cell_methods;
   std::string n_cell_methods_opt;
   std::string n_positive;
+  std::string n_tracking_id;
 
   std::string getCaptIntroDim(VariableMetaData &vMD,
                    struct DimensionMetaData &nc_entry,

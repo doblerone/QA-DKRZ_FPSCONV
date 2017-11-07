@@ -4,7 +4,7 @@ QA-DKRZ - Quality Assurance Tool for Climate Data
 
 |build-status| |conda-install|
 
-:Version: 0.5.x
+:Version: 0.6.6
 
 The Quality Assurance tool QA-DKRZ developed at DKRZ checks conformance
 of meta-data of climate simulations given in `NetCDF` format with conventions

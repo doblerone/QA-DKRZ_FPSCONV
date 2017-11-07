@@ -12,7 +12,7 @@ import re
 import shutil
 import subprocess
 import copy
-from type import *
+from   types import *
 
 import qa_util
 import qa_init
