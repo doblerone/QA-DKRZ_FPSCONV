@@ -562,6 +562,18 @@ Annotation::operate(std::string headline,
       std::string passedText,
       std::string mail_subject, std::string mail_body )
 {
+    std::vector<std::string> vs;
+    if( passedText.size() )
+        vs.push_back(passedText);
+
+    return operate(headline, &vs, mail_subject, mail_body);
+}
+
+bool
+Annotation::operate(std::string headline,
+      std::vector<std::string>* passedText,
+      std::string mail_subject, std::string mail_body )
+{
    bool isReturn=false;
 
    std::string tag(code[currIndex]) ;
@@ -619,8 +631,10 @@ Annotation::operate(std::string headline,
 
    // print notes
    if( isDescriptionFromTable )
-     passedText = text[currIndex] ;
-
+   {
+     passedText->clear();
+     passedText->push_back(text[currIndex]) ;
+   }
 
    // a caption only for the 'classical' output into the QA_RESULTS DRS
    std::string capt(code[currIndex]);
@@ -628,7 +642,7 @@ Annotation::operate(std::string headline,
    capt += mp_capt[tag] ;
 
    if( !isDisplay )
-     printNotes( tag, capt, passedText );
+     printNotes( tag, capt, *passedText );
 
    // prepare email
    if( task[currIndex].find("EM") < std::string::npos )
@@ -1074,7 +1088,7 @@ Annotation::printHeader(std::ofstream *ofs)
 
 void
 Annotation::printNotes(std::string &tag, std::string &caption,
-   std::string str, bool enableStopAtErr)
+   std::vector<std::string>& vs_text, bool enableStopAtErr)
 {
   // str == message
 
@@ -1119,18 +1133,29 @@ Annotation::printNotes(std::string &tag, std::string &caption,
   if( mp_count[tag] == 1 )
       *ofsNotes << "\n" << caption << std::endl;
 
-  *ofsNotes <<  str ;
-  size_t sz=str.size();
-  if( sz && str[sz-1] != '\n' )
-    *ofsNotes <<  std::endl;
+  std::string str;
+  for( size_t j=0 ; j < vs_text.size() ; ++j )
+  {
+     size_t sz=vs_text[j].size();
 
-  // output the pure text with '\n' replaced by ';'
-  for( size_t i=0 ; i < sz ; ++i )
-    if( str[i] == '\n' )
-       str[i] = ';' ;
+     if( vs_text[j][sz-1] != '\n' )
+         vs_text[j] += '\n';
+
+     *ofsNotes <<  vs_text[j] ;
+
+     // output the pure text with '\n' replaced by ';'
+     // could be internally or eventually
+     for( size_t i=0 ; i < sz ; ++i )
+     {
+       if( vs_text[j][i] == '\n' )
+          str += ';' ;
+       else
+          str += vs_text[j][i];
+     }
+  }
 
   if( mp_txt[tag].size() )
-    mp_txt[tag] += ';' ;
+     mp_txt[tag] += ';' ;
 
   mp_txt[tag] += str;
 
