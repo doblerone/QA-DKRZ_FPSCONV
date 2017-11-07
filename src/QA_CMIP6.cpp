@@ -4287,7 +4287,7 @@ void
 CMOR::checkTrackingID(std::string& rV, std::string& aV)
 {
     if( rV.size() == 0 && aV.size() == 0 )
-        return true;
+        return ;
 
     int is=0;
 
@@ -4343,8 +4343,7 @@ CMOR::checkTrackingID(std::string& rV, std::string& aV)
             if( is == 1 )
                 capt += " is missing";
             else if( is == 2 )
-                capt += " does not match requested prefix pwd
-                " + hdhC::tf_val(rV);
+                capt += " does not match requested prefix" + hdhC::tf_val(rV);
             else if( is == 3 )
                 capt += " with ill-formatted uuid";
 
