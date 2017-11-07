@@ -209,12 +209,17 @@ template <typename T>
 //  void   setTable(std::string p){ std_name_table=p; }
 
   bool   timeUnitsFormat(Variable&, bool annot=true);
-  bool   timeUnitsFormat_frq(std::string, std::vector<std::string>&);
-  bool   timeUnitsFormat_key(std::string, std::vector<std::string>&);
+  bool   timeUnitsFormat_frq(std::string, std::vector<std::string>& capt,
+                             std::vector<std::string>& text);
+  bool   timeUnitsFormat_key(std::string,  std::vector<std::string>& capt,
+                             std::vector<std::string>& text);
   bool   timeUnitsFormat_date(Variable&, std::string,
-                              std::vector<std::string>&, bool annot=true);
-  bool   timeUnitsFormat_time(std::string, std::vector<std::string>&);
-  bool   timeUnitsFormat_TZ(std::string, std::vector<std::string>&);
+                             std::vector<std::string>& capt,
+                             std::vector<std::string>& text, bool annot=true);
+  bool   timeUnitsFormat_time(std::string,  std::vector<std::string>& capt,
+                             std::vector<std::string>& text);
+  bool   timeUnitsFormat_TZ(std::string,  std::vector<std::string>& capt,
+                             std::vector<std::string>& text);
 
   std::string
          units_lon_lat(Variable&, std::string units="");

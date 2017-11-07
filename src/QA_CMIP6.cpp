@@ -203,12 +203,13 @@ CMIP6_CV::check_string(std::string& id)
        if( notes->inq( key, n_CV) )
        {
          std::string capt(hdhC::tf_att(hdhC::empty, "institution", hdhC::colon) ) ;
-         capt += "found ";
-         capt += hdhC::tf_val(f_inst);
-         capt += ", expected from CMIP6_institution_id.json ";
-         capt += hdhC::tf_val(str);
 
-         (void) notes->operate(capt) ;
+         std::string text("Found ");
+         text += hdhC::tf_val(f_inst);
+         text += ", expected from CMIP6_institution_id.json ";
+         text += hdhC::tf_val(str);
+
+         (void) notes->operate(capt, text) ;
          notes->setCheckStatus(n_CV, pQA->n_fail);
        }
      }
@@ -1067,6 +1068,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
   Split& x_e = x_enc[m] ;
   std::map<std::string, std::string>& gM = globMap[m] ;
 
+  std::vector<std::string> capt;
   std::vector<std::string> text;
   std::vector<std::string> keys;
 
@@ -1079,35 +1081,35 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
       if( x_e[i] == "frequency" )
       {
         keys.push_back("1_5b");
-        text.push_back( "A gridspec file must have frequency fx" );
+        capt.push_back( "A gridspec file must have frequency fx" );
+        text.push_back("");
       }
 
       if( x_e[i] == "member_id" )
       {
         keys.push_back("1_5a");
-        text.push_back( "A gridspec file must have ensemble member r0i0p0" );
+        capt.push_back( "A gridspec file must have ensemble member r0i0p0" );
+        text.push_back("");
       }
     }
   }
 
   std::string txt;
-  findFN_faults(drs, x_e, gM, txt) ;
+  std::string cpt;
+  findFN_faults(drs, x_e, gM, cpt, txt) ;
   if( txt.size() )
   {
+     capt.push_back(cpt);
      text.push_back(txt);
      keys.push_back("1_2");
   }
 
-  if( text.size() )
+  for( size_t i=0 ; i < capt.size() ; ++i )
   {
-    std::string capt("DRS CV filename:");
-    for(size_t i=0 ; i < text.size() ; ++i )
+    if( notes->inq( keys[i], "DRS") )
     {
-      if( notes->inq( keys[i], "DRS") )
-      {
-        (void) notes->operate(capt+text[i]) ;
-        notes->setCheckStatus(drsF, pQA->n_fail);
-      }
+      (void) notes->operate(capt[i], text[i]) ;
+      notes->setCheckStatus(drsF, pQA->n_fail);
     }
   }
 
@@ -1356,12 +1358,14 @@ DRS_CV::checkMIPT_tableName(Split& x_filename)
 
     if( notes->inq( key, "MIP") )
     {
-      std::string capt("Ambiguous MIP table names, found ") ;
-      capt += hdhC::tf_assign("MIP-table(file)", x_filename[1]) ;
-      capt += " vs. global ";
-      capt += hdhC::tf_att(CMOR::n_table_id, QA::tableID);
+      std::string capt("Ambiguous MIP table name");
 
-      (void) notes->operate(capt) ;
+      std::string text("Found ") ;
+      text += hdhC::tf_assign("MIP-table(file)", x_filename[1]) ;
+      text += " vs. global ";
+      text += hdhC::tf_att(CMOR::n_table_id, QA::tableID);
+
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus(drsF, pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
@@ -1428,10 +1432,11 @@ DRS_CV::checkNetCDF(NcAPI* p_nc)
     std::string key("12");
     if( notes->inq( key, pQA->fileStr ) )
     {
-      std::string capt("format does not conform to netCDF classic, found") ;
-      capt += s;
+      std::string capt("format does not conform to netCDF classic");
 
-      (void) notes->operate( capt) ;
+      std::string text("Found " + s) ;
+
+      (void) notes->operate( capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
     }
   }
@@ -1483,12 +1488,14 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
         std::string key("7_3");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
-        capt += ": encoding not available in CV, found " ;
-        capt += hdhC::tf_assign("item", x_e[x]) ;
+        capt += ": encoding not available in CV";
+
+        std::string text("Found ") ;
+        text += hdhC::tf_assign("item", x_e[x]) ;
 
         if( notes->inq( key, drsP) )
         {
-          (void) notes->operate(capt) ;
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus(drsP, pQA->n_fail);
         }
       }
@@ -1625,7 +1632,7 @@ DRS_CV::checkVariableName(std::string& f_vName)
 void
 DRS_CV::findFN_faults(Split& drs, Split& x_e,
                    std::map<std::string,std::string>& gM,
-                   std::string& text)
+                   std::string& capt, std::string& text)
 {
   std::string t;
   std::string n_ast="*";
@@ -1638,17 +1645,16 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
 
     if( drsSz == x_eSz )
     {
-      text = " check failed, suspicion of a missing item in the filename, found" ;
-      text += hdhC::tf_val(drs.getStr()) ;
+      capt = "Suspicion of a missing item in the filename" ;
+      text = "Found " + hdhC::tf_val(drs.getStr()) ;
 
       return;
     }
 
-    if( drs[j] == CMOR::n_output )
     if( !(drs[j] == t || t == n_ast) )
     {
-      text = " check failed, found " ;
-      text += hdhC::tf_assign(x_e[j],drs[j]) ;
+      capt = "DRS CV filename: check failed";
+      text = "Found " + hdhC::tf_assign(x_e[j],drs[j]) ;
       text += ", expected" ;
       text += hdhC::tf_val(t) ;
 
@@ -1682,7 +1688,7 @@ DRS_CV::findPath_faults(Split& drs, int drsBeg, Split& x_e,
 
     if( i == -1 )
     {
-      text = " suspicion of a missing item in the path, found" ;
+      text = " Suspicion of a missing item in the path, found" ;
       text += hdhC::tf_val(drs.getStr()) ;
       break;
     }
@@ -1876,10 +1882,12 @@ DRS_CV::testPeriod(Split& x_f)
      std::string key("1_6c");
      if( notes->inq( key, pQA->fileStr) )
      {
-       std::string capt("invalid period in the filename, found ");
-       capt += hdhC::tf_val(sd[0] + "-" + sd[1]);
+       std::string capt("invalid period in the filename");
 
-       (void) notes->operate(capt) ;
+       std::string text("Found ");
+       text += hdhC::tf_val(sd[0] + "-" + sd[1]);
+
+       (void) notes->operate(capt, text) ;
        notes->setCheckStatus(drsF, pQA->n_fail );
      }
 
@@ -1916,11 +1924,11 @@ DRS_CV::testPeriod(Split& x_f)
       if( !isInstantTime() )
       {
         std::string tb_name(pQA->qaTime.getBoundsName());
-        
+
         if( ! notes->findAnnotation("6_15", tb_name) )
         {
           std::string key("3_17");
-          
+
           if( notes->inq( key, tb_name ) )
           {
             std::string capt(hdhC::tf_var("time_bnds"));
@@ -2214,11 +2222,13 @@ DRS_CV::testPeriodDatesFormat(std::vector<std::string>& sd)
 
      if( notes->inq( key, pQA->fileStr) )
      {
-        std::string capt("period in filename of incorrect format, found ");
-        capt += sd[0] + "-" +  sd[1];
-        capt += " expected " + str ;
+        std::string capt("period in filename incorrectly formatted");
 
-        (void) notes->operate(capt) ;
+        std::string text("Found ");
+        text += sd[0] + "-" +  sd[1];
+        text += " expected " + str ;
+
+        (void) notes->operate(capt, text) ;
         notes->setCheckStatus(drsF, pQA->n_fail );
      }
   }
@@ -2441,6 +2451,7 @@ void
 CMOR::checkEnsembleMemItem(std::string& rqName, std::string& attVal)
 {
   std::string capt;
+  std::string text;
   std::string key;
 
   if( ! hdhC::isDigit(attVal) )
@@ -2448,8 +2459,9 @@ CMOR::checkEnsembleMemItem(std::string& rqName, std::string& attVal)
     key = "2_5a";
     capt = n_global + hdhC::blank ;
     capt += hdhC::tf_att(rqName);
-    capt += "must be integer, found ";
-    capt += attVal;
+    capt += "must be integer";
+
+    text = "Found " + attVal;
   }
   else
   {
@@ -2461,7 +2473,7 @@ CMOR::checkEnsembleMemItem(std::string& rqName, std::string& attVal)
       capt = n_global + hdhC::blank ;
       capt += hdhC::tf_att(rqName);
       capt += "must be an integer > 0 for";
-      capt += hdhC::tf_assign(pQA->n_frequency, pExp->getFrequency());
+      text = pQA->n_frequency + hdhC::tf_val(pExp->getFrequency());
     }
 
     else if( id > 0 && pExp->getFrequency() == "fx" )
@@ -2477,7 +2489,7 @@ CMOR::checkEnsembleMemItem(std::string& rqName, std::string& attVal)
   {
     if( notes->inq( key, n_global) )
     {
-      (void) notes->operate(capt) ;
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
@@ -2497,12 +2509,12 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
   x_aV.addStripSides(" ");
 
   std::vector<char> sep {',', ' '} ;
-  
+
   for(size_t i=0 ; i < sep.size() ; ++i )
   {
     x_aV.setSeparator(sep[i]);
     x_aV = hdhC::clearEnclosures(aV) ;
-    
+
     if( x_aV.size() > 1 )
     {
       if(i)
@@ -2519,8 +2531,8 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
           notes->setCheckStatus("CV",  pQA->n_fail );
         }
       }
-      
-      break; 
+
+      break;
     }
   }
 
@@ -2541,7 +2553,7 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
          item = vs_item[0];
       else
          item = hdhC::getUniqueString(vs_item, ',');
-      
+
       std::string capt(pQA->s_global);
       capt += hdhC::blank;
       capt += hdhC::tf_att(hdhC::empty, n_forcing);
@@ -2749,19 +2761,22 @@ CMOR::checkMIPT_dim_axis(
   if( notes->inq( key, vMD.var->name) )
   {
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_axis ));
+    std::string text;
 
     if( f_DMD.attMap[n_axis].size() )
     {
-      capt += "no match with the CMOR table request, found";
-      capt += hdhC::tf_val(f_DMD.attMap[n_axis]);
-      capt += ", expected";
+      capt += "no match with the CMOR table request";
+      text = "Found " + hdhC::tf_val(f_DMD.attMap[n_axis]);
+      text += ", expected " ;
     }
     else
-     capt += "missing, CMOR table requests";
+    {
+     capt += "missing, CMOR table request";
+     text = "Expected " ;
+    }
+    text += hdhC::tf_val(t_DMD.attMap[n_axis]);
 
-    capt += hdhC::tf_val(t_DMD.attMap[n_axis]);
-
-    (void) notes->operate(capt) ;
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
     pQA->setExitState( notes->getExitState() ) ;
   }
@@ -2898,16 +2913,13 @@ CMOR::checkMIPT_dim_longName(
   if( notes->inq( key, vMD.var->name) )
   {
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, "long name" ));
+    std::string text;
     if( f_long_name.size() )
-    {
-      capt += "found";
-      capt += hdhC::tf_val(f_long_name);
-    }
+      text = "Found " + hdhC::tf_val(f_long_name);
 
-    capt += ", expected";
-    capt += hdhC::tf_val(t_DMD_long_name) ;
+    text += ", expected " + hdhC::tf_val(t_DMD_long_name) ;
 
-    (void) notes->operate(capt) ;
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
     pQA->setExitState( notes->getExitState() ) ;
   }
@@ -2955,16 +2967,18 @@ CMOR::checkMIPT_dim_positive(
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_positive));
     capt += hdhC::tf_att(n_positive);
     capt += "in the file does not match the request in the CMOR table";
+    std::string text;
     if( f_DMD.attMap[n_positive].size() )
     {
-      capt += ", found";
-      capt += hdhC::tf_val(f_DMD.attMap[n_positive]);
+      text += "Found " + hdhC::tf_val(f_DMD.attMap[n_positive]);
+      text +=", expected " ;
     }
+    else
+      text = "Expected ";
 
-    capt += ", expected";
-    capt += hdhC::tf_val(t_positive);
+    text += hdhC::tf_val(t_positive);
 
-    (void) notes->operate(capt) ;
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
     pQA->setExitState( notes->getExitState() ) ;
   }
@@ -3016,17 +3030,20 @@ CMOR::checkMIPT_dim_stdName(
   if( notes->inq( key, vMD.var->name) )
   {
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, "standard name" ));
-    capt += "not as the CMOR table requested";
+    capt += "does not match the CMOR table request";
+    std::string text;
     if( f_DMD.attMap[n_standard_name].size() )
     {
-      capt += ", found";
-      capt += hdhC::tf_val(f_DMD.attMap[n_standard_name]);
+      text = "Found";
+      text += hdhC::tf_val(f_DMD.attMap[n_standard_name]);
+      text += ", expected ";
     }
+    else
+      text += "Expected ";
 
-    capt += ", expected";
-    capt += hdhC::tf_val(t_DMD.attMap[n_standard_name]);
+    text += hdhC::tf_val(t_DMD.attMap[n_standard_name]);
 
-    (void) notes->operate(capt) ;
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
     pQA->setExitState( notes->getExitState() ) ;
   }
@@ -3047,12 +3064,12 @@ CMOR::checkMIPT_dim_type(
   if( notes->inq( key, vMD.var->name) )
   {
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_type ));
-    capt += "CMOR table requests,";
-    capt += hdhC::tf_val(t_DMD.attMap[n_type]);
-    capt += ", found";
-    capt += hdhC::tf_val(f_DMD.attMap[n_type]);
+    capt += " does not match the CMOR table request";
 
-    (void) notes->operate(capt) ;
+    std::string text("Found " + hdhC::tf_val(f_DMD.attMap[n_type]) );
+    text += ", expected " + hdhC::tf_val(t_DMD.attMap[n_type]);
+
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
     pQA->setExitState( notes->getExitState() ) ;
   }
@@ -3113,11 +3130,13 @@ CMOR::checkMIPT_dim_units(
       if( notes->inq( key, vMD.var->name) )
       {
         std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_units ));
-        capt += "ill-formatted units, found";
-        capt += hdhC::tf_val(f_units);
-        capt += ", expected <days since ...>";
+        capt += "ill-formatted units";
 
-        (void) notes->operate(capt) ;
+        std::string text("Found ");
+        text += hdhC::tf_val(f_units);
+        text += ", expected <days since ...>";
+
+        (void) notes->operate(capt, text) ;
         notes->setCheckStatus("CV", pQA->n_fail);
         pQA->setExitState( notes->getExitState() ) ;
       }
@@ -3163,9 +3182,10 @@ CMOR::checkMIPT_dim_units(
     if( notes->inq( key, vMD.var->name) )
     {
       std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_units ));
-      capt += "expted dim-less, found " + hdhC::tf_assign(n_units, f_units) ;
+      capt += "expted dim-less";
+      std::string text("Found " + hdhC::tf_assign(n_units, f_units) );
 
-      (void) notes->operate(capt) ;
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
@@ -3179,15 +3199,19 @@ CMOR::checkMIPT_dim_units(
   if( notes->inq( key, vMD.var->name) )
   {
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_units ));
-    capt += "CMOR table requests";
-    capt += hdhC::tf_val(t_units);
+    capt += "does not match the CMOR table request";
+    std::string text;
     if( f_units.size() )
     {
-      capt += ", found";
-      capt += hdhC::tf_val(f_units);
+      text= "Found " + hdhC::tf_val(f_units);
+      text += ", expected ";
     }
+    else
+      text += "Expected ";
 
-    (void) notes->operate(capt) ;
+    text += hdhC::tf_val(t_units);
+
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
     pQA->setExitState( notes->getExitState() ) ;
   }
@@ -3221,12 +3245,12 @@ CMOR::checkMIPT_dim_validMin(
       {
         std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_valid_min ));
         capt += "data minimum is lower than requested by the CMOR table";
-        capt += ", found";
-        capt += hdhC::tf_val(hdhC::double2String(min));
-        capt += ", expected";
-        capt += hdhC::tf_val(t_DMD.attMap[n_valid_min]);
+        std::string text("Found ");
+        text += hdhC::tf_val(hdhC::double2String(min));
+        text += ", expected";
+        text += hdhC::tf_val(t_DMD.attMap[n_valid_min]);
 
-        (void) notes->operate(capt) ;
+        (void) notes->operate(capt, text) ;
         notes->setCheckStatus("CV", pQA->n_fail);
         pQA->setExitState( notes->getExitState() ) ;
       }
@@ -3262,12 +3286,12 @@ CMOR::checkMIPT_dim_validMax(
       {
         std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_valid_max ));
         capt += "data maximum is higher than requested by the CMOR table";
-        capt += ", found";
-        capt += hdhC::tf_val(hdhC::double2String(max));
-        capt += ", expected";
-        capt += hdhC::tf_val(t_DMD.attMap[n_valid_max]);
+        std::string text("Found ");
+        text += hdhC::tf_val(hdhC::double2String(max));
+        text += ", expected";
+        text += hdhC::tf_val(t_DMD.attMap[n_valid_max]);
 
-        (void) notes->operate(capt) ;
+        (void) notes->operate(capt, text) ;
         notes->setCheckStatus("CV", pQA->n_fail);
         pQA->setExitState( notes->getExitState() ) ;
       }
@@ -3388,23 +3412,24 @@ CMOR::checkMIPT_var_cellMeasures(
       std::string currTable(QA::tableID) ;
 
       std::string capt(QA_Exp::getCaptionIntroVar(
-              currTable, vMD, n_cell_measures));
+                       currTable, vMD, n_cell_measures));
+      capt += "failed";
 
+      std::string text;
       if( vMD.attMap[n_cell_measures].size() )
       {
-        capt += ", found" ;
-        capt += hdhC::tf_val(vMD.attMap[n_cell_measures]) ;
+        text = "Found " + hdhC::tf_val(vMD.attMap[n_cell_measures]) ;
       }
       else
-        capt += hdhC::tf_val(pQA->notAvailable) ;
+        text = hdhC::tf_val(pQA->notAvailable) ;
 
-      capt += ", expected";
+      text += ", expected";
       if( tEntry.attMap[n_cell_measures].size() )
-        capt += hdhC::tf_val(tEntry.attMap[n_cell_measures]) ;
+        text += hdhC::tf_val(tEntry.attMap[n_cell_measures]) ;
       else
-        capt += hdhC::tf_val(pQA->notAvailable) ;
+        text += hdhC::tf_val(pQA->notAvailable) ;
 
-      (void) notes->operate(capt) ;
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
@@ -3460,21 +3485,19 @@ CMOR::checkMIPT_var_cellMethods(
       std::string capt(QA_Exp::getCaptionIntroVar(
               currTable, vMD, n_cell_methods));
 
+      std::string text;
       if( vMD.attMap[n_cell_methods].size() )
-      {
-        capt += ", found" ;
-        capt += hdhC::tf_val(vMD.attMap[n_cell_methods]) ;
-      }
+        text = "Found " + hdhC::tf_val(vMD.attMap[n_cell_methods]) ;
       else
-        capt += hdhC::tf_val(pQA->notAvailable) ;
+        text = hdhC::tf_val(pQA->notAvailable) ;
 
-      capt += ", expected";
+      text += ", expected";
       if( tEntry.attMap[n_cell_methods].size() )
-        capt += hdhC::tf_val(tEntry.attMap[n_cell_methods]) ;
+        text += hdhC::tf_val(tEntry.attMap[n_cell_methods]) ;
       else
-        capt += hdhC::tf_val(pQA->notAvailable) ;
+        text += hdhC::tf_val(pQA->notAvailable) ;
 
-      (void) notes->operate(capt) ;
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
@@ -3586,21 +3609,22 @@ CMOR::checkMIPT_var_type(
       std::string currTable(QA::tableID) ;
 
       std::string capt(QA_Exp::getCaptionIntroVar(currTable, vMD, n_type));
+      capt += " failed";
       capt += " expected ";
 
+      std::string text("Expected");
       if( tEntry.attMap[n_type].size() )
-        capt += hdhC::tf_val(tEntry.attMap[n_type]) ;
+        text += hdhC::tf_val(tEntry.attMap[n_type]) ;
       else
-        capt += " no type";
+        text += " no type";
 
-      capt += ", found" ;
+      text += ", found" ;
       if( vMD.attMap[n_type].size() )
-        capt += hdhC::tf_val(vMD.attMap[n_type]) ;
+        text += hdhC::tf_val(vMD.attMap[n_type]) ;
       else
-        capt += "no type" ;
+        text += "no type" ;
 
-
-      (void) notes->operate(capt) ;
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
@@ -3824,10 +3848,11 @@ CMOR::checkReqAtt_global(void)
                 std::string capt(pQA->s_global);
                 capt += hdhC::blank;
                 capt += hdhC::tf_att(rqName);
-                capt += "does not comply with YYYY-MM-DDThh:mm:ssZ, found: " ;
-                capt += aV ;
+                capt += "does not comply with YYYY-MM-DDThh:mm:ssZ";
 
-                (void) notes->operate(capt) ;
+                std::string text("Found " + aV) ;
+
+                (void) notes->operate(capt, text) ;
                 notes->setCheckStatus("CV",  pQA->n_fail );
               }
             }
@@ -4034,12 +4059,13 @@ CMOR::checkSource(void)
           if( notes->inq(key) )
           {
             std::string capt(hdhC::tf_att(n_global, n_source, hdhC::colon));
-            capt += "The model_id does not match, found";
-            capt += hdhC::tf_val(x_word[j]) ;
-            capt += ", expected";
-            capt += hdhC::tf_val(model_id) ;
+            capt += "The model_id does not match";
 
-            (void) notes->operate(capt) ;
+            std::string text("Found " + hdhC::tf_val(x_word[j]) ) ;
+            text += ", expected";
+            text += hdhC::tf_val(model_id) ;
+
+            (void) notes->operate(capt, text) ;
             notes->setCheckStatus("CV", pQA->n_fail);
           }
 
@@ -4121,10 +4147,12 @@ CMOR::checkSource(void)
           if( notes->inq(key) )
           {
             std::string capt(hdhC::tf_att(n_global, n_source, hdhC::colon));
-            capt += "faulty term (<technical_name>, <resolution_and_levels>), found";
-            capt += hdhC::tf_val(x_brackets_items.getStr()) ;
+            capt += "faulty term (<technical_name>, <resolution_and_levels>)";
 
-            (void) notes->operate(capt) ;
+            std::string text("Found ");
+            text += hdhC::tf_val(x_brackets_items.getStr()) ;
+
+            (void) notes->operate(capt, text) ;
             notes->setCheckStatus("CV", pQA->n_fail);
           }
 
@@ -4173,10 +4201,12 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
          if( notes->inq( key, f_DMD.var->name) )
          {
            std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
-           capt += "provision of more than the requested max(17+6) levels, found";
-           capt += hdhC::tf_val(hdhC::double2String(vs_values.size()));
+           capt += "provision of more than the requested max(17+6) levels";
 
-           (void) notes->operate(capt) ;
+           std::string text("Found ");
+           text += hdhC::tf_val(hdhC::double2String(vs_values.size()));
+
+           (void) notes->operate(capt, text) ;
            notes->setCheckStatus("CV", pQA->n_fail);
            pQA->setExitState( notes->getExitState() ) ;
          }
@@ -4201,13 +4231,15 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
     if( notes->inq( key, f_DMD.var->name) )
     {
       std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
-      capt += "mismatch of number of data values, found";
-      capt += hdhC::tf_val(hdhC::double2String(vs_values.size()));
-      capt += " items in the file and ";
-      capt += hdhC::tf_assign(cName, hdhC::double2String(x_tVal.size()));
-      capt += " in the table";
+      capt += "mismatch of number of data values";
 
-      (void) notes->operate(capt) ;
+      std::string text("Found ");
+      text += hdhC::tf_val(hdhC::double2String(vs_values.size()));
+      text += " items in the file and ";
+      text += hdhC::tf_assign(cName, hdhC::double2String(x_tVal.size()));
+      text += " in the table";
+
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
@@ -4281,10 +4313,12 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
          if( notes->inq( key, f_DMD.var->name) )
          {
            std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
-           capt += " max. no. of levels=(17+6), found";
-           capt += hdhC::tf_val(hdhC::double2String(ma.size()));
+           capt += " max. no. of levels=(17+6)";
 
-           (void) notes->operate(capt) ;
+           std::string text("Found ");
+           text += hdhC::tf_val(hdhC::double2String(ma.size()));
+
+           (void) notes->operate(capt, text) ;
            notes->setCheckStatus("CV", pQA->n_fail);
            pQA->setExitState( notes->getExitState() ) ;
          }
@@ -4309,13 +4343,15 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
     if( notes->inq( key, f_DMD.var->name) )
     {
       std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
-      capt += "mismatch of number of data values, found";
-      capt += hdhC::tf_val(hdhC::double2String(ma.size()));
-      capt += " items in the file and ";
-      capt += hdhC::tf_assign(cName, hdhC::double2String(x_tVal.size()));
-      capt += " in the table";
+      capt += "mismatch of number of data values";
 
-      (void) notes->operate(capt) ;
+      std::string text("Found ");
+      text += hdhC::tf_val(hdhC::double2String(ma.size()));
+      text += " items in the file and ";
+      text += hdhC::tf_assign(cName, hdhC::double2String(x_tVal.size()));
+      text += " in the table";
+
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
@@ -4365,12 +4401,14 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
   if( notes->inq( key, f_DMD.var->name) )
   {
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
-    capt += "Mismatch of data values between file and table, found";
-    capt += hdhC::tf_val(hdhC::double2String(ma[i]));
-    capt += ", expected ";
-    capt += hdhC::tf_assign(cName, x_tVal[i]);
+    capt += "Mismatch of data values between file and table";
 
-    (void) notes->operate(capt) ;
+    std::string text("Found ");
+    text += hdhC::tf_val(hdhC::double2String(ma[i]));
+    text += ", expected ";
+    text += hdhC::tf_assign(cName, x_tVal[i]);
+
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
     pQA->setExitState( notes->getExitState() ) ;
   }
@@ -4690,7 +4728,7 @@ CMOR::run(InFile& in, std::vector<VariableMetaData>& varMeDa)
       checkMIP_table(in, vMD, vs_f_DMD_entries) ;
     }
   }
-  
+
   return;
 }
 
@@ -4788,7 +4826,7 @@ QA_Exp::applyOptions(std::vector<std::string>& optStr)
 
        continue;
      }
-    
+
      if( split[0] == "fNVI"
           || split[0] == "file_name_var_index" )
      {
@@ -4862,17 +4900,30 @@ QA_Exp::checkDataVarNum(void)
   std::string key("9_1a");
   if( notes->inq( key) )
   {
-    std::string capt("multiple variables, found: ") ;
+    std::string name = getVarnameFromFilename() ;
 
-    for( size_t i=0 ; i < pQA->pIn->dataVarIndex.size() ; ++i)
+    std::string capt(hdhC::tf_var(name, hdhC::colon));
+    capt += " Multiple data variables are present";
+
+    std::string text("Found also ");
+
+    size_t count=0;
+    for( size_t j=0 ; j < pQA->pIn->dataVarIndex.size() ; ++j )
     {
-      if(i)
-        capt += ", ";
+       Variable &var = pQA->pIn->variable[pQA->pIn->dataVarIndex[j]];
 
-      capt += pQA->pIn->variable[pQA->pIn->dataVarIndex[i]].name;
+       if( var.name == name )
+           continue;
+
+       if(count)
+         text += ", ";
+       else
+           ++count;
+
+       text += var.name;
     }
 
-    (void) notes->operate(capt) ;
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
     pQA->setExitState( notes->getExitState() ) ;
   }
@@ -4920,18 +4971,30 @@ QA_Exp::createVarMetaData(void)
      std::string key("9_1");
      if( notes->inq( key, pQA->fileStr) )
      {
-       std::string capt("multiple data variables are present, found ");
+       std::string name = getVarnameFromFilename() ;
 
+       std::string capt(hdhC::tf_var(name, hdhC::colon));
+       capt += " Multiple data variables are present";
+
+       std::string text("Found also ");
+
+       size_t count=0;
        for( size_t j=0 ; j < pQA->pIn->dataVarIndex.size() ; ++j )
        {
          Variable &var = pQA->pIn->variable[pQA->pIn->dataVarIndex[j]];
-         if(j)
-           capt += ", ";
 
-         capt += var.name;
+         if( var.name == name )
+             continue;
+
+         if(count)
+           text += ", ";
+         else
+             ++count;
+
+         text += var.name;
        }
 
-       (void) notes->operate(capt) ;
+       (void) notes->operate(capt, text) ;
        notes->setCheckStatus("CV",  pQA->n_fail );
      }
   }
@@ -5002,13 +5065,13 @@ QA_Exp::getFrequency(void)
     if( frequencyPosition > -1 )
     {
       size_t fp=static_cast<size_t>(frequencyPosition);
-      
+
       if( fp < splt.size() )
          frequency = splt[fp] ;
     }
 
     if( frequency.size() == 0 )
-    {   
+    {
       // the second term denotes the mip table for CMIP5
       std::string mip_f = splt[1];
 
@@ -5038,7 +5101,7 @@ QA_Exp::getFrequency(void)
       }
     }
   }
-  
+
   return frequency ;
 }
 
@@ -5061,13 +5124,13 @@ QA_Exp::getMIP_tableName(std::string tName)
      std::string key("7_6");
      std::string capt;
      std::string text;
-     
+
      if( notes->inq( key, CMOR::n_global) )
      {
        capt = "Missing global " ;
        capt += hdhC::tf_att(hdhC::empty, CMOR::n_table_id) ;
      }
-     
+
      if( mipPosition > -1 )
      {
         Split x_ff(pQA->pIn->file.getFilename(), "_") ;
@@ -5085,7 +5148,7 @@ QA_Exp::getMIP_tableName(std::string tName)
           (void) notes->operate(capt, text) ;
           pQA->setExitState( notes->getExitState() ) ;
        }
-     }    
+     }
 
      return tableID ;
   }
@@ -5213,7 +5276,7 @@ QA_Exp::initDefaults(void)
   frequencyPosition=-1;  // not set
   mipPosition=-1;
   varnamePosition=-1;
-  
+
   return;
 }
 
@@ -5497,11 +5560,13 @@ VariableMetaData::verifyPercent(void)
         if( notes->inq( key, var->name) )
         {
           std::string capt( hdhC::tf_var(var->name, ":"));
-          capt += "Suspicion of fractional data range for units [%], found range ";
-          capt += "[" + hdhC::double2String(qaData.statMin.getSampleMin());
-          capt += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
+          capt += "Suspicion of fractional data range for units [%]";
 
-          (void) notes->operate(capt) ;
+          std::string text("Found range [");
+          text += hdhC::double2String(qaData.statMin.getSampleMin());
+          text += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
+
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus("CV",  pQA->n_fail );
         }
       }
@@ -5517,11 +5582,13 @@ VariableMetaData::verifyPercent(void)
         std::string key("6_9");
         if( notes->inq( key, var->name) )
         {
-          std::string capt( "Suspicion of percentage data range for units <1>, found range " ) ;
-          capt += "[" + hdhC::double2String(qaData.statMin.getSampleMin());
-          capt += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
+          std::string capt( "Suspicion of percentage data range for units <1>");
 
-          (void) notes->operate(capt) ;
+          std::string text("Found range [" ) ;
+          text += hdhC::double2String(qaData.statMin.getSampleMin());
+          text += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
+
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus("CV",  pQA->n_fail );
         }
       }

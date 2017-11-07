@@ -675,7 +675,7 @@ Outlier::test(QA_Data *pQAD)
         }
 
         std::string capt(hdhC::tf_var(vMD->var->name, hdhC::colon)) ;
-        capt += " Suspected outlier for " << extStr[i] ;
+        capt += " Suspected outlier for " + extStr[i] ;
 
         std::ostringstream ostr(std::ios::app);
         ostr.setf(std::ios::scientific, std::ios::floatfield);
@@ -1090,10 +1090,22 @@ void
 ReplicatedRecord::report(std::vector<std::string> &range,
                          size_t bufferCount, bool isMultiple)
 {
-   std::string capt(hdhC::tf_var(name) + "rec# ") ;
-
    // Is it a group?
-   bool isIsolated=false;
+   bool isIsolated=false;  // !! true is not enabled at present
+
+   std::string capt(hdhC::tf_var(name, hdhC::colon) ) ;
+   capt += " suspicion of replicated ";
+
+   if( enableReplicationOnlyGroups )
+     capt += "group(s) of records" ;
+   else
+   {
+     if( isIsolated )
+       capt += "isolated record(s)" ;
+     else
+       capt += "group(s) of records" ;
+   }
+
 
    if( range.size() > 4 )
    {
@@ -1104,41 +1116,13 @@ ReplicatedRecord::report(std::vector<std::string> &range,
        if( diff < groupSize )
          return;
      }
-
-     capt += range[0];
-     capt += "-";
-     capt += range[4];
-     capt += " --> ";
-     capt += range[1];
-     capt += "-";
-     capt += range[5] + ": ";
    }
-   else
-   {
-     if( enableReplicationOnlyGroups )
+   else if( enableReplicationOnlyGroups )
        return;
-
-     capt += range[0];
-     capt += " --> " ;
-     capt += range[1] + ": ";
-     isIsolated=true;
-   }
 
    std::string key("R3200");
    if( notes->inq( key, name, "ACCUM") )
    {
-     capt += "suspicion of replicated ";
-
-     if( enableReplicationOnlyGroups )
-       capt += "group(s) of records" ;
-     else
-     {
-       if( isIsolated )
-         capt += "isolated record(s)" ;
-       else
-         capt += "group(s) of records" ;
-     }
-
      std::string text;
 
      // Is it a group?

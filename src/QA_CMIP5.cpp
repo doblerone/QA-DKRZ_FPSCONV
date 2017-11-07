@@ -215,6 +215,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
   Split& x_e = x_enc[m] ;
   std::map<std::string, std::string>& gM = globMap[m] ;
 
+  std::vector<std::string> capt;
   std::vector<std::string> text;
   std::vector<std::string> keys;
 
@@ -239,9 +240,11 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
   }
 
   std::string txt;
-  findFN_faults(drs, x_e, gM, txt) ;
+  std::string cpt;
+  findFN_faults(drs, x_e, gM, cpt, txt) ;
   if( txt.size() )
   {
+     capt.push_back(cpt);
      text.push_back(txt);
      keys.push_back("1_2");
   }
@@ -253,7 +256,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
     {
       if( notes->inq( keys[i], "DRS") )
       {
-        (void) notes->operate(capt+text[i]) ;
+        (void) notes->operate(capt[i]+text[i]) ;
         notes->setCheckStatus(drsF, pQA->n_fail);
       }
     }
@@ -504,12 +507,13 @@ DRS_CV::checkMIPT_tableName(Split& x_filename)
 
     if( notes->inq( key, "MIP") )
     {
-      std::string capt("Ambiguous MIP table names, found ") ;
-      capt += hdhC::tf_assign("MIP-table(file)", x_filename[1]) ;
-      capt += " vs. global ";
-      capt += hdhC::tf_att(CMOR::n_table_id, QA::tableID);
+      std::string capt("Ambiguous MIP table names");
+      std::string text("Found ") ;
+      text += hdhC::tf_assign("MIP-table(file)", x_filename[1]) ;
+      text += " vs. global ";
+      text += hdhC::tf_att(CMOR::n_table_id, QA::tableID);
 
-      (void) notes->operate(capt) ;
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus(drsF, pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
@@ -576,10 +580,11 @@ DRS_CV::checkNetCDF(NcAPI* p_nc)
     std::string key("12");
     if( notes->inq( key, pQA->fileStr ) )
     {
-      std::string capt("format does not conform to netCDF classic, found") ;
-      capt += s;
+      std::string capt("format does not conform to netCDF classic");
+      std::string text("Found ") ;
+      text += s;
 
-      (void) notes->operate( capt) ;
+      (void) notes->operate( capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
     }
   }
@@ -610,12 +615,12 @@ DRS_CV::checkProductName(std::string& drs_product,
   {
     std::string capt("DRS fault for path component");
     capt += hdhC::tf_val(CMOR::n_product);
-    capt += ", found" ;
-    capt += hdhC::tf_val(drs_product) ;
-    capt += ", expected ";
-    capt += hdhC::tf_val(prod_choice);
+    std::string text("Found ") ;
+    text += hdhC::tf_val(drs_product) ;
+    text += ", expected ";
+    text += hdhC::tf_val(prod_choice);
 
-    (void) notes->operate(capt) ;
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus(drsP, pQA->n_fail);
     pQA->setExitState( notes->getExitState() ) ;
   }
@@ -663,12 +668,13 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
         std::string key("7_3a");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
-        capt += ": encoding not available in CV, found " ;
-        capt += hdhC::tf_assign("item", x_e[x]) ;
+        capt += ": encoding not available in CV";
+        std::string text("Found ") ;
+        text += hdhC::tf_assign("item", x_e[x]) ;
 
         if( notes->inq( key, drsP) )
         {
-          (void) notes->operate(capt) ;
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus(drsP, pQA->n_fail);
         }
       }
@@ -801,7 +807,7 @@ DRS_CV::checkVariableName(std::string& f_vName)
 void
 DRS_CV::findFN_faults(Split& drs, Split& x_e,
                    std::map<std::string,std::string>& gM,
-                   std::string& text)
+                   std::string& capt, std::string& text)
 {
   std::string t;
   std::string n_ast="*";
@@ -814,17 +820,16 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
 
     if( drsSz == x_eSz )
     {
-      text = " check failed, suspicion of a missing item in the filename, found" ;
-      text += hdhC::tf_val(drs.getStr()) ;
+      capt = "Suspicion of a missing item in the filename" ;
+      text = "Found " + hdhC::tf_val(drs.getStr()) ;
 
       return;
     }
 
-    if( drs[j] == CMOR::n_output )
     if( !(drs[j] == t || t == n_ast) )
     {
-      text = " check failed, found " ;
-      text += hdhC::tf_assign(x_e[j],drs[j]) ;
+      capt = "DRS CV filename: check failed";
+      text = "Found " + hdhC::tf_assign(x_e[j],drs[j]) ;
       text += ", expected" ;
       text += hdhC::tf_val(t) ;
 
@@ -1072,10 +1077,11 @@ DRS_CV::testPeriod(Split& x_f)
      std::string key("1_6c");
      if( notes->inq( key, pQA->fileStr) )
      {
-       std::string capt("invalid period in the filename, found ");
-       capt += hdhC::tf_val(sd[0] + "-" + sd[1]);
+       std::string capt("invalid period in the filename");
+       std::string text("Found ");
+       text += hdhC::tf_val(sd[0] + "-" + sd[1]);
 
-       (void) notes->operate(capt) ;
+       (void) notes->operate(capt, text) ;
        notes->setCheckStatus(drsF, pQA->n_fail );
      }
 
@@ -1383,11 +1389,12 @@ DRS_CV::testPeriodDatesFormat(std::vector<std::string>& sd)
 
      if( notes->inq( key, pQA->fileStr) )
      {
-        std::string capt("period in filename of incorrect format, found ");
-        capt += sd[0] + "-" +  sd[1];
-        capt += " expected " + str ;
+        std::string capt("period in filename of incorrect format");
+        std::string text("Found ");
+        text += sd[0] + "-" +  sd[1];
+        text += " expected " + str ;
 
-        (void) notes->operate(capt) ;
+        (void) notes->operate(capt, text) ;
         notes->setCheckStatus(drsF, pQA->n_fail );
      }
   }
@@ -2142,19 +2149,21 @@ CMOR::checkMIPT_dim_axis(
   if( notes->inq( key, vMD.var->name) )
   {
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_axis ));
+    std::string text;
 
     if( f_DMD.attMap[n_axis].size() )
     {
-      capt += "no match with the CMOR table request, found";
-      capt += hdhC::tf_val(f_DMD.attMap[n_axis]);
-      capt += ", expected";
+      capt += "no match with the CMOR table request";
+      text = "Found ";
+      text += hdhC::tf_val(f_DMD.attMap[n_axis]);
+      text += ", expected";
     }
     else
      capt += "missing, CMOR table requests";
 
     capt += hdhC::tf_val(t_DMD.attMap[n_axis]);
 
-    (void) notes->operate(capt) ;
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
     pQA->setExitState( notes->getExitState() ) ;
   }

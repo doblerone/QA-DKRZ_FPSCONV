@@ -87,10 +87,10 @@ DRS_CV::checkDrivingExperiment(void)
     if( notes->inq( key, pQA->fileStr ) )
     {
       std::string capt("global " + hdhC::tf_att("driving_experiment") );
-      capt += "with wrong number of items, found" ;
-      capt += hdhC::tf_val(str) ;
+      capt += "with wrong number of items" ;
+      std::string text("Found " + hdhC::tf_val(str)) ;
 
-      (void) notes->operate( capt) ;
+      (void) notes->operate( capt, text) ;
       notes->setCheckStatus("DRS", pQA->n_fail);
     }
 
@@ -708,12 +708,13 @@ DRS_CV::checkProductName(std::string& drs_product,
 
   if( notes->inq( key, drsP) )
   {
-    std::string capt("DRS fault for path component <product>, found") ;
-    capt += hdhC::tf_val(drs_product) ;
-    capt += ", expected ";
-    capt += hdhC::tf_val(prod_choice);
+    std::string capt("DRS fault for path component <product>");
 
-    (void) notes->operate(capt) ;
+    std::string text("Found " + hdhC::tf_val(drs_product) ) ;
+    text += ", expected ";
+    text += hdhC::tf_val(prod_choice);
+
+    (void) notes->operate(capt, text) ;
     pQA->setExitState( notes->getExitState() ) ;
   }
 
@@ -959,8 +960,9 @@ DRS_CV::testPeriod(Split& x_f)
      std::string key("1_6c");
      if( notes->inq( key, pQA->fileStr) )
      {
-       std::string capt("invalid period range in the filename, found");
-       capt += hdhC::tf_val(sd[0] + "-" + sd[1]);
+       std::string capt("invalid period range in the filename");
+       std::string text("Found ");
+       text += hdhC::tf_val(sd[0] + "-" + sd[1]);
 
        (void) notes->operate(capt) ;
        notes->setCheckStatus(drsF, pQA->n_fail );
@@ -1140,7 +1142,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
       std::string key("1_6g");
       if( notes->inq( key, pQA->fileStr) )
       {
-        std::string token;
+        std::string text;
 
         std::string capt("Misaligned ");
         if( i == 0 )
@@ -1153,19 +1155,20 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
 
         if( pQA->qaTime.isTimeBounds )
         {
-          capt +="of time bounds, found difference of ";
+          capt +="of time bounds";
+          text = "Found difference of ";
           ix = 4 + i ;
-          capt += hdhC::double2String(dDiff[2+i]);
-          capt += " day(s)";
+          text += hdhC::double2String(dDiff[2+i]);
+          text += " day(s)";
         }
         else
         {
-          capt="time values: ";
+          capt="time values ";
           ix = 2 + i ;
 
-          capt += sd[i] ;
-          capt += " vs. " ;
-          capt += pDates[ix]->str();
+          text = "Found " + sd[i] ;
+          text += " vs. " ;
+          text += pDates[ix]->str();
         }
 
 
@@ -1446,7 +1449,6 @@ DRS_CV::testPeriodDatesFormat(std::vector<std::string> &sd)
 {
   // return: true means go on for testing the period cut
   std::string key("1_6f");
-  std::string capt;
   std::string str;
   std::string frequency(pQA->qaExp.getFrequency());
 
@@ -1485,11 +1487,11 @@ DRS_CV::testPeriodDatesFormat(std::vector<std::string> &sd)
   {
      if( notes->inq( key, pQA->fileStr) )
      {
-        capt = "period in filename of incorrect format";
-        capt += ", found " + sd[0] + "-" +  sd[1];
-        capt += " expected " + str ;
+        std::string capt("period in filename of incorrect format");
+        std::string text("Found " + sd[0] + "-" +  sd[1]);
+        text += ", expected " + str ;
 
-        (void) notes->operate(capt) ;
+        (void) notes->operate(capt, text) ;
 
         notes->setCheckStatus(drsF, pQA->n_fail );
      }
@@ -2460,10 +2462,11 @@ QA_Exp::checkPressureCoord(InFile &in)
        {
          std::string capt(hdhC::tf_var("plev", hdhC::colon));
          capt += "Data value does not match Pa units" ;
-         capt += ", found " + hdhC::tf_assign("p", pData);
-         capt += ", expected " + hdhC::tf_assign("p", pVarname);
 
-         (void) notes->operate(capt) ;
+         std::string text("Found " + hdhC::tf_assign("p", pData));
+         text += ", expected " + hdhC::tf_assign("p", pVarname);
+
+         (void) notes->operate(capt, text) ;
          notes->setCheckStatus("CV", pQA->n_fail);
        }
      }
@@ -2833,27 +2836,29 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
     {
       std::string capt("resolution of CORDEX ");
       capt += hdhC::tf_assign("domain", tName) ;
-      capt += " does not match, found " ;
+      capt += " does not match";
+
+      std::string text("Found ") ;
       if( is_lon && is_lat )
       {
-        capt += hdhC::tf_val(f_resol_lon) ;
+        text += hdhC::tf_val(f_resol_lon) ;
       }
       else if( is_lon )
       {
-        capt += hdhC::tf_val(f_resol_lon) ;
-        capt += " for " ;
-        capt += var_lon ;
+        text += hdhC::tf_val(f_resol_lon) ;
+        text += " for " ;
+        text += var_lon ;
       }
       else
       {
-        capt += hdhC::tf_val(f_resol_lat) ;
-        capt += " for " ;
-        capt += var_lat ;
+        text += hdhC::tf_val(f_resol_lat) ;
+        text += " for " ;
+        text += var_lat ;
       }
 
-      capt += ", required is "  + t_resol;
+      text += ", required is "  + t_resol;
 
-      (void) notes->operate(capt) ;
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
     }
   }
@@ -2998,12 +3003,14 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
     {
       std::string capt("unmatched CORDEX boundaries for the ");
       capt += tName ;
-      capt += " domain, found " ;
-      capt += text2;
-      capt += ", required " ;
-      capt += text1;
+      capt += " domain";
 
-      (void) notes->operate(capt) ;
+      std::string text("Found ") ;
+      text += text2;
+      text += ", required " ;
+      text += text1;
+
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
     }
   }
@@ -3074,13 +3081,14 @@ QA_Exp::domainCheckDims(std::string item,
     capt += tbl_id ;
     capt += ": Dimension ";
     capt += hdhC::tf_val(f_name) ;
-    capt += " does not match the grid definition, found" ;
+    capt += " does not match the grid definition";
 
-    capt += hdhC::tf_val(hdhC::itoa(f_num)) ;
-    capt += ", required" ;
-    capt += hdhC::tf_val(t_num_str);
+    std::string text("Found ") ;
+    text += hdhC::tf_val(hdhC::itoa(f_num)) ;
+    text += ", required" ;
+    text += hdhC::tf_val(t_num_str);
 
-    (void) notes->operate(capt) ;
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
   }
 
@@ -3193,12 +3201,13 @@ QA_Exp::domainCheckPole(std::string item,
       if( item.substr(0,3) == "NP " )
           item_start = 3;
 
-      std::string capt("rotated N.Pole of CORDEX domain Table 1 does not match, found ");
-      capt += hdhC::tf_assign(item.substr(item_start), f_num);
-      capt += ", required" ;
-      capt += hdhC::tf_val(t_num);
+      std::string capt("rotated N.Pole of CORDEX domain Table 1 does not match");
+      std::string text("Found ");
+      text += hdhC::tf_assign(item.substr(item_start), f_num);
+      text += ", required" ;
+      text += hdhC::tf_val(t_num);
 
-      (void) notes->operate(capt) ;
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail);
     }
   }
@@ -3354,13 +3363,14 @@ QA_Exp::checkHeightValue(InFile &in)
        if( notes->inq( key, var.name ) )
        {
          std::string capt(hdhC::tf_var("height") + "requires a value [0-10]m") ;
+         std::string text;
          if( tmp_mv.size() )
          {
-           capt += ", found" ;
-           capt += hdhC::tf_val( hdhC::double2String( tmp_mv[0]) ) ;
+           text= "Found " ;
+           text += hdhC::tf_val( hdhC::double2String( tmp_mv[0]) ) ;
          }
 
-         (void) notes->operate( capt) ;
+         (void) notes->operate( capt, text) ;
          notes->setCheckStatus("CV", pQA->n_fail);
        }
      }
@@ -3465,18 +3475,30 @@ QA_Exp::createVarMetaData(void)
      std::string key("9_1");
      if( notes->inq( key, pQA->fileStr) )
      {
-       std::string capt("multiple data variables are present, found ");
+       std::string name = getVarnameFromFilename() ;
 
+       std::string capt(hdhC::tf_var(name, hdhC::colon));
+       capt += " Multiple data variables are present";
+
+       std::string text("Found also ");
+
+       size_t count=0;
        for( size_t j=0 ; j < pQA->pIn->dataVarIndex.size() ; ++j )
        {
          Variable &var = pQA->pIn->variable[pQA->pIn->dataVarIndex[j]];
-         if(j)
-           capt += ", ";
 
-         capt += var.name;
+         if( var.name == name )
+             continue;
+
+         if(count)
+           text += ", ";
+         else
+             ++count;
+
+         text += var.name;
        }
 
-       (void) notes->operate(capt) ;
+       (void) notes->operate(capt, text) ;
        notes->setCheckStatus("CV", pQA->n_fail );
      }
   }
@@ -3573,17 +3595,20 @@ QA_Exp::checkVarTableEntry_cell_methods(
     if( notes->inq( key, vMD.var->name) )
     {
       std::string capt;
+      std::string text;
 
       if( cm_val.size() )
       {
         capt = hdhC::tf_att(vMD.var->name, cm_name) ;
-        capt += "does not match, found" ;
-        capt += hdhC::tf_val(cm_val);
-        capt += " expected";
+        capt += "does not match";
+
+        text = "Found " ;
+        text += hdhC::tf_val(cm_val);
+        text += ", expected";
         if( isOpt )
-          capt += hdhC::tf_val(t_DMD_entry.attMap[n_cell_methods_opt]) ;
+          text += hdhC::tf_val(t_DMD_entry.attMap[n_cell_methods_opt]) ;
         else
-          capt += hdhC::tf_val(t_DMD_entry.attMap[n_cell_methods]) ;
+          text += hdhC::tf_val(t_DMD_entry.attMap[n_cell_methods]) ;
       }
       else
       {
@@ -3890,12 +3915,14 @@ QA_Exp::checkVariableTypeX(size_t v, size_t i, size_t j, std::string& tName)
         capt = "auxiliary ";
 
       capt += hdhC::tf_var(var.name);
-      capt += "has wrong data type, found";
-      capt += hdhC::tf_val(s);
-      capt += ", expected";
-      capt += hdhC::tf_val(tAttValue);
+      capt += "has wrong data type";
 
-      (void) notes->operate(capt) ;
+      std::string text("Found ");
+      text += hdhC::tf_val(s);
+      text += ", expected";
+      text += hdhC::tf_val(tAttValue);
+
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail );
     }
   }
@@ -5227,11 +5254,12 @@ VariableMetaData::verifyPercent(void)
         if( notes->inq( key, var->name) )
         {
           std::string capt( hdhC::tf_var(var->name, ":"));
-          capt += "Suspicion of fractional data range for units [%], found range ";
-          capt += "[" + hdhC::double2String(qaData.statMin.getSampleMin());
-          capt += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
+          capt += "Suspicion of fractional data range for units [%]";
+          std::string text("Found range [");
+          text += hdhC::double2String(qaData.statMin.getSampleMin());
+          text += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
 
-          (void) notes->operate(capt) ;
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus("CV", pQA->n_fail );
         }
       }
@@ -5247,11 +5275,11 @@ VariableMetaData::verifyPercent(void)
         std::string key("6_9");
         if( notes->inq( key, var->name) )
         {
-          std::string capt( "Suspicion of percentage data range for units <1>, found range " ) ;
-          capt += "[" + hdhC::double2String(qaData.statMin.getSampleMin());
-          capt += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
+          std::string capt("Suspicion of percentage data range for units <1>"); std::string text("Found range [" ) ;
+          text += hdhC::double2String(qaData.statMin.getSampleMin());
+          text += ", " + hdhC::double2String(qaData.statMax.getSampleMax()) + "]" ;
 
-          (void) notes->operate(capt) ;
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus("MD(variable)", pQA->n_fail );
         }
       }

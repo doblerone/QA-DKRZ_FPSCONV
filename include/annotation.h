@@ -95,7 +95,9 @@ class Annotation : public IObj
       mail_body overrule the default procedure for email notification.
       A leading ! may suppress the upper-case conversion of the initial character
       of caption */
-  bool operate(std::string caption, std::string text="",
+  bool operate(std::string caption, std::string text,
+          std::string mail_subject="", std::string mail_body="") ;
+  bool operate(std::string caption, std::vector<std::string>* text=0,
           std::string mail_subject="", std::string mail_body="") ;
   //! Parse directives.
   void parse();
@@ -110,7 +112,8 @@ class Annotation : public IObj
   void printFlags(void);
   void printHeader(std::ofstream*);
   //! Detailed description of a condition raising an annotation.
-  void printNotes(std::string&, std::string&, std::string, bool is=false );
+  void printNotes(std::string&, std::string&, std::vector<std::string>&,
+                  bool is=false );
 
   //! Insert a directive internally aside a check-list file.
   void push_back(std::string pf_code, std::string pf_var,

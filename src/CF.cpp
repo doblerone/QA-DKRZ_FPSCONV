@@ -478,6 +478,7 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
     if( i > -1 )
     {
       std::string capt0;
+      std::string text;
       if( var.isCoordinate() )
       {
         if( !var.coord.isCoordVar )
@@ -501,19 +502,21 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
         {
           if( mv.valExcp->countInf )
           {
-            capt += "be <Inf> found at index " ;
-            capt += mv.indicesStr(mv.valExcp->firstInf_ix) ;
+            capt += "be <Inf>";
+            text="Found first occurrence at index " ;
+            text += mv.indicesStr(mv.valExcp->firstInf_ix) ;
           }
 
           if( mv.valExcp->countNaN )
           {
             if( mv.valExcp->countInf )
               capt += ", ";
-            capt += "<NaN> found at index " ;
-            capt += mv.indicesStr(mv.valExcp->firstNaN_ix) ;
+            capt += "<NaN>";
+            text="Found first occurrence at index " ;
+            text += mv.indicesStr(mv.valExcp->firstNaN_ix) ;
           }
 
-          (void) notes->operate(capt0 + capt) ;
+          (void) notes->operate(capt0 + capt, text) ;
           notes->setCheckStatus( n_CF, fail );
         }
       }
@@ -533,18 +536,18 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
             {
               if( var.isValidAtt(n_FillValue) )
               {
-                capt += "be ";
+                capt += "have ";
                 capt += hdhC::tf_assign(n_FillValue,
                                       var.getAttValue(n_FillValue)) ;
-                capt += " found" ;
+                 text.clear() ;
                 isFirst[0]=false;
               }
               else if( isFirst[1] && var.isValidAtt(n_missing_value) )
               {
-                capt += "be " ;
+                capt += "have " ;
                 capt += hdhC::tf_assign(n_missing_value,
                                       var.getAttValue(n_missing_value)) ;
-                capt += " found missing_value" ;
+                text.clear() ;
                 isFirst[1]=false;
               }
               else if( isFirst[2] )
@@ -552,35 +555,39 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
                 capt += "be default " ;
                 capt += hdhC::tf_assign(n_FillValue,
                                       hdhC::double2String(mv[i])) ;
-                capt += " found" ;
+                text.clear();
                 isFirst[2]=false;
               }
             }
 
             else if( isFirst[3] && mv.valExcp->exceptionMode[e] == '<')
             {
-              capt += "fall below " ;
-              capt += hdhC::tf_assign(n_valid_min, var.getAttValue(n_valid_min)) ;
-              capt += ", found" ;
-              capt += hdhC::tf_val(hdhC::double2String(mv[i])) ;
+              capt += "fall below " + hdhC::tf_att(n_valid_min) ;
+
+              text ="Found ";
+              text += hdhC::tf_val(hdhC::double2String(mv[i])) ;
+              text += " for " ;
+              text += hdhC::tf_assign(n_valid_min, var.getAttValue(n_valid_min)) ;
+
               isFirst[3]=false;
             }
             else if( isFirst[4] && mv.valExcp->exceptionMode[e] == '>')
             {
-              capt += "exceed " ;
-              capt += hdhC::tf_assign(n_valid_max, var.getAttValue(n_valid_max)) ;
-              capt += ", found" ;
-              capt += hdhC::tf_val(hdhC::double2String(mv[i])) ;
+              capt += "exceed " + hdhC::tf_att(n_valid_max);
+              text= "Found ";
+              text += hdhC::tf_val(hdhC::double2String(mv[i])) ;
+              text += " for " ;
+              text += hdhC::tf_assign(n_valid_max, var.getAttValue(n_valid_max)) ;
               isFirst[4]=false;
             }
             else if( isFirst[5] && mv.valExcp->exceptionMode[e] == 'R')
             {
-              capt += "be out of " + n_valid_range ;
+              capt += "be out of " + hdhC::tf_att(n_valid_range) ;
               int j = var.getAttIndex(n_valid_range);
-              capt += "=<"+ var.attValue[j][0] ;
-              capt += ", " + var.attValue[j][1] + ">" ;
-              capt += " found" ;
+              text= "Found ";
               capt += hdhC::tf_val(hdhC::double2String(mv[i])) ;
+              text +="for the range <" + var.attValue[j][0] ;
+              text += ", " + var.attValue[j][1] + ">" ;
               isFirst[5]=false;
             }
 
@@ -589,7 +596,7 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
               capt += " at index " ;
               capt += mv.indicesStr(i) ;
 
-              (void) notes->operate(capt0+capt) ;
+              (void) notes->operate(capt0+capt, text) ;
               notes->setCheckStatus( n_CF, fail );
             }
           }
@@ -659,18 +666,20 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
     {
       // no considering about matrix indexing
       std::string capt("coordinate " + hdhC::tf_var(var.name));
-      capt += "has to be strictly monotonic, found around index " ;
-      capt += mv.indicesStr(i) + " values" ;
+      capt += "has to be strictly monotonic";
+
+      std::string text("Found around index ") ;
+      text += mv.indicesStr(i) + " values" ;
 
       if(i>1)
-        capt += hdhC::tf_val(hdhC::double2String(mv[i-2]));
+        text += hdhC::tf_val(hdhC::double2String(mv[i-2]));
 
-      capt += "," + hdhC::tf_val(hdhC::double2String(mv[i-1]));
+      text += "," + hdhC::tf_val(hdhC::double2String(mv[i-1]));
 
       if( i < mv.size() )
-        capt += "," + hdhC::tf_val(hdhC::double2String(mv[i]));
+        text += "," + hdhC::tf_val(hdhC::double2String(mv[i]));
 
-      (void) notes->operate(capt) ;
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus( n_CF, fail );
     }
   }
@@ -679,17 +688,18 @@ CF::checkCoordinateValues(Variable& var, bool isFormTermAux, T x)
   {
     std::vector<size_t> vs_ix ;
     std::string capt("coordinate " + hdhC::tf_var(var.name));
-    capt += "has to be strictly monotonic at indices " ;
+    capt += "has to be strictly monotonic";
 
-    capt += mv.indicesStr(dif_ix-1) ;
-    capt += " and " ;
-    capt += mv.indicesStr(dif_ix) ;
-    capt += ", found equal values" ;
+    std::string text("Found at indices ") ;
+    text += mv.indicesStr(dif_ix-1) ;
+    text += " and " ;
+    text += mv.indicesStr(dif_ix) ;
+    text += ", found equal values" ;
 
-    capt += hdhC::tf_val(hdhC::double2String(mv[dif_ix-1]));
-    capt += "," + hdhC::tf_val(hdhC::double2String(mv[dif_ix]));
+    text += hdhC::tf_val(hdhC::double2String(mv[dif_ix-1]));
+    text += "," + hdhC::tf_val(hdhC::double2String(mv[dif_ix]));
 
-    (void) notes->operate(capt) ;
+    (void) notes->operate(capt, text) ;
     notes->setCheckStatus( n_CF, fail );
   }
 
@@ -1051,10 +1061,12 @@ CF::finalAtt_axis(void)
         if( notes->inq(bKey + "4a", var.name) )
         {
           std::string capt(hdhC::tf_att(var.name, n_axis));
-          capt += "is not X,Y,Z,T, found" ;
-          capt += hdhC::tf_val(var.getAttValue(n_axis));
+          capt += "is not X,Y,Z,T";
 
-          (void) notes->operate(capt) ;
+          std::string text("Found ") ;
+          text += hdhC::tf_val(var.getAttValue(n_axis));
+
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus( n_CF, fail );
         }
       }
@@ -1177,16 +1189,18 @@ CF::finalAtt_axis(void)
         {
           std::string capt( hdhC::tf_var(var.name) );
           capt += "must not depend on more than one coordinate " + n_variable ;
-          capt += " with the same axis, found:";
+          capt += " with the same axis";
+
+          std::string text("Found ");
 
           for( size_t k=0 ; k < ix_CoordAxis[l].size() ; ++k )
           {
             if( k )
-              capt += "," ;
-            capt += hdhC::tf_val(pIn->variable[ ix_CoordAxis[l][k] ].name) ;
+              text += "," ;
+            text += hdhC::tf_val(pIn->variable[ ix_CoordAxis[l][k] ].name) ;
           }
 
-          (void) notes->operate(capt) ;
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus( n_CF, fail );
         }
       }
@@ -1577,10 +1591,11 @@ CF::finalAtt_positive(void)
          if( !is && notes->inq(bKey + "43a", var.name) )
          {
            std::string capt(hdhC::tf_att(var.name, n_positive));
-           capt += "should be Up|Down, found" ;
-           capt += hdhC::tf_val(var.attValue[j][0]) ;
+           capt += "should be Up|Down";
+           std::string text("Found ") ;
+           text += hdhC::tf_val(var.attValue[j][0]) ;
 
-           (void) notes->operate(capt) ;
+           (void) notes->operate(capt, text) ;
            notes->setCheckStatus( n_CF, fail );
          }
        }
@@ -3101,6 +3116,7 @@ CF::timeUnitsFormat(Variable& var, bool isAnnot)
 
   int seq[] = { 5, 5, 5, 5, 5};  // sequence of recognised units items
 
+  std::vector<std::string> capt;
   std::vector<std::string> text;
   size_t prevSz;
 
@@ -3110,7 +3126,7 @@ CF::timeUnitsFormat(Variable& var, bool isAnnot)
 
     if( tryFreq )
     {
-      if( timeUnitsFormat_frq(x_units[itm], text) )
+      if( timeUnitsFormat_frq(x_units[itm], capt, text) )
       {
         tryFreq=false;
         seq[itm]=itm;
@@ -3121,7 +3137,7 @@ CF::timeUnitsFormat(Variable& var, bool isAnnot)
     }
     else if( tryKey )
     {
-      if( timeUnitsFormat_key(x_units[itm], text) )
+      if( timeUnitsFormat_key(x_units[itm], capt, text) )
       {
         tryKey=false;
         seq[itm]=itm;
@@ -3132,7 +3148,7 @@ CF::timeUnitsFormat(Variable& var, bool isAnnot)
     }
     else if( tryDate )
     {
-      if( timeUnitsFormat_date(var, x_units[itm], text, isAnnot) )
+      if( timeUnitsFormat_date(var, x_units[itm], capt, text, isAnnot) )
       {
         tryDate=false;
         seq[itm]=itm;
@@ -3143,7 +3159,7 @@ CF::timeUnitsFormat(Variable& var, bool isAnnot)
     }
     else if( tryTime )
     {
-      if( timeUnitsFormat_time(x_units[itm], text) )
+      if( timeUnitsFormat_time(x_units[itm], capt, text) )
       {
         tryTime=false;
         seq[itm]=itm;
@@ -3154,7 +3170,7 @@ CF::timeUnitsFormat(Variable& var, bool isAnnot)
     }
     else if( tryTZ )
     {
-      if( timeUnitsFormat_TZ(x_units[itm], text) )
+      if( timeUnitsFormat_TZ(x_units[itm], capt, text) )
       {
         tryTZ=false;
         seq[itm]=itm;
@@ -3212,18 +3228,16 @@ CF::timeUnitsFormat(Variable& var, bool isAnnot)
 
   if( countInvalid && countValid > countInvalid && isAnnot )
   {
-    for( size_t t=0 ; t < text.size() ; ++t )
-    {
-      if( notes->inq(bKey + "44b", var.name) )
-      {
-        std::string capt(hdhC::tf_att(var.name, n_units, hdhC::colon)) ;
-        capt += text[t];
-        capt += hdhC::tf_val(var.units);
+      std::string capt0(hdhC::tf_att(var.name, n_units, hdhC::colon)) ;
 
-        (void) notes->operate(capt) ;
-        notes->setCheckStatus( n_CF, fail );
+      for( size_t i=0 ; i < text.size() ; ++i )
+      {
+        if( notes->inq(bKey + "44b", var.name) )
+        {
+          (void) notes->operate(capt0+capt[i], text[i]+hdhC::tf_val(var.units)) ;
+          notes->setCheckStatus( n_CF, fail );
+        }
       }
-    }
 
     return true;
   }
@@ -3232,7 +3246,9 @@ CF::timeUnitsFormat(Variable& var, bool isAnnot)
 }
 
 bool
-CF::timeUnitsFormat_frq(std::string item, std::vector<std::string>& text )
+CF::timeUnitsFormat_frq(std::string item,
+                        std::vector<std::string>& capt,
+                        std::vector<std::string>& text )
 {
   std::vector<std::string> period;
   period.push_back("year");
@@ -3259,21 +3275,24 @@ CF::timeUnitsFormat_frq(std::string item, std::vector<std::string>& text )
   if( hdhC::isAmong(item, period) )
     return true;  // ok
 
-  text.push_back("Missing or wrong frequency, found in") ;
+  capt.push_back("Missing or wrong frequency") ;
+  text.push_back("Found in ") ;
 
   return false ;
 }
 
 bool
-CF::timeUnitsFormat_key(std::string item, std::vector<std::string>& text)
+CF::timeUnitsFormat_key(std::string item,
+                        std::vector<std::string>& capt,
+                        std::vector<std::string>& text )
 {
   if( item == "since" )
     return true;  // ok
 
   if( item == "before" )
   {
-    text.push_back("Wrong key-word" + hdhC::tf_val(item)) ;
-    text.back() += ", found in";
+    capt.push_back("Wrong key-word" + hdhC::tf_val(item)) ;
+    text.push_back("Found in ");
     return true;
   }
 
@@ -3282,7 +3301,8 @@ CF::timeUnitsFormat_key(std::string item, std::vector<std::string>& text)
 
 bool
 CF::timeUnitsFormat_date(Variable& var, std::string item,
-                         std::vector<std::string>& text, bool isAnnot)
+                        std::vector<std::string>& capt,
+                        std::vector<std::string>& text, bool isAnnot)
 {
   // true: is a date, perhaps faulty
 
@@ -3340,8 +3360,9 @@ CF::timeUnitsFormat_date(Variable& var, std::string item,
   // a colon is never valid
   if(isColon)
   {
-    text.push_back("The date item should be separated by");
-    text.back() += hdhC::tf_val("-") + ", found";
+    capt.push_back("The date item should be separated by");
+    capt.back() += hdhC::tf_val("-");
+    text.push_back("Found ");
     text.back() += hdhC::tf_val(":") + " in";
   }
 
@@ -3358,15 +3379,17 @@ CF::timeUnitsFormat_date(Variable& var, std::string item,
 
   if( countItems < 3 )
   {
-    text.push_back("Invalid date, expected yyyy-mm-dd found") ;
-    text.back() += hdhC::tf_val(item) + " in";
+    capt.push_back("Invalid date, expected yyyy-mm-dd") ;
+    text.push_back("Found " + hdhC::tf_val(item) + " in ");
   }
 
   return true;
 }
 
 bool
-CF::timeUnitsFormat_time(std::string item, std::vector<std::string>& text)
+CF::timeUnitsFormat_time(std::string item,
+                        std::vector<std::string>& capt,
+                        std::vector<std::string>& text )
 {
   // true: is a time item, perhaps faulty
 
@@ -3413,22 +3436,25 @@ CF::timeUnitsFormat_time(std::string item, std::vector<std::string>& text)
   // a colon is never valid
   if( item.find('-') < std::string::npos )
   {
-    text.push_back("Time item should be separated by");
-    text.back() += hdhC::tf_val(":") + ", found";
-    text.back() += hdhC::tf_val("-") + " in";
+    capt.push_back("Time item should be separated by");
+    capt.back() += hdhC::tf_val(":") ;
+    text.push_back("Found " + hdhC::tf_val("-") + " in ");
   }
 
   if( countItems < x_item.size() )
   {
-    text.push_back("Invalid time, expected hh:mm:ss[.DEC] found") ;
-    text.back() += hdhC::tf_val(item) + " in";
+    capt.push_back("Invalid time, expected hh:mm:ss[.DEC]") ;
+    text.push_back(hdhC::tf_val(item) + " in");
   }
 
   return true;
 }
 
 bool
-CF::timeUnitsFormat_TZ(std::string item, std::vector<std::string>& text)
+CF::timeUnitsFormat_TZ(std::string item,
+                        std::vector<std::string>& capt,
+                        std::vector<std::string>& text )
+
 {
   // true: is TZ item
 
@@ -3447,7 +3473,8 @@ CF::timeUnitsFormat_TZ(std::string item, std::vector<std::string>& text)
 
   if( item[0] == ':' )  // invalid begin
   {
-    text.push_back("time-zone item should not begin with a colon, found in") ;
+    capt.push_back("time-zone item should not begin with a colon");
+    text.push_back("Found in ") ;
     ++countNo;
   }
 
@@ -3457,8 +3484,8 @@ CF::timeUnitsFormat_TZ(std::string item, std::vector<std::string>& text)
   {
     if( ! (t0 == "utc" || t0 == "gmt") )
     {
-      text.push_back("invalid time-zone indicator, found") ;
-      text.back() += hdhC::tf_val(item);
+      capt.push_back("invalid time-zone indicator") ;
+      text.push_back(hdhC::tf_val(item));
       text.back() += " instead of Z, UTC, GMT, or omission";
 
       return true;
@@ -3495,8 +3522,8 @@ CF::timeUnitsFormat_TZ(std::string item, std::vector<std::string>& text)
   if( countNo >= countYes )
     return false;
 
-  text.push_back("invalid time-zone item, found in") ;
-  text.back() += hdhC::tf_val(item);
+  capt.push_back("invalid time-zone item") ;
+  text.push_back("Found in " + hdhC::tf_val(item) );
 
   return true;
 }
@@ -3961,10 +3988,10 @@ CF::chap23_reco(void)
         else
           capt += "for attributes of " + hdhC::tf_var(*(type[i])) ;
 
-        capt += ": Avoid same names when case is ignored, found";
-        capt += what[i];
+        capt += ": Avoid same names when case is ignored";
+        std::string text("Found " + what[i]);
 
-        (void) notes->operate(capt) ;
+        (void) notes->operate(capt, text) ;
         notes->setCheckStatus( n_CF, fail );
       }
    }
@@ -4232,7 +4259,7 @@ CF::chap251(void)
                  capt += "should not be within the range specified by ";
                  capt += n_valid_min + " and " + n_valid_max  ;
 
-                 std::string text("Found: " + hdhC::tf_assign(mfName[k], mfvStr[k]));
+                 std::string text("Found " + hdhC::tf_assign(mfName[k], mfvStr[k]));
                  text += ", [" + hdhC::tf_assign(n_valid_min, var.attValue[jxVMin][0]) ;
                  text += ", " + hdhC::tf_assign(n_valid_max, var.attValue[jxVMax][0]) + "]" ;
 
@@ -4253,7 +4280,7 @@ CF::chap251(void)
                  capt += "should not be smaller than the " ;
                  capt += n_valid_max +" value" ;
 
-                 std::string text("Found: " + hdhC::tf_assign(mfName[k], mfvStr[k]));
+                 std::string text("Found " + hdhC::tf_assign(mfName[k], mfvStr[k]));
                  text += ", " + hdhC::tf_assign(n_valid_max, var.attValue[jxVMax][0]) ;
 
                  (void) notes->operate(capt, text) ;
@@ -4272,7 +4299,7 @@ CF::chap251(void)
                  capt += "should not be larger than the ";
                  capt += n_valid_min + " value" ;
 
-                 std::string text("Found: " + hdhC::tf_assign(mfName[k], mfvStr[k]));
+                 std::string text("Found " + hdhC::tf_assign(mfName[k], mfvStr[k]));
                  text += ", " + hdhC::tf_assign(n_valid_min, var.attValue[jxVMin][0]) ;
 
                  (void) notes->operate(capt, text) ;
@@ -4368,12 +4395,13 @@ CF::chap26(void)
               {
                 std::string capt(hdhC::tf_var(var.name));
                 capt += "and " + hdhC::tf_att(aName);
-                capt += "have to be the same type, found ";
-                capt += hdhC::tf_val(pIn->nc.getTypeStr(var.attType[j])) ;
-                capt += ", expected";
-                capt += hdhC::tf_val(pIn->nc.getTypeStr(var.type)) ;
+                capt += "have to be the same type";
+                std::string text("Found ");
+                text += hdhC::tf_val(pIn->nc.getTypeStr(var.attType[j])) ;
+                text += ", expected";
+                text += hdhC::tf_val(pIn->nc.getTypeStr(var.type)) ;
 
-                (void) notes->operate(capt) ;
+                (void) notes->operate(capt, text) ;
                 notes->setCheckStatus( n_CF, fail );
               }
             }
@@ -4386,10 +4414,11 @@ CF::chap26(void)
               if( notes->inq(bKey + "26b", var.name) )
               {
                 std::string capt(hdhC::tf_att(var.name, aName));
-                capt += "should be character type, found ";
-                capt += pIn->nc.getTypeStr(var.attType[j]) ;
+                capt += "should be character type";
+                std::string text("Found ");
+                text += pIn->nc.getTypeStr(var.attType[j]) ;
 
-                (void) notes->operate(capt) ;
+                (void) notes->operate(capt, text) ;
                 notes->setCheckStatus( n_CF, fail );
               }
             }
@@ -4402,10 +4431,11 @@ CF::chap26(void)
               if( notes->inq(bKey + "26c", var.name) )
               {
                 std::string capt(hdhC::tf_att(var.name, aName));
-                capt += "should be numeric type, found ";
+                capt += "should be numeric type";
+                std::string text("Found ");
                 capt += pIn->nc.getTypeStr(var.attType[j]) ;
 
-                (void) notes->operate(capt) ;
+                (void) notes->operate(capt, text) ;
                 notes->setCheckStatus( n_CF, fail );
               }
             }
@@ -4689,10 +4719,12 @@ CF::chap33(void)
             std::string capt(hdhC::tf_att(var.name, n_standard_name, hdhC::colon) );
             capt += "The ";
             capt += hdhC::tf_assign("modifier", n_number_of_observations);
-            capt += " requires units=1, found";
-            capt += hdhC::tf_val(var.units) ;
+            capt += " requires units=1";
 
-            (void) notes->operate(capt) ;
+            std::string text("Found ");
+            text += hdhC::tf_val(var.units) ;
+
+            (void) notes->operate(capt, text) ;
             notes->setCheckStatus( n_CF, fail );
           }
         }
@@ -4788,25 +4820,29 @@ CF::chap34(void)
         }
 
         std::string text;
+        std::string capt;
 
         if( non_var.size() > 2 && countSuccess )
         {
-          text  = "CF requires a blank separated list of variable names, ";
-          text += "found names embedded in text";
+          capt  = "CF requires a blank separated list of variable names";
+          text = "Found names embedded in text";
         }
         else if( non_var.size() )
         {
-          text  = "declares non-existing variables, found " ;
-          text += hdhC::getVector2Str(non_var) ;
+          capt  = "declares non-existing variables" ;
+          text = "Found " + hdhC::getVector2Str(non_var) ;
         }
         else if(isComma)
-          text = "CF requires a blank separated list of variable names";
+        {
+          capt = "CF requires a blank separated list of variable names";
+          text.clear();
+        }
 
         if( text.size() && notes->inq(bKey + "34a", var.name) )
         {
-          std::string capt(hdhC::tf_att(var.name, n_ancillary_variables));
+          std::string capt0(hdhC::tf_att(var.name, n_ancillary_variables));
 
-          (void) notes->operate(capt + text) ;
+          (void) notes->operate(capt0+capt, text) ;
           notes->setCheckStatus( n_CF, fail );
         }
      }
@@ -4899,7 +4935,7 @@ CF::chap35(void)
               std::string capt(hdhC::tf_var(var.name, hdhC::colon));
               capt += "Values of flag_values have to be mutually exclusive";
 
-              std::string text("found ");
+              std::string text("Found ");
               text += var.name + ":flag_values=" ;
               for( int l=0 ; l < sz ; ++l )
               {
@@ -4929,7 +4965,7 @@ CF::chap35(void)
               std::string capt("type of" + hdhC::tf_val(var.name, hdhC::blank));
               capt += "has to be bit-field-expression compatible";
 
-              std::string text("type of ");
+              std::string text("Type of ");
               text += var.name + "is" ;
               text += pIn->nc.getVarTypeStr(var.name) ;
 
@@ -4997,12 +5033,13 @@ CF::chap35(void)
                 capt += f_name[k0] ;
                 capt += " and ";
                 capt += f_name[k1] ;
-                capt += " require same number of items, found ";
-                capt += hdhC::tf_assign("num", hdhC::itoa(pf[k0]->size())) ;
-                capt += " vs.";
-                capt += hdhC::tf_val(hdhC::itoa(pf[k1]->size())) ;
+                capt += " require same number of items";
+                std::string text("Found ");
+                text += hdhC::tf_assign("num", hdhC::itoa(pf[k0]->size())) ;
+                text += " vs.";
+                text += hdhC::tf_val(hdhC::itoa(pf[k1]->size())) ;
 
-                (void) notes->operate(capt) ;
+                (void) notes->operate(capt, text) ;
                 notes->setCheckStatus( n_CF, fail );
               }
             }
@@ -5693,7 +5730,7 @@ CF::chap432(Variable& var,
       capt += "The attributes " + n_formula_terms + " and " ;
       capt += n_standard_name + " are not compatible";
 
-      std::string text("found ") ;
+      std::string text("Found ") ;
       text += hdhC::tf_att(var.name, n_standard_name, var.attValue[att_sn_ix][0]) + " vs. " ;
       text += hdhC::tf_att(var.name,n_formula_terms, var.attValue[att_ft_ix][0]) ;
 
@@ -6145,12 +6182,13 @@ CF::chap432_verify_FT(
              capt += hdhC::tf_val(paramVarUnits[0].first, hdhC::blank) ;
              capt += "and";
              capt += hdhC::tf_val(paramVarUnits[k].first, hdhC::blank);
-             capt += "should be identical, found";
-             capt += hdhC::tf_val(paramVarUnits[0].second, hdhC::blank) ;
-             capt += "vs." ;
-             capt += hdhC::tf_val(paramVarUnits[k].second) ;
+             capt += "should be identical";
+             std::string text("Found ");
+             text += hdhC::tf_val(paramVarUnits[0].second, hdhC::blank) ;
+             text += "vs." ;
+             text += hdhC::tf_val(paramVarUnits[k].second) ;
 
-             (void) notes->operate(capt) ;
+             (void) notes->operate(capt, text) ;
              notes->setCheckStatus( n_CF, fail );
            }
 
@@ -6176,10 +6214,11 @@ CF::chap432_verify_FT(
           }
 
           std::string capt(hdhC::tf_att(var.name, n_formula_terms)) ;
-          capt += "with syntax error, expected " + t ;
-          capt += ", found" + hdhC::tf_val(var.attValue[att_ft_ix][0]) ;
+          capt += "with syntax error";
+          std::string text("Expected " + t) ;
+          text += ", found" + hdhC::tf_val(var.attValue[att_ft_ix][0]) ;
 
-          (void) notes->operate(capt) ;
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus( n_CF, fail );
         }
 
@@ -6384,10 +6423,11 @@ CF::chap441(Variable& var)
       if( notes->inq(bKey + "441a", var.name) )
       {
         std::string capt(hdhC::tf_att(var.name, n_month_lengths)) ;
-        capt += "requires 12 values, found" ;
-        capt += hdhC::tf_val(hdhC::getVector2Str(var.attValue[ml])) ;
+        capt += "requires 12 values";
+        std::string text("Found ") ;
+        text += hdhC::tf_val(hdhC::getVector2Str(var.attValue[ml])) ;
 
-        (void) notes->operate(capt) ;
+        (void) notes->operate(capt, text) ;
         notes->setCheckStatus( n_CF, fail );
       }
     }
@@ -6411,6 +6451,7 @@ CF::chap441(Variable& var)
     isLMV=true;
 
     std::string capt;
+    std::string text;
 
     // value must be in the range 1-12
     if( var.attValue[i][0].size() )
@@ -6421,8 +6462,10 @@ CF::chap441(Variable& var)
       if(! (iv > 0 && iv < 13) )
       {
         capt = hdhC::tf_att(var.name, n_leap_month) ;
-        capt += "requires a value in the range 1-12, found";
-        capt += hdhC::tf_val(var.attValue[i][0]);
+        capt += "requires a value in the range 1-12";
+
+        text="Found ";
+        text += hdhC::tf_val(var.attValue[i][0]);
       }
     }
     else  // empty attribute
@@ -6433,7 +6476,7 @@ CF::chap441(Variable& var)
 
     if( capt.size() && notes->inq(bKey + "441c", var.name) )
     {
-      (void) notes->operate(capt) ;
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus( n_CF, fail );
     }
   }
@@ -7062,7 +7105,7 @@ CF::chap6(void)
              capt += "does not share a " + n_dimension ;
              capt += " with associated " + hdhC::tf_var(dv.name);
 
-             std::string text("label: ");
+             std::string text("Label: ");
              text += label.getDimNameStr(true);
              text += "\n " + n_variable + ": ";
              text += dv.getDimNameStr(true);
@@ -7153,18 +7196,18 @@ CF::chap6(void)
             capt += hdhC::tf_val("region", hdhC::blank) ;
             capt += "requires labels taken from";
             capt += hdhC::tf_val(std_name_table.filename) ;
-            capt += ", found" ;
+            std::string text("Found ") ;
             for(size_t f=0 ; f < vs_region_file.size() ; ++f )
             {
               if( !hdhC::isAmong(vs_region_file[f], vs_region_table) )
               {
                 if(f)
-                  capt += ",";
-                capt += hdhC::tf_val(vs_region_file[f]) ;
+                  text += ",";
+                text += hdhC::tf_val(vs_region_file[f]) ;
               }
             }
 
-            (void) notes->operate(capt) ;
+            (void) notes->operate(capt, text) ;
             notes->setCheckStatus( n_CF, fail );
           }
         }
@@ -7309,7 +7352,7 @@ CF::chap71(void)
         capt += "s of the associated " +  n_variable;
         capt += hdhC::tf_val(var_has.getDimNameStr(true)) ;
 
-        std::string text("Found: ");
+        std::string text("Found ");
         text += var_is.getDimNameStr(true);
         text += " vs. " + var_has.getDimNameStr(true);
 
@@ -7337,7 +7380,7 @@ CF::chap71(void)
           capt += "additional ";
         capt += n_dimension + " for the vertices" ;
 
-        std::string text("Found: ");
+        std::string text("Found ");
         text += var_is.getDimNameStr(true);
         text += " vs. " + var_has.getDimNameStr(true);
 
@@ -7377,7 +7420,7 @@ CF::chap71(void)
         capt += hdhC::blank + hdhC::tf_var(var_is.name);
         capt += "should be numeric type" ;
 
-        std::string text("Found: type=" );
+        std::string text("Found type=" );
         text += pIn->nc.getVarTypeStr(var_is.name);
 
         (void) notes->operate(capt, text) ;
@@ -7617,15 +7660,16 @@ CF::chap72(void)
         if(is && notes->inq(bKey + "72c", mvar.name) )
         {
           std::string capt(hdhC::tf_var(mvar.name) + "requires missing ") ;
+          std::string text;
           if( cm_key[0].find(n_area) < std::string::npos )
             capt += hdhC::tf_assign(n_units, "m2");
           else if( cm_key[0].find("volume") < std::string::npos )
             capt += hdhC::tf_assign(n_units, "m3");
 
           if( mvar.units.size() )
-            capt += ", found" + hdhC::tf_val(mvar.units);
+            text = "Found" + hdhC::tf_val(mvar.units);
 
-          (void) notes->operate(capt) ;
+          (void) notes->operate(capt, text) ;
           notes->setCheckStatus( n_CF, fail );
         }
 
@@ -7682,10 +7726,10 @@ CF::chap73(void)
       {
         std::string capt("Only data variables may have ");
         capt += hdhC::tf_att(hdhC::empty, n_cell_methods, hdhC::no_colon);
-        capt += ", found for" ;
-        capt += hdhC::tf_val(var.name);
+        std::string text("Found for ") ;
+        text += hdhC::tf_val(var.name);
 
-        (void) notes->operate(capt) ;
+        (void) notes->operate(capt, text) ;
         notes->setCheckStatus( n_CF, fail );
       }
 
@@ -7821,10 +7865,11 @@ CF::chap73(void)
       if( notes->inq(bKey + "73a", var.name) )
       {
          std::string capt(hdhC::tf_att(var.name,n_cell_methods));
-         capt += "requires blank separated word-list, found" ;
-         capt += hdhC::tf_val(cm);
+         capt += "requires blank separated word-list";
+         std::string text("Found ") ;
+         text += hdhC::tf_val(cm);
 
-         (void) notes->operate(capt) ;
+         (void) notes->operate(capt, text) ;
          notes->setCheckStatus( n_CF, fail );
       }
 
@@ -8053,7 +8098,7 @@ CF::chap73_cellMethods_Comment(std::string &par, Variable& var)
            capt += "Key-word" + hdhC::tf_val("comment:", hdhC::blank) ;
            capt += "should be omitted because of absent standardised information" ;
 
-           std::string text("found=" + par);
+           std::string text("Found " + par);
 
            (void) notes->operate(capt, text) ;
            notes->setCheckStatus( n_CF, fail );
@@ -8067,7 +8112,7 @@ CF::chap73_cellMethods_Comment(std::string &par, Variable& var)
            capt += "Swapped order of information, ";
            capt += "required is (interval: val units comment: text)" ;
 
-           std::string text("found=" + par);
+           std::string text("Found " + par);
 
            (void) notes->operate(capt, text) ;
            notes->setCheckStatus( n_CF, fail );
@@ -8957,7 +9002,7 @@ CF::chap74b(Variable& var,
         std::string capt(hdhC::tf_att(var.name, n_cell_methods)) ;
         capt += "is ill-formatted for a " + n_climatology ;
 
-        std::string text("Found: " + var.name + hdhC::colon);
+        std::string text("Found " + var.name + hdhC::colon);
         text += hdhC::tf_assign(n_cell_methods, var.getAttValue(n_cell_methods));
 
         (void) notes->operate(capt, text) ;
@@ -9240,7 +9285,7 @@ CF::chap81(Variable& var)
          capt += "and" + hdhC::tf_val(attStr[1]) ;
          capt += ", which have to be float or double";
 
-         std::string text("Found: " + var.name + hdhC::colon);
+         std::string text("Found " + var.name + hdhC::colon);
          if( attBool[0] )
          {
            text += attStr[0] + " type=";
