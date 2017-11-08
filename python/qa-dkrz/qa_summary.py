@@ -219,6 +219,7 @@ class LogSummary(object):
         # ------
         # begin of writing the JSON files
         fl = os.path.join(self.f_annot, self.log_name + '.json')
+        self.save_json_file = fl
 
         with open(fl, 'w') as fd:
             # pItems across ix are now all the same
@@ -515,14 +516,12 @@ class LogSummary(object):
                or words[0] == 'LOG_PATH_BASE:' \
                      or words[0] == 'EXP_PATH_BASE:':
             self.pathBase = words[1]
+        elif words[0] == 'EMAIL_SUMMARY:':
+            #works for both single and list
+            self.email_addr=qa_util.split(words[1], ", []'")
         elif words[0] == 'LOG_PATH_INDEX:' \
                or words[0] == 'EXP_PATH_INDEX:':
-            # the following does not seem to work, although it should
-            # self.logPathIndex = words[1].split('[, ]')
-            #so, a work-around
-            w2=words[1].replace('[','')
-            w2=w2.replace(']','')
-            self.logPathIndex = w2.split(', ')
+            self.logPathIndex = qa_util.split(words[1], ", []'")
         elif words[0] == 'SELECT_PATH_LIST:':
             self.spl = qa_util.split(words[1], ", []'")
         elif words[0][0:12] == 'PROJECT_DATA':
@@ -882,7 +881,50 @@ class LogSummary(object):
 
 
     def sendMail(self):
-      return
+        try:
+            self.email_addr
+        except:
+            return
+
+        import smtplib
+        from email.MIMEMultipart import MIMEMultipart
+        from email.MIMEText import MIMEText
+        from email.MIMEBase import MIMEBase
+        from email import encoders
+
+        fromA = self.email_addr[0]
+        to = self.email_addr[0]
+
+        msg = MIMEMultipart()
+
+        msg['From'] = fromA
+        msg['To'] = to
+        msg['Subject'] = "QA: " \
+            + qa_util.lstrip(self.save_json_file, pat='##')
+
+        body = "QA: \n" + os.getcwd() + "\n" + self.save_json_file
+
+        msg.attach(MIMEText(body, 'plain'))
+        f = self.save_json_file
+        void, filename = os.path.split(f)
+
+        attachment = open(f, "rb")
+
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload((attachment).read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+
+        msg.attach(part)
+        attachment.close()
+
+        server = smtplib.SMTP('localhost')
+        #server.starttls()
+        text = msg.as_string()
+        server.sendmail(fromA, to, text)
+        server.quit()
+
+        return
 
 
     def set_curr_dt(self, fse):
