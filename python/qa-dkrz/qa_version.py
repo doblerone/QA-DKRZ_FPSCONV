@@ -153,7 +153,9 @@ class GetVersion(object):
 
 
     def get_from_conda(self):
-        tag=''
+        tag='-'
+        branch='-'
+        curr_id='-'
 
         f = os.path.join(self.opts["QA_SRC"], "install.log")
         cmd="cat " + f + " 2> /dev/null"
