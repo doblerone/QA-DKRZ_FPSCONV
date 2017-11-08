@@ -259,7 +259,7 @@ for arg in $* ; do
   fi
 done
 
-test ${CONFIG_READ_ONLY} && pC_read_only
+test ${CONFIG_READ_ONLY} && pC_read_only=t
 
 #if [ "$1" = --show_lines ] ; then
 #  show_lines

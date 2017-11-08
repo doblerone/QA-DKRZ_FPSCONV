@@ -546,9 +546,8 @@ do
           isForceUpdate=t
           isUpdate=t
         elif [ "${OPTNAME}" = FREEZE ] ; then
-          if cp ~/.qa-dkrz/config.txt ${QA_SRC}/.qa-config.txt ; then
-             . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
-          fi
+          . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
+          cp ~/.qa-dkrz/config.txt ${QA_SRC}/.qa-config.txt
           exit
         elif [ "${OPTNAME}" = HELP ] ; then
           descript
