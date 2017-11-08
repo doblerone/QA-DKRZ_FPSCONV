@@ -14,7 +14,7 @@ source:
 
 requirements:
   build:
-    - libnetcdf 4.4.1
+    - libnetcdf 4.4.*
     - jpeg 9b
     - zlib
     - udunits2
