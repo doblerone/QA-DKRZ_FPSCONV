@@ -1481,6 +1481,8 @@ NcAPI::isEmptyData(int varid)
 
   MtrxArr<double> ma;
   size_t nrec=getNumOfRecords();
+  if(nrec == 0)
+      ++nrec;
 
   for( size_t rec=0 ; rec < nrec ; ++rec )
   {

@@ -541,10 +541,8 @@ public:
   std::string fVarname;
 
   static std::string getCaptionIntroDim(
-                   struct DimensionMetaData& f_entry,
-                   struct DimensionMetaData& t_entry, std::string att="");
+                   struct DimensionMetaData& f_entry, std::string att="");
   static std::string getCaptionIntroVar(
-                   std::string table,
                    struct VariableMetaData& f_entry, std::string att="");
   bool        not_equal(double x1, double x2, double epsilon);
   void        pushBackVarMeDa(Variable*);
