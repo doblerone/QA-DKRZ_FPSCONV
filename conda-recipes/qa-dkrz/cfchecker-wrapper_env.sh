@@ -31,8 +31,8 @@ get_QA_path()
    return
 }
 
-unset LD_LIBRARY_PATH
-
 get_QA_path
+
+export LD_LIBRARY_PATH=${QA_PATH}/lib
 
 exec ${QA_PATH}/opt/qa-dkrz/scripts/dkrz-cf-checker $@
