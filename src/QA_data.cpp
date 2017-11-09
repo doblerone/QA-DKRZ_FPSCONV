@@ -256,10 +256,11 @@ SharedRecordFlag::store(void)
 }
 
 
-Outlier::Outlier( QA *p, std::string nm)
+Outlier::Outlier( QA *p, VariableMetaData* v)
 {
   pQA=p;
-  name=nm;
+  vMD=v;
+  name=v->var->name;
 }
 
 bool
@@ -707,11 +708,11 @@ Outlier::test(QA_Data *pQAD)
   return retCode;
 }
 
-
-ReplicatedRecord::ReplicatedRecord( QA *p, std::string nm)
+ReplicatedRecord::ReplicatedRecord( QA *p, VariableMetaData* v)
 {
   pQA=p;
-  name=nm;
+  vMD=v;
+  name=v->var->name;
 
   groupSize=0;
   enableReplicationOnlyGroups = false ;

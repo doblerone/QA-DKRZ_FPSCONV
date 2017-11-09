@@ -52,7 +52,7 @@ class DataOutputBuffer
 class Outlier
 {
   public:
-  Outlier( QA*, std::string name);
+  Outlier( QA*, VariableMetaData*);
   ~Outlier(){;}
 
   static bool
@@ -89,7 +89,7 @@ class ReplicatedRecord
       in the array itself.*/
 
   public:
-  ReplicatedRecord( QA*, std::string name);
+  ReplicatedRecord( QA*, VariableMetaData*);
   ~ReplicatedRecord(){;}
 
   void   getRange(size_t ix, size_t sz, size_t recNum,

@@ -22,7 +22,7 @@ void
 QA::activate_modules(std::string &vName)
 {
    // setCheckMode() was called already by applyOptions()
-   
+
    if(isRequiredVariable)
      pIn->pullMetaData('V', vName);
 
@@ -33,7 +33,7 @@ QA::activate_modules(std::string &vName)
      pIn->pullMetaData('G');
 
    initCheckStatus();
-   
+
    return;
 }
 
@@ -516,7 +516,7 @@ QA::init(void)
    std::string vName(qaExp.getVarnameFromFilename());
 
    activate_modules(vName);
-   
+
    // check for CF Convention.
    if(isCheckCF)
    {
@@ -1335,7 +1335,7 @@ QA::setProcessing(void)
       if( ReplicatedRecord::isSelected( *(vMD.var),
               replicationOpts, qaTime.name ) )
       {
-        vMD.qaData.replicated = new ReplicatedRecord(this, vMD.var->name);
+        vMD.qaData.replicated = new ReplicatedRecord(this, &vMD);
         vMD.qaData.replicated->setAnnotation(notes);
         vMD.qaData.replicated->parseOption(replicationOpts) ;
       }
@@ -1348,7 +1348,7 @@ QA::setProcessing(void)
       {
         vMD.qaData.enableOutlierTest=true;
 
-        vMD.qaData.outlier = new Outlier(this, vMD.var->name);
+        vMD.qaData.outlier = new Outlier(this, &vMD);
         vMD.qaData.outlier->setAnnotation(notes);
         vMD.qaData.outlier->parseOption(outlierOpts);
       }
