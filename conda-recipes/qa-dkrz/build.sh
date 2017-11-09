@@ -11,7 +11,7 @@ mkdir -vp ${QA_SRC}
 echo "CC=${CC}" > install_configure
 echo "CXX=${CXX}" >> install_configure
 echo "CFLAGS=\"-Wall\"" >> install_configure
-echo "CXXFLAGS=\"-Wall -std=c++11 -D NC4\"" >> install_configure
+echo "CXXFLAGS=\"-g -Wall -std=c++11 -D NC4\"" >> install_configure
 echo "LIB=${LIBPATH}" >> install_configure
 echo "INCLUDE=\"${PREFIX}/include\"" >> install_configure
 cp install_configure ${QA_SRC}
@@ -31,10 +31,9 @@ cp README* ${QA_SRC}
 touch ${QA_SRC}/.ignore_GitHub # avoids git update!
 
 # run build
-#touch .ignore_GitHub # avoids git update!
 export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg -lssl -lcrypto"
 QA_TABLES=/hdh/hdh/QA_HOME
-./install --conda-build --net=no --cf --qa-src=$QA_SRC --qa-tables="$QA_TABLES" CF CMIP5 CMIP6 CORDEX
+./install --debug --conda-build --net=no --cf --qa-src=$QA_SRC --qa-tables="$QA_TABLES" CF CMIP5 CMIP6 CORDEX
 
 # copy generated files to opt/qa-dkrz
 #cp -r ./bin ${QA_SRC}
