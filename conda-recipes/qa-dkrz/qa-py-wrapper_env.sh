@@ -33,7 +33,8 @@ get_QA_path()
 
 get_QA_path
 
-export LD_LIBRARY_PATH=${QA_PATH}/lib
+unset LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=${QA_PATH}/lib
 
 exec ${QA_PATH%envs/*}/bin/python ${QA_PATH}/opt/qa-dkrz/python/qa-dkrz/qa-dkrz.py $*
 
