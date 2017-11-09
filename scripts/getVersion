@@ -14,6 +14,8 @@ descript()
 
 getGitBranch()
 {
+   test ! -d $1/.git && return
+
    #git -C $1 branch | grep '*' | awk '{print $2}'
    cd $1 &> /dev/null
 
@@ -115,7 +117,7 @@ getExternalVersion()
     sep0='|'
   fi
 
-  local pprj=${QA_TABLES}/tables/projects
+  local p_base=${QA_TABLES}/tables/projects
   local branch currIdent
 
   for prj in ${prjs[*]} ; do
@@ -128,7 +130,7 @@ getExternalVersion()
          fi
        fi
 
-       getGitBranch $pprj/CMIP6/CMIP6_CVs
+       getGitBranch $p_base/CMIP6/CMIP6_CVs
 
        #git -C ${QA_TABLES}/CMIP6/CMIP6_CVs log --oneline --decorate\
        vStr="CMIP6_CVs:${sep1}"
@@ -136,7 +138,7 @@ getExternalVersion()
 
        vStr="${vStr}${sep0}CMIP6_MIP_tables.xlsx:${sep1}"
        vStr="${vStr}"$(ls -l --time-style='+%FT%T' \
-                   $pprj/CMIP6/CMIP6_MIP_tables.xlsx \
+                   $p_base/CMIP6/CMIP6_MIP_tables.xlsx \
                    | awk '{print $6}')
 
        if [ ! ${PrePARE} ] ; then
@@ -150,7 +152,7 @@ getExternalVersion()
            i=${i##*/}
            vStr="${vStr}${sep0}CMOR:${sep1}${i%.json}"
 
-           getGitBranch $pprj/CMIP6/cmip6-cmor-tables
+           getGitBranch $p_base/CMIP6/cmip6-cmor-tables
 
            #git -C ${QA_TABLES}/CMIP6/CMIP6_CVs log --oneline --decorate\
            vStr="${vStr}${sep0}cmip6-cmor-tables:${sep1}${branch}-${currIdent}"
@@ -170,11 +172,7 @@ getExternalVersion()
          fi
        fi
 
-       getGitBranch $QA_SRC
-
-       cd $pprj/CORDEX/IS-ENES-Data.github.io &>  /dev/null
-       #currIdent=$(git -C ${QA_SRC} log --pretty=format:'%h' -n 1)
-       local currIdent=$(git log --pretty=format:'%h' -n 1)
+       getGitBranch $QA_SRC/CORDEX/IS-ENES-Data.github.io
 
        vStr="IS-ENES-Data.github.io:${sep1}"
        vStr="${vStr}${branch}-${currIdent}"
@@ -183,7 +181,6 @@ getExternalVersion()
        if . ${QA_SRC}/scripts/parseConfigFile CORDEX_VERSION=${vStr} ; then
           isUpdate=1
        fi
-       cd - &> /dev/null
     elif [ ${prj} = CF ] ; then
        if [ ! ${isForce} ] ; then
          if [[ ${#CF_VERSION} -gt 0 ]] || \
@@ -195,9 +192,9 @@ getExternalVersion()
 
        if [ ${CF_STD_NAME} ] ; then
          vStr="CF_STD_NAME:${sep1}${CF_STD_NAME}"
-       elif [ -f $pprj/CF/standard-names.html ] ; then
+       elif [ -f $p_base/CF/standard-names.html ] ; then
          local vd
-         vd="$(grep 'Standard Name Table (.*)' $pprj/CF/standard-names.html)"
+         vd="$(grep 'Standard Name Table (.*)' $p_base/CF/standard-names.html)"
          vd="${vd#*(}"
          vd="${vd%)*}"
          vd="${vd// /}"
