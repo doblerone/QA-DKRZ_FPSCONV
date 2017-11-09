@@ -379,9 +379,11 @@ class LogSummary(object):
                 except:
                     mutables.append([k])
                 else:
-                    for m in range(1,len(mutables[j])):
-                        if mutables[j][m] != mutables[j][0]:
-                            mutables[j].append(k)
+                    for m in range(len(mutables[j])):
+                        if mutables[j][m] == k:
+                            break
+                    else:
+                        mutables[j].append(k)
 
 
         #if sep == '/':
