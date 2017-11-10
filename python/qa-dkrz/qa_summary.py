@@ -166,18 +166,18 @@ class LogSummary(object):
 
         # combine annotations that only differ by a var-name
         index_to_kill=[]
-        for ix in range(annot_sz):
+        for ix in range(annot_sz-1):
             if len(self.annot_capt[ix]) == 0:
                 continue
 
-            words_ix = qa_util.split(self.annot_capt[ix],  ' <>')
+            words_ix = qa_util.split(self.annot_capt[ix], '\'" <>')
             ix_sz = len(words_ix)
 
             for jx in range(ix+1, annot_sz):
-                if len(self.annot_capt[ix]) == 0:
+                if len(self.annot_capt[jx]) == 0:
                     continue
 
-                words_jx = qa_util.split(self.annot_capt[jx],  ' <>')
+                words_jx = qa_util.split(self.annot_capt[jx], '\'" <>')
                 jx_sz = len(words_jx)
 
                 count=0
@@ -187,6 +187,20 @@ class LogSummary(object):
                         if words_ix[i] != words_jx[i]:
                             count += 1
                             pos=i
+                        else:
+                            isBreak=False
+                            for pM in pMutable[ix]:
+                                for k in pM:
+                                    p_item=self.p_items[k]
+                                    if words_ix[i] == p_item:
+                                        count += 1
+                                        pos=i
+                                        isBreak=True
+                                        break
+
+                                if isBreak:
+                                    break
+
                     else:
                         if count == 1:
                             # is it a variable?
