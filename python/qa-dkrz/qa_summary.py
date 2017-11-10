@@ -30,7 +30,7 @@ class LogSummary(object):
         self.prj_data_sep = '/'
         self.prj_var_ix = 0
         self.prj_frq_ix = 1
-
+        self.no_email=False
 
     def annotation_add(self, var_id, path_id, blk, i):
         # annotation and associated indices of properties
@@ -163,6 +163,59 @@ class LogSummary(object):
             a, b = self.annotation_getItems(ix)
             pItems.append(copy.deepcopy(a))
             pMutable.append(copy.deepcopy(b))
+
+        # combine annotations that only differ by a var-name
+        index_to_kill=[]
+        for ix in range(annot_sz):
+            if len(self.annot_capt[ix]) == 0:
+                continue
+
+            words_ix = qa_util.split(self.annot_capt[ix],  ' <>')
+            ix_sz = len(words_ix)
+
+            for jx in range(ix+1, annot_sz):
+                if len(self.annot_capt[ix]) == 0:
+                    continue
+
+                words_jx = qa_util.split(self.annot_capt[jx],  ' <>')
+                jx_sz = len(words_jx)
+
+                count=0
+                pos=0
+                if ix_sz == jx_sz:
+                    for i in range(jx_sz):
+                        if words_ix[i] != words_jx[i]:
+                            count += 1
+                            pos=i
+                    else:
+                        if count == 1:
+                            # is it a variable?
+                            for j in range( len(pMutable[jx]) ):
+                                for k in range( len(pMutable[jx][j]) ):
+                                    p_item=self.p_items[pMutable[jx][j][k]]
+
+                                    if words_jx[pos] == p_item:
+                                        # found some
+                                        pMutable[ix][j].append(pMutable[jx][j][k])
+                                        pItems[ix][j]=0  # i.e. '*'
+                                        index_to_kill.append(jx)
+                                        self.annot_capt[jx]=''
+
+
+        index_to_kill.sort()
+        index_to_kill.reverse()
+        for ix in index_to_kill:
+            del pMutable[ix]
+            del pItems[ix]
+            del self.annot_capt[ix]
+            del self.annot_impact[ix]
+            del self.annot_tag[ix]
+            del self.annot_fName_id[ix]
+            del self.annot_path_id[ix]
+            del self.annot_fName_dt_id[ix]
+        else:
+            annot_sz = len(self.annot_capt)
+
 
         # any component before pathBase is deleted.
         for ix in range(len(pItems)):
@@ -883,6 +936,9 @@ class LogSummary(object):
 
 
     def sendMail(self):
+        if self.no_email:
+            return
+
         try:
             self.email_addr
         except:
@@ -1068,7 +1124,7 @@ class LogSummary(object):
 
         for k in range(len(self.mutable_DRS)):
             if mut_ix[k] < len(pMutable):
-                fd.write(3*tab + self.mutable_DRS[k] + '": ')
+                fd.write(3*tab + self.mutable_DRS[k] + '": [ ')
 
                 keys=''
 
@@ -1079,7 +1135,7 @@ class LogSummary(object):
                         keys +=', '
                     keys += '"' + p_item + '"'
 
-                fd.write(keys + ',\n')
+                fd.write(keys + ' ],\n')
 
         capt = self.annot_capt[ix].strip("'")
         fd.write(3*tab + '"caption": "' + capt + '"')
@@ -1116,7 +1172,14 @@ class LogSummary(object):
 
 if __name__ == '__main__':
     summary = LogSummary()
-    f_logs = summary.prelude(sys.argv[1:])
+    args=[]
+    for a in sys.argv[1:]:
+        if a == '--no-email':
+            summary.no_email=True
+        else:
+            args.append(a)
+
+    f_logs = summary.prelude(args)
 
     for f_log in f_logs:
         summary.run(f_log) # prelude returns always a list

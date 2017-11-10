@@ -1,6 +1,10 @@
 cd /path/conda-recipes/qa-dkrz
 edit build.sh (if necessary)
 edit meta.yaml (at least the entries for the version)
+
+conda install conda-build     # once for all
+conda install anaconda-client # once for all
+
 conda build -c conda-forge -c defaults .
 
 Any errors? No, then execute the line: anaconda upload ...
