@@ -1551,19 +1551,19 @@ CF::finalAtt_coordinates_D(void)
             is=false;
             break;
         }
-
-        if(is)
-        {
-           if( notes->inq(bKey + "5k", aux.name, NO_MT ) )
-           {
-              std::string capt("Warning: auxiliary " + hdhC::tf_var(aux.name));
-              capt += " is not used in any coordinates attribute" ;
-
-              (void) notes->operate(capt) ;
-              notes->setCheckStatus( n_CF, fail );
-           }
-        }
      }
+
+    if(is)
+    {
+        if( notes->inq(bKey + "5k", aux.name, NO_MT ) )
+        {
+            std::string capt("Warning: auxiliary " + hdhC::tf_var(aux.name));
+            capt += " is not used in any coordinates attribute" ;
+
+            (void) notes->operate(capt) ;
+            notes->setCheckStatus( n_CF, fail );
+        }
+    }
   }
 
   return;
@@ -6994,9 +6994,9 @@ CF::chap56_attProps(
        {
          std::string capt("grid mapping: missing ");
          capt += hdhC::tf_assign(n_standard_name, mCV[l]) ;
-         capt += " for any " + n_variable ;
+         std::string text("Perhaps a missing map coordinate.") ;
 
-         (void) notes->operate(capt) ;
+         (void) notes->operate(capt, text) ;
          notes->setCheckStatus( n_CF, fail );
        }
      }

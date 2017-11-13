@@ -641,7 +641,7 @@ Annotation::operate(std::string headline,
    capt += ": ";
    capt += mp_capt[tag] ;
 
-   if( !isDisplay )
+   //if( !isDisplay )
      printNotes( tag, capt, passedText );
 
    // prepare email
