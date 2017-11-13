@@ -894,11 +894,15 @@ void
     void
       setPseudoUnlimitedDim(std::string vName){pseudoUnlimitedDim.push_back(vName);}
 
+    void
+      temporarily_disable_annotation(void){with_annotation=false;}
+
 private:
     int ncid;
     int status ;
     int ncFormat;
     bool isDefineMode;
+    bool with_annotation;
 
     bool isChunking;
     bool isDeflate;

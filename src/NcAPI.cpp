@@ -1486,6 +1486,8 @@ NcAPI::isEmptyData(int varid)
 
   for( size_t rec=0 ; rec < nrec ; ++rec )
   {
+    temporarily_disable_annotation();
+
     getData(ma, varid, rec);
 
     isDataEmpty[varid] = ma.validRangeBegin.size() ? false : true ;
@@ -2811,7 +2813,7 @@ NcAPI::getData(int varid, size_t rec, int leg)
     }
   }
 
-  if(status)
+  if(status && with_annotation)
   {
     std::string key("NC_7_1");
     std::string capt("Could  not get data.") ;
@@ -2827,6 +2829,7 @@ NcAPI::getData(int varid, size_t rec, int leg)
 
   delete [] curr_count ;
 
+  with_annotation=true;
   return p;
 }
 
@@ -3031,7 +3034,7 @@ NcAPI::getData(std::vector<std::string> &v, std::string varName, size_t rec )
     break;
   }
 
-  if(status)
+  if(status && with_annotation)
   {
     std::string key("NC_7_3");
     std::string capt("Could not get data.") ;
@@ -3043,6 +3046,7 @@ NcAPI::getData(std::vector<std::string> &v, std::string varName, size_t rec )
     exceptionHandling(key, capt, text, varName);
   }
 
+  with_annotation=true;
   return ;
 }
 
@@ -4115,6 +4119,7 @@ void
 NcAPI::init(void)
 {
   isThisOpen  = false;
+  with_annotation=true;
 
   numOfRecords=-1;
   max_read_sz=100000;
