@@ -1094,7 +1094,7 @@ Annotation::printNotes(std::string &tag, std::string &caption,
 
   // Occurrence of an error usually stops the run immediately.
   // But, it lies with the calling program unit to exit.
-  if( ofsNotes == 0 )
+  if( ofsNotes == 0 && ! isDisplay )
   {
     if( file.path.size() == 0 )
       file.path = "undefined_path" ;
@@ -1123,7 +1123,8 @@ Annotation::printNotes(std::string &tag, std::string &caption,
   {
     std::string more("more ...");
 
-    *ofsNotes << more << std::endl;
+    //*ofsNotes << more << std::endl;
+    ofs_text += more + "\n";
     mp_txt[tag] += more ;
 
     return;
@@ -1131,7 +1132,8 @@ Annotation::printNotes(std::string &tag, std::string &caption,
 
   // write caption+message, but the caption only once
   if( mp_count[tag] == 1 )
-      *ofsNotes << "\n" << caption << std::endl;
+      ofs_text += "\n" + caption + "\n";
+      // *ofsNotes << "\n" << caption << std::endl;
 
   if( mp_txt[tag].size() )
      mp_txt[tag] += ';' ;
@@ -1150,7 +1152,8 @@ Annotation::printNotes(std::string &tag, std::string &caption,
      if( text[sz-1] != '\n' )
          text += '\n';
 
-     *ofsNotes <<  text ;
+     ofs_text += text;
+     //*ofsNotes <<  text ;
 
      // output the pure text with '\n' replaced by ';'
      // could be internally or eventually
@@ -1164,6 +1167,9 @@ Annotation::printNotes(std::string &tag, std::string &caption,
   }
 
   mp_txt[tag] += str;
+
+  if( ! isDisplay )
+      *ofsNotes << ofs_text;
 
   return ;
 }

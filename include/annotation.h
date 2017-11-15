@@ -164,6 +164,7 @@ class Annotation : public IObj
   std::map<std::string, std::string> mp_txt;
 
   std::ofstream *ofsNotes;
+  std::string ofs_text;
 
   size_t recErrCountLimit;
 
