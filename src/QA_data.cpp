@@ -1261,8 +1261,7 @@ QA_Data::checkFinally(Variable *var)
      std::string key=("R200");
      if( notes->inq( key, name) )
      {
-       std::string capt("data range");
-       capt += " totally with constant value ";
+       std::string capt("data record totally with constant value ");
        capt += hdhC::tf_val(constValueRecord[0]);
 
        std::string text;
@@ -1336,7 +1335,7 @@ QA_Data::checkFinally(Variable *var)
      std::string key=("R100");
      if( notes->inq( key, name) )
      {
-       std::string capt("data range totally with _FillValue, found ");
+       std::string capt("data record totally with _FillValue, found ");
        if( fillValueRecordStartTime.size() > 1 )
          capt += "first ";
 

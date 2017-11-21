@@ -4154,6 +4154,9 @@ CF::chap251(void)
    double maxVal=0.;
    double range[] = { 0., 0.};
 
+   int countMV=0;
+   int countFV=0;
+
    // missing data
    for( size_t ix=0 ; ix < pIn->varSz ; ++ix )
    {
@@ -4166,7 +4169,9 @@ CF::chap251(void)
         if( notes->inq(bKey + "251c", NO_MT) )
         {
           std::string capt("reco for CF-1.4: " + hdhC::tf_att(n_missing_value));
-          capt += "s deprecated";
+          capt += " is deprecated";
+
+          std::string text("Note that this recommendation is only given for CF-1.4");
 
           (void) notes->operate(capt) ;
           notes->setCheckStatus( n_CF, fail );
@@ -4187,6 +4192,12 @@ CF::chap251(void)
         range[0] = hdhC::string2Double(var.attValue[jxVRange][0]) ;
         range[1] = hdhC::string2Double(var.attValue[jxVRange][1]) ;
       }
+
+      if(jxFV > -1)
+        ++countFV;
+
+      if(jxMV > -1)
+        ++countMV;
 
       std::vector<std::string> mfName;
       std::vector<std::string> mfvStr;
@@ -4344,6 +4355,18 @@ CF::chap251(void)
            }
          }
       }
+  }
+
+  if( countMV == 1 && countFV == 0)
+  {
+    if( notes->inq(bKey + "251d", NO_MT) )
+    {
+      std::string capt("reco: " + hdhC::tf_att(n_missing_value));
+      capt += " should be replaced by _FillValue";
+
+      (void) notes->operate(capt) ;
+      notes->setCheckStatus( n_CF, fail );
+    }
   }
 
   return;

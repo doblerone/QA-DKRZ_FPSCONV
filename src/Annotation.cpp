@@ -503,15 +503,28 @@ Annotation::inq( std::string key, std::string name, std::string mode)
     // check any specified constraint
     if( value[currIndex].size() || frq[currIndex].size() )
     {
+      bool isV=false;
+      bool isF=false;
+
       for(size_t i=0 ; i < value[currIndex].size() ; ++i )
         if( value[currIndex][i] == constraintValue )
-          return false;  // discard any kind of notification
+          isV=true;
 
       for(size_t i=0 ; i < frq[currIndex].size() ; ++i )
         if( frq[currIndex][i] == constraintFrq )
-          return false;  // discard any kind of notification
+          isF=true;
 
-      return true;  // constraint was set but did not match
+      if( value[currIndex].size() && frq[currIndex].size() )
+      {
+         if( isV && isF )
+            return false;
+      }
+      else if( value[currIndex].size() && isV )
+          return false;
+      else if( frq[currIndex].size() && isF )
+          return false;
+      else
+          return true;
     }
 
     // check excluded record
@@ -522,6 +535,8 @@ Annotation::inq( std::string key, std::string name, std::string mode)
         if( j == currentRecord )
           return false;  // discard any kind of notification
       }
+
+      return true;
     }
 
     return false;
