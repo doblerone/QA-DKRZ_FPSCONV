@@ -29,29 +29,14 @@ descript()
 checkInstallation()
 {
   # sets: QA_TABLES, CONFIG_FILE
-  if [ -f ~/.qa-dkrz/config.txt ] ; then
+  if [ ${QA_SRC}/.qa-config.txt ] ; then
+     # is it frozen?
+     export CONFIG_FILE=${QA_SRC}/.qa-config.txt
+     . ${QA_SRC}/scripts/getTablesPath
+     return
+  elif [ -f ~/.qa-dkrz/config.txt ] ; then
      export CONFIG_FILE=~/.qa-dkrz/config.txt
-  fi
-
-  . ${QA_SRC}/scripts/getTablesPath
-
-  if [ ${isLCF} ] ; then
-    if [ ! "${locConfFile}" ] ; then
-      if [ ${QA_TABLES} ] ; then
-        locConfFile=${QA_TABLES}
-      else
-        echo "option --lcf requires provision of --qa-tables"
-        exit 1
-      fi
-    fi
-  else
-    locConfFile=${HOME}
-  fi
-
-  export CONFIG_FILE=$locConfFile/.qa-dkrz/config.txt
-  if [ ! -f $locConfFile/.qa-dkrz/config.txt ] ; then
-    mkdir -p ${locConfFile}/.qa-dkrz
-    touch $CONFIG_FILE
+     . ${QA_SRC}/scripts/getTablesPath
   fi
 
   if ! . $QA_SRC/scripts/inqRunEnv --read-only CF ; then
@@ -121,17 +106,6 @@ do
           descript
         elif [ "${OPTARG}" = "debug" ] ; then
           set -x
-        elif [ "${OPTARG%=*}" = LCF -o "${OPTARG%=*}" = lcf ] ; then
-          isLCF=t
-          if [ ${OPTARG%=*} != ${OPTARG} ] ; then
-            locConfFile=${OPTARG#*=}
-          fi
-        elif [ "${OPTARG%=*}" = CONFIG_FILE_LOCATION \
-                  -o "${OPTARG%=*}" = config-file-location ] ; then
-          isLCF=t
-          if [ ${OPTARG%=*} != ${OPTARG} ] ; then
-            locConfFile=${OPTARG#*=}
-          fi
         elif [ "${OPTARG}" = "no-reco" ] ; then
           RC=f
         elif [ "${OPTARG%%=*}" = "note" ] ; then
@@ -165,7 +139,6 @@ done
 shift $(( $OPTIND - 1 ))
 
 checkInstallation
-
 
 # files
 fs=( $* )
