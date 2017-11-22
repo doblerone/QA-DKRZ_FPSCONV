@@ -42,8 +42,7 @@ setDefaults()
   # to the calling qaDirector
 
   # you should not leave this unchanged in the config file
-  test ! ${QA_RESULTS} && setKWL QA_RESULTS=$PWD/QA_Results
-  # test ! ${PROJECT_DATA} && setKWL PROJECT_DATA=$PWD
+  test ! ${QA_RESULTS} && setKWL QA_RESULTS=/tmp/QA_Results
 
   setKWL QA_HOST=$HOSTNAME
 

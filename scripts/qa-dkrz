@@ -2346,10 +2346,14 @@ getPaths()
          echo "-1 ${PWD%/*} ${x_pf##*/}" > $pathListFile
        elif [ ${x_pf:0:1} != '/' ] ; then
          # relative path
-         echo "-1 ${PWD} ${x_pf##*/}" > $pathListFile
+         if [ ${x_pf##*/} = ${x_pf} ] ; then
+            echo "-1 ${PWD} ${x_pf}" > $pathListFile
+         else
+            echo "-1 ${PWD}/${x_pf%/*} ${x_pf##*/}" > $pathListFile
+         fi
          x_pf=${PWD}/${x_pf}
        else
-         # abosulte path
+         # absolute path
          echo "-1 ${x_pf%/*} ${x_pf##*/}" > $pathListFile
        fi
        echo "---EOF---" >> $pathListFile

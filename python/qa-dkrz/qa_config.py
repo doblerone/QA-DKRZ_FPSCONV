@@ -909,7 +909,7 @@ class QaConfig(object):
         #_ldo['PROJECT_DATA']=''
         # _ldo['QA_TABLES']=os.path.join(self.home, 'tables')
         _ldo['QA_HOST']=socket.gethostname()
-        _ldo['QA_RESULTS']=os.path.join(self.curr_dir, "QA_Results")
+        _ldo['QA_RESULTS']=os.path.join("/tmp", "QA_Results")
         _ldo['REATTEMPT_LIMIT']=5
         _ldo['SLEEP_PERIOD']=300
         _ldo['QA_EXEC_HOSTS']=_ldo['QA_HOST']
