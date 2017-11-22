@@ -57,8 +57,8 @@ for(( i=0 ; i < ${#last_log[*]} ; ++i )) ; do
 done
 
 # install wrapper script in bin/ to call cfchecker and qa-dkrz
-cp $RECIPE_DIR/cfchecker-wrapper_env.sh $PREFIX/bin/dkrz-cf-checker
-cp $RECIPE_DIR/qa-wrapper_env.sh $PREFIX/bin/qa-dkrz
-cp $RECIPE_DIR/qa-py-wrapper_env.sh $PREFIX/bin/qa-dkrz.py
+cp $RECIPE_DIR/cfchecker-wrapper_env.sh $PREFIX/bin/dkrz-cf-checker.sh
+cp $RECIPE_DIR/qa-wrapper_env.sh $PREFIX/bin/qa-dkrz.sh
+cp $RECIPE_DIR/qa-py-wrapper_env.sh $PREFIX/bin/qa-dkrz
 
 chmod +x $PREFIX/bin
