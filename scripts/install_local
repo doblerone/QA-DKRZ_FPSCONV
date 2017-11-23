@@ -1,5 +1,7 @@
 #! /bin/bash
 
+WGET_TOUT=60
+
 package=QA-DKRZ  # default
 
 check_targets()
@@ -323,19 +325,19 @@ f_build()
     local text
     if [ ${name:0:1} = 'n' ] ; then
       text="-l1 -N -np ftp://ftp.unidata.ucar.edu/pub/netcdf/${name}.tar.gz"
-      if wget ${text} &> INSTALL_netcdf.log ; then
+      if wget --timeout=${WGET_TOUT} ${text} &> INSTALL_netcdf.log ; then
         text="-l1 -N -np ftp://ftp.unidata.ucar.edu/pub/netcdf/old/${name}.tar.gz"
         wget ${text} &> INSTALL_netcdf.log
       fi
     elif [ ${name:0:1} = 'h' ] ; then
       text="-l1 -N -np www.hdfgroup.org/ftp/HDF5/releases/${name}/src/${name}.tar.gz"
-      wget ${text} &> INSTALL_hdf.log
+      wget --timeout=${WGET_TOUT} ${text} &> INSTALL_hdf.log
     elif [ ${name:0:1} = 'z' ] ; then
       text="-l1 -N -np www.zlib.net/fossils/${name}.tar.gz"
-      wget ${text} &> INSTALL_zlib.log
+      wget --timeout=${WGET_TOUT} ${text} &> INSTALL_zlib.log
     elif [ ${name:0:1} = 'u' ] ; then
       text=""
-      wget -N ftp://ftp.unidata.ucar.edu/pub/udunits/${name}.tar.gz \
+      wget --timeout=${WGET_TOUT} -N ftp://ftp.unidata.ucar.edu/pub/udunits/${name}.tar.gz \
           &> INSTALL_udunits.log
     fi
 
@@ -391,7 +393,7 @@ f_link()
 
   local ids names
   declare -a ids names
-  
+
   names=( hdf5 netcdf udunits zlib )
   ids=( h n u z )
 
@@ -756,7 +758,7 @@ saveAsCycle()
     local ext val x
     local maxVal fs fx
     declare -a fs
-    
+
     maxVal=0
     fs=( $(ls -d $f.* 2> /dev/null) )
 

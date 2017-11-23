@@ -1,3 +1,5 @@
+WGET_TOUT=60
+
 ges_cf()
 {
    if ! mkdir -p $QA_TABLES/tables/projects/CF ; then
@@ -23,7 +25,7 @@ ges_cf_html()
 
   ges_checkDate init ${html}
 
-  wget -q -N $org/$html
+  wget --timeout=${WGET_TOUT} -q -N $org/$html
 
   if [ ! -f ${html} ] ; then
     err[${#err[*]}]="failed wget -N $org/$html"
@@ -182,7 +184,7 @@ ges_parse_html()
   fi
 
   if [ ${#cf_table_name} -gt 0 ] ; then
-    if ! wget -q -N $org/${cf_table_name} ; then
+    if ! wget --timeout=${WGET_TOUT} -q -N $org/${cf_table_name} ; then
       err[${#err[*]}]="failed wget -q -N $org/${cf_table_name}"
       return 41
     fi
@@ -407,7 +409,7 @@ ges_cmip6_mip()
 
    ges_checkDate init CMIP6_MIP_tables.xlsx
 
-   wget -l1 -N -np  \
+   wget --timeout=${WGET_TOUT} -l1 -N -np  \
       http://proj.badc.rl.ac.uk/svn/exarch/CMIP6dreq/tags/latest/dreqPy/docs/CMIP6_MIP_tables.xlsx \
       &>> log_cmip6_tables.txt
 
@@ -527,7 +529,7 @@ ges_make_miniconda()
      fi
 
      if [ ! -f Miniconda-latest-Linux-x86_64.sh ] ; then
-       wget -l1 -N -np \
+       wget --timeout=${WGET_TOUT} -l1 -N -np \
           https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
      fi
 
