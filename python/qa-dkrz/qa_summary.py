@@ -817,6 +817,9 @@ class LogSummary(object):
 
 
     def run(self, f_log):
+        if len(f_log) == 0:
+            return
+
         if not os.path.isfile(f_log):
             print 'qa_summary: ' + f_log + ' : no such file'
             return

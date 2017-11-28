@@ -1496,6 +1496,8 @@ NcAPI::isEmptyData(int varid)
         break;
   }
 
+  isDataEmptyChecked[varid]=true;
+
   return isDataEmpty[varid] ;
 }
 

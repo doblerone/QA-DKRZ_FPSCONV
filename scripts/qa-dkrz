@@ -457,7 +457,7 @@ callQaConfig()
       tableCandidates[${#tableCandidates[*]}]=${key%=*}
     elif [ ${key%%_*} = CF ] ; then
       tableCandidates[${#tableCandidates[*]}]=${key%=*}
-    elif [ ${key/CHECK_LIST/} != ${key} ] ; then
+    elif [ "${key/CHECK_LIST/}" != "${key}" ] ; then
       tableCandidates[${#tableCandidates[*]}]=${key%=*}
     fi
 
