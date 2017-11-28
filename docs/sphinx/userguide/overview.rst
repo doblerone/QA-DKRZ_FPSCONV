@@ -34,35 +34,25 @@ compliance is now verified. The CF check is both embedded in the
 QA tool itself and provided by a stand-alone tool, which is described below.
 Also available is a test suite used during the development phase.
 
-There was a discussion during the 2016-ESGF_F2F_Conference (http://esgf.llnl.gov)
-for CMIP6 that passing a DRS check and the CMOR3 checker
-(http://cmor.llnl.gov/mydoc_cmip6_validator)
-is sufficient to enter files in ESGF-CoG nodes.
-The CMOR3 validator `PrePARE.py` is additionally run by the QA-DKRZ tool; the results are
-merged into the flow of QA-DKRZ annotations.
+The development of a QA-DKRZ CMOR3 check module was frozen with
+the 2016-ESGF_F2F_Conference (http://esgf.llnl.gov). Since then, the CMOR3 checker ``PrePARE`` is applied for checking CMIP6 files
+(http://cmor.llnl.gov/mydoc_cmip6_validator).
+The output by `PrePARE` is merged into the flow of QA-DKRZ annotations.
 
 After installation, QA-DKRZ runs are started on the command-line.
 
 .. code-block:: bash
 
-   $ /package-path/scripts/qa-DKRZ [opts]
+   $ qa-dkrz [command-line opts, -f task-file, config-opts] [file.nc]
 
-.. note:: The name of the tool has changed over the years as well as the name of
-          the starting script. At first, the acronym QC (Quality Control/Check)
-          was used, but was changed to the more commonly used term
-          QA (Quality Assurance). The former script names qcManager as well as
-          qc_DKRZ, and the underscore replaced by a hyphen work, too.
-          Also, option names containing QC or qc are still
-          valid for backward compatibility.
+- command-line opts: usually for non-operational usage; mostly prefixed by ``--``
+- \- \-help displays description of command-line options.
+- task-file: a container with config-options for specific settings
+- config-opts: given in project specific files, e.g. CORDEX_qa.conf; provides a default. Every option of PROJECT_qa.conf can be provided on the command-line with the prefix ``-e|E[ |_]option``, e.g. -e next. Note that option names are case-insensitive while values are not.
+- file.nc: only for a quick test.
 
 
 Available Versions
 ==================
 
-At present, the QA-DKRZ package is a rolling release
-and is provided on GitHub
-
-.. code-block:: bash
-
-   $ git clone  https://github.com/IS-ENES-Data/QA-DKRZ
-
+The QA-DKRZ package is a rolling release, however tagged.

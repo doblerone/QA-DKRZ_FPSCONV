@@ -4,11 +4,15 @@
 CF Conventions Checker
 ======================
 
-The CF Conformance checker applies to conventions 1.4 -1.7draft (cfconventions.org).
+The CF Conformance checker applies to conventions 1.4 -1.7 (cfconventions.org).
 
-.. note:: The cf-checkers takes a few seconds for the installation when it runs for the first time.
+The checker is a bash script and resides in
 
-See :ref:`installation` on how to install this tool. See the available options:
+**conda-built**
+   path=``miniconda/env/qa-dkrz/opt/qa-dkrz/scripts``
+
+**GitHub**
+   path=``QA-DKRZ/scripts``
 
 .. code-block:: bash
 
@@ -35,7 +39,7 @@ CF Test Suite
 =============
 
 A collection of NetCDF files designed to cover all rules of the CF Conventions
-derived from the examples of the cf-conventions-1.x.pdf documents. There are
+derived from the examples of the cf-conventions-1.6.pdf documents. There are
 two branches.
 
    PASS

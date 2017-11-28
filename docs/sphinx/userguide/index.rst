@@ -9,9 +9,10 @@ User Guide
     :maxdepth: 2
 
     overview
+    best-practices
     installation
+    work-flow
     configuration
-    best-practice
     results
     cf-checker
 
