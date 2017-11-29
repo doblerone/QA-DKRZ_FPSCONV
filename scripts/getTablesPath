@@ -1,16 +1,5 @@
 getTablesPath()
 {
-  if [ ! ${CONFIG_FILE} ] ; then
-     if [ -w $QA_SRC/.qa-config.txt ] ; then
-        CONFIG_FILE=$QA_SRC/.qa-config.txt
-     elif [ -w ~/.qa-dkrz/config.txt ] ; then
-        CONFIG_FILE=~/.qa-dkrz/config.txt
-     else
-        echo "Please, run $QA_SRC/install up $PROJECT"
-        exit 41
-     fi
-  fi
-
   # path to the current user's home
   export QA_TABLES
 

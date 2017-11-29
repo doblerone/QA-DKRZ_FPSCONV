@@ -417,10 +417,7 @@ callQaConfig()
 #  set -f
 
 # calling the configuration script
-  local p=${0%/*}/
-  test ${p} = ${0} && p=
-
-  if ! items=( $( ${p}$QA_CONFIG $* ) ) ; then
+  if ! items=( $( ${QA_SRC}/scripts/$QA_CONFIG $* ) ) ; then
     # not necessarily an error; also SHOW_CONF, CHECK_TOOLS and
     # no argument for displaying help will return exit 1
     exit
@@ -464,11 +461,6 @@ callQaConfig()
     setKWL ${key}
   done
   set +f
-
-  if [ -f ${QA_SRC}/.qa-config.txt ] ; then
-     CONFIG_READ_ONLY=t
-     export CONFIG_FILE=${QA_SRC}/.qa-config.txt
-  fi
 
   # invoked by option -E_DEBUG_MANAGER
   if [ ${#DEBUG_MANAGER} -gt 1 ] ; then
@@ -2847,22 +2839,26 @@ init()
   NO_STATUS=f
   isTPUT=f
 
-  test ${QA_EXAMPLE:-f} = t && initExample
-
-  # note: if not --example, then example_args is empty
-  basic_args=( ${example_args[*]} -E_QA_SRC=${QA_SRC} )
-
-  # sets: QA_TABLES, CONFIG_FILE
-  . ${QA_SRC}/scripts/getTablesPath
-
-  basic_args=( ${basic_args[*]} -E_QA_TABLES=${QA_TABLES} )
+  if [ ${QA_EXAMPLE:-f} = t ] ; then
+    initExample
+  else
+    # set QA_TABLES
+    . ${QA_SRC}/scripts/getTablesPath
+  fi
 
   # check whether tables have been initially copied from QA_SRC to QA_TABLES;
   # if not, then do it.
   if [ ! -d $QA_TABLES/tables ] ; then
     # note that QA_TABLES is user-defined
-    rsync -auz --exclude='*~' $QA_SRC/tables $QA_TABLES &> /dev/null
+    rsync -lrtuz --exclude='*~' $QA_SRC/tables $QA_TABLES &> /dev/null
   fi
+
+  # note: if not --example, then example_args is empty
+  basic_args=( ${example_args[*]} \
+               -E_QA_SRC=${QA_SRC} \
+               -E_CONFIG_FILE=${CONFIG_FILE} \
+               -E_QA_TABLES=${QA_TABLES} \
+               )
 
   callQaConfig ${T[*]} ${basic_args[*]} $*
 
@@ -3293,12 +3289,12 @@ initTables()
 
 
   # default tables
-  rsync --copy-links -auz \
+  rsync --copy-links -lrtz \
      --exclude='*~' --exclude='.*' --exclude='*_qa.conf' \
      ${QA_TABLES}/tables/projects/${PROJECT}/* ${TABLE_PATH}
 
   if [ "$PROJECT" != CF ] ; then
-    rsync -auz --exclude='*~' --exclude='.*' \
+    rsync -lrtuz --exclude='*~' --exclude='.*' \
        ${QA_TABLES}/tables/projects/CF/* ${TABLE_PATH}
 
     export CF_AREA_TYPES=${CF_AREA_TYPES}
@@ -4223,22 +4219,22 @@ rmConsistTableEntry()
 initExample()
 {
   # for running an example for CORDEX
-    if [ "${QA_TABLES}" ] ; then
-      setKWL EXAMPLE_PATH=${QA_TABLES}/example
-      example_args[${#example_args[*]}]="--up=no"
-    else
-      setKWL EXAMPLE_PATH=$(pwd)/example
+    #if [ "${QA_TABLES}" ] ; then
+    #  setKWL EXAMPLE_PATH=${QA_TABLES}/example
+    #  example_args[${#example_args[*]}]="--up=no"
+    #else
+      setKWL EXAMPLE_PATH=$PWD/example
       setKWL QA_TABLES=${EXAMPLE_PATH}
-    fi
+    #fi
 
-    if [ ! "${QA_RESULTS}" ] ; then
+    #if [ ! "${QA_RESULTS}" ] ; then
       setKWL QA_RESULTS=${EXAMPLE_PATH}/results
       example_args[${#example_args[*]}]="-E_QA_RESULTS=${QA_RESULTS}"
-    fi
+    #fi
 
     example_args[${#example_args[*]}]='-m -f qa-test.task'
 
-    test ${EXAMPLE_PATH:0:1} != '/' && EXAMPLE_PATH=$(pwd)/$EXAMPLE_PATH
+    test ${EXAMPLE_PATH:0:1} != '/' && EXAMPLE_PATH=$PWD/$EXAMPLE_PATH
 
     if ! mkdir -p ${EXAMPLE_PATH} &> /dev/null ; then
       echo "could not mkdir ${EXAMPLE_PATH}, please use option --work=path"
@@ -4273,6 +4269,13 @@ initExample()
       echo "building data in example requires the ncgen utility"
       exit
     fi
+
+    export CONFIG_FILE=${EXAMPLE_PATH}/config.txt
+    touch $CONFIG_FILE
+
+    $QA_SRC/install --config-file=${CONFIG_FILE} \
+                    --qa_tables=$QA_TABLES \
+                    up CORDEX
 
   return
 }
@@ -5151,15 +5154,6 @@ umask 002
 getSrcPath
 test ${QA_SRC##*/} = scripts && QA_SRC=${QA_SRC%/scripts}
 
-if [ -f ${QA_SRC}/.qa-config.txt ] ; then
-    export CONFIG_FILE=$QA_SRC/.qa-config.txt
-else
-    export CONFIG_FILE=$HOME/.qa-dkrz/config.txt
-fi
-
-# is it in a conda built?
-. ${QA_SRC}/scripts/getCondaPath
-
 initial_params=( $* )
 
 # store the tty, if any
@@ -5188,12 +5182,8 @@ for OPTARG in $* ; do
     elif [ "${OPTNAME}" = EXAMPLE ] ; then
       QA_EXAMPLE=t
 
-    elif [ ${OPTNAME} = CONFIG_FILE_LOCATION -o ${OPTNAME} = LCF ] ; then
-      if [ ${OPTNAME} = ${arg#*=} ] ; then
-        isLCF=t
-      else
-        CONFIG_FILE_LOCATION=${OPTARG#*=}
-      fi
+    elif [ ${OPTNAME} = CONFIG_FILE ] ; then
+      CONFIG_FILE=${OPTARG#*=}
     elif [ ${OPTNAME} = QA_CONFIG ] ; then
       QA_CONFIG==${OPTARG#*=}
     elif [ ${OPTNAME} = QA_TABLES ] ; then
@@ -5201,7 +5191,7 @@ for OPTARG in $* ; do
     elif [ ${OPTNAME} = QA_SRC ] ; then
       QA_SRC=${OPTARG#*=}
     elif [ ${OPTNAME} = WORK ] ; then
-      QA_TABLES=${OPTARG#*=}
+      QA_RESULTS=${OPTARG#*=}
     fi
 
     uu_opts[${#uu_opts[*]}]=${arg}
@@ -5209,22 +5199,10 @@ for OPTARG in $* ; do
   done
 done
 
-if [ ${isLCF} ] ; then
-  if [ ! "${CONFIG_FILE_LOCATION}" ] ; then
-    if [ ${QA_TABLES} ] ; then
-      setKWL CONFIG_FILE=${QA_TABLES}/.qa-dkrz/config.txt
-    else
-      echo "option --lcf requires provision of --qa-home"
-      exit 1
-    fi
-  fi
-else
-  if [ -f ${QA_SRC}/.qa-config.txt ] ; then
-    setKWL CONFIG_FILE=${QA_SRC}/.qa-config.txt
-  else
-    setKWL CONFIG_FILE=${HOME}/.qa-dkrz/config.txt
-  fi
-fi
+. $QA_SRC/scripts/getConfigFile
+
+# is it in a conda built?
+. ${QA_SRC}/scripts/getCondaPath
 
 init $*
 

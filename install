@@ -42,6 +42,7 @@ descript()
   echo "  --build           Download and build required libraries."
   echo "  --conda-cmor-path=path Alias: --ccp=path"
   echo "                    If a separate conda is neither in PATH nor aliased."
+  echo "  --config-file=path  HOME/.qa-dkrz/config.txt by default"
   echo "  --debug[=script]  Display execution commands. If the name of a script"
   echo "                    is assigned, then debug only this one."
   echo "  --force           Force update of the given project."
@@ -63,7 +64,7 @@ descript()
   echo "  --update-frequency=num"
   echo "                    --uf and any --uXXX_FYYY is valid; num in days with default [1]"
   echo ""
-  echo "  projects-name(s)   At present CF, CMIP5/6, [CORDEX] and HAPPI."
+  echo '  projects-name(s)   At present CF, CMIP5/6, [CORDEX] and HAPPI.'
 }
 
 getSrcPath()
@@ -380,10 +381,6 @@ initialArgs=($*)
 # resolve symbolic links and realtive paths
 getSrcPath
 
-# Condition for frozen. However, here an exit would be wrong,
-# because --force would disable a frozen state.
-test -f $QA_SRC/.qa-config.txt && CONFIG_READ_ONLY=t
-
 if [ $# -gt 0 ] ; then
   # safe arguments
   sArgs=($*)
@@ -426,16 +423,11 @@ do
     -)  OPTVAL=${OPTARG#*=}
         OPTNAME=${UOPTARG%%=*}
 
-        if [ "${OPTNAME:0:1}" = C ] ; then
-          name_0=${OPTNAME%%_*}
-          name_1=${OPTNAME#*_}
+        if [ "${OPTNAME}" = CONFIG_FILE ] ; then
+          CONFIG_FILE=${OPTVAL}
 
-          if [ "${OPTNAME}" = CF \
-               -o \( "${name_0:0:1}" = C -a "${name_1:0:1}" = F \) ]
-          then
-            isConfigFile=t
-            test ${UOPTARG%=*} != ${OPTNAME} && configDir=${OPTVAL}
-          fi
+        elif [ "${OPTNAME}" = CF ] ; then
+            CONFIG_FILE=${OPTVAL}
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
           DEBUG='--debug'
           set -x
@@ -444,33 +436,14 @@ do
         elif [ "${OPTNAME}" = QA_TABLES ] ; then
           export QA_TABLES=${OPTVAL}
         elif [ "${OPTNAME}" = WORK ] ; then
-          export QA_TABLES=${OPTVAL}
+          export QA_RESULTS=${OPTVAL}
         fi
         ;;
    \?)  ;;
   esac
 done
 
-if [ ${isConfigFile} ] ; then
-  # passed by option; required for a conda-build
-
-  if [ ! "${configDir}" ] ; then
-    if [ ${QA_TABLES} ] ; then
-      configDir=${QA_TABLES}
-    else
-      echo "option --cf requires provision of --qa-tables"
-      exit 1
-    fi
-  fi
-else
-  configDir=${HOME}
-fi
-
-export CONFIG_FILE=$configDir/.qa-dkrz/config.txt
-if [ ! -f $configDir/.qa-dkrz/config.txt ] ; then
-  mkdir -p ${configDir}/.qa-dkrz
-  touch $CONFIG_FILE
-fi
+. $QA_SRC/scripts/getConfigFile
 
 # is it in a conda built?
 . ${QA_SRC}/scripts/getCondaPath
@@ -541,6 +514,7 @@ do
 
         elif [ "${OPTNAME}" = FORCE ] ; then
           \rm -f ${QA_SRC}/.qa-config.txt
+          . $QA_SRC/scripts/getConfigFile
           . $QA_SRC/scripts/parseConfigFile UPDATE=enabled
 
           isForceUpdate=t
@@ -627,7 +601,7 @@ done
 shift $(( $OPTIND - 1 ))
 
 if [ -f $QA_SRC/.qa-config.txt ] ; then
-  echo "currently frozen; use install --force ... to thaw"
+  echo "currently frozen; use install --force ... to re-enable"
   exit
 fi
 
