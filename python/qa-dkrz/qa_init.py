@@ -244,7 +244,7 @@ def rsync_default_tables(g_vars, qaConf):
 
    dest=g_vars.table_path
 
-   rsync_cmd_0='rsync' + ' -auz ' + '--copy-links ' \
+   rsync_cmd_0='rsync' + ' -lrtuz ' + '--copy-links ' \
                + "--exclude='*~' " + "--exclude='.*' " + " --exclude='*_qa.conf' "
 
    rsync_cmd = rsync_cmd_0 + src + ' ' + dest

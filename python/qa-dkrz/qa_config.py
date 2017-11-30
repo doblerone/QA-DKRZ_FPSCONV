@@ -22,12 +22,16 @@ class QaConfig(object):
     classdocs
     '''
 
-    def __init__(self, qa_src):
+    def __init__(self, qa_src, argv=[]):
         '''
         Constructor
         '''
+        if len(argv):
+            self.argv=argv
+        else:
+            self.argv=sys.argv[1:]
+
         self.qa_src = qa_src
-        self.home = os.path.join( os.environ['HOME'], '.qa-dkrz')
 
         # dictionary for the final result
 
@@ -42,21 +46,10 @@ class QaConfig(object):
         # a list of dicts, first for the command-line options,
         # then those from successive QA_CONF files.
         self.ldOpts=[]
-        self.curr_dir = os.getcwd()
 
         if len(qa_src):
             self.ldOpts.append({})
             self.ldOpts[0]['QA_SRC']=qa_src
-
-        # is it defined in QA_SRC/.qa-conf ? Else: try home
-        if os.path.isfile( os.path.join(qa_src, '.qa-config.txt') ):
-           self.cfg_file=os.path.join(qa_src, '.qa-config.txt')
-        elif os.path.isfile( os.path.join(qa_src, '.qa.cfg') ):
-           self.cfg_file=os.path.join(qa_src, '.qa.cfg')
-        elif os.path.isfile( os.path.join(self.home, 'config.txt') ):
-           self.cfg_file=os.path.join(self.home, 'config.txt')
-        else:
-           self.cfg_file=os.path.join(self.home, 'qa.cfg')
 
         self.cfg = CfgFile(self)
 
@@ -124,7 +117,7 @@ class QaConfig(object):
     def commandLineOpts(self, parser):
         # Some conversions of command-line parameters; just to be backward
         # compatible
-        llArgv = sys.argv[1:]
+        llArgv = self.argv
         lArgv=[]
 
         for i in range(len(llArgv)):
@@ -160,8 +153,7 @@ class QaConfig(object):
         args = parser.parse_args(lArgv)
 
         # post-processing: namespace --> dict
-        self.ldOpts.append({})
-        _ldo = self.ldOpts[len(self.ldOpts)-1]
+        _ldo={}
 
         # apply for the list provided by -e_
         if args.eTypeOpt != None:
@@ -217,30 +209,38 @@ class QaConfig(object):
                 _ldo[key] = val
 
         # special: long-opts
-        if args.AUTO_UP    != None: _ldo['AUTO_UP']    = args.AUTO_UP
-        if args.PROJECT    != None:
+        if args.PROJECT     != None:
             _ldo['PROJECT']    = args.PROJECT
             self.project = args.PROJECT
-        if args.PROJECT_AS != None:
+        if args.PROJECT_AS  != None:
             _ldo['PROJECT_AS'] = args.PROJECT_AS
             self.project_as = args.PROJECT_AS
-        if args.TASK       != None: _ldo['TASK']       = args.TASK
-        if args.UPDATE     != None: _ldo['UPDATE']     = args.UPDATE
-        if args.QA_TABLES  != None: _ldo['QA_TABLES']  = args.QA_TABLES
 
         if args.SHOW_NEXT > 0:
             _ldo['NEXT']      = args.SHOW_NEXT
             args.SHOW_CALL = True
 
-        if args.SHOW_VERSION:      _ldo['SHOW_VERSION']      = True
-        if args.DRYRUN:            _ldo['DRY_RUN']           = True
-        if args.NEXT  > 0:         _ldo['NEXT']              = args.NEXT
-        if args.NEXT_VAR > 0:      _ldo['NEXT_VAR']          = args.NEXT_VAR
-        if args.QA_EXAMPLE:        _ldo['QA_EXAMPLE']        = args.QA_EXAMPLE
-        if args.STATUS_LINE:       _ldo['STATUS_LINE']       = args.STATUS_LINE
-        if args.SHOW_CALL:         _ldo['SHOW_CALL']         = args.SHOW_CALL
-        if args.SHOW_CONF:         _ldo['SHOW_CONF']         = args.SHOW_CONF
-        if args.SHOW_EXP:          _ldo['SHOW_EXP']          = args.SHOW_EXP
+        if args.AUTO_UP     != None: _ldo['AUTO_UP']      = args.AUTO_UP
+        if args.CONFIG_FILE != None: _ldo['CONFIG_FILE']  = args.CONFIG_FILE
+        if args.QA_TABLES   != None: _ldo['QA_TABLES']    = args.QA_TABLES
+        if args.TASK        != None: _ldo['TASK']         = args.TASK
+        if args.UPDATE      != None: _ldo['UPDATE']       = args.UPDATE
+
+        if args.DRYRUN:              _ldo['DRY_RUN']        = True
+        if args.NEXT  > 0:           _ldo['NEXT']           = args.NEXT
+        if args.NEXT_VAR > 0:        _ldo['NEXT_VAR']       = args.NEXT_VAR
+        if args.QA_EXAMPLE:          _ldo['QA_EXAMPLE']     = args.QA_EXAMPLE
+
+        if args.SHOW_CALL:           _ldo['SHOW_CALL']      = args.SHOW_CALL
+        if args.SHOW_CONF:           _ldo['SHOW_CONF']      = args.SHOW_CONF
+        if args.SHOW_EXP:            _ldo['SHOW_EXP']       = args.SHOW_EXP
+        if args.SHOW_VERSION:        _ldo['SHOW_VERSION']   = True
+        if args.STATUS_LINE:         _ldo['STATUS_LINE']    = args.STATUS_LINE
+        if args.WORK:                _ldo['WORK']           = args.WORK
+
+        if args.QA_EXAMPLE:
+             print 'Please, use the bash version for the example.'
+             sys.exit(0)
 
         # special: SELECT | LOCK
         if len(args.NC_FILE) == 0:
@@ -287,7 +287,7 @@ class QaConfig(object):
         if str0:
             _ldo['install_args']=str0
 
-        return
+        return _ldo
 
 
     def copyDefaultTables(self):
@@ -334,6 +334,9 @@ class QaConfig(object):
             nargs='?', const='enable', dest='AUTO_UP',
             help="Passed to install")
 
+        parser.add_argument('--config-file', dest='CONFIG_FILE',
+            help="Contains paths and update frequencies.")
+
         parser.add_argument('--dry', '--dry-run', dest='DRYRUN',
             action="store_true",
             help='Show only filenames which are to be processed')
@@ -347,7 +350,7 @@ class QaConfig(object):
             help="QA configuration: [-e|-E]key[=value].")
 
         parser.add_argument('-f', '--task', dest='TASK',
-            help="QA Configuration file.")
+            help="QA task-file with frequently changing options.")
 
         parser.add_argument('--install', dest='INSTALL',
             help="Comma-sep-list passed to the install script.")
@@ -404,8 +407,8 @@ class QaConfig(object):
             action="store_true", dest='SHOW_VERSION',
             help='Display version information of QA_DKRZ and tables.')
 
-        parser.add_argument( '--work', dest='QA_RESULTS',
-            help='''Same as QA_RESULTS.''')
+        parser.add_argument( '--work', dest='WORK',
+            help='''You don't need this.''')
 
         parser.add_argument('NC_FILE', nargs='*',
             help= "NetCDF files [file1.nc[, file2.nc[, ...]]].")
@@ -751,13 +754,34 @@ class QaConfig(object):
 
 
     def run(self):
+        cLO = self.commandLineOpts( self.create_parser() )
+
+        if 'WORK' in cLO.keys():
+            self.curr_dir = cLO['WORK']
+        else:
+            self.curr_dir = os.getcwd()
+
+        # is it defined in QA_SRC/.qa-conf ? Else: try home
+        self.home = os.path.join( os.environ['HOME'], '.qa-dkrz')
+
+        if os.path.isfile( os.path.join(self.qa_src, '.qa-config.txt') ):
+           self.cfg_file=os.path.join(self.qa_src, '.qa-config.txt')
+        elif os.path.isfile( os.path.join(self.qa_src, '.qa.cfg') ):
+           self.cfg_file=os.path.join(self.qa_src, '.qa.cfg')
+        elif os.path.isfile( os.path.join(self.home, 'config.txt') ):
+           self.cfg_file=os.path.join(self.home, 'config.txt')
+        else:
+           self.cfg_file=os.path.join(self.home, 'qa.cfg')
+
         self.cfg.read_file( self.cfg_file, section=self.qa_src)
 
         self.cfg_opts = self.getCFG_opts(self.qa_src) # (multiple) ..._qa.conf files
 
         # dictionaries with options( precedence: high --> low)
-        self.commandLineOpts( self.create_parser() )
-        self.ldOpts.append( self.cfg_opts )  # config file in HOME/.qa-conf
+        if len(cLO):
+            self.ldOpts.append(cLO)
+        if len(self.cfg_opts):
+            self.ldOpts.append(self.cfg_opts)  # config file in HOME/.qa-conf
 
         #if self.getOpt("QA_TABLES", dct=self.cfg_opts):
         qa_tables=''
@@ -798,8 +822,12 @@ class QaConfig(object):
                 self.cfg_opts["QA_TABLES"] = qa_tables
                 '''
 
+
         if len(qa_tables):
             self.readQA_CONF_files()
+        elif 'QA_EXAMPLE' in cLO:
+             print 'example requires tables, please, run ' + self.qa_src + '/install up CORDEX'
+             sys.exit(0)
 
         self.setDefault()
 

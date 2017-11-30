@@ -481,14 +481,13 @@ def f_str_replace(rFile, items, repls):
             sys.exit(1)
 
         for line in f:
-            line = clear_line(line)
+            # line = clear_line(line)
             if len(line):
                 for ix in rng: # loop over items
                     if items[ix] in line:
                         line = line.replace(items[ix], repls[ix])
 
-            w.write(line+'\n')
-
+            w.write(line)
 
         w.close()
         os.rename(wFile, rFile)
