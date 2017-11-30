@@ -513,7 +513,8 @@ do
           . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_PATH=${OPTVAL}
 
         elif [ "${OPTNAME}" = FORCE ] ; then
-          \rm -f ${QA_SRC}/.qa-config.txt
+          \rm -rf ${QA_SRC}/.qa-config.txt
+          CONFIG_FILE=
           . $QA_SRC/scripts/getConfigFile
           . $QA_SRC/scripts/parseConfigFile UPDATE=enabled
 
@@ -521,7 +522,7 @@ do
           isUpdate=t
         elif [ "${OPTNAME}" = FREEZE ] ; then
           . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
-          cp ~/.qa-dkrz/config.txt ${QA_SRC}/.qa-config.txt
+          cp -T ~/.qa-dkrz/config.txt ${QA_SRC}/.qa-config.txt
           exit
         elif [ "${OPTNAME}" = HELP ] ; then
           descript
