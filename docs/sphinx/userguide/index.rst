@@ -11,6 +11,7 @@ User Guide
     overview
     best-practices
     installation
+    update
     work-flow
     configuration
     results

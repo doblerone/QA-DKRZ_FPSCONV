@@ -53,6 +53,13 @@ The QA-DKRZ module for checking CF Conventions is also available stand-alone:
 
    $ dkrz-cf-checker [ops] file.nc
 
+Running the QA_DKRZ tool requires external tables which are not provided by conda packages. ``qa-dkrz`` delegates installation and updates to a script, when
+the first argument is ``install`` .
+
+.. code-block:: bash
+
+   $ qa-dkrz install [opts] PROJECT-Name
+
 
 Documentation
 =============

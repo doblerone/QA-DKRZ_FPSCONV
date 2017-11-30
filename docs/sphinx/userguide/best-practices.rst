@@ -10,7 +10,7 @@ Installation
 
 * ``conda create -n qa-dkrz -c conda-forge -c h-dh qa-dkrz``
 *  CMIP6 with PrePARE: ``conda create -n cmor -c conda-forge -c pcmdi cmor``
-*  run ``path/miniconda/env/qa-dkrz/opt/install`` for downloading/updating required external tables; not when frozen.
+*  run ``qa-dkrz install [opts] PROJECT-name`` for downloading/updating required external tables (updating not when frozen).
 
 ---------
 Operation

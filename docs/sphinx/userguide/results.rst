@@ -29,16 +29,15 @@ Running ``qa-dkrz`` generates QA results with a few directories.
   **Period** (files: experiment-name.period in YAML format, **time_range.txt**)
     The time range for each variable. Shorter ranges are marked.
 
-  **Summary** (only for qa-dkrz.sh, obsolete)
-    Directories: experiment-name, contained files are human readable)
+  **Summary** (at present only for qa-dkrz.sh)
 
-    **experiment-name**
+    **experiment-names**
+      Directories: experiment-name, contained files are human readable)
 
       **annotations.txt**
-
-        * inform about missing variables, if a project defines a set of required  ones.
-        * file names with a time-range stamp that violates project rules, e.g.  overlapping with other files, syntax failure, etc..
-        * In fact copies of the tag-files describe below.
+        - inform about missing variables, if a project defines a set of required  ones.
+        - file names with a time-range stamp that violates project rules, e.g.  overlapping with other files, syntax failure, etc..
+        - In fact copies of the tag-files describe below.
 
       **tag-files**
         a file for each annotation flag found in the corresponding log-file.

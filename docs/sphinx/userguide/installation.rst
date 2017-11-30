@@ -9,8 +9,10 @@ from a GitHub repository. Recommended is ``conda`` installing
 a ready-to-use package (a 64-bit processor is required). If you want to work with sources or use a different machine architecture, then the
 installation from GitHUb should be the first choice.
 
+Running the QA_DKRZ tool requires external tables which are not provided by conda packages (neither by QA_DKRZ from GitHub). ``qa-dkrz`` starts a script for installation and updates, when the first argument is ``install`` .
+
 For CMIP6, `QA-DKRZ` binds the CMOR validator `PrePARE` (D. Nadeau, LLNL,
-https://cmor.llnl.gov). This is accomplished by `conda`
+https://cmor.llnl.gov). The CMOR package is downloaded by
 
 .. code-block:: bash
 
@@ -22,11 +24,10 @@ No matter what the preference is `conda` or `git`, operational
 and update processes are separated.
 
 .. note::
-         - ``qa-dkrz:`` just for runs. While the completeness of required tables is checked, the state whether tables / programs are up-to-date is not. If this check fails, the user is asked to run ``install``
-         - ``install [opts] PROJECT:`` get/update external tables and, when installed from GitHub, also compile executables. If run initially, you are asked for a path to put external tables. The user is disengaged from knowing table names or their internet access.
+         - ``qa-dkrz:`` just for runs. While the completeness of required tables is checked, but the state whether tables / programs are up-to-date is not. If this check fails, the user is asked to run the command below.
 
+         - ``qa-dkrz install [opts] PROJECT:`` get/update external tables and, when installed from GitHub, also compile executables. If run initially, you are asked for a path to put external tables. The user is disengaged from knowing table names or their internet access.
 
-.. _conda-install:
 
 Conda Package Manager
 =====================
@@ -73,21 +74,21 @@ Please, have also a look at the Work-flow section.
 - A file ``install_configure`` in ``QA-DKRZ`` binds
   necessary ``lib`` and ``include`` directories. If ``install_configure`` is not available, a template is created and the user is asked to edit the file.
 - Environmental variables CC, CXX, CFLAGS, and CXXFLAGS are accepted.
-- ``install`` establishes access to libraries, which may be linked (recommended) or built
+- ``qa-dkrz install`` establishes access to libraries, which may be linked (recommended) or built
   (triggered by option ``--build``. Note that this is rarely tested of the courwse of development).
 - Proceedings are logged in file ``install.log``.
 - The executables are compiled for projects named on the command-line.
-- If ``install`` is started the first time for a given project, then
+- If ``qa-dkrz install`` is started the first time for a given project, then
   corresponding external tables and programs are downloaded to directory
   `QA_TABLES`; the user is asked for the path.
 - The user's home directory contains a config.txt file in directory .qa-dkrz
-  by default, created and updated by ``install``.
+  by default, created and updated by ``qa-dkrz install``.
 
 The full set of options is described by:
 
 .. code-block:: bash
 
-  $ ./install --help
+  $ qa-dkrz install --help
 
 Building Libraries
 ------------------
@@ -98,7 +99,7 @@ this is accomplished by
 
 .. code-block:: bash
 
-  $ ./install --build [opts]
+  $ qa-dkrz install --build [opts]
 
 Sources of the following libraries are downloaded and installed:
 

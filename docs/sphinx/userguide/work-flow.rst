@@ -13,10 +13,10 @@ are updated only manually. The work-flow is generally as:
 
 - download the QA-DKRZ package (conda or GitHub)
 - CMIP6: download the CMOR3 package (both conda and GitHub)
-- run install [opts] PROJECT: download external tables (both conda and HitHub), compilation of executables (only GitHub)
+- run ``qa-dkrz install [opts] PROJECT`` : download external tables (both conda and HitHub), compilation of executables (only GitHub)
 - file HOME/.qa-dkrz/config.txt is created
 
-The paths to the ``install`` script (bash) is:
+The paths to the ``qa-dkrz install`` script (bash) is:
 
 *conda-built*
    path: miniconda/env/qa-dkrz/opt/qa-dkrz/install
@@ -24,30 +24,9 @@ The paths to the ``install`` script (bash) is:
 *GitHub*
    path: QA-DKRZ/install
 
-Options of ``install``:
-
-PROJECT (as single parameter)
-    Compilation of executables for PROJECT. Only for GitHub based installation; no effect for a conda based `qa-dkrz`.
-
-\- -force [PROJECT]
-    Unconditional update. Required to unlock a frozen state.
-
-\- -freeze
-    Lock current installation; `HOME/.qa-dkrz/config.txt` is copied to the root  directory of QA-DKRZ.
-
-\- -up  [PROJECT]
-    Updating once every day. The frequency may be prolonged by option ``--uf=num`` with ``num`` in days.
-
-\- -ship
-    Prepare a working installation for transferring it to internet-free devices. (in preparation)
-
-\- -shipped
-    internet-free installation. (in preparation)
-
 Paths and times of next updates
 are kept in a configuration file located in `HOME/.qa-dkrz/config.txt`
-by default. User may not edit it, but could. If missing, it is restored during
-the next `qa-dkrz` call.
+by default. It is not necessary for a user to edit it, but permitted. It ismanaged by ``qa-dkrz install`` calls.
 
 **Operation**
 
