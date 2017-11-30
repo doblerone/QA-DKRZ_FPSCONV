@@ -31,10 +31,19 @@ get_QA_path()
    return
 }
 
+if [ "$1" = 'install' ] ; then
+  isInstall=t
+  shift
+fi
+
 get_QA_path
 
 unset LD_LIBRARY_PATH
 #export LD_LIBRARY_PATH=${QA_PATH}/lib
 
-exec ${QA_PATH}/opt/qa-dkrz/scripts/qa-dkrz $*
+if [ ${isInstall:-f} = t ] ; then
+  exec ${QA_PATH}/opt/qa-dkrz/install $*
+else
+  exec ${QA_PATH}/opt/qa-dkrz/scripts/qa-dkrz $*
+fi
 
