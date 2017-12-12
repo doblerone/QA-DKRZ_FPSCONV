@@ -634,7 +634,7 @@ init()
 
   if ! tryCom get_status test -f "${ncFile}" ; then
     sTxt[${#sTxt[*]}]='--standard'
-    sTxt[${#sTxt[*]}]="text: file ${ncFile} not found by qaExecutor."
+    sTxt[${#sTxt[*]}]="text: file ${ncFile} not found by qa-exec-check."
 
     log --keep
     sendEMail
