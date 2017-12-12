@@ -12,14 +12,16 @@
 #include "brace_op.h"
 #include "date.h"
 #include "getopt_hdh.h"
+#include "matrix_array.h"  // with sources
+#include "nc_api.h"
 #include "readline.h"
-#include "netcdf.h"  // local instance
 #include "annotation.h"
 
 #include "hdhC.cpp"
 #include "BraceOP.cpp"
 #include "Date.cpp"
 #include "GetOpt_hdh.cpp"
+#include "NcAPI.cpp"
 #include "ReadLine.cpp"
 #include "Split.cpp"
 #include "Annotation.cpp"
@@ -82,6 +84,9 @@ class Member
          getFile(void){ return path + filename ; }
   std::string
          getOutput(bool printSeparationLine=false);
+  bool   openNc(int ncid){ return openNc(ncid, ""); }
+  bool   openNc(std::string file){ return openNc(-1, file); }
+  bool   openNc(int ncid, std::string file);
   void   print(bool printSeparationLine=false);
   void   putState(std::string, bool printDateRange=true);
   void   setBegin(Date);
@@ -103,6 +108,8 @@ class Member
   Date        end;
   Date        refDate ;
   long        modTime;
+
+  NcAPI       nc;
 } ;
 
 class Ensemble
@@ -124,7 +131,6 @@ class Ensemble
           getIso8601(std::string);
    std::string
           getOutput(void);
-   bool   getAttText(int, int, const char*, std::vector<std::string>& );
    int    getTimes(std::string &);
    void   print(void);
    void   printDateSpan(void);
@@ -629,57 +635,11 @@ Ensemble::getOutput(void)
   return s ;
 }
 
-bool
-Ensemble::getAttText(int ncid, int varid, const char* aName,
-                     std::vector<std::string>& vs )
-{
-  // true for failure
-  vs.clear();
-
-  nc_type xtypep;
-  size_t len;
-
-  if( nc_inq_att(ncid, varid, aName, &xtypep, &len) )
-      return true;
-
-  if( xtypep == 12 )
-  {
-    char** arr = new char*[len];
-    for(size_t i=0 ; i < len ; ++i )
-      arr[i] = new char[250];
-
-    if( nc_get_att_string(ncid, varid, aName, arr) )
-        return true;
-
-    for( size_t i=0 ; i < len ; ++i )
-        vs.push_back(arr[i]);
-
-    for(size_t i=0 ; i < len ; ++i )
-      delete [] arr[i];
-    delete [] arr;
-  }
-  else if( xtypep == 2 )
-  {
-    char uc[len+1] ;
-    if( nc_get_att_text(ncid, varid, aName, uc) )
-       return true;
-
-    uc[len]='\0';
-    vs.push_back(uc);
-  }
-
-  return false;
-}
-
 int
 Ensemble::getTimes(std::string &str)
 {
   // reading netcdf files
-  int ncid, dimid, varid, status;
 
-  size_t recSize, len;
-  size_t index=0;
-  double val ;
   int retVal=0;
 
   std::string begStr;
@@ -687,25 +647,22 @@ Ensemble::getTimes(std::string &str)
 
   for( size_t i=0 ; i < member.size() ; ++i )
   {
-     if( nc_open( member[i]->getFile().c_str(), 0, &ncid) )
+     Member &mmb = *(member[i]);
+
+     if( mmb.openNc(mmb.getFile()) )
      {
        isInvalid = true;
-       member[i]->state = "could not open file";
+       mmb.state = "could not open file";
        continue;
      }
 
-     nc_inq_unlimdim(ncid, &dimid) ;
-
-     if( dimid == -1 )
-        // try for a regular dimension time
-        nc_inq_dimid(ncid, "time", &dimid);
-
      // no unlimited variable found; this is not
      // neccessarily an error.
-     if( dimid == -1 )
+     std::string ulName(mmb.nc.getUnlimitedDimName());
+     if( ulName.size() == 0 )
      {
        isNoRec = true;
-       nc_close(ncid);
+       mmb.nc.close();
 
        if( sz == 1 )
        	 return 0; // a single file
@@ -713,143 +670,118 @@ Ensemble::getTimes(std::string &str)
          retVal=4;
 
        isInvalid = true;
-       member[i]->state += "missing time dimension";
+       mmb.state += "missing time dimension";
        continue;
      }
 
-     if( (status = nc_inq_dimlen(ncid, dimid, &recSize) ) )
-     {
-       isInvalid = true;
-       member[i]->state = "could not read time dimension";
-       nc_close(ncid);
-       continue;
-     }
-
-     if( status == 0 && recSize == 0 )
+     if( mmb.nc.getNumOfRecords() == 0 )
      {
        // this could be wrong
        // or just a fixed variable with time dimension defined.
        isNoRec = true;
-       nc_close(ncid);
+       mmb.nc.close();
 
        if( sz == 1 )
       	  return 0;
 
        isInvalid = true;
-       member[i]->state = "no time values available";
+       mmb.state = "no time values available";
        continue;
      }
 
-     if( (status = nc_inq_varid(ncid, "time", &varid) ) )
+     std::string vName(mmb.nc.getUnlimitedDimRepName() );
+     if( vName.size() == 0 )
      {
-       isNoRec = true;
-       nc_close(ncid);
-
-       if( sz == 1 )
-      	  return 0;
-
-       member[i]->state = "missing time variable";
+       isInvalid = true;
+       mmb.state = "no time variable";
+       mmb.nc.close();
        continue;
      }
 
      // reference calendar
+     /*
      std::vector<std::string> vs;
 
-     if( getAttText(ncid, varid, "calendar", vs) )
+     if( mmb.nc.getAttString("calendar", vName).size() == 0 )
      {  // failure
-       member[i]->state = "missing or invalid calendar attribute";
-       nc_close(ncid);
+       mmb.state = "missing or invalid calendar attribute";
+       mmb.nc.close();
        continue;
      }
-     else
-       // successful reading of calendar
-       member[i]->refDate.setCalendar(vs[0]) ;
 
        // reference date
-     if( getAttText(ncid, varid, "units", vs) )
+     if( mmb.nc.getAttString("units", vName).size() == 0 )
      {  // failure
-         member[i]->state = "missing or invalid units attribute";
-         nc_close(ncid);
+         mmb.state = "missing or invalid units attribute";
+         mmb.nc.close();
          continue;
      }
-     else
-     {
-       if( vs[0].find("%Y") < std::string::npos )
-          member[i]->refDate.setFormattedDate();
-       else
-          member[i]->refDate = vs[0] ;
-     }
+     */
 
      // time values: fist and last
-     index=0;
-     if( (status = nc_get_var1_double(ncid, varid, &index, &val) ) )
+     MtrxArr<double> ma_t;
+     double tBegin, tEnd;
+     if( (tBegin=mmb.nc.getData(ma_t, vName,0,-1)) == MAXDOUBLE )
      {
         if( sz > 1 )
         {
           isInvalid = true;
-          member[i]->state = "could not read first time value";
-          nc_close(ncid);
+          mmb.state = "could not read time values";
+          mmb.nc.close();
           continue;
         }
      }
 
-     // any reasonable values available?
-     nc_type var_type ;
-     status = nc_inq_vartype(ncid, varid, &var_type) ;
+     if( ma_t.validRangeBegin.size() == 1  )
+     {
+        if( ma_t.validRangeBegin[0] != 0 )
+        {
+           isInvalid = true;
+           mmb.putState("first time value equals _FillValue");
+           mmb.nc.close();
+           continue;
+        }
 
-     // return value type is double
-     double fV;
-     int noFill=0;
-     int statusF = nc_inq_var_fill(ncid, varid, &noFill, &fV);
-
-     if( noFill != 1 && (statusF || val == fV) )
+        size_t last=ma_t.validRangeEnd[0];
+        // note validRangeEnd points to memory after the last element
+        if( ma_t.validRangeEnd[0] != ma_t.size() )
+        {
+           isInvalid = true;
+           mmb.putState("last time value equals _FillValue");
+           mmb.nc.close();
+           continue;
+        }
+     }
+     else
      {
         isInvalid = true;
-        member[i]->state = "first time value equals _FillValue";
-        nc_close(ncid);
+        mmb.putState("all time values equal _FillValue");
+        mmb.nc.close();
         continue;
      }
 
-     if(member[i]->refDate.isValid(val))
-       member[i]->setBegin( member[i]->refDate.getDate(val) );
-     else
+     if( ! mmb.refDate.isValid(tBegin))
      {
        isInvalid=true;
        retVal=5;
-       member[i]->putState("invalid data, found " + hdhC::double2String(val), false);
-       nc_close(ncid);
+       mmb.putState("invalid data, found " + hdhC::double2String(tBegin), false);
+       mmb.nc.close();
        continue;
      }
 
-     index=recSize-1;
-     if( (status = nc_get_var1_double(ncid, varid, &index, &val) ) )
-     {
-        if( sz > 1 )
-        {
-          isInvalid = true;
-          member[i]->putState("could not read last time value");
-          nc_close(ncid);
-        }
-     }
+     mmb.setBegin( mmb.refDate.getDate(tBegin) );
 
-     if( noFill != 1 && (statusF || val == fV) )
-     {
-        isInvalid = true;
-        member[i]->putState("last time value equals _FillValue");
-        nc_close(ncid);
-        continue;
-     }
-
-     if(member[i]->refDate.isValid(val))
-       member[i]->setEnd( member[i]->refDate.getDate(val) );
-     else
+     tEnd=ma_t[ma_t.size()-1];
+     if( ! mmb.refDate.isValid(tEnd))
      {
        isInvalid=true;
        retVal=5;
-       member[i]->putState("invalid data, found " + hdhC::double2String(val), false);
+       mmb.putState("invalid data, found " + hdhC::double2String(tEnd), false);
      }
 
-     nc_close(ncid);
+     mmb.setEnd( mmb.refDate.getDate(tEnd) );
+
+     mmb.nc.close();
   }
 
   // any serious conditions
@@ -1170,6 +1102,28 @@ Member::getOutput(bool printSepLine)
   str += newline;
 
   return str ;
+}
+
+bool
+Member::openNc(int ncid, std::string file)
+{
+  if( ncid == -1 )
+  {
+    try
+    {
+      if( ! nc.open(file.c_str()) )
+        throw "Exception";
+    }
+    catch (char const*)
+    {
+      // it is a feature for files built by pattern, if the
+      // time frame extends the range of files.
+      // Caller is responsible for trapping errors
+      return true;
+    }
+  }
+
+  return false;
 }
 
 void
