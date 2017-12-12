@@ -1359,7 +1359,7 @@ Annotation::readConf(void)
       }
 
       // replace level value by the limitation value
-      size_t pos ;
+      size_t pos=0 ;
       while( (pos=str0.find("L", pos)) < std::string::npos )
       {
          size_t lval=static_cast<size_t>(
