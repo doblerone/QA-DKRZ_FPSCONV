@@ -2108,7 +2108,7 @@ getNextVariable()
 
   status=$?
 
-  # expand \newline, but preserve üpotential blanks
+  # expand \newline, but preserve potential blanks
   nextFile=()
   local p0 p1 i
   for(( p0=0 , p1=0 , i=0 ; p1 < ${#nxtFl} ; ++p1 )) ; do
@@ -2183,7 +2183,7 @@ getNextVariable()
   fi
 
   # SYNC_FILE_AMBIGUITY_CHECK failed?
-  if [ $status -gt 10 ] ; then
+  if [ $status -gt 9 ] ; then
 #    if [ ${PROGRESS_BAR} ] ; then
       local num=${#nV_fls[*]}
 #    fi
