@@ -3687,7 +3687,7 @@ QA_Exp::checkVarTableEntry_cell_methods(
         capt += "is missing";
       }
 
-      (void) notes->operate(capt) ;
+      (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail );
     }
   }
@@ -4212,7 +4212,7 @@ QA_Exp::getDimMetaData(InFile &in,
 
       if( aN == "bounds" )
           t_DMD_entry.attMap[n_bnds_name] = aV ;
-      else if( aN == "climatology" && aN == "time" )
+      else if( aN == "climatology" && aN == pQA->qaTime.name )
           t_DMD_entry.attMap[n_bnds_name] = aV ;
       else if( aN == pQA->n_units )
       {

@@ -114,9 +114,9 @@ QA_Time::finally(NcAPI *nc)
   }
 
   // write internal data to variable time
-  nc->setAtt( "time", "last_time", lastTimeValue);
-  nc->setAtt( "time", "last_date", refDate.getDate(lastTimeValue).str() );
-  nc->setAtt( "time", "isTimeBoundsTest", static_cast<double>(isTimeBounds));
+  nc->setAtt( name, "last_time", lastTimeValue);
+  nc->setAtt( name, "last_date", refDate.getDate(lastTimeValue).str() );
+  nc->setAtt( name, "isTimeBoundsTest", static_cast<double>(isTimeBounds));
 
   if( pIn->currRec )
   {
@@ -133,11 +133,11 @@ QA_Time::finally(NcAPI *nc)
     else
       tmp=currTimeStep;
 
-    nc->setAtt( "time_step", "last_time_step", tmp);
+    nc->setAtt( name+"_step", "last_time_step", tmp);
   }
 
-  nc->setAtt( "time", "last_time_bnd_0", prevTimeBoundsValue[0]);
-  nc->setAtt( "time", "last_time_bnd_1", prevTimeBoundsValue[1]);
+  nc->setAtt( name, "last_time_bnd_0", prevTimeBoundsValue[0]);
+  nc->setAtt( name, "last_time_bnd_1", prevTimeBoundsValue[1]);
 
   return;
 }
@@ -306,7 +306,7 @@ QA_Time::init(std::vector<std::string>& optStr)
      size_t i;
      for( i=0 ; i < pIn->varSz ; ++i )
      {
-       if( pIn->variable[i].name == "time" )
+       if( pIn->variable[i].name == name )
        {
          name = pIn->variable[i].name ;
          time_ix = static_cast<int>(i) ;
@@ -332,7 +332,25 @@ QA_Time::init(std::vector<std::string>& optStr)
       if( ! pIn->variable[timeBounds_ix].isExcluded )
       {
         timeBounds_ix = pIn->getVarIndex(boundsName);
-        enableTimeBoundsTest();
+
+        if( timeBounds_ix == -1 )
+        {
+           std::string key("13_15");
+           if( notes->inq( key, name) )
+           {
+              std::string capt(hdhC::tf_var(boundsName));
+              capt += " is missing, but was declared by ";
+              capt += hdhC::tf_att(name, "time_bnds") ;
+
+              if( notes->operate(capt) )
+              {
+                notes->setCheckStatus("TIME", fail);
+                pQA->setExitState( notes->getExitState() ) ;
+              }
+           }
+       }
+       else
+          enableTimeBoundsTest();
       }
    }
 
@@ -1099,7 +1117,7 @@ QA_Time::openQA_NcContrib(NcAPI *nc)
    nc->setAtt( name, "first_date", refDate.getDate(firstTimeValue).str() );
    nc->setAtt( name, "isTimeBoundsTest", static_cast<double>(0.));
 
-   std::string str0("time_step");
+   std::string str0(name+"_step");
    nc->defineVar( str0, NC_DOUBLE, vs);
    nc->setDeflate(str0, 1, 1, 9);
    nc->setAtt( str0, "long_name", name) ;
