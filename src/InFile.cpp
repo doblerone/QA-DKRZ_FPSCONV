@@ -476,7 +476,7 @@ InFile::getVariableMD(std::vector<Variable>& variable, char mode, std::string vN
       isGlobal = true;
   else if( mode == 'T' )
   {
-      std::string tName( nc.getUnlimitedDimVarName() );
+      std::string tName( nc.getUnlimitedDimRepName() );
 
       if( tName.size() )
       {
@@ -814,8 +814,6 @@ InFile::openNc(bool isNew)
 
   if( isNew )
   {
-    nc.setPseudoUnlimitedDim("time");
-
     try
     {
       if( path.size() > 0 )

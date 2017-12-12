@@ -286,13 +286,13 @@ QA_Time::init(std::vector<std::string>& optStr)
    if( !pQA->isCheckTime )
       return (isTime=false) ;
 
-   name = pIn->nc.getUnlimitedDimVarName();
+   name = pIn->nc.getUnlimitedDimRepName();
 
    if( name.size() )
    {
      for( size_t i=0 ; i < pIn->varSz ; ++i )
      {
-       if( pIn->variable[i].name == "time" )
+       if( pIn->variable[i].name == name )
        {
           time_ix = i;
           isTime=true;
@@ -618,7 +618,7 @@ QA_Time::initRelativeTime(std::string &units)
           // empty equivalent to only _FillValue
           isTimeBounds=false;
           std::string key("6_15");
-          
+
           if( notes->inq( key, boundsName ) )
           {
             std::string capt(hdhC::tf_var("time_bnds", hdhC::colon));
@@ -702,11 +702,11 @@ QA_Time::initTimeBounds(double offset)
 
   // -1: all records
   (void) pIn->nc.getData(ma_tb, boundsName, 0, -1 );
-  
+
   // check for empty data
   if( ! ma_tb.validRangeBegin.size() )
     return false;
-  
+
   m2D = ma_tb.getM();
 
   firstTimeBoundsValue[0]=m2D[0][0] + offset;

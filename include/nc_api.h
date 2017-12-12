@@ -76,9 +76,6 @@ public:
     {
       int         format;
 
-      int         unlimitedDimID;
-      std::string unlimitedDimName;
-
 // DIMENSIONS
 //! Names of the dimensions.
 /*! Note: dim IDs are identical to indexes.*/
@@ -542,18 +539,22 @@ void
     std::string
       getTypeStr(nc_type);
 
-//! Get names of all variables depending on the unlimited dimension.
+      //! Get names of all variables depending on the unlimited dimension.
     std::vector<std::string>
       getUnlimitedVars(void);
 
 //! Get the name of the unlimited dimension; empty if none.
     std::string
       getUnlimitedDimName(void)
-        {return layout.unlimitedDimName;}
+        {return unlimitedDimName;}
 
 //! Get name of the variable representation of the unlimited dimension.
+/*! If there is none, then try to find a limited time variable as substitute.*/
     std::string
-      getUnlimitedDimVarName(void);
+      getUnlimitedDimRepName(void);
+
+//    std::string
+//      getUnlimitedDimVarName(void){ return getUnlimitedDimRepName;}
 
 //! Get sizes of the dimensions variable 'vName' depends on.
 /*! Return sizes of all dimensions in the sequence getDimName
@@ -891,8 +892,9 @@ void
     void
       setPath(std::string &p){ncPath=p;}
 
-    void
-      setPseudoUnlimitedDim(std::string vName){pseudoUnlimitedDim.push_back(vName);}
+//    void
+//      setPseudoUnlimitedDim(std::string vName)
+//          {pseudoUnlimitedDim.push_back(vName);}
 
     void
       temporarily_disable_annotation(void){with_annotation=false;}
@@ -908,6 +910,11 @@ private:
     bool isDeflate;
     bool isEndianess;
     bool isFletcher32;
+
+    int         unlimitedDimID;
+    std::string unlimitedDimName;
+    std::string unlimitedDimRepName;
+
 
     struct ExternalSetting
     {
@@ -932,9 +939,8 @@ private:
     std::string ncFileDirection;  // "in" || "out"
     std::string fileAccessMode;
 
-    size_t effUnlimitedDimSize;
-    std::vector<bool> hasEffVarUnlimitedDim;
-    std::vector<std::string> pseudoUnlimitedDim;
+    std::vector<bool>        hasEffVarUnlimitedDim;
+//    std::vector<std::string> pseudoUnlimitedDim;
     std::vector<bool>        isDataEmpty;
     std::vector<bool>        isDataEmptyChecked;
 

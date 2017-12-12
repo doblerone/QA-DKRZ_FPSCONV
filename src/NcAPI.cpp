@@ -764,7 +764,7 @@ NcAPI::copyDim(NcAPI &from, std::string dName)
       continue;
 
     // safe for already defined dimensions
-    if( uName == from.layout.unlimitedDimName )
+    if( uName == from.unlimitedDimName )
       defineDim(uName, NC_UNLIMITED) ;
     else
       defineDim(uName, from.layout.dimSize[i]) ;
@@ -1177,8 +1177,8 @@ NcAPI::defineDim(std::string name, size_t dimsize)
 
   if( dimsize == NC_UNLIMITED )
   {
-    layout.unlimitedDimID=dim_ID;
-    layout.unlimitedDimName=name;
+    unlimitedDimID=dim_ID;
+    unlimitedDimName=name;
   }
 
   // update layout
@@ -1288,12 +1288,7 @@ NcAPI::defineVar(std::string vName, nc_type type,
 
   for( size_t i=0 ; i < currDimName.size() ; ++i )
   {
-    bool is=false;
-    for( size_t j=0 ; j < pseudoUnlimitedDim.size() ; ++j )
-        if( pseudoUnlimitedDim[j] == currDimName[i] )
-            is=true;
-
-    if( is || currDimName[i] == layout.unlimitedDimName )
+    if( currDimName[i] == unlimitedDimName )
     {
       layout.varIsRecordType.back()=true;
       hasEffVarUnlimitedDim.back()=true;
@@ -1323,7 +1318,7 @@ NcAPI::defineVar(std::string vName, nc_type type,
     size_t m = layout.dimMap[ currDimName[i] ] ;
 
     if( isDimUnlimited()
-          && m == static_cast<size_t>(layout.unlimitedDimID) )
+          && m == static_cast<size_t>(unlimitedDimID) )
     {
       layout.rec_start.back()[i]=0;  //place-holder for current record
       layout.rec_count.back()[i]=1;
@@ -3370,7 +3365,7 @@ NcAPI::getLayout(void)
   int dimNum, varNum, globalAttNum;
 
   status = nc_inq(ncid, &dimNum, &varNum, &globalAttNum,
-                      &layout.unlimitedDimID);
+                      &unlimitedDimID);
 
   if(status)
   {
@@ -3411,23 +3406,8 @@ NcAPI::getLayout(void)
      layout.dimMap[name_buf] = id ;
   }
 
-  // any unlimited dimension?
-  for( size_t j=0 ; j < pseudoUnlimitedDim.size() ; ++j )
-  {
-    if( (layout.unlimitedDimID = getDimID(pseudoUnlimitedDim[j])) > -1 )
-    {
-      layout.unlimitedDimName = pseudoUnlimitedDim[j];
-      break;
-    }
-  }
-
-  if( layout.unlimitedDimID > -1 )
-  {
-    layout.unlimitedDimName=
-       layout.dimName[layout.unlimitedDimID] ;
-  }
-  else
-    effUnlimitedDimSize=0 ;
+  if( unlimitedDimID > -1 )
+      unlimitedDimName=layout.dimName[unlimitedDimID];
 
   // Variables
   int dimids[NC_MAX_VAR_DIMS];
@@ -3472,19 +3452,6 @@ NcAPI::getLayout(void)
 
      if( dimsp == 0 )  // scalar variable
         layout.varDimSize[id].push_back(1);
-
-     // check for unlimited dim
-     layout.varIsRecordType.push_back( false) ;
-     layout.noData.push_back( false) ;
-     hasEffVarUnlimitedDim.push_back( false) ;
-     for( int j=0 ; j < dimsp ; ++j )
-     {
-       if( layout.varDimName[id][j] == layout.unlimitedDimName )
-       {
-         layout.varIsRecordType.back()=true;
-         hasEffVarUnlimitedDim.back()=true ;
-       }
-     }
 
      layout.varMap[name_buf] = id ;
      layout.varidMap[id] = name_buf ;
@@ -3542,6 +3509,15 @@ NcAPI::getLayout(void)
 
        addAttToLayout( id, name_buf, aType, len) ;
      }
+  }
+
+  // any unlimited dimension? representative variable of such?
+  // If not, then any limited time variable as substitution?
+  getUnlimitedDimRepName();
+
+  for( int id=0 ; id < varNum ; ++id)
+  {
+     vName = layout.varName[id];
 
      // initiate the data containers
      layoutVarDataPushes(vName, type);
@@ -3687,7 +3663,7 @@ NcAPI::getLayout(void)
          size_t m = layout.dimMap[ layout.varDimName[id][i] ] ;
 
          if( isDimUnlimited()
-                && m == static_cast<size_t>(layout.unlimitedDimID) )
+                && m == static_cast<size_t>(unlimitedDimID) )
          {
             layout.rec_start.back()[i]=0;
             layout.rec_count.back()[i]=1;
@@ -3712,7 +3688,7 @@ NcAPI::getLayout(void)
      }
 
      layout.recSize.push_back( sz );
-   }
+  }
 
    // global attributes are associated
    // with variable name 'NC_GLOBAL'
@@ -3811,7 +3787,7 @@ NcAPI::getNumOfRecords(bool force)
 
   if( isDimUnlimited() )
   {
-    status=nc_inq_dimlen(ncid, layout.unlimitedDimID, &len);
+    status=nc_inq_dimlen(ncid, unlimitedDimID, &len);
 
     if(status)
     {
@@ -3822,7 +3798,7 @@ NcAPI::getNumOfRecords(bool force)
       exceptionHandling(key, capt, text);
     }
     else
-      layout.dimSize[ layout.unlimitedDimID ] = len;
+      layout.dimSize[ unlimitedDimID ] = len;
   }
 
   numOfRecords = static_cast<int>( len );
@@ -3896,41 +3872,139 @@ NcAPI::getTypeStr(nc_type ncType)
 }
 
 std::string
-NcAPI::getUnlimitedDimVarName(void)
+NcAPI::getUnlimitedDimRepName(void)
 {
   // Return the name of the variable representation
   // of the unlimited dimension. Return empty string,
   // if there is none.
 
-  std::string ulimDimName( getUnlimitedDimName() );
+  if( unlimitedDimRepName.size() )
+      return unlimitedDimRepName;
 
-  std::vector<std::string> dn;
-  std::vector<std::string> vn( getUnlimitedVars() );
+  std::string ulDimName( getUnlimitedDimName() );
+
+  std::vector<std::string> vs_d;
+  std::vector<std::string> vs_uv( getUnlimitedVars() );
 
   // scan through the vars with unlimited dim
-  for( size_t i=0 ; i < vn.size() ; ++i)
+  for( size_t i=0 ; i < vs_uv.size() ; ++i)
   {
      // get names of the dimensions of the current variable
-     dn = getDimName(vn[i]);
-     if( dn.size() == 1  // only one dim
-            && dn[0] == ulimDimName  // dim is unlimited
-                &&  vn[i] == ulimDimName )  // same name
-       return dn[0] ;
+     vs_d = getDimName(vs_uv[i]);
+     if( vs_d.size() == 1  // only one dim
+            && vs_d[0] == ulDimName  // dim is unlimited
+                &&  vs_uv[i] == ulDimName )  // same name
+     {
+       unlimitedDimRepName = vs_d[0] ;
+       break;
+     }
   }
 
-  std::string str;
-  return str;  // not found
+  // Not found
+  // Is there any limited variable depending on time properties?
+  if( unlimitedDimName.size() == 0 )
+  {
+    vs_uv = getLimitedVarName() ;
+    std::vector<std::string> att_name;
+    std::string av;
+    std::string str_days("days");
+    std::string str_since("since");
+
+    // scan through the vars for a single dim with same name
+    for( size_t i=0 ; i < vs_uv.size() ; ++i)
+    {
+       vs_d = getDimName(vs_uv[i]);
+
+       if( vs_d.size() == 1 )  // only one dim
+       {
+          if( vs_uv[i] == vs_d[0] )  // same name
+          {
+             // scan attributes for CF Convention time properties
+             att_name = getAttName(vs_d[0]);
+
+             for( size_t j=0 ; j < att_name.size() ; ++j)
+             {
+                if( att_name[j] == "standard_name" )
+                {
+                   av = hdhC::Lower()(getAttString(att_name[j], vs_d[0])) ;
+                   if( av == "time" )
+                   {
+                     unlimitedDimRepName = vs_d[0] ;
+                     break;
+                   }
+                }
+
+                if( att_name[j] == "long_name" )
+                {
+                   av = hdhC::Lower()(getAttString(att_name[j], vs_d[0])) ;
+                   if( av == "time" )
+                   {
+                     unlimitedDimRepName = vs_d[0] ;
+                     break;
+                   }
+                }
+
+                if( att_name[j] == "calendar" )
+                {
+                  unlimitedDimRepName = vs_d[0] ;
+                  break;
+                }
+
+                if( att_name[j] == "units" )
+                {
+                   av = hdhC::Lower()(getAttString(att_name[j], vs_d[0])) ;
+                   Split x_av(av);
+
+                   if( av.size() > 2 && x_av[0] == str_days && x_av[1] == str_since )
+                   {
+                     unlimitedDimRepName = vs_d[0] ;
+                     break;
+                   }
+                }
+             }
+
+             unlimitedDimName = unlimitedDimRepName;
+             vs_d = getDimName();
+             for( size_t j=0 ; j < vs_d.size() ; ++j)
+             {
+                 if( vs_d[j] == unlimitedDimRepName )
+                 {
+                     unlimitedDimID = j;
+                     break;
+                 }
+             }
+          }
+       }
+    }
+  }
+
+  return unlimitedDimRepName;  // empty if not found
 }
 
 std::vector<std::string>
 NcAPI::getUnlimitedVars(void)
 {
-  std::vector<std::string> t0;
-  for( size_t i=0 ; i < layout.varName.size() ; ++i)
-    if( hasEffVarUnlimitedDim[i] )
-      t0.push_back( layout.varName[i] );
+  std::vector<std::string> ulName;
 
-  return t0;
+  for( size_t id=0 ; id < layout.varName.size() ; ++id)
+  {
+    layout.varIsRecordType.push_back( false) ;
+    layout.noData.push_back( false) ;
+    hasEffVarUnlimitedDim.push_back( false) ;
+
+    for( size_t j=0 ; j < layout.varDimName[id].size() ; ++j)
+    {
+       if( layout.varDimName[id][j] == unlimitedDimName )
+       {
+         layout.varIsRecordType.back()=true;
+         hasEffVarUnlimitedDim.back()=true ;
+         ulName.push_back(layout.varName[id]);
+         break;
+       }
+    }
+  }
+
+  return ulName;
 }
 
 std::vector<size_t>
@@ -4182,7 +4256,7 @@ NcAPI::isAnyRecord(std::string vName)
 bool
 NcAPI::isDimUnlimited(void)
 {
-   bool is=(layout.unlimitedDimName.size() > 0) ? true : false ;
+   bool is=(unlimitedDimName.size() > 0) ? true : false ;
 
    return is;
 }
@@ -4193,7 +4267,7 @@ NcAPI::isDimUnlimited(std::string &dName)
   bool is=false;
 
   if( isDimValid(dName) )
-    is = (layout.unlimitedDimName == dName) ? true : false;
+    is = (unlimitedDimName == dName) ? true : false;
 
   return is;
 }
