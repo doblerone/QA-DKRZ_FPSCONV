@@ -831,6 +831,25 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
   return ;
 }
 
+std::string
+DRS_CV::getInstantAtt(void)
+{
+//  if( pQA->qaExp.getFrequency() == "6hr" )
+//    return true;
+
+  size_t i;
+  for( i=0 ; i < pQA->qaExp.varMeDa.size() ; ++i )
+    if( pQA->qaExp.varMeDa[i].attMap[pQA->n_cell_methods].size()
+          && pQA->qaExp.varMeDa[i].attMap[pQA->n_cell_methods] != "time: point" )
+        break;
+
+  if( i == pQA->qaExp.varMeDa.size() )
+      return "";
+  else
+      return hdhC::tf_att(pQA->qaExp.varMeDa[i].var->name,
+                  pQA->qaExp.varMeDa[i].attMap[pQA->n_cell_methods] ) ;
+}
+
 int
 DRS_CV::getPathBegIndex(
     Split& drs, Split& x_e,
@@ -876,22 +895,6 @@ DRS_CV::getPathBegIndex(
   }
 
   return ix;
-}
-
-bool
-DRS_CV::isInstantTime(void)
-{
-
-//  if( pQA->qaExp.getFrequency() == "6hr" )
-//    return true;
-
-  bool is=true;
-  for( size_t i=0 ; i < pQA->qaExp.varMeDa.size() ; ++i )
-    if( pQA->qaExp.varMeDa[i].attMap[pQA->n_cell_methods].size()
-          && pQA->qaExp.varMeDa[i].attMap[pQA->n_cell_methods] != "time: point" )
-      is=false;
-
-  return is;
 }
 
 void
@@ -1012,25 +1015,23 @@ DRS_CV::testPeriod(Split& x_f)
   else
   {
     if( pQA->qaTime.time_ix > -1 &&
-        ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
+        pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
     {
-      if( !isInstantTime() )
+      std::string tb_name(pQA->qaTime.getBoundsName());
+
+      if( tb_name.size() )
       {
-        std::string tb_name(pQA->qaTime.getBoundsName());
+         std::string key("3_16");
 
-        if( ! notes->findAnnotation("6_15", tb_name) )
-        {
-          std::string key("5_8");
-
-          if( notes->inq( key, tb_name ) )
-          {
-            std::string capt(hdhC::tf_var("time_bnds"));
-            capt += "is missing" ;
+         if( notes->inq( key, tb_name ) )
+         {
+            std::string capt(hdhC::tf_var(tb_name));
+            capt += " contradicts " ;
+            capt += getInstantAtt() ;
 
             (void) notes->operate(capt) ;
             notes->setCheckStatus(drsF, pQA->n_fail);
-          }
-        }
+         }
       }
     }
   }

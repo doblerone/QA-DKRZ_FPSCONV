@@ -51,8 +51,8 @@ struct DRS_CV
 
   int    getPathBegIndex( Split& drs, Split& x_e,
             std::map<std::string, std::string>& gM );
-
-  bool   isInstantTime(void);
+  std::string
+         getInstantAtt(void);
 
   void run(void);
 
