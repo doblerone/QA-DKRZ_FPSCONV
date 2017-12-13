@@ -3288,9 +3288,10 @@ initTables()
   # 4) option USE_STRICT discards non-default tables.
 
 
-  # default tables
+  # default tables   --chmod=Du+rwx
   rsync --copy-links -lrtz \
      --exclude='*~' --exclude='.*' --exclude='*_qa.conf' \
+     --eclude='IS-ENES-Data.github.io' \
      ${QA_TABLES}/tables/projects/${PROJECT}/* ${TABLE_PATH}
 
   if [ "$PROJECT" != CF ] ; then
