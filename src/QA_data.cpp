@@ -691,6 +691,7 @@ Outlier::test(QA_Data *pQAD)
           if( (cT=pQA->nc->getData(ma_t, pQA->qaTime.name, outRec[k], 1)) < MAXDOUBLE)
           {
             ostr << "\nrec#=" << outRec[k];
+            ostr << ", time=" << pQA->qaTime.cT;
             ostr << ", date=" << pQA->qaTime.refDate.getDate(cT).str();
             ostr << ", value=";
             ostr << std::setw(12) << std::setprecision(5) << outVal[k];
