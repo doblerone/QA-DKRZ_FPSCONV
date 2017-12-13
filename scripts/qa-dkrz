@@ -3291,7 +3291,7 @@ initTables()
   # default tables   --chmod=Du+rwx
   rsync --copy-links -lrtz \
      --exclude='*~' --exclude='.*' --exclude='*_qa.conf' \
-     --eclude='IS-ENES-Data.github.io' \
+     --exclude='IS-ENES-Data.github.io' \
      ${QA_TABLES}/tables/projects/${PROJECT}/* ${TABLE_PATH}
 
   if [ "$PROJECT" != CF ] ; then

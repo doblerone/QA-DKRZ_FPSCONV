@@ -245,7 +245,8 @@ def rsync_default_tables(g_vars, qaConf):
    dest=g_vars.table_path
 
    rsync_cmd_0='rsync' + ' -lrtuz ' + '--copy-links ' \
-               + "--exclude='*~' " + "--exclude='.*' " + " --exclude='*_qa.conf' "
+               + "--exclude='*~' " + "--exclude='.*' " + " --exclude='*_qa.conf' " \
+               + "--exclude='IS-ENES-Data.github.io'"
 
    rsync_cmd = rsync_cmd_0 + src + ' ' + dest
 
