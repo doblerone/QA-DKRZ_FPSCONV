@@ -29,7 +29,7 @@ descript()
 checkInstallation()
 {
   # sets: QA_TABLES, CONFIG_FILE
-  if [ ${QA_SRC}/.qa-config.txt ] ; then
+  if [ -f ${QA_SRC}/.qa-config.txt ] ; then
      # is it frozen?
      export CONFIG_FILE=${QA_SRC}/.qa-config.txt
      . ${QA_SRC}/scripts/getTablesPath
