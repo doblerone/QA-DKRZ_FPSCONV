@@ -6,7 +6,7 @@ User Guide
 :Date: |today|
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     overview
     best-practices

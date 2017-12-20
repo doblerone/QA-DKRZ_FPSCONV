@@ -48,7 +48,6 @@ It is recommended to use conda's default for named environments found in ``path/
 
    $ conda create -n qa-dkrz -c conda-forge -c h-dh qa-dkrz
 
-
 GitHUB repository
 =================
 
@@ -112,3 +111,29 @@ Sources of the following libraries are downloaded and installed:
 The libraries are built in sub-directory ``local/source``.
 If libraries had been built previously, then the sources are updated and
 the libraries are rebuilt.
+
+
+Package for Shipping
+====================
+
+When there is a request to use QA-DKRZ on a system **without any internet access**, then
+a package ready for shipping may be created on a system **with access**.
+
+.. code-block:: bash
+
+  $ qa-dkrz install --ship=/path
+
+This created a tarball ``/path/QA-DKRZ.tar`` .
+
+Note that no ship-ready version is provided neither by conda nor by git. The
+installation must be done before execution of ``--ship=/path``
+for all projects designated to be checked on the isolated system.
+
+After the tarball was copied to the new location and ``tar -xf QA-DKRZ.tar``
+was executed, run
+
+.. code-block:: bash
+
+  $ qa-dkrz install --unship
+
+This will adjust the paths in the file ``.qa-config.txt``, which is used internally.
