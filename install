@@ -28,9 +28,9 @@ udunits=udunits-2.2.20
 descript()
 {
   echo "Usage: install [options] [projects[s]]"
-  echo "Purpose: Install/update 'the Quality Control Software Package'"
+  echo "Purpose: Install/update 'the DKRZ Quality Control Software Package'"
   echo "for checking climate simulation meta-data provided in netCDF format."
-  echo "Details at https://redmine.dkrz.de/projectss/cordex/wiki/DKRZ_QC_Tool"
+  echo "Details at https://readthedocs.org/projects/qa-dkrz"
   echo ''
   echo "Options:"
   echo "  -B                Unconditionally re-make all QA executables."
@@ -57,7 +57,9 @@ descript()
   echo "  --net=no          Disable internet access."
   echo "  --qa-tables=path  Location of the projects tables and external programs."
   echo "                    Also for user-modified QA tables."
+  echo "  --ship=/path      Prepare the current QA-DKRZ installation for shipping."
   echo "  --show-inst       Display properties of the current installation."
+  echo "  --unship          See ReadTheDocs:installation."
   echo "  --up[date]        Update external packages from the repository."
   echo "                    Note: not for netCDF, HDF5, udunits2 or zlib."
   echo "  --up              Update the qa-dkrz package when installed by conda."
@@ -108,11 +110,11 @@ log()
   return
 }
 
-process_wheel()
+progress_wheel()
 {
-   trap process_wheel_term TERM
+   trap progress_wheel_term TERM
 
-   process_wheel_term()
+   progress_wheel_term()
    {
      echo -n -e "\r \r"
      exit 0
@@ -171,14 +173,14 @@ ship()
           local bp=${CONDA_QA_PATH%/bin/conda}
           cd ${bp%/*} &> /dev/null
           echo  "tar cvf ${ov}/QA-DKRZ.tar ${bp##*/} "
-          process_wheel &
+          progress_wheel &
           job_id=$!
           tar cvf ${ov}/QA-DKRZ.tar ${bp##*/}
           kill -TERM $job_id
         else
           cd ${QA_SRC%/*} &> /dev/null
           echo -e "\rtar cvf ${ov}/QA-DKRZ.tar QA-DKRZ "
-          process_wheel &
+          progress_wheel &
           job_id=$!
           tar cvf ${ov}/QA-DKRZ.tar QA-DKRZ
           kill -TERM $job_id
@@ -187,7 +189,7 @@ ship()
         . $QA_SRC/scripts/parseConfigFile QA_TABLES
         cd ${QA_TABLES%/*} &> /dev/null
         echo -e "\rtar cvf ${ov}/QA-DKRZ.tar QA_TABLES "
-        process_wheel &
+        progress_wheel &
         job_id=$!
         tar rvf ${ov}/QA-DKRZ.tar QA_TABLES
         kill -TERM $job_id
@@ -196,7 +198,7 @@ ship()
           local bp=${PrePARE%/envs/cmor/bin/PrePARE}
           cd ${bp%/*} &> /dev/null
           echo -e "\rtar rvf ${ov}/QA-DKRZ.tar PrePARE-package"
-          process_wheel &
+          progress_wheel &
           job_id=$!
           if [ CONDA_QA_PATH} ] ; then
              tar rvf ${ov}/QA-DKRZ.tar ${bp##*/}
@@ -369,12 +371,17 @@ update_CONDA()
     # look for a new conda-built package
     echo "searching ${conda_name} updates" > ${TTY}
 
+    progress_wheel &
+    job_id=$!
+
     set -f
     ${conda_path} ${action} ${conda_env:+-n ${conda_env}} \
                        ${conda_channels//,/ } \
                        ${conda_name} &> /dev/null << EOF
 y
 EOF
+
+    kill -TERM $job_id
 
     set +f
   else

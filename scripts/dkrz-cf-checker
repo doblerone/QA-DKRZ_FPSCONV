@@ -28,6 +28,10 @@ descript()
 
 checkInstallation()
 {
+  if ! . ${QA_SRC}/scripts/getConfigFile ] ; then
+    ${QA_SRC}/install CF
+  fi
+
   # sets: QA_TABLES, CONFIG_FILE
   if [ -f ${QA_SRC}/.qa-config.txt ] ; then
      # is it frozen?
@@ -43,7 +47,7 @@ checkInstallation()
       # get the state of the current installation: read config-file
         local installArg="--install=force${prj:+,${prj}}"
 
-        echo -e "\nMissing external tables/executabels."
+        echo -e "\nMissing external tables/executables."
         prg=${0%/*}
         prg=${prg%/*}/install
         echo "Please, run: $prg --up CF"

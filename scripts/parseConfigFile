@@ -375,9 +375,13 @@ done
 
 test ${CONFIG_READ_ONLY} && pC_read_only=t
 
-if [ ! -f "${CONFIG_FILE}" ] ; then
-  mkdir -p ${CONFIG_FILE%/*}
-  touch ${CONFIG_FILE}
+if [ "${CONFIG_FILE}" ] ; then
+  if [ ! -f "${CONFIG_FILE}" ] ; then
+    mkdir -p ${CONFIG_FILE%/*}
+    touch ${CONFIG_FILE}
+  fi
+else
+  return 1 # no config file
 fi
 
 if [ ${#uCF_lines[*]} -eq 0 ] ; then
