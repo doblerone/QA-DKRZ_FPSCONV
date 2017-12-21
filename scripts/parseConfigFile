@@ -9,6 +9,115 @@
 # return 1 for a new/updated parameter, a mismatch, disable, a set variable, not defined,
 #          or when today is older than the scheduled next time
 
+pC_ship()
+{
+  local i j k last arr x_itm
+  declare -a arr x_itm
+
+  if [ ${uCF_caption} ] ; then
+     # section caption
+     x_itm=( ${uCF_caption//\// } )
+     for((j=0 ; j < ${#x_itm[*]} ; ++j )) ; do
+        if [ ${x_itm[j]} = 'envs' ] ; then
+          test ${x_itm[$((j+2))]} = 'opt' && break
+        fi
+     done
+
+     if [ $j -eq ${#x_itm[*]} ] ; then
+        # GitHub based
+        arr[0]="SUBST/QA-DKRZ:"
+     else
+        # conda built
+        arr[0]="SUBST"
+        for((k=j-1 ; k < ${#x_itm[*]} ; ++k )) ; do
+           arr[0]="${arr[0]}/${x_itm[k]}"
+        done
+     fi
+  fi
+
+  for(( i=0 ; i < ${#uCF_lines[*]} ; ++i )) ; do
+    ai=$((i+1))
+    local name=${uCF_lines[i]%=*}
+    local val=${uCF_lines[i]#*=}
+
+    if [ ${name} = QA_TABLES ] ; then
+       x_itm=( ${val//\// } )
+       last=$(( ${#x_itm[*]} -1 ))
+       arr[ai]="${name}=SUBST/${x_itm[last]}"
+
+    elif [ ${name} = CONDA_QA_PATH ] ; then
+       x_itm=( ${val//\// } )
+       for((j=0 ; j < ${#x_itm[*]} ; ++j )) ; do
+          if [ ${x_itm[j]} = 'bin' -a ${x_itm[$((j+1))]} = 'conda' ] ; then
+            break
+          elif [ ${x_itm[j]} = 'bin' -a ${x_itm[$((j+1))]} = 'anaconda' ] ; then
+            break
+          fi
+       done
+
+       arr[ai]="${name}=SUBST"
+       for((k=j-1 ; k < ${#x_itm[*]} ; ++k )) ; do
+          arr[ai]="${arr[ai]}/${x_itm[k]}"
+       done
+
+    elif [ ${name} = PrePARE ] ; then
+       x_itm=( ${val//\// } )
+       for((j=0 ; j < ${#x_itm[*]} ; ++j )) ; do
+          if [ ${x_itm[j]} = 'envs' ] ; then
+            test ${x_itm[$((j+2))]} = 'bin' -a \
+                   ${x_itm[$((j+3))]} = 'PrePARE' && break
+          fi
+       done
+
+       arr[ai]="${name}=SUBST"
+       for((k=j-1 ; k < ${#x_itm[*]} ; ++k )) ; do
+          arr[ai]="${arr[ai]}/${x_itm[k]}"
+       done
+
+    elif [ ${name} = CONDA_CMOR_PATH ] ; then
+       x_itm=( ${val//\// } )
+       for((j=0 ; j < ${#x_itm[*]} ; ++j )) ; do
+          if [ ${x_itm[j]} = 'envs' ] ; then
+            break
+          fi
+       done
+
+       arr[ai]="${name}=SUBST"
+       for((k=j-1 ; k < ${#x_itm[*]} ; ++k )) ; do
+          arr[ai]="${arr[ai]}/${x_itm[k]}"
+       done
+
+    elif [ ${name} = XLSX2CSV ] ; then
+       x_itm=( ${val//\// } )
+       for((j=0 ; j < ${#x_itm[*]} ; ++j )) ; do
+          if [ ${x_itm[j]} = 'xlsx2csv' -a ${x_itm[$((j+1))]} = 'xlsx2csv.py' ] ; then
+            break
+          fi
+       done
+
+       arr[ai]="${name}=SUBST"
+       for((k=j-1 ; k < ${#x_itm[*]} ; ++k )) ; do
+          arr[ai]="${arr[ai]}/${x_itm[k]}"
+       done
+
+    elif [ ${uCF_lines[i]%=*} = UPDATE ] ; then
+       arr[ai]="UPDATE=frozen"
+
+    else
+       arr[ai]="${uCF_lines[i]}"
+    fi
+  done
+
+  echo -n '' >> ${QA_SRC}/.ship-qa-config.txt
+  for(( i=0 ; i < ${#arr[*]} ; ++i )) ; do
+     echo "${arr[i]}" >> ${QA_SRC}/.ship-qa-config.txt
+  done
+
+  pC_isShip=
+
+  return 0
+}
+
 isNextDate()
 {
    # entries with time comparison in a destinct work-flow
@@ -78,6 +187,7 @@ readCF()
        if [ "${line}" = ${QA_SRC}: ] ; then
            uCF_is=t
            uCF_blkBeg=$sz
+           uCF_caption=${line}
            continue
        fi
 
@@ -249,22 +359,21 @@ pC_read_only=f
 for arg in $* ; do
   if [ "${arg:0:9}" = '--inquire' ] ; then
     pC_read_only=t
+  elif [ "${arg}" = '--no-path' ] ; then
+    pC_no_path=t
   elif [ "${arg}" = '--read' ] ; then
     unset uCF_lines
     unset uCF_blkBeg
   elif [ "${arg:0:15}" = '--set_frequency' ] ; then
     test ${arg#*=} != ${arg} && pC_freq=${arg#*=}
+  elif [ "${arg:0:6}" = '--ship' ] ; then
+    pC_isShip=t
   else
     pC_Args[${#pC_Args[*]}]="$arg"
   fi
 done
 
 test ${CONFIG_READ_ONLY} && pC_read_only=t
-
-#if [ "$1" = --show_lines ] ; then
-#  show_lines
-#  return
-#fi
 
 if [ ! -f "${CONFIG_FILE}" ] ; then
   mkdir -p ${CONFIG_FILE%/*}
@@ -277,6 +386,10 @@ if [ ${#uCF_lines[*]} -eq 0 ] ; then
   readCF
 fi
 
+if [ ${pC_isShip:-f} = t ] ; then
+  pC_ship
+  return 0
+fi
 test ${#pC_Args[*]} -eq 0 && return 0
 
 updateConfFile ${pC_Args[*]}

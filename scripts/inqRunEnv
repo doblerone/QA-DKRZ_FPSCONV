@@ -402,7 +402,7 @@ iRE_scanCondaEnv()
      test ${CONDA_QA_PATH} && \
         . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_PATH=${CONDA_QA_PATH}
   elif [ $1 = PrePARE ] ; then
-     CONDA_CMOR_ENV=${env}
+     # CONDA_CMOR_ENV=${env}
      # . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${CONDA_CMOR_ENV}
 
      #test ${CONDA_CMOR_PATH} && \

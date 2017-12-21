@@ -108,6 +108,26 @@ log()
   return
 }
 
+process_wheel()
+{
+   trap process_wheel_term TERM
+
+   process_wheel_term()
+   {
+     echo -n -e "\r \r"
+     exit 0
+   }
+
+   item=( '-' '\\' '|' '/' '-' '\\' '|' )
+
+   while : ; do
+     for itm in ${item[*]} ; do
+        echo -n -e "\r$itm"
+        sleep 0.1
+     done
+   done
+}
+
 saveAsCycle()
 {
   for f in $* ; do
@@ -132,6 +152,67 @@ saveAsCycle()
 
     mv $f ${f}.$((++maxVal)) 2> /dev/null
   done
+}
+
+ship()
+{
+    local ov=$1
+
+    if ! mkdir -p $ov ; then
+      exit
+    fi
+
+    if [ ${OPTVAL} ] ; then
+        test -f $QA_SRC/.ship-qa-config.txt && \rm -f $QA_SRC/.ship-qa-config.txt
+        . $QA_SRC/scripts/parseConfigFile --ship
+
+        # conda or github repo
+        if [ ${CONDA_QA_PATH} ] ; then
+          local bp=${CONDA_QA_PATH%/bin/conda}
+          cd ${bp%/*} &> /dev/null
+          echo  "tar cvf ${ov}/QA-DKRZ.tar ${bp##*/} "
+          process_wheel &
+          job_id=$!
+          tar cvf ${ov}/QA-DKRZ.tar ${bp##*/}
+          kill -TERM $job_id
+        else
+          cd ${QA_SRC%/*} &> /dev/null
+          echo -e "\rtar cvf ${ov}/QA-DKRZ.tar QA-DKRZ "
+          process_wheel &
+          job_id=$!
+          tar cvf ${ov}/QA-DKRZ.tar QA-DKRZ
+          kill -TERM $job_id
+        fi
+
+        . $QA_SRC/scripts/parseConfigFile QA_TABLES
+        cd ${QA_TABLES%/*} &> /dev/null
+        echo -e "\rtar cvf ${ov}/QA-DKRZ.tar QA_TABLES "
+        process_wheel &
+        job_id=$!
+        tar rvf ${ov}/QA-DKRZ.tar QA_TABLES
+        kill -TERM $job_id
+
+        if . $QA_SRC/scripts/parseConfigFile PrePARE ; then
+          local bp=${PrePARE%/envs/cmor/bin/PrePARE}
+          cd ${bp%/*} &> /dev/null
+          echo -e "\rtar rvf ${ov}/QA-DKRZ.tar PrePARE-package"
+          process_wheel &
+          job_id=$!
+          if [ CONDA_QA_PATH} ] ; then
+             tar rvf ${ov}/QA-DKRZ.tar ${bp##*/}
+          else
+             tar --exclude="${bp##*/}/envs/qa-dkrz" --exclude="${bp##*/}/qa-dkrz*" \
+               rvf ${ov}/QA-DKRZ.tar ${bp##*/}
+          fi
+
+          tar rvf ${ov}/QA-DKRZ.tar ${bp##*/}
+          kill -TERM $job_id
+        fi
+    else
+        echo "please, provide a destination path with option --ship=DEST"
+    fi
+
+    return
 }
 
 tr_option()
@@ -171,6 +252,45 @@ tr_option()
   eval ${1}=\${line}
 
   return
+}
+
+unship()
+{
+   test $PWD != $QA_SRC && cd $QA_SRC &> /dev/null
+
+
+   # find the root of a conda based tree
+   local j k base_path x_itm
+   x_itm=( ${PWD//\// } )
+
+   for((j=0 ; j < ${#x_itm[*]} ; ++j )) ; do
+      if [ ${x_itm[j]} = 'envs' ] ; then
+        if [ ${x_itm[$((j+2))]} = 'opt' ] ; then
+          j=$((j-1))
+          break
+        fi
+      fi
+   done
+
+   if [ $j -eq ${#x_itm[*]} ] ; then
+      # GitHub based
+      base_path=${PWD%/*}
+   else
+      # conda built
+      for((k=0 ; k < j ; ++k )) ; do
+         base_path="${base_path}/${x_itm[k]}"
+      done
+   fi
+
+   local line
+   echo -n '' > .qa-config.txt
+
+   while read line ; do
+     echo ${line//SUBST/${base_path}} >> .qa-config.txt
+   done < .ship-qa-config.txt
+
+   \rm -f .ship-qa-config.txt
+   exit
 }
 
 update()
@@ -513,16 +633,18 @@ do
           . ${QA_SRC}/scripts/parseConfigFile CONDA_QA_PATH=${OPTVAL}
 
         elif [ "${OPTNAME}" = FORCE ] ; then
+          test ! -d ~/.qa-dkrz && mkdir ~/.qa-dkrz
+          test ! -f ~/.qa-dkrz/config.txt && cp -T .qa-config.txt ~/.qa-dkrz/config.txt
           \rm -rf ${QA_SRC}/.qa-config.txt
-          CONFIG_FILE=
+
+          CONFIG_FILE=  # unset
           . $QA_SRC/scripts/getConfigFile
           . $QA_SRC/scripts/parseConfigFile UPDATE=enabled
 
           isForceUpdate=t
           isUpdate=t
         elif [ "${OPTNAME}" = FREEZE ] ; then
-          . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
-          cp -T ~/.qa-dkrz/config.txt ${QA_SRC}/.qa-config.txt
+          . $QA_SRC/scripts/parseConfigFile --freeze
           exit
         elif [ "${OPTNAME}" = HELP ] ; then
           descript
@@ -554,8 +676,14 @@ do
           export QA_SRC=${OPTVAL}
         elif [ "${OPTNAME}" = QA_TABLES ] ; then
           continue
+        elif [ "${OPTNAME}" = SHIP ] ; then
+          ship ${OPTVAL} # function
+          exit
         elif [ "${OPTNAME}" = SRC ] ; then
           :  # for backward compatibilty
+        elif [ "${OPTNAME}" = UNSHIP ] ; then
+          unship  # function
+          exit
         elif [ "${OPTNAME:0:2}" = UP ] ; then
           isUpdate=t
 
