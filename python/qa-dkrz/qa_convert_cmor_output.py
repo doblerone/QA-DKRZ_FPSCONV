@@ -8,12 +8,10 @@ def convert_CMOR_output(lines):
     ix=-1
     blkOn=False
 
-    #with open( "/hdh/hdh/QA-DKRZ/test/cmorOut.txt") as fd:
-    #    for line in fd:
-    #        lines.append(line)
-
-
     for line in lines:
+        if len(line) == 0 or line[0:11] == 'processing:':
+            continue
+
         # find the beginning of a block
         count = 0
         for mark in blk_marks:
@@ -112,8 +110,7 @@ def convert_CMOR_output(lines):
 
             annot[ix][0] += 'TXT-END'
 
-            for jx in range(1,sz):
-                del annot[ix][jx]
+            del annot[ix][1:]
 
         annot[ix][0] += 'FLAG-END'
         annot[ix][0] = annot[ix][0].replace('"','\"')
@@ -128,11 +125,14 @@ def convert_CMOR_output(lines):
 
 if __name__ == '__main__':
     lines=[]
-    #if len(sys.argv) == 1:
-    for line in sys.stdin:
-        lines.append(line)
-    #elif len(sys.argv) == 2:
-    #    for arg in argv[1:]:
-    #        lines.append( arg.split('\n') )
+    if len(sys.argv) == 1:
+        for line in sys.stdin:
+            lines.append(line)
+    elif len(sys.argv) == 2:
+        with open( sys.argv[1]) as fd:
+            for line in fd:
+                line = line.rstrip(' \n')
+                if len(line):
+                    lines.append(line)
 
     convert_CMOR_output(lines)
