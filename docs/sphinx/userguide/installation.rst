@@ -32,7 +32,7 @@ and update processes are separated.
 Conda Package Manager
 =====================
 
-Make sure that you have a working conda environment.
+Make sure that you have a working conda environment for python 2.7.
 The quick steps to install `miniconda` on Linux 64-bit are:
 
 .. code-block:: bash
@@ -42,11 +42,12 @@ The quick steps to install `miniconda` on Linux 64-bit are:
 
 Have the ``conda`` in your ``PATH`` or execute it by ``path/miniconda/bin/conda``.
 `Conda` provides the QA-DKRZ package with all dependencies included.
-It is recommended to use conda's default for named environments found in ``path/miniconda/envs`` .
+It is recommended to use conda's default for named environments found in ``path/miniconda/envs`` . Please, note that this should work also with anaconda, but this wasn't tested.
 
 .. code-block:: bash
 
    $ conda create -n qa-dkrz -c conda-forge -c h-dh qa-dkrz
+
 
 GitHUB repository
 =================
@@ -123,17 +124,18 @@ a package ready for shipping may be created on a system **with access**.
 
   $ qa-dkrz install --ship=/path
 
-This created a tarball ``/path/QA-DKRZ.tar`` .
+This creates a tarball ``/path/QA-DKRZ.tar`` .
 
 Note that no ship-ready version is provided neither by conda nor by git. The
 installation must be done before execution of ``--ship=/path``
 for all projects designated to be checked on the isolated system.
 
 After the tarball was copied to the new location and ``tar -xf QA-DKRZ.tar``
-was executed, run
+was executed, please, make sure that the conda-based script ``qa-dkrz`` or git-hub
+based ``qa-dkrz.sh`` , respectively, is accessable. Finally, run
 
 .. code-block:: bash
 
   $ qa-dkrz install --unship
 
-This will adjust the paths in the file ``.qa-config.txt``, which is used internally.
+This will adjust the paths in the file ``.qa-config.txt`` , which is used internally.
