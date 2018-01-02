@@ -393,7 +393,7 @@ class QaExec(object):
             period.append('')
             period.append('')
 
-        log_entry["period"] = period
+        log_entry['period'] = period
 
         return
 

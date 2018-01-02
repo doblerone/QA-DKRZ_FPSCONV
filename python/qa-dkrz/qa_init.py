@@ -244,11 +244,11 @@ def rsync_default_tables(g_vars, qaConf):
 
    dest=g_vars.table_path
 
-   rsync_cmd_0='rsync' + ' -lrtuz ' + '--copy-links ' \
-               + "--exclude='*~' " + "--exclude='.*' " + " --exclude='*_qa.conf' " \
-               + "--exclude='IS-ENES-Data.github.io'"
+   rsync_cmd_0='rsync' + ' -lrtuz ' + ' --copy-links' \
+               + " --exclude='*~'" + " --exclude='.*'" + " --exclude='*_qa.conf'" \
+               + " --exclude='IS-ENES-Data.github.io'"
 
-   rsync_cmd = rsync_cmd_0 + src + ' ' + dest
+   rsync_cmd = rsync_cmd_0 + ' ' + src + ' ' + dest
 
    try:
       subprocess.call(rsync_cmd, shell=True)
@@ -260,7 +260,7 @@ def rsync_default_tables(g_vars, qaConf):
    if prj != 'CF':
       src=os.path.join(src_0, 'projects', 'CF', '')
 
-   rsync_cmd = rsync_cmd_0 + src + ' ' + dest
+   rsync_cmd = rsync_cmd_0 + ' ' + src + ' ' + dest
 
    try:
       subprocess.call(rsync_cmd, shell=True)
