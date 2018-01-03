@@ -9,10 +9,10 @@ The CF Conformance checker applies to conventions 1.4 -1.7 (cfconventions.org).
 The checker is a bash script and resides in
 
 **conda-built**
-   path=``miniconda/env/qa-dkrz/opt/qa-dkrz/scripts``
+   path=``miniconda/env/qa-dkrz/bin/dkrz-cf-checker.sh``
 
 **GitHub**
-   path=``QA-DKRZ/scripts``
+   path=``QA-DKRZ/scripts/dkrz-cf-checker``
 
 .. code-block:: bash
 
