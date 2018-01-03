@@ -1147,16 +1147,16 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
 
         std::string capt("Misaligned ");
         if( i == 0 )
-          capt += "start-time" ;
+          capt += "start-time: " ;
         else
-          capt += "end-time" ;
-        capt += " in filename and ";
+          capt += "end-time: " ;
+        capt += "filename vs. ";
 
         size_t ix;
 
         if( pQA->qaTime.isTimeBounds )
         {
-          capt +="of time bounds";
+          capt +="time bounds";
           text = "Found difference of ";
           ix = 4 + i ;
           text += hdhC::double2String(dDiff[2+i]);
