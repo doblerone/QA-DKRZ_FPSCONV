@@ -229,6 +229,112 @@ Date::clear(void)
 }
 
 std::string
+Date::convertFormattedDate(std::string sd)
+{
+  // be prepared for some short-cuts to be valid
+  // (e.g. 1961 equiv. 1961-01 equiv. 1961-01-01)
+  // bool parameter extends a date to the end of the given date (see below);
+  // sharp by default.
+
+  std::string iso("0000-01-01T00:00:00");
+
+  // append decimal figures
+  size_t pos;
+  if( (pos=sd.find('.')) < std::string::npos)
+  {
+    iso += sd.substr(pos) ;
+    sd = sd.substr(0,pos);
+  }
+
+  // way back in the past
+  bool isMinus(false);
+
+  if( sd[0] == '-' )
+  {
+     isMinus=true;
+     sd = sd.substr(1);
+  }
+
+  // set dates of time periods
+  if( sd.size() > 3 )
+    iso.replace(0, 4, sd, 0, 4);
+  if( sd.size() > 5 )
+    iso.replace(5, 2, sd, 4, 2);
+  if( sd.size() > 7 )
+    iso.replace(8, 2, sd, 6, 2);
+  if( sd.size() > 9 )
+    iso.replace(11, 2, sd, 8, 2);
+  if( sd.size() > 11 )
+    iso.replace(14, 2, sd, 10, 2);
+  if( sd.size() > 13 )
+    iso.replace(17, 2, sd, 12, 2);
+
+  // Apply maximum date ranges when enabled; times remain sharp.
+  // Take into account individual settings 'Yx-Mx-...' with
+  // x=s for a sharp deadline and x=e for extended maximum period.
+  // Defaults for x=s.
+
+  if( ! isFormattedSharp )
+  {
+     // reset to default
+     isFormattedSharp=true;
+
+     // e: extended, s: sharp
+     std::string extendedEnd("Ye-Me-De-hs-ms-ss") ;
+
+     // year
+     if( sd.size() == 4 )
+     {
+        //if( extendedEnd.find("Ye") < std::string::npos )
+          iso.replace(5, 2, "12-31T24");
+     }
+     else if( sd.size() == 6 )
+     {
+        // months
+        //if( extendedEnd.find("Me") < std::string::npos )
+        {
+           // find the end of the month specified
+           // Date xD(sd, getCalendar());
+           double md = getMonthDaysNum(
+              hdhC::string2Double( iso.substr(5,2) ),    // month
+              hdhC::string2Double( iso.substr(0,4) ) ) ; //year
+
+          // convert to string with leading zero(s)
+          std::string smd( hdhC::double2String(md, 0, "2_0") );
+
+          // the number of days of the end month of the period
+          iso.replace(8, 2, smd);
+          iso.replace(11, 2, "24");
+        }
+     }
+     else if( sd.size() == 8 )
+     {
+        // days
+        //if( extendedEnd.find("De") < std::string::npos )
+           iso.replace(11, 2, "24");
+     }
+     else if( sd.size() == 10 )
+     {
+        // hours
+        if( extendedEnd.find("he") < std::string::npos )
+           iso.replace(14, 2, "60");
+     }
+     else if( sd.size() == 12 )
+     {
+        // minutes
+        if( extendedEnd.find("me") < std::string::npos )
+           iso.replace(17, 2, "60");
+     }
+     // note: no seconds
+  }
+
+  if(isMinus)
+    iso = "-" + iso;
+
+  return iso;
+}
+
+std::string
 Date::convertFormattedToISO_8601(double f)
 {
   // convert YYYYMMDDhhmmss.f formatted str to ISO-8601 where
@@ -931,6 +1037,7 @@ Date::init(void)
 
   isDateSet=false;
   isFormattedDate=false;
+  isFormattedSharp=true;
 
   regularMonthDays = new double [12] ;
 }
@@ -1511,7 +1618,7 @@ Date::setDate(double f, std::string cal, std::string monLen)
   if( isFormattedDate )
   {
     // convert %Y%m%d.f formatted str
-    str = convertFormattedToISO_8601(f) ;
+    str = convertFormattedDate(hdhC::double2String(f) ) ;
 
     if( ! parseISO_8601(str) )
       return true;
@@ -1551,7 +1658,7 @@ Date::setDate( std::string str, std::string cal, std::string monLen)
   setUnitsAndClear(str) ;
 
   if( isFormattedDate || str.find(' ') < std::string::npos )
-    str = convertFormattedToISO_8601(str) ;
+    str = convertFormattedDate(str) ;
 
   if( ! parseISO_8601(str) )
     return true;

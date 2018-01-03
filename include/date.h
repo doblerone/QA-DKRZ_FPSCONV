@@ -210,6 +210,8 @@ public:
          convertFormattedToISO_8601(double f) ;
   static std::string
          convertFormattedToISO_8601(std::string) ;
+  std::string
+         convertFormattedDate(std::string sd);
 
   //! A usage description and examples
   static void
@@ -378,6 +380,7 @@ public:
                     double h=0, double min=0, double s=0 );
 
   void   setFormattedDate(void){isFormattedDate=true;}
+  void   setFormattedSharp(bool is){isFormattedSharp=is;}
 
   //! Set the occurrences of a leap month.
   /*! The number of the leap month (2 by default). Note that this is only
@@ -431,6 +434,7 @@ private:
 
   bool         isDateSet ;
   bool         isFormattedDate;
+  bool         isFormattedSharp;
 
   std::string  unitStr;
   std::string  dateCode ;  // prescribed formats

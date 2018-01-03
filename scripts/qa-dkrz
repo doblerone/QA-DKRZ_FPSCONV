@@ -886,7 +886,7 @@ checkLockFile()
    return 1
 }
 
-checkValidNcFile()
+checkCorruptedQA()
 {
   # Probe corrupt file due to a crash.
   # Return 0, i.e. true, if there is no solution
@@ -1442,7 +1442,7 @@ finally()
   countSelectedVars=$((countSelectedVars - countProcessedFiles ))
 
   if [ ${countSelectedVars} -gt 0 ] ; then
-    echo -n "number of un-processed variables: ${countSelectedVars}"
+    echo "number of un-processed variables: ${countSelectedVars}"
   fi
   if [ ${countLockedVars} -gt 0 ] ; then
     echo "number of locked variables: ${countLockedVars}"
@@ -1997,7 +1997,7 @@ getNextVariable()
   # back-up file available. Note: return value 0 (true) would happen
   # only, if there are more than one qa-files backup files.
   # The function shall clear such.
-  if checkValidNcFile ${QA_RESULTS}/data/${subPath} $1 ; then
+  if checkCorruptedQA ${QA_RESULTS}/data/${subPath} $1 ; then
     nextFile=  # ignore, try next
     return 0
   fi
@@ -3118,6 +3118,13 @@ init()
   fi
 
   syncOptsInit='--only-marked --line-feed=__EOL__'
+
+  # only test the time alignment by means of times in the filename;
+  # no further processing of the current files
+  if [ ${TEST_FNAME_ALIGNMENT} ] ; then
+    syncOptsInit="${syncOptsInit} --fname-alignment --continuous"
+  fi
+
 
   # progress bar
 #  if [ ${PROGRESS_BAR:-f} = t ] ; then

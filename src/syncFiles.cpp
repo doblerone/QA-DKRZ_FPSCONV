@@ -33,25 +33,7 @@ netCDF files provided on the command-line (exclusive) or on stdin
 are synchronised to a command-line given target.\n
 The next filename to process is printed.\n
 
-Options:\n
-   -E               Print info about the entire set of files (date-sorted names.\n
-                    and annotations; last line is for the target file (if any).\n
-   -d [date0-]date1 Time limit for a starting and/or ending point.
-                    A range may be separated by a slash or a dash;\n
-                    omission indicates the end.\n
-   -m               Allow for mixing of filenames with and without time range.\n
-   -M               Test modification times.\n
-   -P string        Path to the files.\n
-   -p qa-nc-file    QA result file with path.\n
-   -S               As -s, additionally with begin and end time.\n
-                    Note that the range is given anyway in case of error.\n
-   -T               Determine and append the total time range to the output.\n
-   -t [t0-]t2       As for -d, but referring to the time values.\n
-                    Time attributes of files must be identical.\n
-   --help \n
-   --note           not implemented, yet\n
-   --only-marked    Only issue failing properties\n
-   --line-feed=str  Newline indicator \n
+Options: --help
 \n
 return:  output: \n
   0      Name of next file(s).\n
@@ -59,8 +41,10 @@ return:  output: \n
   2      Last filename if the date is older than.\n
          the end-date in the QA-result file.\n
   3      Unspecific error.\n
-  4      No time info found; output filename.\n
-  5      Invalid data.\n
+  4      No or invalid time properties; output filename.\n
+  5      Invalid time data.\n
+  6      Could not open a NetCDF data file.\n
+  7      Could not open a NetCDF QA file.\n
 >10      Ambiguity test failed (values accumulate):\n
   +1        misaligned dates in filenames \n
   +2        modification time check failed \n
@@ -104,9 +88,9 @@ class Member
   bool         isPrintDateRange;
   bool         isModTimeNote;
 
+  Date        refDate;
   Date        begin;
   Date        end;
-  Date        refDate ;
   long        modTime;
 
   NcAPI       nc;
@@ -128,10 +112,10 @@ class Ensemble
    std::string
           getDateSpan(void);
    std::string
-          getIso8601(std::string);
-   std::string
           getOutput(void);
-   int    getTimes(std::string &);
+   int    getTimes(std::string &, bool is=false);
+   int    getTimes_NC(Member &);
+   int    getTimes_FName(Member &);
    void   print(void);
    void   printDateSpan(void);
 //   void   setAnnotation( Annotation *n ) { notes = n ;}
@@ -140,13 +124,14 @@ class Ensemble
    int    testAmbiguity(std::string &,
                 bool isOnlyMarked=false, bool isMod=false, bool isNoMix=true);
 
+   bool   isContinuousAlignment;
    bool   isInvalid;
    bool   isFormattedDate;
    bool   isNoRec;
    bool   isPrintEnsemble;
    bool   isPrintOnlyMarked ;
    bool   isPrintDateRange;
-   bool   isWithTarget;
+   bool   withTarget;
 
    size_t startIndex;  // default: 0, modifiable by a time-limit.
    size_t sz ;         // end of effective ensemble, which is modifiable.
@@ -155,7 +140,9 @@ class Ensemble
    std::string           newline;
    std::string           path;
    std::vector<Member*>  member ;
-//   Annotation           *notes;
+
+   Date        refDate ;
+// Annotation           *notes;
 } ;
 
 class SyncFiles
@@ -186,10 +173,10 @@ class SyncFiles
    std::string timeLimitStr;
 
    bool isAddTimes;
+   bool isFNameAlignment;
    bool isInvalid;
    bool isMixingRefused;
    bool isModificationTest;
-   bool isNoRec;
    bool isPeriod;
    bool isPrintOnlyMarked;
 
@@ -226,10 +213,15 @@ int main(int argc, char *argv[])
   std::string str;
   std::string str0;
   std::string oStr("Ad:Ehl:mMP:p:St:T");
+  oStr += "<--calendar>:";
+  oStr += "<--continuous>";
+  oStr += "<--fname-alignment>";
   oStr += "<--only-marked>";
   oStr += "<--help>";
   oStr += "<--line-feed>:";
   oStr += "<--note>:";
+
+  ensemble.refDate.setCalendar("proleptic_gregorian");
 
   while( (copt = opt.getopt(argc, argv, oStr.c_str() )) != -1 )
   {
@@ -243,23 +235,31 @@ int main(int argc, char *argv[])
         return 3;
       }
 
-      if( str0 == "--line-feed" )
-      {
+      if( str0 == "--calendar" )
+        ensemble.refDate.setCalendar(opt.optarg);
+
+      else if( str0 == "--continuous" )
+        ensemble.isContinuousAlignment=true;
+
+      else if( str0 == "--fname-alignment" )
+        syncFiles.isFNameAlignment=true;
+
+      else if( str0 == "--line-feed" )
         syncFiles.enableNewLine(opt.optarg);
-        continue;
-      }
 
-      if( str0 == "--note" )
-      {
+      else if( str0 == "--note" )
         noteOpts=opt.optarg;
-        continue;
+
+      else if( str0 == "--only-marked" )
+        syncFiles.isPrintOnlyMarked=true;
+
+      else
+      {
+          std::cerr << "syncFiles.x: unknown option " + str0 << std::endl;
+          exit(1);
       }
 
-      if( str0 == "--only-marked" )
-      {
-        syncFiles.isPrintOnlyMarked=true;
-        continue;
-      }
+      continue;
     }
 
     switch ( copt )
@@ -356,13 +356,14 @@ int main(int argc, char *argv[])
 
 Ensemble::Ensemble()
 {
-  isInvalid        = false;
+  isContinuousAlignment  = false;
   isFormattedDate  = false;
+  isInvalid        = false;
   isNoRec          = false;
   isPrintEnsemble  = false;
   isPrintOnlyMarked= false;
   isPrintDateRange = false;
-  isWithTarget     = false;
+  withTarget       = false;
 
   startIndex  = 0;
   newline="\n";
@@ -385,7 +386,7 @@ Ensemble::addTarget( std::string &qa_target )
 
   member.push_back( new Member );
   member.back()->setFile(qa_target) ;
-  isWithTarget = true;
+  withTarget = true;
   ++last ;
   return ;
 }
@@ -400,7 +401,7 @@ Ensemble::constraint(std::string &timeLimitStr)
       return 1;
 
   // up-to-date
-  if( isWithTarget )
+  if( withTarget )
   {
     if( member[last]->end  ==  member[sz-1]->end)
     {
@@ -422,7 +423,7 @@ Ensemble::constraintSeries(void)
   // Synchronisation according dates in a target file.
 
   // If target not available, then all files
-  if( isWithTarget )
+  if( withTarget )
   {
     if( startIndex == sz )
         return 1;  // up-to-date
@@ -483,12 +484,19 @@ Ensemble::constraintTimeLimit(std::string &timeLimitStr)
   { // it is a date limit
     if( splt[0].size() )
     {
-      tl_beg.setDate( getIso8601( splt[0] ) );
+      tl_beg = refDate;
+      tl_beg.setFormattedDate(); //sharp by default
+
+      tl_beg.setDate(splt[0]);
       isBeg=true;
     }
     else
     {
-      tl_end.setDate( getIso8601( splt[1] ) );
+      tl_end = refDate;
+      tl_end.setFormattedDate();
+      tl_end.setFormattedSharp(false);
+
+      tl_end.setDate(splt[1]);
       isEnd=true;
     }
   }
@@ -496,13 +504,13 @@ Ensemble::constraintTimeLimit(std::string &timeLimitStr)
   { // a limit in terms of time values
     if( splt[0].size() )
     {
-      tl_beg.setDate( member[0]->refDate );
+      tl_beg.setDate( refDate );
       tl_beg.addTime(splt[0]);
       isBeg=true;
     }
     else
     {
-      tl_end.setDate( member[0]->refDate );
+      tl_end.setDate( refDate );
       tl_end.addTime(splt[1]);
       isEnd=true;
     }
@@ -582,28 +590,6 @@ Ensemble::getDateSpan(void)
 }
 
 std::string
-Ensemble::getIso8601(std::string c)
-{
-  // compose ISO-8601 strings
-  std::string iso("0000-01-01T00:00:00");
-
-  if( c.size() > 3 )
-    iso.replace(0, 4, c, 0, 4);
-  if( c.size() > 5 )
-    iso.replace(5, 2, c, 4, 2);
-  if( c.size() > 7 )
-    iso.replace(8, 2, c, 6, 2);
-  if( c.size() > 9 )
-    iso.replace(11, 2, c, 8, 2);
-  if( c.size() > 11 )
-    iso.replace(14, 2, c, 10, 2);
-  if( c.size() > 13 )
-    iso.replace(17, 2, c, 12, 2);
-
-  return iso;
-}
-
-std::string
 Ensemble::getOutput(void)
 {
   if( isPrintEnsemble )
@@ -626,7 +612,7 @@ Ensemble::getOutput(void)
     if( newline.size() )
       member[i]->enableNewLine(newline);
 
-    if( isWithTarget && i == (member.size()-1) )
+    if( withTarget && i == (member.size()-1) )
       printSepLine=true;
 
     s += member[i]->getOutput(printSepLine) ;
@@ -636,152 +622,47 @@ Ensemble::getOutput(void)
 }
 
 int
-Ensemble::getTimes(std::string &str)
+Ensemble::getTimes(std::string &str, bool isFNameAlignment)
 {
-  // reading netcdf files
+  // reading netcdf files or use only filename info
 
   int retVal=0;
 
   std::string begStr;
   std::string endStr;
 
+  size_t ens_sz = member.size();
+  if( withTarget )
+      --ens_sz;
+
   for( size_t i=0 ; i < member.size() ; ++i )
   {
-     Member &mmb = *(member[i]);
+    Member &mmb = *(member[i]);
 
-     if( mmb.openNc(mmb.getFile()) )
-     {
-       isInvalid = true;
-       mmb.state = "could not open file";
-       continue;
-     }
-
-     // no unlimited variable found; this is not
-     // neccessarily an error.
-     std::string ulName(mmb.nc.getUnlimitedDimName());
-     if( ulName.size() == 0 )
-     {
-       isNoRec = true;
-       mmb.nc.close();
-
-       if( sz == 1 )
-       	 return 0; // a single file
-       else
-         retVal=4;
-
-       isInvalid = true;
-       mmb.state += "missing time dimension";
-       continue;
-     }
-
-     if( mmb.nc.getNumOfRecords() == 0 )
-     {
-       // this could be wrong
-       // or just a fixed variable with time dimension defined.
-       isNoRec = true;
-       mmb.nc.close();
-
-       if( sz == 1 )
-      	  return 0;
-
-       isInvalid = true;
-       mmb.state = "no time values available";
-       continue;
-     }
-
-     std::string vName(mmb.nc.getUnlimitedDimRepName() );
-     if( vName.size() == 0 )
-     {
-       isInvalid = true;
-       mmb.state = "no time variable";
-       mmb.nc.close();
-       continue;
-     }
-
-     // reference calendar
-     /*
-     std::vector<std::string> vs;
-
-     if( mmb.nc.getAttString("calendar", vName).size() == 0 )
-     {  // failure
-       mmb.state = "missing or invalid calendar attribute";
-       mmb.nc.close();
-       continue;
-     }
-
-       // reference date
-     if( mmb.nc.getAttString("units", vName).size() == 0 )
-     {  // failure
-         mmb.state = "missing or invalid units attribute";
-         mmb.nc.close();
-         continue;
-     }
-     */
-
-     // time values: fist and last
-     MtrxArr<double> ma_t;
-     double tBegin, tEnd;
-     if( (tBegin=mmb.nc.getData(ma_t, vName,0,-1)) == MAXDOUBLE )
-     {
-        if( sz > 1 )
+    if( isFNameAlignment )
+    {
+        if( i < ens_sz )
         {
-          isInvalid = true;
-          mmb.state = "could not read time values";
-          mmb.nc.close();
-          continue;
-        }
-     }
+          // this mode doesn't need a target, even if there were one.
+          retVal = getTimes_FName(mmb) ;
 
-     if( ma_t.validRangeBegin.size() == 1  )
-     {
-        if( ma_t.validRangeBegin[0] != 0 )
-        {
-           isInvalid = true;
-           mmb.putState("first time value equals _FillValue");
-           mmb.nc.close();
-           continue;
+          if( retVal == -1 )
+             return 0;  // fixed file
         }
-
-        size_t last=ma_t.validRangeEnd[0];
-        // note validRangeEnd points to memory after the last element
-        if( ma_t.validRangeEnd[0] != ma_t.size() )
-        {
-           isInvalid = true;
-           mmb.putState("last time value equals _FillValue");
-           mmb.nc.close();
-           continue;
-        }
-     }
-     else
-     {
-        isInvalid = true;
-        mmb.putState("all time values equal _FillValue");
+    }
+    else
+    {
+        int retVal = getTimes_NC(mmb);
         mmb.nc.close();
-        continue;
-     }
 
-     if( ! mmb.refDate.isValid(tBegin))
-     {
-       isInvalid=true;
-       retVal=5;
-       mmb.putState("invalid data, found " + hdhC::double2String(tBegin), false);
-       mmb.nc.close();
-       continue;
-     }
+        if( retVal == -1 )
+           return 0;  // fixed file
+        else if( retVal == 4 )
+           isNoRec=true;
+    }
 
-     mmb.setBegin( mmb.refDate.getDate(tBegin) );
-
-     tEnd=ma_t[ma_t.size()-1];
-     if( ! mmb.refDate.isValid(tEnd))
-     {
-       isInvalid=true;
-       retVal=5;
-       mmb.putState("invalid data, found " + hdhC::double2String(tEnd), false);
-     }
-
-     mmb.setEnd( mmb.refDate.getDate(tEnd) );
-
-     mmb.nc.close();
+    if( mmb.state.size() )
+        isInvalid=true;
   }
 
   // any serious conditions
@@ -805,6 +686,200 @@ Ensemble::getTimes(std::string &str)
   sortDate();
 
   return 0;
+}
+
+int
+Ensemble::getTimes_FName(Member &mmb)
+{
+    int retVal=0;
+
+    std::string fName;
+    size_t pos;
+    if( (pos=mmb.filename.rfind('.')) < std::string::npos )
+        fName = mmb.filename.substr(0,pos) ;
+    else
+        fName = mmb.filename ;
+
+    Split y_fName(fName,'_');
+    Split x_fName(y_fName[y_fName.size()-1],'-');
+
+    size_t ix_0, ix_1;
+    if( x_fName.size() > 1 )
+    {
+        ix_1=x_fName.size()-1 ;
+        ix_0=ix_1-1 ;
+
+        if( ! hdhC::isDigit(x_fName[ix_1]) )
+            return -1;
+        else if( ! hdhC::isDigit(x_fName[ix_0]) )
+            ix_0 = ix_1 ;
+    }
+    else if( x_fName.size() > 0 )
+    {
+        ix_1=x_fName.size()-1 ;
+
+        if( ! hdhC::isDigit(x_fName[ix_1]) )
+            return -1;
+        ix_0=ix_1 ;
+    }
+    else
+      return -1;
+
+    std::string tBegin(x_fName[ix_0]);
+
+    mmb.begin = refDate;
+    mmb.begin.setFormattedDate(); //sharp by default
+
+    if( ! mmb.begin.setDate(tBegin) )
+    {
+       mmb.putState("invalid data, found " + tBegin);
+       return 5;
+    }
+
+    retVal=0;
+    if( ix_0 == ix_1 )
+      mmb.end = mmb.begin ;
+    else
+    {
+      std::string tEnd(x_fName[ix_1]);
+
+      mmb.end = refDate;
+      mmb.end.setFormattedDate();
+      mmb.end.setFormattedSharp(false);
+      if( ! mmb.end.setDate(tEnd) )
+      {
+         mmb.putState("invalid data, found " + tEnd, false);
+         retVal = 5;
+      }
+    }
+
+    return retVal;
+}
+
+int
+Ensemble::getTimes_NC(Member &mmb)
+{
+    if( ! mmb.openNc(mmb.getFile()) )
+    {
+       mmb.state = "could not open file";
+
+       std::string fName( mmb.filename );
+
+       if(withTarget)
+           return 7;
+       else
+           return 6;
+
+       return 76;
+    }
+
+    // no unlimited variable found; this is not
+    // neccessarily an error.
+    std::string ulName(mmb.nc.getUnlimitedDimName());
+    if( ulName.size() == 0 )
+    {
+       if( sz == 1 )
+       	 return -1; // a single file
+
+       mmb.state += "missing time dimension";
+       return 4;
+    }
+
+    if( mmb.nc.getNumOfRecords() == 0 )
+    {
+       // this could be wrong
+       // or just a fixed variable with time dimension defined.
+       if( sz == 1 )
+      	  return -1;
+
+       mmb.state = "no time values available";
+       return 4;
+    }
+
+    std::string vName(mmb.nc.getUnlimitedDimRepName() );
+    if( vName.size() == 0 )
+    {
+       mmb.state = "no time variable";
+       return 4;
+    }
+
+    // get refdate (each member could have its own)
+
+    // calendar; None by default
+    std::string att_cal(mmb.nc.getAttString("calendar", vName));
+
+    if( att_cal.size() )
+        mmb.refDate.setCalendar(att_cal);
+
+    // units; a missing one is a fault
+    std::string att_units(mmb.nc.getAttString("units", vName));
+    if( att_units.size() )
+    {
+        if( ! mmb.refDate.setDate(att_units) )
+        {
+          mmb.state = "invalid units";
+          mmb.nc.close();
+          return 4;
+        }
+    }
+    else
+    {
+        mmb.state = "no units";
+        mmb.nc.close();
+        return 4;
+    }
+
+    // time values: fist and last
+    MtrxArr<double> ma_t;
+    double tBegin, tEnd;
+    if( (tBegin=mmb.nc.getData(ma_t, vName,0,-1)) == MAXDOUBLE )
+    {
+        if( sz > 1 )
+        {
+           mmb.state = "could not read time values";
+           return 5;
+        }
+    }
+
+    if( ma_t.validRangeBegin.size() == 1  )
+    {
+        if( ma_t.validRangeBegin[0] != 0 )
+        {
+           mmb.putState("first time value equals _FillValue");
+           return 5;
+        }
+
+        // note validRangeEnd points to memory after the last element
+        if( ma_t.validRangeEnd[0] != ma_t.size() )
+        {
+           mmb.putState("last time value equals _FillValue");
+           return 5;
+        }
+    }
+    else
+    {
+        mmb.putState("all time values equal _FillValue");
+        return 5;
+    }
+
+    if( ! mmb.refDate.isValid(tBegin))
+    {
+       mmb.putState("invalid data, found " + hdhC::double2String(tBegin), false);
+       return 5;
+    }
+
+    mmb.setBegin( mmb.refDate.getDate(tBegin) );
+
+    tEnd=ma_t[ma_t.size()-1];
+    if( ! mmb.refDate.isValid(tEnd))
+    {
+       mmb.putState("invalid data, found " + hdhC::double2String(tEnd), false);
+       return 5;
+    }
+
+    mmb.setEnd( mmb.refDate.getDate(tEnd) );
+
+    return 0;
 }
 
 void
@@ -858,7 +933,7 @@ Ensemble::testAmbiguity( std::string &str,
   // this function operates on the time-sorted files
 
   //detect a renewed data set testing internal time values
-  if( isWithTarget )
+  if( withTarget )
   {
     // Note that last points to the target
     if( member[last]->end  >  member[sz-1]->end )
@@ -876,7 +951,7 @@ Ensemble::testAmbiguity( std::string &str,
   int returnVal=0;
 
   // test modification time against the target
-  if( isModificationTest && isWithTarget )
+  if( isModificationTest && withTarget )
   {
     int rV=0;
     for( size_t i=0 ; i < sz ; ++i)
@@ -1017,6 +1092,26 @@ Ensemble::testAmbiguity( std::string &str,
      }
   }
 
+  if( isContinuousAlignment )
+  {
+    for( size_t i=1 ; i < sz ; ++i)
+    {
+       int rV=0;
+       if( member[i-1]->end != member[i]->begin )
+       {
+         enablePrintEnsemble();
+
+         member[i-1]->putState("misaligned across files");
+
+         if(!rV)
+         {
+           rV=8;
+           returnVal += rV;
+         }
+       }
+    }
+  }
+
   if( returnVal )
   {
     if( is_only_marked )
@@ -1119,11 +1214,11 @@ Member::openNc(int ncid, std::string file)
       // it is a feature for files built by pattern, if the
       // time frame extends the range of files.
       // Caller is responsible for trapping errors
-      return true;
+      return false;
     }
   }
 
-  return false;
+  return true;
 }
 
 void
@@ -1184,10 +1279,10 @@ SyncFiles::SyncFiles( Ensemble &e)
 //  notes=0;
 
   isAddTimes         = false;
+  isFNameAlignment   = false;
   isInvalid          = false;
   isMixingRefused    = true;
   isModificationTest = false;
-  isNoRec            = false;
   isPeriod           = false;
 
   returnValue=0;
@@ -1212,7 +1307,15 @@ SyncFiles::description(void)
   std::cout << "-t begin_date-end_date \n";
   std::cout << "         Requires separator '-'; no spaces\n";
   std::cout << "-t [t0/]t1  As for -d, but referring to the time values.\n";
-  std::cout << "         Time attributes of files must be identical.\n\n";
+  std::cout << "         Time attributes of files must be identical.\n";
+
+  std::cout << "--calendar    Calendar type; by defauöt proleptic-gregorian\n" ;
+  std::cout << "--continuous  Continuous, formatted dates from filenames\n" ;
+  std::cout << "--line-feed   Newline indicated by provided string.\n" ;
+  //std::cout << "--note" ;
+  std::cout << "--only-marked Issue only filnames with failed properties.\n" ;
+  std::cout << "--only-fname-alignment\n" ;
+  std::cout << "              Use only times from filenames.\n\n";
   std::cout << "Output: one  or more filenames.\n";
   std::cout << "return:  0  File(s) synchronised to the target.\n";
   std::cout << "         1  qa-file is up-to-date.\n";
@@ -1316,12 +1419,9 @@ SyncFiles::readArgv
     ensemble->member.push_back( new Member );
 
     if( path.size() )
-    {
       ensemble->member.back()->setPath(path);
-      ensemble->member.back()->setFilename(argv[i]);
-    }
-    else
-      ensemble->member.back()->setFilename(argv[i]);
+
+    ensemble->member.back()->setFilename(argv[i]);
   }
 
   // sz will be changed corresponding to the effective range
@@ -1346,7 +1446,8 @@ SyncFiles::run(void)
   // Any annotation would be done there.
   std::string str;
 
-  returnValue = ensemble->getTimes(str) ;
+  // isFNameAlignment is usually false
+  returnValue = ensemble->getTimes(str, isFNameAlignment) ;
 
   if( str.size() )  // exit condition found
   {
