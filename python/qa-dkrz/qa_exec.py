@@ -696,9 +696,10 @@ class QaExec(object):
                     is_post_proc = False
 
                     if self.is_next:
-                        self.next -= 1
-                        if self.next == -1:
+                        if self.next == 0:
                             break
+                        else:
+                            self.next -= 1
 
                     if ix == 0:
                         if ix == lenFN_1:

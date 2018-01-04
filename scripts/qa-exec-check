@@ -1446,9 +1446,6 @@ set_qa_par()
  test ${#FREQUENCY} -gt 0 && \
    par=${par}"${s}"fq=${FREQUENCY}
 
- test ${#FILE_NAME_FREQ_INDEX} -gt 0 && \
-   par=${par}"${s}"fNFI=${FILE_NAME_FREQ_INDEX}
-
  test ${#FILE_NAME_MIP_INDEX} -gt 0 && \
    par=${par}"${s}"fNMI=${FILE_NAME_MIP_INDEX}
 

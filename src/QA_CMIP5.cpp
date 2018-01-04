@@ -4450,6 +4450,15 @@ QA_Exp::applyOptions(std::vector<std::string>& optStr)
        continue;
      }
 
+     if( split[0] == "fq"
+          || split[0] == "frequency" )
+     {
+       if( split.size() == 2 )
+          frequency=split[1];
+
+       continue;
+     }
+
      if( split[0] == "mFNTS" || split[0] == "MIP_fname_time_size" )
      {
        if( split.size() == 2 )
@@ -4657,15 +4666,6 @@ QA_Exp::getFrequency(void)
     std::string f( pQA->pIn->file.basename );
 
     Split splt(f, "_");
-
-    // try a given index (position) for a freq-item in the filename
-    if( frequencyPosition > -1 )
-    {
-      size_t fp=static_cast<size_t>(frequencyPosition);
-
-      if( fp < splt.size() )
-         frequency = splt[fp] ;
-    }
 
     if( frequency.size() == 0 )
     {
@@ -4908,7 +4908,6 @@ QA_Exp::initDefaults(void)
   isUseStrict=false;
   bufferSize=1500;
 
-  frequencyPosition=-1;  // not set
   mipPosition=-1;
   varnamePosition=-1;
 

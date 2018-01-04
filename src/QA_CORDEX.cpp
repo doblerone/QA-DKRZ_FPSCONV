@@ -1691,20 +1691,20 @@ QA_Exp::applyOptions(std::vector<std::string>& optStr)
        continue;
      }
 
-     if( split[0] == "fNFI"
-          || split[0] == "file_name_freq_index" )
-     {
-       if( split.size() == 2 )
-          frequencyPosition=hdhC::string2Double(split[1]);
-
-       continue;
-     }
-
      if( split[0] == "fNVI"
           || split[0] == "file_name_var_index" )
      {
        if( split.size() == 2 )
           varnamePosition=hdhC::string2Double(split[1]);
+
+       continue;
+     }
+
+     if( split[0] == "fq"
+          || split[0] == "frequency" )
+     {
+       if( split.size() == 2 )
+          frequency=split[1];
 
        continue;
      }
@@ -4286,16 +4286,6 @@ QA_Exp::getFrequency(void)
     std::string f( pQA->pIn->file.basename );
 
     Split splt(f, "_");
-
-    // This disables the different variations in number of items
-    // in the filename possible for CORDEX!!!
-    if( frequencyPosition > -1 )
-    {
-      size_t fp=static_cast<size_t>(frequencyPosition);
-
-      if( fp < splt.size() )
-         frequency = splt[fp] ;
-    }
   }
 
   if( frequency == "fx" && pQA->pIn->nc.isDimUnlimited() )
@@ -4432,7 +4422,6 @@ QA_Exp::initDefaults(void)
   isRotated=true;
   isUseStrict=false;
 
-  frequencyPosition=-1;  // not set
   varnamePosition=-1;
 
   n_axis="axis";

@@ -522,7 +522,6 @@ public:
   bool notMIP_table_avail;
 
 
-  int frequencyPosition;
   int mipPosition;
   int varnamePosition;
 

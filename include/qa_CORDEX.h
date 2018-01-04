@@ -359,7 +359,6 @@ class QA_Exp
   bool isClearBits;
   bool isRotated;
 
-  int frequencyPosition;
   int varnamePosition;
 
   std::vector<std::string> excludedAttribute;
