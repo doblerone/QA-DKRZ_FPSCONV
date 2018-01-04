@@ -380,7 +380,7 @@ public:
                     double h=0, double min=0, double s=0 );
 
   void   setFormattedDate(void){isFormattedDate=true;}
-  void   setFormattedSharp(bool is){isFormattedSharp=is;}
+  void   setFormattedRange(std::string s){formattedRange=s;}
 
   //! Set the occurrences of a leap month.
   /*! The number of the leap month (2 by default). Note that this is only
@@ -434,7 +434,7 @@ private:
 
   bool         isDateSet ;
   bool         isFormattedDate;
-  bool         isFormattedSharp;
+  std::string  formattedRange;
 
   std::string  unitStr;
   std::string  dateCode ;  // prescribed formats

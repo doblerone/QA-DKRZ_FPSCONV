@@ -139,6 +139,7 @@ class Ensemble
 
    std::string           newline;
    std::string           path;
+   std::string           frequency;
    std::vector<Member*>  member ;
 
    Date        refDate ;
@@ -216,6 +217,7 @@ int main(int argc, char *argv[])
   oStr += "<--calendar>:";
   oStr += "<--continuous>";
   oStr += "<--fname-alignment>";
+  oStr += "<--freq>:";
   oStr += "<--only-marked>";
   oStr += "<--help>";
   oStr += "<--line-feed>:";
@@ -243,6 +245,9 @@ int main(int argc, char *argv[])
 
       else if( str0 == "--fname-alignment" )
         syncFiles.isFNameAlignment=true;
+
+      else if( str0 == "--freq" )
+        ensemble.frequency=opt.optarg;
 
       else if( str0 == "--line-feed" )
         syncFiles.enableNewLine(opt.optarg);
@@ -485,7 +490,8 @@ Ensemble::constraintTimeLimit(std::string &timeLimitStr)
     if( splt[0].size() )
     {
       tl_beg = refDate;
-      tl_beg.setFormattedDate(); //sharp by default
+      tl_beg.setFormattedDate();
+      tl_end.setFormattedRange(""); // sharp
 
       tl_beg.setDate(splt[0]);
       isBeg=true;
@@ -494,7 +500,7 @@ Ensemble::constraintTimeLimit(std::string &timeLimitStr)
     {
       tl_end = refDate;
       tl_end.setFormattedDate();
-      tl_end.setFormattedSharp(false);
+      tl_end.setFormattedRange("Y+ M+ D+ h m s");
 
       tl_end.setDate(splt[1]);
       isEnd=true;
@@ -728,7 +734,9 @@ Ensemble::getTimes_FName(Member &mmb)
     std::string tBegin(x_fName[ix_0]);
 
     mmb.begin = refDate;
-    mmb.begin.setFormattedDate(); //sharp by default
+    mmb.begin.setFormattedDate();
+    // extended when specified down to sub-day
+    mmb.begin.setFormattedRange("Y M D +h +m +s");
 
     if( ! mmb.begin.setDate(tBegin) )
     {
@@ -745,7 +753,8 @@ Ensemble::getTimes_FName(Member &mmb)
 
       mmb.end = refDate;
       mmb.end.setFormattedDate();
-      mmb.end.setFormattedSharp(false);
+      // sharp when specified down to sub-day
+      mmb.end.setFormattedRange("Y+ M+ D+ h m s");
       if( ! mmb.end.setDate(tEnd) )
       {
          mmb.putState("invalid data, found " + tEnd, false);

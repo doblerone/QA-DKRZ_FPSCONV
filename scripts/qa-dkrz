@@ -588,11 +588,8 @@ callQaExecutor()
           EMAIL_TO \
           EXCLUDE_ATTRIBUTE \
           EXCLUDE_VARIABLE \
-          FILE_NAME_FREQ_INDEX \
           FILE_NAME_MIP_INDEX \
           FILE_NAME_VAR_INDEX \
-          LOG_FNAME_DIR \
-          LOG_FNAME \
           FD_BARS \
           FD_EXPLICIT_PROPS \
           FD_PLAIN \
@@ -601,11 +598,12 @@ callQaExecutor()
           FILE_SEQUENCE \
           FREQ_DIST \
           FREQUENCY \
-          FREQUENCY_POSITION \
           IMPORTED_PATH \
           IGNORE_REFERENCE_DATE \
           IGNORE_REF_DATE_ACROSS_EXP \
           LOG_CPU_TIME \
+          LOG_FNAME \
+          LOG_FNAME_DIR \
           MAIL \
           MIP_FNAME_TIME_SZ \
           MIP_TABLE_NAME \
@@ -2103,6 +2101,30 @@ getNextVariable()
     exit
   fi
 
+  # get frequency from filename or path
+  if [ ${FILE_NAME_FREQ_INDEX} ] ; then
+     local x_fName
+     declare -a x_fName
+
+     if [ "${FILE_NAME_SEP}" = '/' ] ; then
+        x_fName=( ${nV_fls[0]//\${FILE_NAME_SEP}/ } )
+     else
+        x_fName=( ${nV_fls[0]//${FILE_NAME_SEP}/ } )
+     fi
+     FREQUENCY=${x_fname[${FREQ_INDEX_FNAME}]}
+  elif [ ${FREQ_INDEX_PATH} ] ; then
+     local x_path
+     declare -a x_path
+
+     if [ "${PATH_SEP}" = '/' ] ; then
+       x_path=( ${nextPath//\${PATH_SEP}/ } )
+     else
+       x_path=( ${nextPath//${PATH_SEP}/ } )
+     fi
+     FREQUENCY=${x_path[${FREQ_INDEX_PATH}]}
+  fi
+  #syncOpts="${syncOpts} --freq=${FREQUENCY}"
+
   nxtFl="$( ${QA_BIN#*:}/syncFiles.x \
      $syncOpts -P ${nextPath} ${nV_fls[*]} )"
 
@@ -2204,6 +2226,11 @@ getNextVariable()
 
     initLog $1
 
+    nextFile= # ignore, try next
+    return 0
+  fi
+
+  if [ ${TEST_FNAME_ALIGNMENT} ] ; then
     nextFile= # ignore, try next
     return 0
   fi

@@ -274,24 +274,29 @@ Date::convertFormattedDate(std::string sd)
   // x=s for a sharp deadline and x=e for extended maximum period.
   // Defaults for x=s.
 
-  if( ! isFormattedSharp )
+  if( formattedRange.size() > 0 )
   {
-     // reset to default
-     isFormattedSharp=true;
+     // +e: before, e+: after, defautl: sharp
+     std::string &extension = formattedRange ;
 
-     // e: extended, s: sharp
-     std::string extendedEnd("Ye-Me-De-hs-ms-ss") ;
+     /*
+     if( formattedRange == "pre-extended" )
+        extension("Y M +D +h +m +s") ;
+     else if( formattedRange == "post-extended" )
+        extension("Y+ M+ D+ h+ m+ s+") ;
+    */
 
      // year
      if( sd.size() == 4 )
      {
-        //if( extendedEnd.find("Ye") < std::string::npos )
-          iso.replace(5, 2, "12-31T24");
+        if( extension.find("Y+") < std::string::npos )
+          iso.replace(5, 8, "12-31T24");
+        // the pre-case is already in iso
      }
      else if( sd.size() == 6 )
      {
         // months
-        //if( extendedEnd.find("Me") < std::string::npos )
+        if( extension.find("M+") < std::string::npos )
         {
            // find the end of the month specified
            // Date xD(sd, getCalendar());
@@ -304,28 +309,37 @@ Date::convertFormattedDate(std::string sd)
 
           // the number of days of the end month of the period
           iso.replace(8, 2, smd);
-          iso.replace(11, 2, "24");
+          iso.replace(11, 2, "24"); // hrs
         }
+        // the pre-case is already in iso
      }
      else if( sd.size() == 8 )
      {
         // days
-        //if( extendedEnd.find("De") < std::string::npos )
-           iso.replace(11, 2, "24");
+        if( extension.find("D+") < std::string::npos )
+           iso.replace(11, 2, "24"); // hrs
+        // the pre-case is already in iso
      }
      else if( sd.size() == 10 )
      {
-        // hours
-        if( extendedEnd.find("he") < std::string::npos )
-           iso.replace(14, 2, "60");
+        // hours: 0000-01-01T00:00:00
+        if( extension.find("h+") < std::string::npos )
+           iso.replace(14, 2, "60"); //min
+        else if( extension.find("+h") < std::string::npos )
+           iso.replace(11, 2, "00");// hr
      }
      else if( sd.size() == 12 )
      {
-        // minutes
-        if( extendedEnd.find("me") < std::string::npos )
+        // minutes: 0000-01-01T00:00:00
+        if( extension.find("m+") < std::string::npos )
            iso.replace(17, 2, "60");
+        else if( extension.find("+m") < std::string::npos )
+           iso.replace(14, 2, "00");
      }
      // note: no seconds
+
+     // reset to default
+     formattedRange.clear();
   }
 
   if(isMinus)
@@ -1037,7 +1051,6 @@ Date::init(void)
 
   isDateSet=false;
   isFormattedDate=false;
-  isFormattedSharp=true;
 
   regularMonthDays = new double [12] ;
 }
