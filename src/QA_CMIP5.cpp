@@ -4423,15 +4423,6 @@ QA_Exp::applyOptions(std::vector<std::string>& optStr)
        continue;
      }
 
-     if( split[0] == "fNFI"
-          || split[0] == "file_name_freq_index" )
-     {
-       if( split.size() == 2 )
-          frequencyPosition=hdhC::string2Double(split[1]);
-
-       continue;
-     }
-
      if( split[0] == "fNMI"
           || split[0] == "file_name_mip_index" )
      {
