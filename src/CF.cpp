@@ -1248,8 +1248,8 @@ CF::finalAtt_axis(void)
 
     if( followRecommendations )
     {
-      // recommendation: horizontal coordinate variable
-      // should have an axis attribute
+      // recommendation: horizontal coordinate variable other than
+      // longitude, latitude should have an axis attribute
       if( var.coord.isCoordVar && (var.coord.isC[0] || var.coord.isC[1]) )
       {
         // cases with a false axis value would match this
