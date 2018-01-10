@@ -44,6 +44,11 @@ VariableMeta::VariableMeta()
   coord.cType.push_back('Z');
   coord.cType.push_back('T');
 
+  coord.isBasicType.push_back(false);
+  coord.isBasicType.push_back(false);
+  coord.isBasicType.push_back(false);
+  coord.isBasicType.push_back(false);
+
   clearCoord();
 }
 

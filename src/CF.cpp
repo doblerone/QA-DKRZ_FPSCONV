@@ -1255,21 +1255,25 @@ CF::finalAtt_axis(void)
         // cases with a false axis value would match this
         if( !var.isValidAtt(n_axis) )
         {
-          std::string tag(bKey + "5d");
 
-          if( notes->inq(tag, var.name) )
+          if( ! (var.coord.isBasicType[0] || var.coord.isBasicType[1]) )
           {
-            std::string capt("reco: Horizontal coordinate ");
-            capt += hdhC::tf_var(var.name) ;
-            capt += "should have " + hdhC::tf_att(n_axis, hdhC::no_blank);
-            capt += "=";
-            if( var.coord.isC[0] )
-              capt += "X";
-            else
-              capt += "Y";
+             std::string tag(bKey + "5d");
 
-            (void) notes->operate(capt) ;
-            notes->setCheckStatus( n_CF, fail );
+             if( notes->inq(tag, var.name) )
+             {
+                std::string capt("reco: Horizontal coordinate ");
+                capt += hdhC::tf_var(var.name) ;
+                capt += "should have " + hdhC::tf_att(n_axis, hdhC::no_blank);
+                capt += "=";
+                if( var.coord.isC[0] )
+                   capt += "X";
+                else
+                   capt += "Y";
+
+                (void) notes->operate(capt) ;
+                notes->setCheckStatus( n_CF, fail );
+             }
           }
         }
       }
@@ -5273,20 +5277,18 @@ CF::chap41(Variable& var)
   // possible return values: lon, lat, rlon, rlat, size==0
   std::string coordType( units_lon_lat(var, units) );
 
-  bool isType[2]={false, false};
-
   if( coordType == n_longitude || coordType == "rlon" )
-    isType[0]=true;
+    var.coord.isBasicType[0]=true;
   else if( coordType == n_latitude || coordType == "rlat" )
-    isType[1]=true;
+    var.coord.isBasicType[1]=true;
 
   bool isAx[2]={false, false};  // optional, but if, then axis=X or Y
   bool isSN[2]={false, false};
   int count[2]= {0,0};
 
-  if( isType[0] )
+  if( var.coord.isBasicType[0] )
     ++count[0];
-  else if( isType[1] )
+  else if( var.coord.isBasicType[1] )
     ++count[1];
 
   // no standard_name? try the long-name
@@ -5330,9 +5332,9 @@ CF::chap41(Variable& var)
 
   for( size_t i=0 ; i < 2 ; ++i )
   {
-    if( isType[i] && isSN[i] )
+    if( var.coord.isBasicType[i] && isSN[i] )
       ++count[i];
-    if( isType[i] && isAx[i] )
+    if( var.coord.isBasicType[i] && isAx[i] )
       ++count[i];
     if( isSN[i] && isAx[i] )
       ++count[i];
@@ -5376,14 +5378,14 @@ CF::chap41(Variable& var)
     }
   }
 
-  if( !isSN[ix] && isType[ix] )
+  if( !isSN[ix] && var.coord.isBasicType[ix] )
   {
     if( coordType == "rlon" || coordType == "rlat" )
     {
       if( notes->inq(bKey + "41c", var.name) )
       {
         std::string capt(hdhC::tf_var(var.name) + "was rated a rotational " );
-        if( isType[ix] )
+        if( var.coord.isBasicType[ix] )
           capt += n_longitude ;
         else
           capt += n_latitude ;
@@ -5399,7 +5401,7 @@ CF::chap41(Variable& var)
   if( units.size() && isSN[ix] )
   {
     bool is=false;
-    if( isType[ix] )
+    if( var.coord.isBasicType[ix] )
     {
       std::string sn_coordType( units_lon_lat(var, var.snTableEntry.canonical_units) );
       if( sn_coordType != coordType )
