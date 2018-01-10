@@ -227,7 +227,10 @@ class QaConfig(object):
         if args.UPDATE      != None: _ldo['UPDATE']       = args.UPDATE
 
         if args.DRYRUN:              _ldo['DRY_RUN']        = True
-        if args.NEXT  > 0:           _ldo['NEXT']           = args.NEXT
+        if args.NEXT  > 0:
+            _ldo['NEXT']           = args.NEXT
+            if args.NEXT_VAR == 0:
+                _ldo['NEXT_VAR']   = 1
         if args.NEXT_VAR > 0:        _ldo['NEXT_VAR']       = args.NEXT_VAR
         if args.QA_EXAMPLE:          _ldo['QA_EXAMPLE']     = args.QA_EXAMPLE
 
@@ -738,6 +741,11 @@ class QaConfig(object):
                 str0='' # default configuration
 
             self.searchQA_CONF_chain(str0, lCfgFiles)
+
+        # special
+        if 'NEXT' in _ldo.keys():
+            if not 'NEXT_VAR' in _ldo.keys():
+                _ldo['NEXT_VAR'] = 1
 
         # preserve the list of configuration files
         if len(self.ldOpts):

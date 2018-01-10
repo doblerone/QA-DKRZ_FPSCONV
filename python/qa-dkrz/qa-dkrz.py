@@ -294,6 +294,9 @@ def get_next_variable(data_path, fBase, fNames):
 
     syncCall = g_vars.syncFilePrg + ' --only-marked'
 
+    if qaConf.isOpt('TEST_FNAME_ALIGNMENT'):
+        syncCall += ' --fname-alignment --continuous'
+
     if os.path.exists(qaNc):
         syncCall += ' -p ' + qaNc
 
@@ -301,6 +304,7 @@ def get_next_variable(data_path, fBase, fNames):
         syncCall += ' -l ' + qaConf.getOpt('TIME_LIMIT')
 
     syncCall += ' -P ' + data_path
+
     for f in fNames:
         syncCall += ' ' + f
 
@@ -332,7 +336,7 @@ def get_next_variable(data_path, fBase, fNames):
                 # previously processed
                 return []
 
-        elif status > 10:
+        elif status > 8:
             g_vars.anyProgress = True
 
             entry_id = log.append( t_vars.log_fname, f=fBase, d_path=data_path,
@@ -352,6 +356,9 @@ def get_next_variable(data_path, fBase, fNames):
     try:
         lst = next_file_str.splitlines()
     except:
+        lst=[]
+
+    if qaConf.isOpt('TEST_FNAME_ALIGNMENT'):
         lst=[]
 
     return lst
