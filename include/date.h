@@ -210,6 +210,7 @@ public:
          convertFormattedToISO_8601(double f) ;
   static std::string
          convertFormattedToISO_8601(std::string) ;
+  //! not static, because of dependencies
   std::string
          convertFormattedDate(std::string sd);
 

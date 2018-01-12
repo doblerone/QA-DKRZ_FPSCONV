@@ -236,6 +236,9 @@ Date::convertFormattedDate(std::string sd)
   // bool parameter extends a date to the end of the given date (see below);
   // sharp by default.
 
+  if( sd.find('-') < std::string::npos )
+      return sd;
+
   std::string iso("0000-01-01T00:00:00");
 
   // append decimal figures
@@ -1670,7 +1673,7 @@ Date::setDate( std::string str, std::string cal, std::string monLen)
   // key-word.
   setUnitsAndClear(str) ;
 
-  if( isFormattedDate || str.find(' ') < std::string::npos )
+  if( isFormattedDate || str.find('-') == std::string::npos )
     str = convertFormattedDate(str) ;
 
   if( ! parseISO_8601(str) )

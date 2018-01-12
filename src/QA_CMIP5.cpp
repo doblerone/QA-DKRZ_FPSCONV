@@ -1071,11 +1071,26 @@ DRS_CV::testPeriod(Split& x_f)
 
   // now that we have found two candidates for a date
   // compose ISO-8601 strings
-  std::vector<Date> period;
-  pQA->qaTime.getDRSformattedDateRange(period, sd);
+
+  Date* pDates[6];
+  // index 2: date of first time value
+  // index 3: date of last  time value
+  // index 4: date of first time-bound value, if available; else 0
+  // index 5: date of last  time-bound value, if available; else 0
+
+  pDates[0] = new Date() ;
+  pDates[1] = new Date() ;
+
+  pDates[0]->setFormattedDate();
+  pDates[0]->setFormattedRange(""); // sharp
+  pDates[0]->setDate(sd[0], pQA->qaTime.refDate.getCalendar());
+
+  pDates[1]->setFormattedDate();
+  pDates[1]->setFormattedRange("Y+ M+ D+ h+ m+ s+"); // extended
+  pDates[1]->setDate(sd[1], pQA->qaTime.refDate.getCalendar());
 
   // necessary for validity (not sufficient)
-  if( period[0] > period[1] )
+  if( *(pDates[0]) > *(pDates[1]) )
   {
      std::string key("1_6c");
      if( notes->inq( key, pQA->fileStr) )
@@ -1091,19 +1106,10 @@ DRS_CV::testPeriod(Split& x_f)
      return false;
   }
 
-  Date* pDates[6];
-  pDates[0] = &period[0];  // StartTime in the filename
-  pDates[1] = &period[1];  // EndTime in the filename
-
-  // index 2: date of first time value
-  // index 3: date of last  time value
-  // index 4: date of first time-bound value, if available; else 0
-  // index 5: date of last  time-bound value, if available; else 0
-
   for( size_t i=2 ; i < 6 ; ++i )
-    pDates[i] = 0 ;
+     pDates[i] = 0 ;
 
-  if( pQA->qaTime.isTimeBounds)
+ if( pQA->qaTime.isTimeBounds)
   {
     pDates[4] = new Date(pQA->qaTime.refDate);
     if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
@@ -1139,44 +1145,26 @@ DRS_CV::testPeriod(Split& x_f)
 
   pDates[2] = new Date(pQA->qaTime.refDate);
   if( pQA->qaTime.firstTimeValue != 0. )
-    pDates[2]->addTime(pQA->qaTime.firstTimeValue);
+  {
+    //sharp on the left
+    int beg = static_cast<int>( pQA->qaTime.firstTimeValue );
+    pDates[2]->addTime(static_cast<double>(beg));
+  }
 
   pDates[3] = new Date(pQA->qaTime.refDate);
   if( pQA->qaTime.lastTimeValue != 0. )
-    pDates[3]->addTime(pQA->qaTime.lastTimeValue);
+  {
+    //extended on the right
+    int end = static_cast<int>( pQA->qaTime.lastTimeValue );
+    pDates[3]->addTime(static_cast<double>(end + 1) );
+  }
 
   // alignment of of contained dates and those in the filename
   // the booleanx indicate faults
-//  bool is_t_beg = is_t_end = is_tb_beg = is_tb_end = false;
-  bool isFault[4];
-  for(size_t i=0 ; i < 4 ; ++i )
-    isFault[i]=false;
-
-  // time value: left-side
-  Date myDate( *pDates[2] );
-  myDate.addTime(-pQA->qaTime.refTimeStep);
-  isFault[0] = myDate == *pDates[0] ;
-
-  // time value: right-side
-  myDate = *pDates[3] ;
-  myDate.addTime(pQA->qaTime.refTimeStep);
-  isFault[1] = myDate ==*pDates[1] ;
-
-  if(pQA->qaTime.isTimeBounds)
-  {
-    // time_bounds: left-side
-    myDate = *pDates[4] ;
-    myDate.addTime(pQA->qaTime.refTimeStep);
-    isFault[2] = myDate == *pDates[0] ;
-
-    // time_bounds: right-side
-    myDate = *pDates[5] ;
-    myDate.addTime(-pQA->qaTime.refTimeStep);
-    isFault[3] = myDate == *pDates[1] ;
-  }
+  //  bool is_t_beg = is_t_end = is_tb_beg = is_tb_end = false;
 
   // the annotations
-  if( testPeriodAlignment(sd, pDates, isFault) )
+  if( ! testPeriodAlignment(sd, pDates) )
   {
     std::string key("1_6g");
 
@@ -1206,7 +1194,7 @@ DRS_CV::testPeriod(Split& x_f)
 }
 
 bool
-DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates, bool b[])
+DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates)
 {
   // some pecularities of CMOR, which will probably not be modified
   // for a behaviour as expected.
@@ -1214,9 +1202,41 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates, bool b[
   // "..., for using CMOR, the StartTime-EndTime element [in the filename]
   //  is based on the first and last time value included in the file ..."
 
-  // if a test for a CMOR setting fails, testing goes on
+  // regular test: filename vs. time_bounds
   if( *pDates[0] == *pDates[2] && *pDates[1] == *pDates[3] )
       return true;
+
+    // alignment of time bounds and period in the filename
+  bool is[] = { true, true, true, true };
+  double dDiff[]={0., 0., 0., 0.};
+
+  double uncertainty=0.1 ;
+  if( pQA->qaExp.getFrequency() != "day" )
+    uncertainty = 1.; // because of variable len of months
+
+      // time value: already extended to the left-side
+  dDiff[0] = fabs(*pDates[2] - *pDates[0]) ;
+  is[0] = dDiff[0] < uncertainty ;
+
+  // time value: already extended to the right-side
+  dDiff[1] = fabs(*pDates[3] - *pDates[1]) ;
+  is[1] = dDiff[1] < uncertainty ;
+
+  if(pQA->qaTime.isTimeBounds)
+  {
+    is[0] = is[1] = true;
+
+    // time_bounds: left-side
+    if( ! (is[2] = *pDates[0] == *pDates[4]) )
+      dDiff[2] = *pDates[4] - *pDates[0] ;
+
+
+    // time_bounds: right-side
+    if( ! (is[3] = *pDates[1] == *pDates[5]) )
+      dDiff[3] = *pDates[5] - *pDates[1] ;
+  }
+
+  bool bRet=true;
 
   for(size_t i=0 ; i < 2 ; ++i)
   {
@@ -1226,12 +1246,12 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates, bool b[
     if( i && !pQA->isFileComplete )
        continue;
 
-    if( !( !b[0+i] || !b[2+i] ) )
+    if( !is[0+i] || !is[2+i] )
     {
       std::string key("1_6f");
       if( notes->inq( key, pQA->fileStr) )
       {
-        std::string token;
+        std::string text;
 
         std::string capt("Misaligned ");
         if( i == 0 )
@@ -1244,26 +1264,31 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates, bool b[
 
         if( pQA->qaTime.isTimeBounds )
         {
-          capt="time bounds: ";
+          capt +="time bounds";
+          text = "Found difference of ";
           ix = 4 + i ;
+          text += hdhC::double2String(dDiff[2+i]);
+          text += " day(s)";
         }
         else
         {
-          capt="time values: ";
+          capt="time values ";
           ix = 2 + i ;
-        }
 
-        capt += sd[i] ;
-        capt += " vs. " ;
-        capt += pDates[ix]->str();
+          text = "Found " + sd[i] ;
+          text += " vs. " ;
+          text += pDates[ix]->str();
+        }
 
         (void) notes->operate(capt) ;
         notes->setCheckStatus(drsF, pQA->n_fail );
+
+        bRet=false;
       }
     }
   }
 
-  return false;
+  return bRet;
 }
 
 void

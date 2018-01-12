@@ -954,11 +954,26 @@ DRS_CV::testPeriod(Split& x_f)
 
   // now that we have found two candidates for a date
   // compose ISO-8601 strings
-  std::vector<Date> period;
-  pQA->qaTime.getDRSformattedDateRange(period, sd);
+
+  Date* pDates[6];
+  // index 2: date of first time value
+  // index 3: date of last  time value
+  // index 4: date of first time-bound value, if available; else 0
+  // index 5: date of last  time-bound value, if available; else 0
+
+  pDates[0] = new Date() ;
+  pDates[1] = new Date() ;
+
+  pDates[0]->setFormattedDate();
+  pDates[0]->setFormattedRange(""); // sharp
+  pDates[0]->setDate(sd[0], pQA->qaTime.refDate.getCalendar());
+
+  pDates[1]->setFormattedDate();
+  pDates[1]->setFormattedRange("Y+ M+ D+ h+ m+ s+"); // extended
+  pDates[1]->setDate(sd[1], pQA->qaTime.refDate.getCalendar());
 
   // necessary for validity (not sufficient)
-  if( period[0] > period[1] )
+  if( *(pDates[0]) > *(pDates[1]) )
   {
      std::string key("1_6c");
      if( notes->inq( key, pQA->fileStr) )
@@ -973,15 +988,6 @@ DRS_CV::testPeriod(Split& x_f)
 
      return false;
   }
-
-  Date* pDates[6];
-  pDates[0] = &period[0];  // StartTime in the filename
-  pDates[1] = &period[1];  // EndTime in the filename
-
-  // index 2: date of first time value
-  // index 3: date of last  time value
-  // index 4: date of first time-bound value, if available; else 0
-  // index 5: date of last  time-bound value, if available; else 0
 
   for( size_t i=2 ; i < 6 ; ++i )
     pDates[i] = 0 ;
@@ -1038,14 +1044,22 @@ DRS_CV::testPeriod(Split& x_f)
 
   pDates[2] = new Date(pQA->qaTime.refDate);
   if( pQA->qaTime.firstTimeValue != 0. )
-    pDates[2]->addTime(pQA->qaTime.firstTimeValue);
+  {
+    //sharp on the left
+    int beg = static_cast<int>( pQA->qaTime.firstTimeValue );
+    pDates[2]->addTime(static_cast<double>(beg));
+  }
 
   pDates[3] = new Date(pQA->qaTime.refDate);
   if( pQA->qaTime.lastTimeValue != 0. )
-    pDates[3]->addTime(pQA->qaTime.lastTimeValue);
+  {
+    //extended on the right
+    int end = static_cast<int>( pQA->qaTime.lastTimeValue );
+    pDates[3]->addTime(static_cast<double>(end + 1) );
+  }
 
   // the annotations
-  if( !testPeriodAlignment(sd, pDates) )
+  if( ! testPeriodAlignment(sd, pDates) )
   {
     if( testPeriodDatesFormat(sd) ) // format of period dates.
     {
@@ -1098,16 +1112,12 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
   if( pQA->qaExp.getFrequency() != "day" )
     uncertainty = 1.; // because of variable len of months
 
-  // time value: left-side
-  Date myDate( *pDates[2] );
-  myDate.addTime(-pQA->qaTime.refTimeStep/2.);
-  dDiff[0] = fabs(myDate - *pDates[0]) ;
+  // time value: already extended to the left-side
+  dDiff[0] = fabs(*pDates[2] - *pDates[0]) ;
   is[0] = dDiff[0] < uncertainty ;
 
-  // time value: right-side
-  myDate = *pDates[3] ;
-  myDate.addTime(pQA->qaTime.refTimeStep/2.);
-  dDiff[1] = fabs(myDate - *pDates[1]) ;
+  // time value: already extended to the right-side
+  dDiff[1] = fabs(*pDates[3] - *pDates[1]) ;
   is[1] = dDiff[1] < uncertainty ;
 
   if(pQA->qaTime.isTimeBounds)
@@ -1115,20 +1125,16 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
     is[0] = is[1] = true;
 
     // time_bounds: left-side
-    Date myDate = *pDates[4] ;
-//    myDate.addTime(-pQA->qaTime.refTimeStep/2.);
-//    dDiff = fabs(myDate - *pDates[0]) ;
     if( ! (is[2] = *pDates[0] == *pDates[4]) )
       dDiff[2] = *pDates[4] - *pDates[0] ;
 
 
     // time_bounds: right-side
-    myDate = *pDates[5] ;
-//    myDate.addTime(pQA->qaTime.refTimeStep/2.);
-//    dDiff = fabs(myDate - *pDates[1]) ;
     if( ! (is[3] = *pDates[1] == *pDates[5]) )
       dDiff[3] = *pDates[5] - *pDates[1] ;
   }
+
+  bool bRet=true;
 
   for(size_t i=0 ; i < 2 ; ++i)
   {
@@ -1172,14 +1178,15 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
           text += pDates[ix]->str();
         }
 
-
         (void) notes->operate(capt) ;
         notes->setCheckStatus(drsF, pQA->n_fail );
+
+        bRet=false;
       }
     }
   }
 
-  return false;
+  return bRet;
 }
 
 void
