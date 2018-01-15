@@ -1059,7 +1059,34 @@ DRS_CV::testPeriod(Split& x_f)
   }
 
   // the annotations
-  if( ! testPeriodAlignment(sd, pDates) )
+  bool isNot;
+
+  if( (isNot=testPeriodAlignment(sd, pDates)) )
+  {
+    if( pQA->qaExp.getFrequency() == "3hr" )
+    {
+      // alternative: edges of time values may be used in the filename
+      // indicated by false.
+      if( isNot=testPeriodAlignment(sd, pDates, false) )
+      {
+        if( pQA->qaTime.firstTimeValue != 0. )
+        {
+          //sharp on the left
+          *(pDates[2]) = pQA->qaTime.refDate ;
+          pDates[2]->addTime( pQA->qaTime.lastTimeValue );
+        }
+
+        if( pQA->qaTime.lastTimeValue != 0. )
+        {
+           //instant
+          *(pDates[3]) = pQA->qaTime.refDate ;
+           pDates[3]->addTime( pQA->qaTime.lastTimeValue );
+        }
+      }
+    }
+  }
+
+  if( ! isNot )
   {
     if( testPeriodDatesFormat(sd) ) // format of period dates.
     {
@@ -1095,7 +1122,7 @@ DRS_CV::testPeriod(Split& x_f)
 }
 
 bool
-DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
+DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates, bool isNotAlt)
 {
   // regular test: filename vs. time_bounds
   if( *pDates[0] == *pDates[2] && *pDates[1] == *pDates[3] )
@@ -1120,7 +1147,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
   dDiff[1] = fabs(*pDates[3] - *pDates[1]) ;
   is[1] = dDiff[1] < uncertainty ;
 
-  if(pQA->qaTime.isTimeBounds)
+  if(isNotAlt && pQA->qaTime.isTimeBounds)
   {
     is[0] = is[1] = true;
 
@@ -1255,7 +1282,24 @@ DRS_CV::testPeriodCutRegular(std::vector<std::string> &sd,
       }
       else
       {
-        if( sd[0].substr(8,2) != t_hr0 )
+        bool isNotAlt=true;
+
+        if( frequency == "3hr" )
+        {
+           // alternative: edges of time values may be used in the filename
+           Date tv_beg(pQA->qaTime.refDate);
+           tv_beg.addTime(static_cast<double>(pQA->qaTime.firstTimeValue) );
+
+           Date fv_beg(pQA->qaTime.refDate);
+           fv_beg.setFormattedDate();
+           fv_beg.setFormattedRange(""); // sharp
+           fv_beg.setDate(sd[0]);
+
+           if( tv_beg == fv_beg )
+               isNotAlt=false;
+        }
+
+        if( isNotAlt && sd[0].substr(8,2) != t_hr0 )
         {
           text.push_back(" (average + 1st date): expected hr=");
           text.back() += t_hr0 + t_found + s_hr0 ;
@@ -1278,12 +1322,29 @@ DRS_CV::testPeriodCutRegular(std::vector<std::string> &sd,
       }
       else
       {
-        if( isA && s_hr1 != "24" )
+        bool isNotAlt=true;
+
+        if( frequency == "3hr" )
+        {
+           // alternative: edges of time values may be used in the filename
+           Date tv_end(pQA->qaTime.refDate);
+           tv_end.addTime(static_cast<double>(pQA->qaTime.lastTimeValue) );
+
+           Date fv_end(pQA->qaTime.refDate);
+           fv_end.setFormattedDate();
+           fv_end.setFormattedRange(""); // sharp
+           fv_end.setDate(sd[1]);
+
+           if( tv_end == fv_end )
+               isNotAlt=false;
+        }
+
+        if( isNotAlt && isA && s_hr1 != "24" )
         {
           text.push_back(" (averaged + 1st date): expected hr=");
           text.back() += t_hr1 + t_found + s_hr1 ;
         }
-        else if( isB && s_hr1 != "00" )
+        else if( isNotAlt && isB && s_hr1 != "00" )
         {
           text.push_back(" (averaged + 2nd date): expected hr=");
           text.back() += t_hr1 + t_found + s_hr1 ;
@@ -1461,17 +1522,16 @@ DRS_CV::testPeriodDatesFormat(std::vector<std::string> &sd)
   std::string frequency(pQA->qaExp.getFrequency());
 
   // partitioning of files
-  if( frequency == "3hr" || frequency == "6hr" )
+  if( frequency == "3hr" )
+  {
+      if( ! ( (sd[0].size() == 10 && sd[1].size() == 10)
+            || (sd[0].size() == 12 && sd[1].size() == 12) ) )
+        str += "YYYYMMDDhh[ss] for 3-hourly time step";
+  }
+  else if( frequency == "6hr" )
   {
       if( sd[0].size() != 10 || sd[1].size() != 10 )
-      {
-        str += "YYYYMMDDhh for ";
-        if( frequency == "3hr" )
-          str += "3";
-        else
-          str += "6";
-        str += "-hourly time step";
-      }
+        str += "YYYYMMDDhh for 6-hourly time step";
   }
   else if( frequency == "day" )
   {
