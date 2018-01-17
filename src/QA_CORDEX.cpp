@@ -964,12 +964,14 @@ DRS_CV::testPeriod(Split& x_f)
   pDates[0] = new Date() ;
   pDates[1] = new Date() ;
 
+  // regular: filename Start/End time vs. TB 1st_min/last_max
+  // alternative by default: filename Start/End time vs. Time 1st/last
+  if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
+
   pDates[0]->setFormattedDate();
-  pDates[0]->setFormattedRange(""); // sharp
   pDates[0]->setDate(sd[0], pQA->qaTime.refDate.getCalendar());
 
   pDates[1]->setFormattedDate();
-  pDates[1]->setFormattedRange("Y+ M+ D+ h+ m+ s+"); // extended
   pDates[1]->setDate(sd[1], pQA->qaTime.refDate.getCalendar());
 
   // necessary for validity (not sufficient)
@@ -992,15 +994,43 @@ DRS_CV::testPeriod(Split& x_f)
   for( size_t i=2 ; i < 6 ; ++i )
     pDates[i] = 0 ;
 
+  pDates[2] = new Date(pQA->qaTime.refDate);
+  if( pQA->qaTime.firstTimeValue != 0. )
+    pDates[2]->addTime(pQA->qaTime.firstTimeValue);
+
+  pDates[3] = new Date(pQA->qaTime.refDate);
+  if( pQA->qaTime.lastTimeValue != 0. )
+    pDates[3]->addTime(pQA->qaTime.lastTimeValue);
+
+  // two cases how the filename interval can be set
+  // a) regular: fname interval according to time_bounds
+  // b) alternative: fname times correspond to the respective time values
+
+  // shift to the left
+  if( *pDates[0] == *pDates[2] )
+     pDates[0]->addTime(-pQA->qaTime.refTimeStep/2.);
+  if( pQA->qaTime.firstTimeValue != 0. )
+     pDates[2]->addTime(-pQA->qaTime.refTimeStep/2.);
+
+  // shift to the right
+  //if( *pDates[1] == *pDates[3] )
+  pDates[1]->addTime(pQA->qaTime.refTimeStep);  // !!!
+  if( pQA->qaTime.lastTimeValue != 0. )
+     pDates[3]->addTime(pQA->qaTime.refTimeStep/2.);
+
   if( pQA->qaTime.isTimeBounds)
   {
     pDates[4] = new Date(pQA->qaTime.refDate);
-    if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
-      pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
-
     pDates[5] = new Date(pQA->qaTime.refDate);
-    if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
-      pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
+
+    if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
+      if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
+        pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
+
+    // regular: filename Start/End time vs. TB 1st_min/last_max
+    if( pQA->qaTime.lastTimeValue != pQA->qaTime.lastTimeBoundsValue[1] )
+      if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
+        pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
 
     double db_centre=(pQA->qaTime.firstTimeBoundsValue[0]
                         + pQA->qaTime.firstTimeBoundsValue[1])/2. ;
@@ -1042,47 +1072,21 @@ DRS_CV::testPeriod(Split& x_f)
     }
   }
 
-  pDates[2] = new Date(pQA->qaTime.refDate);
-  if( pQA->qaTime.firstTimeValue != 0. )
-  {
-    //sharp on the left
-    int beg = static_cast<int>( pQA->qaTime.firstTimeValue );
-    pDates[2]->addTime(static_cast<double>(beg));
-  }
-
-  pDates[3] = new Date(pQA->qaTime.refDate);
-  if( pQA->qaTime.lastTimeValue != 0. )
-  {
-    //extended on the right
-    int end = static_cast<int>( pQA->qaTime.lastTimeValue );
-    pDates[3]->addTime(static_cast<double>(end + 1) );
-  }
-
-  // the annotations
   bool isNot;
-
   if( (isNot=testPeriodAlignment(sd, pDates)) )
   {
-    if( pQA->qaExp.getFrequency() == "3hr" )
+    if( pQA->qaTime.firstTimeValue != 0. )
     {
-      // alternative: edges of time values may be used in the filename
-      // indicated by false.
-      if( isNot=testPeriodAlignment(sd, pDates, false) )
-      {
-        if( pQA->qaTime.firstTimeValue != 0. )
-        {
-          //sharp on the left
-          *(pDates[2]) = pQA->qaTime.refDate ;
-          pDates[2]->addTime( pQA->qaTime.lastTimeValue );
-        }
+      //sharp on the left
+      *(pDates[2]) = pQA->qaTime.refDate ;
+      pDates[2]->addTime( pQA->qaTime.lastTimeValue );
+    }
 
-        if( pQA->qaTime.lastTimeValue != 0. )
-        {
-           //instant
-          *(pDates[3]) = pQA->qaTime.refDate ;
-           pDates[3]->addTime( pQA->qaTime.lastTimeValue );
-        }
-      }
+    if( pQA->qaTime.lastTimeValue != 0. )
+    {
+       //instant
+      *(pDates[3]) = pQA->qaTime.refDate ;
+       pDates[3]->addTime( pQA->qaTime.lastTimeValue );
     }
   }
 
@@ -1122,7 +1126,7 @@ DRS_CV::testPeriod(Split& x_f)
 }
 
 bool
-DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates, bool isNotAlt)
+DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
 {
   // regular test: filename vs. time_bounds
   if( *pDates[0] == *pDates[2] && *pDates[1] == *pDates[3] )
@@ -1135,9 +1139,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates, bool is
   bool is[] = { true, true, true, true };
   double dDiff[]={0., 0., 0., 0.};
 
-  double uncertainty=0.1 ;
-  if( pQA->qaExp.getFrequency() != "day" )
-    uncertainty = 1.; // because of variable len of months
+  double uncertainty= pQA->qaTime.refTimeStep * 0.15;
 
   // time value: already extended to the left-side
   dDiff[0] = fabs(*pDates[2] - *pDates[0]) ;
@@ -1147,18 +1149,20 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates, bool is
   dDiff[1] = fabs(*pDates[3] - *pDates[1]) ;
   is[1] = dDiff[1] < uncertainty ;
 
-  if(isNotAlt && pQA->qaTime.isTimeBounds)
+  if(pQA->qaTime.isTimeBounds)
   {
-    is[0] = is[1] = true;
+    if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
+    {
+      is[0] = is[1] = true;
 
-    // time_bounds: left-side
-    if( ! (is[2] = *pDates[0] == *pDates[4]) )
-      dDiff[2] = *pDates[4] - *pDates[0] ;
+      // time_bounds: left-side
+      dDiff[2] = fabs(*pDates[4] - *pDates[0]) ;
+      is[2] = dDiff[2] < uncertainty ;
 
-
-    // time_bounds: right-side
-    if( ! (is[3] = *pDates[1] == *pDates[5]) )
-      dDiff[3] = *pDates[5] - *pDates[1] ;
+      // time_bounds: right-side
+      dDiff[3] = fabs(*pDates[5] - *pDates[1]) ;
+      is[3] = dDiff[5] < uncertainty ;
+    }
   }
 
   bool bRet=true;
@@ -1282,8 +1286,6 @@ DRS_CV::testPeriodCutRegular(std::vector<std::string> &sd,
       }
       else
       {
-        bool isNotAlt=true;
-
         if( frequency == "3hr" )
         {
            // alternative: edges of time values may be used in the filename
@@ -1294,12 +1296,9 @@ DRS_CV::testPeriodCutRegular(std::vector<std::string> &sd,
            fv_beg.setFormattedDate();
            fv_beg.setFormattedRange(""); // sharp
            fv_beg.setDate(sd[0]);
-
-           if( tv_beg == fv_beg )
-               isNotAlt=false;
         }
 
-        if( isNotAlt && sd[0].substr(8,2) != t_hr0 )
+        if( sd[0].substr(8,2) != t_hr0 )
         {
           text.push_back(" (average + 1st date): expected hr=");
           text.back() += t_hr0 + t_found + s_hr0 ;
@@ -1322,8 +1321,6 @@ DRS_CV::testPeriodCutRegular(std::vector<std::string> &sd,
       }
       else
       {
-        bool isNotAlt=true;
-
         if( frequency == "3hr" )
         {
            // alternative: edges of time values may be used in the filename
@@ -1334,17 +1331,14 @@ DRS_CV::testPeriodCutRegular(std::vector<std::string> &sd,
            fv_end.setFormattedDate();
            fv_end.setFormattedRange(""); // sharp
            fv_end.setDate(sd[1]);
-
-           if( tv_end == fv_end )
-               isNotAlt=false;
         }
 
-        if( isNotAlt && isA && s_hr1 != "24" )
+        if( isA && s_hr1 != "24" )
         {
           text.push_back(" (averaged + 1st date): expected hr=");
           text.back() += t_hr1 + t_found + s_hr1 ;
         }
-        else if( isNotAlt && isB && s_hr1 != "00" )
+        else if( isB && s_hr1 != "00" )
         {
           text.push_back(" (averaged + 2nd date): expected hr=");
           text.back() += t_hr1 + t_found + s_hr1 ;

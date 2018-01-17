@@ -62,8 +62,7 @@ struct DRS_CV
       the file is assumed to be completely qa-processed.
       Syntax of date ranges as given in CORDEX  DRS Syntax.*/
   bool   testPeriod(Split&);
-  bool   testPeriodAlignment(std::vector<std::string> &sd, Date** pDates,
-              bool isNotAlt=false)  ;
+  bool   testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)  ;
   void   testPeriodCut(std::vector<std::string> &sd) ;
   bool   testPeriodCut_CMOR_isGOD(std::vector<std::string> &sd, Date**);
   void   testPeriodCutRegular(std::vector<std::string> &sd,

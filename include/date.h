@@ -233,8 +233,8 @@ public:
       in ISO-8601 format. If reference was not set before, then
       val is considered a Julian day. The bool set true states
       that val is a Julian day anyway.*/
-  Date  // val must be a Julian Date number if isRel.==false
-         getDate(double val, bool isJD=false) ;
+      // val must be a Julian Date number if isRel.==false
+  Date   getDate(double val, bool isJD=false) ;
 
   //! Get relative or absolute date.
   /*! Provide time units relative to date and return ISO-8601 string.
@@ -243,8 +243,7 @@ public:
       a relative part is considered. In case of failure,
       'not-a-valid-date' string is returned.
       Bool isFormatted=true for formatted value like 20010102.5*/
-  Date
-         getDate(std::string, bool isFormatted=false);
+  Date   getDate(std::string, bool isFormatted=false);
 
   //! Get the day of the year and month.
   double getDay( void );
@@ -411,7 +410,7 @@ public:
 
   bool   size(void){ return isDateSet; }
 
-  std::string
+  std::string  // ISO-8601 representation of the date
          str(void) ;
 
   void   clear(void);
@@ -439,7 +438,6 @@ private:
 
   std::string  unitStr;
   std::string  dateCode ;  // prescribed formats
-
   double       refUnitSign;
 
   // messaging in case of exceptions.
@@ -452,7 +450,10 @@ private:
 
   void   exceptionError(std::string );
 
-/*  double getDayLightST( void );*/
+  /*  double getDayLightST( void );*/
+  static std::string
+         getFullyFormattedDateStr(std::string);
+
   static void
          getDayTime(double d, double *h, double *m, double *s);
   double getLocalTimeZone( void ) ;

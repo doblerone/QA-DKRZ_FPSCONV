@@ -102,9 +102,6 @@ class Ensemble
    Ensemble();
 
    void   addTarget( std::string &qa_target );
-   int    constraint(std::string &timeLimitStr);
-   int    constraintSeries(void);
-   int    constraintTimeLimit(std::string &timeLimitStr);
    void   enablePrintEnsemble(void) {isPrintEnsemble=true;}
    void   enablePrintOnlyMarked(void){isPrintOnlyMarked=true;}
    void   enablePrintDateRange(void){isPrintDateRange=true;}
@@ -167,11 +164,9 @@ class SyncFiles
    void setTarget(std::string q)        {qa_target=q;}
    void setPath(std::string &p);
    void setQA_target(std::string s)     {qa_target=s;}
-   void setTimeLimit(std::string s)     {timeLimitStr = s;}
 
    std::string path;
    std::string qa_target ;
-   std::string timeLimitStr;
 
    bool isAddTimes;
    bool isFNameAlignment;
@@ -213,7 +208,7 @@ int main(int argc, char *argv[])
   int copt;
   std::string str;
   std::string str0;
-  std::string oStr("Ad:Ehl:mMP:p:St:T");
+  std::string oStr("AEhl:mMP:p:ST");
   oStr += "<--calendar>:";
   oStr += "<--continuous>";
   oStr += "<--fname-alignment>";
@@ -272,33 +267,12 @@ int main(int argc, char *argv[])
       case 'A':
         //obsolete
         break;
-      case 'd':
-        {
-        str0=opt.optarg;
-        std::string str("_");
-        size_t p=0;
-
-        if( (p=str0.find('/')) < std::string::npos )
-          str = str0.replace(p, 0, "_") ; // is a range
-        else if( (p=str0.find('-')) <  std::string::npos )
-          str = str0.replace(p, 0, "_") ; // is a range
-        else if( hdhC::isNumber(str0) )
-          str += str0 ;  // end time
-        else
-          return 3;
-
-        syncFiles.setTimeLimit(str) ;
-        }
-        break;
       case 'E':
         syncFiles.enablePrintEnsemble();
         break;
       case 'h':
         syncFiles.description();
         return 3;
-        break;
-      case 'l':
-        syncFiles.setTimeLimit(opt.optarg);
         break;
       case 'm':
         syncFiles.enableMixingRefused();
@@ -316,24 +290,6 @@ int main(int argc, char *argv[])
       case 'S':
         // printing date range of each file in output requested
         syncFiles.enablePrintDateRange();
-        break;
-      case 't':
-        {
-        str0=opt.optarg;
-        std::string str("/");
-        size_t p=0;
-
-        if( (p=str0.find('-')) < std::string::npos )
-          str = str0.replace(p, 0, "/") ; // is a range
-        else if( (p=str0.find('/')) <  std::string::npos )
-          str = str0 ;    // is a range separated by '/'
-        else if( hdhC::isNumber(str0) )
-          str += str0 ;  // end time
-        else
-          return 3;
-
-        syncFiles.setTimeLimit(str) ;
-        }
         break;
       case 'T':
         syncFiles.enablePrintTotalTimeRange() ;
@@ -394,192 +350,6 @@ Ensemble::addTarget( std::string &qa_target )
   withTarget = true;
   ++last ;
   return ;
-}
-
-int
-Ensemble::constraint(std::string &timeLimitStr)
-{
-  int retVal=0;
-
-  if( timeLimitStr.size() )
-    if( constraintTimeLimit(timeLimitStr) == 1 )
-      return 1;
-
-  // up-to-date
-  if( withTarget )
-  {
-    if( member[last]->end  ==  member[sz-1]->end)
-    {
-       startIndex = sz; // ==> empty output
-
-       if( sz == 1 )
-         return 1;
-    }
-  }
-
-  retVal += constraintSeries() ;
-
-  return retVal;
-}
-
-int
-Ensemble::constraintSeries(void)
-{
-  // Synchronisation according dates in a target file.
-
-  // If target not available, then all files
-  if( withTarget )
-  {
-    if( startIndex == sz )
-        return 1;  // up-to-date
-  }
-  else
-    return 0;
-
-  int retVal=0;
-
-  for( size_t i=startIndex ; i < sz ; ++i)
-  {
-    //Note that member[last] is for the target
-    if( member[last]->end  <  member[i]->end)
-    {
-       startIndex = i;
-       if( i == (sz-1) )
-         retVal= 0;
-
-       break;
-    }
-  }
-
-  return retVal;
-}
-
-int
-Ensemble::constraintTimeLimit(std::string &timeLimitStr)
-{
-  Date tl_beg;
-  Date tl_end;
-
-  bool  isBeg=false;
-  bool  isEnd=false;
-
-  // determine the kind of string provided
-  // a) a range or a single instance of date or time
-  // b) date(s) or time(s)
-
-  // A range of times is separated by a slash.
-  // A leading or trailing / is required, if only
-  // a single value is provided for a time limit;
-  // Omission of '_' indicates the end-date limit.
-
-  bool isDate=true;
-  char sep='_';
-  if( timeLimitStr.find('/') < std::string::npos )
-  {
-    sep='/';
-    isDate=false;
-  }
-
-  // Requires the same reference date for all files.
-  // Requires the same calendar for all files and the time limit.
-  Split splt(timeLimitStr,sep);
-  splt.enableEmptyItems();
-
-  if( isDate )
-  { // it is a date limit
-    if( splt[0].size() )
-    {
-      tl_beg = refDate;
-      tl_beg.setFormattedDate();
-      tl_end.setFormattedRange(""); // sharp
-
-      tl_beg.setDate(splt[0]);
-      isBeg=true;
-    }
-    else
-    {
-      tl_end = refDate;
-      tl_end.setFormattedDate();
-      tl_end.setFormattedRange("Y+ M+ D+ h m s");
-
-      tl_end.setDate(splt[1]);
-      isEnd=true;
-    }
-  }
-  else
-  { // a limit in terms of time values
-    if( splt[0].size() )
-    {
-      tl_beg.setDate( refDate );
-      tl_beg.addTime(splt[0]);
-      isBeg=true;
-    }
-    else
-    {
-      tl_end.setDate( refDate );
-      tl_end.addTime(splt[1]);
-      isEnd=true;
-    }
-  }
-
-/*
-    else
-    {
-      std::ostringstream ostr(std::ios::app);
-      ostr << "syncFiles.x::constraint(): option -t:\nargument ";
-      ostr << timeLimitStr ;
-      ostr << " requires separator '-' or '/'.\n";
-
-      std::cout << ostr.str() << std::endl;
-      return 3;
-    }
-*/
-
-  // test
-  if( isBeg )
-  {
-    // find first member fulfilling the time limit
-    if( tl_beg > member[sz-1]->end )
-    {
-      startIndex=sz;  //in fact an up-to-date state
-      return 1;
-    }
-    else
-    {
-      for( size_t i=0 ; i < sz ; ++i )
-      {
-        if( tl_beg <= member[i]->end )
-        {
-          startIndex = i ;  // reduce the file ensemble virtually
-          break;
-        }
-      }
-    }
-  }
-
-  // find last member fulfilling the time limit
-  if( isEnd )
-  {
-    // limit set before the first file
-    if( tl_end > member[startIndex]->begin )
-    {
-      for( size_t i=startIndex ; i < sz ; ++i )
-      {
-        if( tl_end < member[i]->begin )
-        {
-          sz = i ;  // reduce the file ensemble virtually
-          break;
-        }
-      }
-    }
-    else
-    {
-      startIndex=sz;  //in fact an up-to-date state
-      return 1;
-    }
-  }
-
-  return 0;
 }
 
 std::string
@@ -736,7 +506,7 @@ Ensemble::getTimes_FName(Member &mmb)
     mmb.begin = refDate;
     mmb.begin.setFormattedDate();
     // extended when specified down to sub-day
-    mmb.begin.setFormattedRange("Y M D +h +m +s");
+    mmb.begin.setFormattedRange("");
 
     if( ! mmb.begin.setDate(tBegin) )
     {
@@ -753,8 +523,16 @@ Ensemble::getTimes_FName(Member &mmb)
 
       mmb.end = refDate;
       mmb.end.setFormattedDate();
-      // sharp when specified down to sub-day
-      mmb.end.setFormattedRange("Y+ M+ D+ h m s");
+
+      if( frequency.substr(0,2) == "yr" )
+        mmb.end.setFormattedRange("Y+"); // extended
+      else if( frequency.find("mon") < std::string::npos )
+        mmb.end.setFormattedRange("M+"); // extended
+      else if( frequency.find("day") < std::string::npos )
+        mmb.end.setFormattedRange("D+"); // extended
+      else if( frequency == "6hr")
+        mmb.end.setFormattedRange("h+"); // extended
+
       if( ! mmb.end.setDate(tEnd) )
       {
          mmb.putState("invalid data, found " + tEnd, false);
@@ -1304,10 +1082,6 @@ SyncFiles::description(void)
   std::cout << "netCDF files provided on the command-line\n";
   std::cout << "are synchronised to a command-line given target.\n";
   std::cout << "No option: print name of file with first date.\n";
-  std::cout << "-d [date0/]date1\n";
-  std::cout << "         Time limit for a starting and/or ending point.\n";
-  std::cout << "         A range may be separated by a slash or a dash;\n";
-  std::cout << "         omission indicates the end.\n";
   std::cout << "-E       Show info about all files (purpose: debugging).\n";
   std::cout << "-P path  Common path of all data files, but the target.\n";
   std::cout << "-p qa_<variable>.nc-file\n";
@@ -1486,12 +1260,6 @@ SyncFiles::run(void)
       return returnValue;
     }
   }
-
-  // Apply user supplied time-limits and/or
-  // synchronisation to a target file.
-  // Note that dates are already sorted.
-  // Note: does not detect any error; just adjusts index range
-  returnValue = ensemble->constraint(timeLimitStr) ;
 
   // successful run
   print();

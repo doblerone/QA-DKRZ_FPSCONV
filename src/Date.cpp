@@ -236,16 +236,21 @@ Date::convertFormattedDate(std::string sd)
   // bool parameter extends a date to the end of the given date (see below);
   // sharp by default.
 
-  if( sd.find('-') < std::string::npos )
-      return sd;
+  if( formattedRange.size() == 0 )
+    if( sd.find('-') < std::string::npos )
+       return sd;
+
+  // --> YYYYMMDDhhmmss[.deci]
+  sd = getFullyFormattedDateStr(sd) ;
 
   std::string iso("0000-01-01T00:00:00");
 
   // append decimal figures
+  std::string dec;
   size_t pos;
   if( (pos=sd.find('.')) < std::string::npos)
   {
-    iso += sd.substr(pos) ;
+    dec = sd.substr(pos) ;
     sd = sd.substr(0,pos);
   }
 
@@ -265,6 +270,7 @@ Date::convertFormattedDate(std::string sd)
     iso.replace(5, 2, sd, 4, 2);
   if( sd.size() > 7 )
     iso.replace(8, 2, sd, 6, 2);
+
   if( sd.size() > 9 )
     iso.replace(11, 2, sd, 8, 2);
   if( sd.size() > 11 )
@@ -282,64 +288,50 @@ Date::convertFormattedDate(std::string sd)
      // +e: before, e+: after, defautl: sharp
      std::string &extension = formattedRange ;
 
-     /*
-     if( formattedRange == "pre-extended" )
-        extension("Y M +D +h +m +s") ;
-     else if( formattedRange == "post-extended" )
-        extension("Y+ M+ D+ h+ m+ s+") ;
-    */
-
      // year
-     if( sd.size() == 4 )
+     if( extension.find("Y+") < std::string::npos )
+        iso.replace(5, 14, "12-31T24:00:00");
+     else if( extension.find("-Y") < std::string::npos )
+        iso.replace(5, 14, "01-01T00:00:00");
+     else if( extension.find("M+") < std::string::npos )
      {
-        if( extension.find("Y+") < std::string::npos )
-          iso.replace(5, 8, "12-31T24");
-        // the pre-case is already in iso
-     }
-     else if( sd.size() == 6 )
-     {
-        // months
-        if( extension.find("M+") < std::string::npos )
-        {
-           // find the end of the month specified
-           // Date xD(sd, getCalendar());
-           double md = getMonthDaysNum(
-              hdhC::string2Double( iso.substr(5,2) ),    // month
-              hdhC::string2Double( iso.substr(0,4) ) ) ; //year
+          // months; iso with the pre-case; two M+ cases
+          // find the end of the month specified
+          // Date xD(sd, getCalendar());
+          double md = getMonthDaysNum(
+            hdhC::string2Double( iso.substr(5,2) ),    // month
+            hdhC::string2Double( iso.substr(0,4) ) ) ; //year
 
-          // convert to string with leading zero(s)
-          std::string smd( hdhC::double2String(md, 0, "2_0") );
+         // convert to string with leading zero(s)
+         std::string smd( hdhC::double2String(md, 0, "2_0") );
 
-          // the number of days of the end month of the period
-          iso.replace(8, 2, smd);
-          iso.replace(11, 2, "24"); // hrs
-        }
-        // the pre-case is already in iso
+         // the number of days of the end month of the period
+         iso.replace(8, 2, smd);
+         iso.replace(11, 8, "24:00:00"); // hrs
      }
-     else if( sd.size() == 8 )
-     {
+     else if( extension.find("-M") < std::string::npos )
+        iso.replace(8, 11, "01T00:00:00");
+     else if( extension.find("D+") < std::string::npos )
         // days
-        if( extension.find("D+") < std::string::npos )
-           iso.replace(11, 2, "24"); // hrs
-        // the pre-case is already in iso
-     }
-     else if( sd.size() == 10 )
-     {
-        // hours: 0000-01-01T00:00:00
-        if( extension.find("h+") < std::string::npos )
-           iso.replace(14, 2, "60"); //min
-        else if( extension.find("+h") < std::string::npos )
-           iso.replace(11, 2, "00");// hr
-     }
-     else if( sd.size() == 12 )
-     {
-        // minutes: 0000-01-01T00:00:00
-        if( extension.find("m+") < std::string::npos )
-           iso.replace(17, 2, "60");
-        else if( extension.find("+m") < std::string::npos )
-           iso.replace(14, 2, "00");
-     }
-     // note: no seconds
+        iso.replace(11, 8, "24:00:00"); // hrs
+     else if( extension.find("-D") < std::string::npos )
+        // days
+        iso.replace(11, 8, "00:00:00"); // hrs
+     else if( extension.find("h+") < std::string::npos )
+        // hours:
+        iso.replace(11, 8, "24:00:00"); //min
+     else if( extension.find("-h") < std::string::npos )
+        iso.replace(11, 8, "00:00:00");// hr
+     else if( extension.find("m+") < std::string::npos )
+        // minutes
+        iso.replace(14, 5, "60:60");
+     else if( extension.find("-m") < std::string::npos )
+        iso.replace(14, 5, "00:00");
+     else if( extension.find("s+") < std::string::npos )
+        // seconds
+        iso.replace(17, 2, "60");
+     else if( extension.find("-s") < std::string::npos )
+        iso.replace(17, 2, "00");
 
      // reset to default
      formattedRange.clear();
@@ -348,7 +340,7 @@ Date::convertFormattedDate(std::string sd)
   if(isMinus)
     iso = "-" + iso;
 
-  return iso;
+  return iso + dec ;
 }
 
 std::string
@@ -437,6 +429,8 @@ Date::convertFormattedToISO_8601(std::string str )
      double f = hdhC::string2Double(str);
      return convertFormattedToISO_8601(f);
   }
+
+  str = getFullyFormattedDateStr(str);
 
   std::string iso;
 
@@ -786,6 +780,140 @@ Date::getDeciYear(double y, double mo, double d,
   // -1: Jan 1st starts with 0.0 dYear
   double dYear = y + (currD -1. + currTime)/daysY ;
   return dYear ;
+}
+
+std::string
+Date::getFullyFormattedDateStr(std::string sd)
+{
+    std::string str;  // yyyymmddhhmmss.*
+
+    bool isMinus=false;
+    if(sd[0] == '-')
+    {
+      isMinus=true;
+      sd=sd.substr(1);
+    }
+
+    if( hdhC::isDigit(sd) )
+        str=sd;
+    else
+    {
+      size_t pos;
+      if( (pos=sd.find(' ')) < std::string::npos )
+          sd[pos]='T';
+
+      Split x_T(sd,'T');
+      Split x_dash(x_T[0], '-');
+
+      // year
+      if( x_dash[0].size() == 1 )
+          str = "000";
+      else if( x_dash[0].size() == 2 )
+          str = "00";
+      else if( x_dash[0].size() == 3 )
+          str = "0" ;
+      else if( x_dash[0].size() > 4 )
+          return sd;
+
+      str += x_dash[0];
+
+      // month
+      if( x_dash.size() > 1 )
+      {
+         if( x_dash[1].size() == 1 )
+          str += "0";
+         else if( x_dash[1].size() > 2 )
+            return sd;
+
+         str += x_dash[1];
+      }
+
+      // day
+      if( x_dash.size() > 2 )
+      {
+         if( x_dash[2].size() == 1 )
+          str += "0";
+         else if( x_dash[2].size() > 2 )
+            return sd;
+
+         str += x_dash[2];
+      }
+
+      if( x_T.size() > 1 )
+      {
+        Split x_colon(x_T[1], ':');
+
+        if( x_colon[0].size() == 1 )
+           str = "0";
+        else if( x_colon[0].size() > 2 )
+           return sd;
+
+        str += x_colon[0];
+
+        // min
+        if( x_colon.size() > 1 )
+        {
+           if( x_colon[1].size() == 1 )
+            str += "0";
+           else if( x_colon[1].size() > 2 )
+              return sd;
+
+           str += x_colon[2];
+        }
+
+        // sec
+        if( x_colon.size() > 2 )
+        {
+           if( (pos=x_colon[2].find('.')) < std::string::npos )
+           {
+              if( pos == 1 )
+                str += "0";
+              if( pos > 1 )
+                return sd;
+           }
+           else if( x_colon[2].size() == 1 )
+               str += "0";
+
+           str += x_colon[2];
+        }
+      }
+    }
+
+    if( isMinus )
+        str = "-" + str ;
+
+    // clear the string
+    size_t sz=str.size();
+
+    if( str.substr(sz-2) == "00" )
+    {
+        // sec or min
+        sz-=2;
+        str = str.substr(0,sz);
+
+        if( str.substr(sz-2) == "00" )
+        {
+            // min
+            sz-=2;
+            str = str.substr(0,sz);
+
+            if( str.substr(sz-2) == "00" )
+            {
+                // hr
+                sz-=2;
+                str = str.substr(0,sz);
+            }
+        }
+    }
+
+    if( str.substr(sz-4) == "0101" )
+        // yr
+        str = str.substr(0,sz-4);
+    else if( str.substr(sz-2) == "01" )
+        // yr-mon
+        str = str.substr(0,sz-2);
+
+    return str;
 }
 
 double
