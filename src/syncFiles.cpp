@@ -677,7 +677,7 @@ Ensemble::print()
 
   std::cout << s ;
 
-  if( s.size() == 0 );
+  if( s.size() == 0 )
     return 1;
 
   return 0;
