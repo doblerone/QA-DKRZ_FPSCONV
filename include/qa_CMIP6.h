@@ -488,8 +488,7 @@ struct DRS_CV
       Syntax of date ranges as given in CORDEX  DRS Syntax.*/
   bool   testPeriod(Split&);
   bool   testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)  ;
-  void   testPeriodPrecision(std::vector<std::string> &sd,
-              std::vector<std::string>& text);
+  void   testPeriodPrecision(std::vector<std::string> &sd);
   bool   testPeriodDatesFormat(std::vector<std::string> &sd) ;
   bool   testPeriodFormat(Split&, std::vector<std::string> &sd) ;
 

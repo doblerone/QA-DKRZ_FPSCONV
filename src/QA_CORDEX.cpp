@@ -964,10 +964,6 @@ DRS_CV::testPeriod(Split& x_f)
   pDates[0] = new Date() ;
   pDates[1] = new Date() ;
 
-  // regular: filename Start/End time vs. TB 1st_min/last_max
-  // alternative by default: filename Start/End time vs. Time 1st/last
-  if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
-
   pDates[0]->setFormattedDate();
   pDates[0]->setDate(sd[0], pQA->qaTime.refDate.getCalendar());
 
@@ -1006,17 +1002,19 @@ DRS_CV::testPeriod(Split& x_f)
   // a) regular: fname interval according to time_bounds
   // b) alternative: fname times correspond to the respective time values
 
-  // shift to the left
-  if( *pDates[0] == *pDates[2] )
-     pDates[0]->addTime(-pQA->qaTime.refTimeStep/2.);
-  if( pQA->qaTime.firstTimeValue != 0. )
-     pDates[2]->addTime(-pQA->qaTime.refTimeStep/2.);
+  if( ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
+  {
+    // shift to the left
+    if( *pDates[0] == *pDates[2] )
+       pDates[0]->addTime(-pQA->qaTime.refTimeStep/2.);
+    if( pQA->qaTime.firstTimeValue != 0. )
+       pDates[2]->addTime(-pQA->qaTime.refTimeStep/2.);
 
-  // shift to the right
-  //if( *pDates[1] == *pDates[3] )
-  pDates[1]->addTime(pQA->qaTime.refTimeStep);  // !!!
-  if( pQA->qaTime.lastTimeValue != 0. )
-     pDates[3]->addTime(pQA->qaTime.refTimeStep/2.);
+    // shift to the right
+    pDates[1]->addTime(pQA->qaTime.refTimeStep);  // !!!
+    if( pQA->qaTime.lastTimeValue != 0. )
+       pDates[3]->addTime(pQA->qaTime.refTimeStep/2.);
+  }
 
   if( pQA->qaTime.isTimeBounds)
   {
@@ -1072,25 +1070,7 @@ DRS_CV::testPeriod(Split& x_f)
     }
   }
 
-  bool isNot;
-  if( (isNot=testPeriodAlignment(sd, pDates)) )
-  {
-    if( pQA->qaTime.firstTimeValue != 0. )
-    {
-      //sharp on the left
-      *(pDates[2]) = pQA->qaTime.refDate ;
-      pDates[2]->addTime( pQA->qaTime.lastTimeValue );
-    }
-
-    if( pQA->qaTime.lastTimeValue != 0. )
-    {
-       //instant
-      *(pDates[3]) = pQA->qaTime.refDate ;
-       pDates[3]->addTime( pQA->qaTime.lastTimeValue );
-    }
-  }
-
-  if( ! isNot )
+  if( ! testPeriodAlignment(sd, pDates) )
   {
     if( testPeriodDatesFormat(sd) ) // format of period dates.
     {
@@ -1139,7 +1119,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
   bool is[] = { true, true, true, true };
   double dDiff[]={0., 0., 0., 0.};
 
-  double uncertainty= pQA->qaTime.refTimeStep * 0.15;
+  double uncertainty= pQA->qaTime.refTimeStep * 0.25;
 
   // time value: already extended to the left-side
   dDiff[0] = fabs(*pDates[2] - *pDates[0]) ;

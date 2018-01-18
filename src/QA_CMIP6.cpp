@@ -1887,11 +1887,9 @@ DRS_CV::testPeriod(Split& x_f)
   pDates[1] = new Date() ;
 
   pDates[0]->setFormattedDate();
-  pDates[0]->setFormattedRange(""); // sharp
   pDates[0]->setDate(sd[0], pQA->qaTime.refDate.getCalendar());
 
   pDates[1]->setFormattedDate();
-  pDates[1]->setFormattedRange("Y+ M+ D+ h+ m+ s+"); // extended
   pDates[1]->setDate(sd[1], pQA->qaTime.refDate.getCalendar());
 
   // necessary for validity (not sufficient)
@@ -1915,15 +1913,41 @@ DRS_CV::testPeriod(Split& x_f)
   for( size_t i=2 ; i < 6 ; ++i )
     pDates[i] = 0 ;
 
+  pDates[2] = new Date(pQA->qaTime.refDate);
+  if( pQA->qaTime.firstTimeValue != 0. )
+    pDates[2]->addTime(pQA->qaTime.firstTimeValue);
+
+  pDates[3] = new Date(pQA->qaTime.refDate);
+  if( pQA->qaTime.lastTimeValue != 0. )
+    pDates[3]->addTime(pQA->qaTime.lastTimeValue);
+
+    if( ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
+  {
+    // shift to the left
+    if( *pDates[0] == *pDates[2] )
+       pDates[0]->addTime(-pQA->qaTime.refTimeStep/2.);
+    if( pQA->qaTime.firstTimeValue != 0. )
+       pDates[2]->addTime(-pQA->qaTime.refTimeStep/2.);
+
+    // shift to the right
+    pDates[1]->addTime(pQA->qaTime.refTimeStep);  // !!!
+    if( pQA->qaTime.lastTimeValue != 0. )
+       pDates[3]->addTime(pQA->qaTime.refTimeStep/2.);
+  }
+
   if( pQA->qaTime.isTimeBounds)
   {
     pDates[4] = new Date(pQA->qaTime.refDate);
-    if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
-      pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
-
     pDates[5] = new Date(pQA->qaTime.refDate);
-    if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
-      pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
+
+    if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
+      if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
+        pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
+
+    // regular: filename Start/End time vs. TB 1st_min/last_max
+    if( pQA->qaTime.lastTimeValue != pQA->qaTime.lastTimeBoundsValue[1] )
+      if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
+        pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
   }
   else
   {
@@ -1949,55 +1973,12 @@ DRS_CV::testPeriod(Split& x_f)
     }
   }
 
-  pDates[2] = new Date(pQA->qaTime.refDate);
-  if( pQA->qaTime.firstTimeValue != 0. )
-  {
-    //sharp on the left
-    int beg = static_cast<int>( pQA->qaTime.firstTimeValue );
-    pDates[2]->addTime(static_cast<double>(beg));
-  }
-
-  pDates[3] = new Date(pQA->qaTime.refDate);
-  if( pQA->qaTime.lastTimeValue != 0. )
-  {
-    //extended on the right
-    int end = static_cast<int>( pQA->qaTime.lastTimeValue );
-    pDates[3]->addTime(static_cast<double>(end + 1) );
-  }
-
-  // the annotations
   if( ! testPeriodAlignment(sd, pDates) )
   {
-    std::string key("1_6g");
-
-    if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+    if( testPeriodDatesFormat(sd) ) // format of period dates.
     {
-      std::string capt("Warn: Filename's period: No time_bounds, ");
-      capt += "StartTime-EndTime rounded to time values";
-
-      (void) notes->operate(capt) ;
-      notes->setCheckStatus(drsF, pQA->n_fail );
-    }
-  }
-  else if( testPeriodDatesFormat(sd) ) // format of period dates.
-  {
-    // period requires a cut specific to the various frequencies.
-    std::vector<std::string> text ;
-    testPeriodPrecision(sd, text) ;
-
-    if( text.size() )
-    {
-      std::string key("1_6d");
-      std::string capt("period in the filename with wrong precision") ;
-
-      for( size_t i=0 ; i < text.size() ; ++i )
-      {
-        if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
-        {
-          (void) notes->operate(capt + text[i]) ;
-          notes->setCheckStatus(drsF, pQA->n_fail );
-        }
-      }
+      // period requires a cut specific to the various frequencies.
+      testPeriodPrecision(sd) ;
     }
   }
 
@@ -2027,11 +2008,9 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates)
   bool is[] = { true, true, true, true };
   double dDiff[]={0., 0., 0., 0.};
 
-  double uncertainty=0.1 ;
-  if( pQA->qaExp.getFrequency() != "day" )
-    uncertainty = 1.; // because of variable len of months
+  double uncertainty= pQA->qaTime.refTimeStep * 0.25;
 
-      // time value: already extended to the left-side
+  // time value: already extended to the left-side
   dDiff[0] = fabs(*pDates[2] - *pDates[0]) ;
   is[0] = dDiff[0] < uncertainty ;
 
@@ -2047,10 +2026,21 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates)
     if( ! (is[2] = *pDates[0] == *pDates[4]) )
       dDiff[2] = *pDates[4] - *pDates[0] ;
 
-
     // time_bounds: right-side
     if( ! (is[3] = *pDates[1] == *pDates[5]) )
       dDiff[3] = *pDates[5] - *pDates[1] ;
+  }
+  else
+  {
+    std::string key("1_6g");
+
+    if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+    {
+      std::string capt("Missing time_bounds");
+
+      (void) notes->operate(capt) ;
+      notes->setCheckStatus(drsF, pQA->n_fail );
+    }
   }
 
   bool bRet=true;
@@ -2109,8 +2099,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates)
 }
 
 void
-DRS_CV::testPeriodPrecision(std::vector<std::string>& sd,
-                  std::vector<std::string>& text)
+DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
 {
   // Partitioning of files check are equivalent.
   // Note that the format was tested before.
@@ -2119,7 +2108,15 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd,
 
   if( sd[0].size() != sd[1].size() )
   {
-    text.push_back(" 1st and 2nd date are different") ;
+    std::string key("1_6d");
+    std::string capt("period in the filename of different precision") ;
+
+    if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+    {
+        (void) notes->operate(capt ) ;
+        notes->setCheckStatus(drsF, pQA->n_fail );
+    }
+
     return;
   }
 

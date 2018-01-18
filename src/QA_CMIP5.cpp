@@ -1082,11 +1082,9 @@ DRS_CV::testPeriod(Split& x_f)
   pDates[1] = new Date() ;
 
   pDates[0]->setFormattedDate();
-  pDates[0]->setFormattedRange(""); // sharp
   pDates[0]->setDate(sd[0], pQA->qaTime.refDate.getCalendar());
 
   pDates[1]->setFormattedDate();
-  pDates[1]->setFormattedRange("Y+ M+ D+ h+ m+ s+"); // extended
   pDates[1]->setDate(sd[1], pQA->qaTime.refDate.getCalendar());
 
   // necessary for validity (not sufficient)
@@ -1109,15 +1107,41 @@ DRS_CV::testPeriod(Split& x_f)
   for( size_t i=2 ; i < 6 ; ++i )
      pDates[i] = 0 ;
 
- if( pQA->qaTime.isTimeBounds)
+  pDates[2] = new Date(pQA->qaTime.refDate);
+  if( pQA->qaTime.firstTimeValue != 0. )
+    pDates[2]->addTime(pQA->qaTime.firstTimeValue);
+
+  pDates[3] = new Date(pQA->qaTime.refDate);
+  if( pQA->qaTime.lastTimeValue != 0. )
+    pDates[3]->addTime(pQA->qaTime.lastTimeValue);
+
+  if( ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
+  {
+    // shift to the left
+    if( *pDates[0] == *pDates[2] )
+       pDates[0]->addTime(-pQA->qaTime.refTimeStep/2.);
+    if( pQA->qaTime.firstTimeValue != 0. )
+       pDates[2]->addTime(-pQA->qaTime.refTimeStep/2.);
+
+    // shift to the right
+    pDates[1]->addTime(pQA->qaTime.refTimeStep);  // !!!
+    if( pQA->qaTime.lastTimeValue != 0. )
+       pDates[3]->addTime(pQA->qaTime.refTimeStep/2.);
+  }
+
+  if( pQA->qaTime.isTimeBounds)
   {
     pDates[4] = new Date(pQA->qaTime.refDate);
-    if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
-      pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
-
     pDates[5] = new Date(pQA->qaTime.refDate);
-    if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
-      pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
+
+    if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
+      if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
+        pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
+
+    // regular: filename Start/End time vs. TB 1st_min/last_max
+    if( pQA->qaTime.lastTimeValue != pQA->qaTime.lastTimeBoundsValue[1] )
+      if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
+        pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
   }
   else
   {
@@ -1143,45 +1167,15 @@ DRS_CV::testPeriod(Split& x_f)
     }
   }
 
-  pDates[2] = new Date(pQA->qaTime.refDate);
-  if( pQA->qaTime.firstTimeValue != 0. )
-  {
-    //sharp on the left
-    int beg = static_cast<int>( pQA->qaTime.firstTimeValue );
-    pDates[2]->addTime(static_cast<double>(beg));
-  }
-
-  pDates[3] = new Date(pQA->qaTime.refDate);
-  if( pQA->qaTime.lastTimeValue != 0. )
-  {
-    //extended on the right
-    int end = static_cast<int>( pQA->qaTime.lastTimeValue );
-    pDates[3]->addTime(static_cast<double>(end + 1) );
-  }
-
-  // alignment of of contained dates and those in the filename
-  // the booleanx indicate faults
-  //  bool is_t_beg = is_t_end = is_tb_beg = is_tb_end = false;
-
   // the annotations
   if( ! testPeriodAlignment(sd, pDates) )
   {
-    std::string key("1_6g");
-
-    if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+    if( testPeriodDatesFormat(sd) ) // format of period dates.
     {
-      std::string capt("Warn: Filename's period: No time_bounds, ");
-      capt += "StartTime-EndTime rounded to time values";
-
-      (void) notes->operate(capt) ;
-      notes->setCheckStatus(drsF, pQA->n_fail );
+      // period requires a cut specific to the various frequencies.
+      std::vector<std::string> text ;
+      testPeriodPrecision(sd) ;
     }
-  }
-  else if( testPeriodDatesFormat(sd) ) // format of period dates.
-  {
-    // period requires a cut specific to the various frequencies.
-    std::vector<std::string> text ;
-    testPeriodPrecision(sd) ;
   }
 
   // note that indices 0 and 1 belong to a vector
@@ -1210,9 +1204,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates)
   bool is[] = { true, true, true, true };
   double dDiff[]={0., 0., 0., 0.};
 
-  double uncertainty=0.1 ;
-  if( pQA->qaExp.getFrequency() != "day" )
-    uncertainty = 1.; // because of variable len of months
+  double uncertainty= pQA->qaTime.refTimeStep * 0.25;
 
       // time value: already extended to the left-side
   dDiff[0] = fabs(*pDates[2] - *pDates[0]) ;
@@ -1224,16 +1216,18 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates)
 
   if(pQA->qaTime.isTimeBounds)
   {
-    is[0] = is[1] = true;
+    if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
+    {
+      is[0] = is[1] = true;
 
-    // time_bounds: left-side
-    if( ! (is[2] = *pDates[0] == *pDates[4]) )
-      dDiff[2] = *pDates[4] - *pDates[0] ;
+      // time_bounds: left-side
+      if( ! (is[2] = *pDates[0] == *pDates[4]) )
+        dDiff[2] = *pDates[4] - *pDates[0] ;
 
-
-    // time_bounds: right-side
-    if( ! (is[3] = *pDates[1] == *pDates[5]) )
-      dDiff[3] = *pDates[5] - *pDates[1] ;
+      // time_bounds: right-side
+      if( ! (is[3] = *pDates[1] == *pDates[5]) )
+        dDiff[3] = *pDates[5] - *pDates[1] ;
+    }
   }
 
   bool bRet=true;
@@ -1305,7 +1299,7 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
   {
     std::string key("1_6e");
     std::string capt("period in the filename:") ;
-    capt += " Start- and EndTime of different size" ;
+    capt += " Start- and EndTime of different precision" ;
 
     (void) notes->operate(capt) ;
     notes->setCheckStatus(drsF, pQA->n_fail );
@@ -1379,17 +1373,16 @@ DRS_CV::testPeriodDatesFormat(std::vector<std::string>& sd)
   std::string frequency(pQA->qaExp.getFrequency());
   std::string str;
 
-  if( frequency == "3hr" || frequency == "6hr" )
+  if( frequency == "3hr" )
+  {
+      if( ! ( (sd[0].size() == 10 && sd[1].size() == 10)
+            || (sd[0].size() == 12 && sd[1].size() == 12) ) )
+        str += "YYYYMMDDhh[ss] for 3-hourly time step";
+  }
+  else if( frequency == "6hr" )
   {
       if( sd[0].size() != 10 || sd[1].size() != 10 )
-      {
-        str += "YYYYMMDDhh for ";
-        if( frequency == "3hr" )
-          str += "3";
-        else
-          str += "6";
-        str += "-hourly time step";
-      }
+        str += "YYYYMMDDhh for 6-hourly time step";
   }
   else if( frequency == "day" )
   {
