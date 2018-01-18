@@ -113,7 +113,7 @@ class Ensemble
    int    getTimes(std::string &, bool is=false);
    int    getTimes_NC(Member &);
    int    getTimes_FName(Member &);
-   void   print(void);
+   int    print(void);
    void   printDateSpan(void);
 //   void   setAnnotation( Annotation *n ) { notes = n ;}
    void   setPath( std::string &p){path=p;}
@@ -132,7 +132,7 @@ class Ensemble
 
    size_t startIndex;  // default: 0, modifiable by a time-limit.
    size_t sz ;         // end of effective ensemble, which is modifiable.
-   size_t last;        // the last index of the ensemble (target)
+   size_t last;        // the index of the target appended to the ensemble
 
    std::string           newline;
    std::string           path;
@@ -155,7 +155,7 @@ class SyncFiles
    void enablePrintTotalTimeRange(void) {isPeriod=true;}
    void enableNewLine(std::string nl)   {ensemble->enableNewLine(nl);}
    void description(void);
-   void print(void);
+   int  print(void);
    int  printTimelessFile(std::string &);
    void readInput(void);
    void readArgv(int optInd, int argc, char *argv[]);
@@ -348,7 +348,8 @@ Ensemble::addTarget( std::string &qa_target )
   member.push_back( new Member );
   member.back()->setFile(qa_target) ;
   withTarget = true;
-  ++last ;
+  last=sz ;
+
   return ;
 }
 
@@ -669,12 +670,17 @@ Ensemble::getTimes_NC(Member &mmb)
     return 0;
 }
 
-void
+int
 Ensemble::print()
 {
-  std::cout << getOutput() ;
+  std::string s( getOutput() );
 
-  return ;
+  std::cout << s ;
+
+  if( s.size() == 0 );
+    return 1;
+
+  return 0;
 }
 
 void
@@ -708,6 +714,24 @@ Ensemble::sortDate(void)
     }
   }
 
+  // synchronise with target; note that last points to the target
+  if( withTarget )
+  {
+    if( member[sz-1]->end  ==  member[last]->end )
+       startIndex=sz;  // endo of the sequence was already reached
+    else
+    {
+      for( size_t i=0 ; i < sz ; ++i )
+      {
+        if( member[i]->begin  >  member[last]->end )
+        {
+          startIndex = i;
+          break;
+        }
+      }
+    }
+  }
+
   return;
 }
 
@@ -723,7 +747,7 @@ Ensemble::testAmbiguity( std::string &str,
   if( withTarget )
   {
     // Note that last points to the target
-    if( member[last]->end  >  member[sz-1]->end )
+    if( member[last]->begin  >  member[sz-1]->end )
     {
       startIndex = sz-1;
       sz = member.size();
@@ -1120,15 +1144,15 @@ SyncFiles::description(void)
   return;
 }
 
-void
+int
 SyncFiles::print(void)
 {
-  ensemble->print();
+  int retVal = ensemble->print();
 
   if( isPeriod )
     ensemble->printDateSpan();
 
-  return ;
+  return retVal;
 }
 
 int
@@ -1262,7 +1286,8 @@ SyncFiles::run(void)
   }
 
   // successful run
-  print();
+  if( print() == 1 )
+      return 1;
 
   return returnValue ;
 }

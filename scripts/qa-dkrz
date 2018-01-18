@@ -2152,8 +2152,9 @@ getNextVariable()
 #    if [ ${PROGRESS_BAR} ] ; then
       # get number of data files for progress estimation
       # note: all files no matter whether processed or locked
-      local num=${#nV_fls[*]}
+#      local num=${#nV_fls[*]}
 #    fi
+    countProcessedFiles=$(( countProcessedFiles +1 ))
 
     nextFile=
     return 0
@@ -4043,7 +4044,6 @@ operatePipes()
 
       nextFile=${p_nF[0]}
       countProcessedFiles=$(( countProcessedFiles +1 ))
-
 
       if [ ${nF_SEQ[${nFcurr}]} = 'f' ] ; then
         if [ ${#p_nF[*]} -eq 1 ] ; then

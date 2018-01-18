@@ -906,10 +906,10 @@ Date::getFullyFormattedDateStr(std::string sd)
         }
     }
 
-    if( str.substr(sz-4) == "0101" )
+    if( sz == 8 && str.substr(sz-4) == "0101" )
         // yr
         str = str.substr(0,sz-4);
-    else if( str.substr(sz-2) == "01" )
+    else if( sz == 6 && str.substr(sz-2) == "01" )
         // yr-mon
         str = str.substr(0,sz-2);
 
