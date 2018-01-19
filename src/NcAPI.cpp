@@ -3520,7 +3520,7 @@ NcAPI::getLayout(void)
      vName = layout.varName[id];
 
      // initiate the data containers
-     layoutVarDataPushes(vName, type);
+     layoutVarDataPushes(vName, layout.varType[id]);
 
      // Record size (times all dimensions except the unlimited
      // one). This contains also the total size of limited vars.

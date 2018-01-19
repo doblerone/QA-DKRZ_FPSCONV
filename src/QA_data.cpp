@@ -1522,7 +1522,7 @@ QA_Data::flush(void)
          double samMinMax = statMin.getSampleMax();
          double samMaxMin = statMax.getSampleMin();
          if( (isMax && samMax == samMaxMin) || (samMin == samMinMax) )
-            text = "supection of an erroneous set missing_value";
+            text = "suspection of an erroneous set missing_value";
 
          (void) notes->operate(capt, text) ;
          notes->setCheckStatus(pQA->n_data, pQA->n_fail);
