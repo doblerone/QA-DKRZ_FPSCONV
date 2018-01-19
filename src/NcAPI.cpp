@@ -3384,9 +3384,11 @@ NcAPI::getLayout(void)
     exceptionHandling(key, capt);
   }
 
-  // inquire dim IDs
   char name_buf[NC_MAX_NAME+1];
   size_t len;
+  int attNum;
+
+  // inquire dim IDs
   for( int id=0 ; id < dimNum ; ++id)
   {
      status=nc_inq_dim(ncid, id, name_buf, &len) ;
@@ -3409,16 +3411,15 @@ NcAPI::getLayout(void)
   if( unlimitedDimID > -1 )
       unlimitedDimName=layout.dimName[unlimitedDimID];
 
-  // Variables
-  int dimids[NC_MAX_VAR_DIMS];
-  nc_type type;
-  int dimsp;
-  int attNum;
-
-  std::string vName;
-
   for( int id=0 ; id < varNum ; ++id)
   {
+     // Variables
+     int dimids[NC_MAX_VAR_DIMS];
+     nc_type type;
+     int dimsp;
+
+     std::string vName;
+
      status=nc_inq_var(ncid, id, name_buf,
         &type, &dimsp, dimids, &attNum) ;
 
@@ -3517,7 +3518,7 @@ NcAPI::getLayout(void)
 
   for( int id=0 ; id < varNum ; ++id)
   {
-     vName = layout.varName[id];
+     std::string vName(layout.varName[id]);
 
      // initiate the data containers
      layoutVarDataPushes(vName, layout.varType[id]);
@@ -3690,23 +3691,23 @@ NcAPI::getLayout(void)
      layout.recSize.push_back( sz );
   }
 
-   // global attributes are associated
-   // with variable name 'NC_GLOBAL'
-   status=nc_inq_varnatts(ncid, NC_GLOBAL, &attNum) ;
-   if(status)
-   {
+  // global attributes are associated
+  // with variable name 'NC_GLOBAL'
+  status=nc_inq_varnatts(ncid, NC_GLOBAL, &attNum) ;
+  if(status)
+  {
      std::string key="NC_2_12";
 
      std::string capt("Could not get number of global attributes.");
 
      exceptionHandling(key, capt);
-   }
+  }
 
-   if( attNum == 0 )
+  if( attNum == 0 )
      return ;  // no global attributes
 
-   for( int j=0 ; j < attNum ; ++j )
-   {
+  for( int j=0 ; j < attNum ; ++j )
+  {
      status=nc_inq_attname(ncid, NC_GLOBAL, j, name_buf) ;
      if(status)
      {
@@ -3723,6 +3724,7 @@ NcAPI::getLayout(void)
      layout.globalAttName.push_back( name_buf );
      layout.globalAttMap[name_buf] = j;
 
+     nc_type type;
      status=nc_inq_atttype(ncid, NC_GLOBAL, name_buf,  &type) ;
      if(status)
      {
@@ -3752,9 +3754,9 @@ NcAPI::getLayout(void)
      }
 
      layout.globalAttValSize.push_back( len );
-   }
+  }
 
-   return;
+  return;
 }
 
 std::vector<std::string>
