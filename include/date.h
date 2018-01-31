@@ -306,9 +306,6 @@ public:
   //! Get the number of days of the month.
   double getMonthDaysNum( void );
 
-  //! Get number of days of the year specified as parameter.
-  double getYearDaysNum( double myY );
-
   //! Get double representation of the integer second.
   double getSecond( void );
 
@@ -335,6 +332,9 @@ public:
 
   //! Get double representation of the current integer year.
   double getYear( void );
+
+  //! Get number of days of the year specified as parameter.
+  double getYearDaysNum( double myY );
 
   //! Formatted date ( only %Y%m%d[.f] )
   bool   isDateFormatted(void){ return isFormattedDate;}
@@ -410,6 +410,22 @@ public:
 
   bool   size(void){ return isDateSet; }
 
+  bool   shift(std::string s="");
+  bool   shiftShortest(std::string s="");
+
+  void   shiftSecondBeg(void);
+  void   shiftSecondEnd(void);
+  void   shiftMinuteBeg(void);
+  void   shiftMinuteEnd(void);
+  void   shiftHourBeg(void);
+  void   shiftHourEnd(void);
+  void   shiftDayBeg(void);
+  void   shiftDayEnd(void);
+  void   shiftMonthBeg(void);
+  void   shiftMonthEnd(void);
+  void   shiftYearBeg(void);
+  void   shiftYearEnd(void);
+
   std::string  // ISO-8601 representation of the date
          str(void) ;
 
@@ -440,6 +456,13 @@ private:
   std::string  dateCode ;  // prescribed formats
   double       refUnitSign;
 
+  double       currYr;
+  double       currMon;
+  double       currDay;
+  double       currHr;
+  double       currMin;
+  double       currSec;
+
   // messaging in case of exceptions.
   struct ExceptionStruct xcptn;
 
@@ -447,6 +470,9 @@ private:
            double d, double h, double mi, double s );
 
   Julian date2Julian( double y, double mo, double d, double deziH ) ;
+
+  void   copyCurr(double y, double mo, double d, double h=0., double mi=0., double s=0.);
+  void   copyCurr(const Date &);
 
   void   exceptionError(std::string );
 

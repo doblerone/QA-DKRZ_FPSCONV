@@ -33,6 +33,7 @@ Date::Date( long double d, std::string cal )
   setCalendar(cal);
 
   jul.set(d);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
 }
 
 Date::Date( double d, std::string cal )
@@ -41,6 +42,7 @@ Date::Date( double d, std::string cal )
   setCalendar(cal);
 
   jul.set( static_cast<long double>(d) );
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
 }
 
 Date::Date( const Date &d )
@@ -56,6 +58,7 @@ Date::Date( const Date &d )
   lY_month   = d.lY_month;
   monthLengths= d.monthLengths;
 
+  copyCurr(d);
   setCalendar(d.currCalendar);
 
   jul.jdn  = d.jul.jdn ;
@@ -76,6 +79,7 @@ Date::operator=( const Date &d )
   lY_month   = d.lY_month;
   monthLengths= d.monthLengths;
 
+  copyCurr(d);
   setCalendar(d.currCalendar);
 
   jul.jdn  = d.jul.jdn ;
@@ -113,10 +117,9 @@ Date::addMonths( long double v )
   }
 
   // irregular calendars
-  double y, mo, d, h, mi, s;
-  julian2Date(jul, &y, &mo, &d, &h, &mi, &s);
-  mo += v ;
-  jul = date2Julian(y, mo, d, h, mi, s);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
+  currMon += v ;
+  jul = date2Julian(currYr, currMon, currDay, currHr, currMin, currSec);
   isDateSet=true;
 
   return;
@@ -208,10 +211,8 @@ Date::addTime(std::string time, std::string unit)
 void
 Date::addYears( long double v )
 {
-  double y, mo, d, h, mi, s ;
-
-  julian2Date(jul, &y, &mo, &d, &h, &mi, &s);
-  jul=date2Julian( y+v,mo,d,h,mi,s );
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
+  jul=date2Julian( currYr+v, currMon, currDay, currHr, currMin, currSec );
   isDateSet=true;
   return;
 }
@@ -552,6 +553,33 @@ Date::convertFormattedToISO_8601(std::string str )
   return iso ;
 }
 
+void
+Date::copyCurr(double y, double mo, double d, double h, double mi, double s)
+{
+    currYr = y;
+    currMon = mo;
+    currDay = d;
+    currHr = h;
+    currMin = mi;
+    currSec = s;
+
+    return;
+}
+
+void
+Date::copyCurr(const Date &d)
+{
+    currYr = d.currYr;
+    currMon = d.currMon;
+    currDay = d.currDay;
+    currHr = d.currHr;
+    currMin = d.currMin;
+    currSec = d.currSec;
+
+    return;
+}
+
+
 Date::Julian
 Date::date2Julian(double yr, double mo,
            double d, double hour )
@@ -690,18 +718,16 @@ Date::getDate(std::string arg, bool isFormatted)
 double
 Date::getDay( void )
 {
-  double y, mo, d, h, mi, s;
-  julian2Date(jul, &y, &mo, &d, &h, &mi, &s);
-  return d;
+  //julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
+  return currDay;
 }
 
 double
 Date::getDayOfTheYear(void)
 {
-  double y, mo, d, h, mi, s ;
-  julian2Date(jul, &y, &mo, &d, &h, &mi, &s);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
 
-  Julian j0 = date2Julian( y, 1., 1., 0.);
+  Julian j0 = date2Julian( currYr, 1., 1., 0.);
 
   // the 1st of Jan, etc.!
   return ( static_cast<double>( jul.jdn - j0.jdn ) + 1. ) ;
@@ -746,9 +772,8 @@ Date::getDeciHour(void)
 double
 Date::getDeciMonth(void)
 {
-  double y,mo,d,h,mi,s;
-  julian2Date(jul, &y,&mo,&d,&h,&mi,&s);
-  return getDeciMonth( y, mo, d, h, mi, s );
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
+  return getDeciMonth( currYr, currMon, currDay, currHr, currMin, currSec);
 }
 
 double
@@ -763,10 +788,9 @@ Date::getDeciMonth(double y, double mo, double d,
 double
 Date::getDeciYear(void)
 {
-  double y, mo, d, h, mi, s;
-  julian2Date(jul, &y, &mo, &d, &h, &mi, &s);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
 
-  return Date::getDeciYear(y, mo, d, h, mi, s) ;
+  return Date::getDeciYear(currYr, currMon, currDay, currHr, currMin, currSec) ;
 }
 
 double
@@ -926,11 +950,10 @@ Date::getHour( void )
 std::string
 Date::getISO_8601(void)
 {
-  double year, month, day, hour, minute, second;
-  julian2Date(jul, &year, &month, &day, &hour, &minute, &second);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
 
   // Date ISO 8601 Format: yyyy-mm-ddThh:mm:ss
-  return getISO_8601(year, month, day, hour, minute, second);
+  return getISO_8601(currYr, currMon, currDay, currHr, currMin, currSec);
 }
 
 std::string
@@ -1016,18 +1039,16 @@ Date::getMinute( void )
 double
 Date::getMonth( void )
 {
-  double y, mo, d, h, mi, s;
-  julian2Date(jul, &y, &mo, &d, &h, &mi, &s);
-  return mo;
+  //julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
+  return currMon;
 }
 
 double
 Date::getMonthDaysNum( void )
 {
-  double y, mo, d, h, mi, s;
-  julian2Date(jul, &y, &mo, &d, &h, &mi, &s);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
 
-  return getMonthDaysNum(mo, y) ;
+  return getMonthDaysNum(currMon, currYr) ;
 }
 
 double
@@ -1149,9 +1170,8 @@ Date::getTodayStr(void)
 double
 Date::getYear( void )
 {
-  double y, mo, d, h, mi, s;
-  julian2Date(jul, &y, &mo, &d, &h, &mi, &s);
-  return y;
+  //julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
+  return currYr;
 }
 
 double
@@ -1182,6 +1202,13 @@ Date::init(void)
 
   isDateSet=false;
   isFormattedDate=false;
+
+  currYr = 0.;
+  currMon = 0.;
+  currDay = 0.;
+  currHr = 0.;
+  currMin = 0.;
+  currSec = 0.;
 
   regularMonthDays = new double [12] ;
 }
@@ -1363,16 +1390,16 @@ Date::julian2ModelDate( const Date::Julian &j,
     double tmp=0. ;
     for(int imon=0 ; imon < 12 ; ++imon)
     {
-      double currMon = regularMonthDays[imon];
+      double cMon = regularMonthDays[imon];
       if( isCurrLY && imon == lY_month )
-        currMon += 1.;
+        cMon += 1.;
 
-      tmp += currMon;
+      tmp += cMon;
 
       if( tmp > resid )
       {
          *mo = static_cast<double>(imon) ;
-         resid -= (tmp - currMon);
+         resid -= (tmp - cMon);
          *d=static_cast<double>( static_cast<int>(resid) ) ;
          resid -= *d;
          break;
@@ -1554,8 +1581,13 @@ Date::parseISO_8601(std::string str0)
 
   }
 
-  jul = date2Julian( year, month, day, 0., 0., 0.);
-  jul += hour/24.;
+  currYr = year;
+  currMon = month;
+  currDay = day;
+
+  getDayTime(hour, &currHr, &currMin, &currSec);
+
+  jul = date2Julian( year, month, day, hour);
   isDateSet=true;
 
   return false ;
@@ -1725,6 +1757,13 @@ Date::setDate( const Date &d )
   lY_month   = d.lY_month;
   monthLengths= d.monthLengths;
 
+  currYr = d.currYr;
+  currMon = d.currMon;
+  currDay = d.currDay;
+  currHr = d.currHr;
+  currMin = d.currMin;
+  currSec = d.currSec;
+
   setCalendar(d.currCalendar, d.monthLengths);
 
   jul.jdn  = d.jul.jdn ;
@@ -1736,6 +1775,13 @@ Date::setDate( const Date &d )
 bool
 Date::setDate( double y, double mo, double d, double h, double mi, double s)
 {
+  currYr = y;
+  currMon = mo;
+  currDay = d;
+  currHr = h;
+  currMin = mi;
+  currSec = s;
+
   jul = date2Julian(y, mo, d, h, mi, s);
   isDateSet=true;
 
@@ -1869,6 +1915,335 @@ Date::setUnitsAndClear(std::string& str)
   }
 
   return ;
+}
+
+bool
+Date::shift(std::string s)
+{
+    // return true if shifting was done.
+    // string: beg, end, f, y,mo,d,h,mi,s. csv separated.
+    // beg|end: shift to the begin|end
+    // f: force to shift correponding to the one and only frequency given.
+    // default: shift according to the frequency that could be shifted (from
+    //          smallest to highest frequency, i.e. from sec to year.
+
+    Split x_s(s,',') ;
+    std::string beg=("beg");
+    std::string end=("end");
+    size_t i;
+
+    bool isBeg=false;
+
+    if( s.find(beg) < std::string::npos || s.find(end) < std::string::npos )
+    {
+      if( s.find(beg) < std::string::npos )
+          isBeg=true;
+
+      if( x_s.size() != 2 )
+          return false;
+
+      if( x_s[0] == beg || x_s[0] == end )
+        i=1;
+    }
+    else
+      i=0;
+
+    // get a match for frequency
+    if( x_s[i] == "y" )
+    {
+       if( isBeg )
+         shiftYearBeg();
+       else
+         shiftYearEnd();
+    }
+    else if( x_s[i] == "mo" )
+    {
+       if( isBeg )
+         shiftMonthBeg();
+       else
+         shiftMonthEnd();
+    }
+    else if( x_s[i] == "d" )
+    {
+       if( isBeg )
+         shiftDayBeg();
+       else
+         shiftDayEnd();
+    }
+    else if( x_s[i] == "h" )
+    {
+       if( isBeg )
+         shiftHourBeg();
+       else
+         shiftHourEnd();
+    }
+    else if( x_s[i] == "mi" )
+    {
+       if( isBeg )
+         shiftMinuteBeg();
+       else
+         shiftMinuteEnd();
+    }
+    else if( x_s[i] == "s" )
+    {
+       if( isBeg )
+         shiftSecondBeg();
+       else
+         shiftSecondEnd();
+    }
+    else
+        return false;
+
+
+    return true;
+}
+
+bool
+Date::shiftShortest(std::string s)
+{
+    // return true if shifting was done.
+    // string: beg, end, f, y,mo,d,h,mi,s. csv separated.
+    // beg|end: shift to the begin|end;
+    // shift to the end by default,i.e. complete the frequency.
+    // shift according to the frequency that could be shifted (from
+    // smallest to highest frequency, i.e. from sec to year.
+
+    Split x_s(s,',') ;
+    std::string beg=("beg");
+    std::string end=("end");
+    size_t ix;
+
+    bool isBeg=false;
+
+    if( s.find(beg) < std::string::npos || s.find(end) < std::string::npos )
+    {
+      if( s.find(beg) < std::string::npos )
+          isBeg=true;
+
+      if( x_s.size() != 2 )
+          return false;
+
+      if( x_s[0] == beg || x_s[0] == end )
+        ix=1;
+    }
+    else
+      ix=0;
+
+    // find the shortest item smaller than left
+    if( currSec > 0. )
+    {
+      for( size_t i=0 ; i < x_s.size() ; ++i )
+      {
+         if( x_s[ix] == "s" )
+         {
+            if( isBeg )
+                shiftSecondBeg();
+            else
+                shiftSecondEnd();
+
+            return true ;
+         }
+      }
+      return false;
+    }
+    else if( currMin > 0. )
+    {
+      for( size_t i=0 ; i < x_s.size() ; ++i )
+      {
+         if( x_s[ix] == "mi" )
+         {
+            if( isBeg )
+                shiftMinuteBeg();
+            else
+                shiftMinuteEnd();
+           return true ;
+         }
+      }
+      return false;
+    }
+    else if( currHr > 0. )
+    {
+      for( size_t i=0 ; i < x_s.size() ; ++i )
+      {
+         if( x_s[ix] == "h" )
+         {
+            if( isBeg )
+                shiftHourBeg();
+            else
+                shiftHourEnd();
+           return true ;
+         }
+      }
+      return false;
+    }
+    else if( currDay > 1. )
+    {
+      for( size_t i=0 ; i < x_s.size() ; ++i )
+      {
+         if( x_s[ix] == "d" )
+         {
+            if( isBeg )
+                shiftDayBeg();
+            else
+                shiftDayEnd();
+           return true ;
+         }
+      }
+      return false;
+    }
+    else if( currMon > 1. )
+    {
+      for( size_t i=0 ; i < x_s.size() ; ++i )
+      {
+         if( x_s[ix] == "mo" )
+         {
+            if( isBeg )
+                shiftMonthBeg();
+            else
+                shiftMonthEnd();
+           return true ;
+         }
+      }
+      return false;
+    }
+    else
+    {
+      for( size_t i=0 ; i < x_s.size() ; ++i )
+      {
+         if( x_s[ix] == "y" )
+         {
+            if( isBeg )
+                shiftYearBeg();
+            else
+                shiftYearEnd();
+           return true ;
+         }
+      }
+      return false;
+    }
+
+    return true;
+}
+
+void
+Date::shiftSecondBeg(void)
+{
+    // take fraction of the second away
+    int is = static_cast<int>(currSec) ;
+    double resid = currSec - static_cast<double>(is);
+
+    if( resid > 0. )
+      setDate( currYr, currMon, currDay, currHr, currMin, is);
+
+    return;
+}
+
+void
+Date::shiftSecondEnd(void)
+{
+    int is = static_cast<int>(currSec);
+    double resid = currSec - static_cast<double>(is);
+
+    if( resid > 0. )
+      setDate( currYr, currMon, currDay, currHr, currMin, static_cast<double>(is+1));
+
+    return;
+}
+
+void
+Date::shiftMinuteBeg(void)
+{
+    if( currSec > 0. )
+      setDate( currYr, currMon, currDay, currHr, currMin, 0.);
+
+    return;
+}
+
+void
+Date::shiftMinuteEnd(void)
+{
+    if( currSec < 60. )
+       setDate( currYr, currMon, currDay, currHr, currMin, 60.);
+
+    return;
+}
+
+void
+Date::shiftHourBeg(void)
+{
+    if( currMin > 0. || currSec > 0. )
+       setDate( currYr, currMon, currDay, currHr, 0., 0.);
+
+    return;
+}
+
+void
+Date::shiftHourEnd(void)
+{
+    if( currMin < 60. || currSec < 60. )
+       setDate( currYr, currMon, currDay, currHr, 60., 60.);
+
+    return;
+}
+
+void
+Date::shiftDayBeg(void)
+{
+    if( currHr > 0. || currMin > 0. || currSec > 0. )
+       setDate( currYr, currMon, currDay, 0., 0., 0.);
+
+    return;
+}
+
+void
+Date::shiftDayEnd(void)
+{
+    if( ! (currHr == 23. && currMin == 60. && currSec == 60.) )
+       if( ! (currHr == 24. && currMin == 0. && currSec == 0.) )
+          setDate( currYr, currMon, currDay, 24., 0., 0.);
+
+    return;
+}
+
+void
+Date::shiftMonthBeg(void)
+{
+    if( ! ( currDay == 1.
+              || currHr == 0. || currMin == 0. || currSec == 0. ) )
+      setDate( currYr, currMon, 1., 0., 0., 0.);
+
+    return;
+}
+
+void
+Date::shiftMonthEnd(void)
+{
+    double nd = getMonthDaysNum();
+
+    if( ! (nd == currDay && currHr == 24. && currMin == 0. && currSec == 0.) )
+       if( ! (nd == currDay && currHr == 23. && currMin == 60. && currSec == 60.) )
+          setDate( currYr, currMon, nd, 24., 0., 0.);
+    return;
+}
+
+void
+Date::shiftYearBeg(void)
+{
+    if( ! ( currMon == 1. && currDay == 1.
+              && currHr == 0. && currMin == 0. && currSec == 0. ) )
+       setDate( currYr, 1., 1., 0., 0., 0.);
+    return;
+}
+
+void
+Date::shiftYearEnd(void)
+{
+    if( ! ( currMon == 12. && currDay == 31.
+              && currHr == 24. && currMin == 0. && currSec == 0. ) )
+      if( ! ( currMon == 12. && currDay == 31.
+                && currHr == 23. && currMin == 60. && currSec == 60. ) )
+         setDate( currYr, 12., 31., 24., 0., 0.);
+    return;
 }
 
 std::string

@@ -1088,7 +1088,7 @@ DRS_CV::testPeriod(Split& x_f)
   pDates[1]->setDate(sd[1], pQA->qaTime.refDate.getCalendar());
 
   // necessary for validity (not sufficient)
-  if( *(pDates[0]) > *(pDates[1]) )
+  if( *(pDates[0]) != *(pDates[1]) && *(pDates[0]) > *(pDates[1]) )
   {
      std::string key("1_6c");
      if( notes->inq( key, pQA->fileStr) )
@@ -1115,18 +1115,51 @@ DRS_CV::testPeriod(Split& x_f)
   if( pQA->qaTime.lastTimeValue != 0. )
     pDates[3]->addTime(pQA->qaTime.lastTimeValue);
 
-  if( ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
+  if( ! ( pQA->pIn->variable[pQA->qaTime.time_ix].isInstant
+             || ! pQA->qaTime.isTimeBounds ) )
   {
-    // shift to the left
-    if( *pDates[0] == *pDates[2] )
-       pDates[0]->addTime(-pQA->qaTime.refTimeStep/2.);
-    if( pQA->qaTime.firstTimeValue != 0. )
-       pDates[2]->addTime(-pQA->qaTime.refTimeStep/2.);
+     // in case that the mid-frequency time value is provided.
+     // sd[0] and sd[1] are of equal size.
+     if( sd[0].size() < 5 )
+     {
+         //pDates[0]->shift("beg,yr");
+         pDates[1]->shift("end,yr");
 
-    // shift to the right
-    pDates[1]->addTime(pQA->qaTime.refTimeStep);  // !!!
-    if( pQA->qaTime.lastTimeValue != 0. )
-       pDates[3]->addTime(pQA->qaTime.refTimeStep/2.);
+         pDates[2]->shift("beg,yr");
+         pDates[3]->shift("end,yr");
+     }
+     else if( sd[0].size() < 7 )
+     {
+         //pDates[0]->shift("beg,mo");
+         pDates[1]->shift("end,mo");
+
+         pDates[2]->shift("beg,mo");
+         pDates[3]->shift("end,mo");
+     }
+     else if( sd[0].size() < 9 )
+     {
+         //pDates[0]->shift("beg,d");
+         pDates[1]->shift("end,d");
+
+         pDates[2]->shift("beg,d");
+         pDates[3]->shift("end,d");
+     }
+     else if( sd[0].size() < 11 )
+     {
+         //pDates[0]->shift("beg,h");
+         pDates[1]->shift("end,h");
+
+         pDates[2]->shift("beg,h");
+         pDates[3]->shift("end,h");
+     }
+     else if( sd[0].size() < 13 )
+     {
+         //pDates[0]->shift("beg,mi");
+         pDates[1]->shift("end,mi");
+
+         pDates[2]->shift("beg,mi");
+         pDates[3]->shift("end,mi");
+     }
   }
 
   if( pQA->qaTime.isTimeBounds)
@@ -1197,8 +1230,9 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates)
   //  is based on the first and last time value included in the file ..."
 
   // regular test: filename vs. time_bounds
-  if( *pDates[0] == *pDates[2] && *pDates[1] == *pDates[3] )
-      return true;
+  if( pDates[4] && pDates[5] )
+    if( *pDates[0] == *pDates[4] && *pDates[1] == *pDates[5] )
+       return true;
 
     // alignment of time bounds and period in the filename
   bool is[] = { true, true, true, true };
