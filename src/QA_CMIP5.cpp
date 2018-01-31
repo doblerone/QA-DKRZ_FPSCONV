@@ -2885,25 +2885,34 @@ CMOR::checkMIPT_var_cellMethods(
   std::vector<std::string> vs_cm_ve(
       hdhC::itemise(vMD.attMap[n_cell_methods], ":", "last") ) ;
 
-  bool is=true;
   size_t tSz = vs_cm_te.size();
   size_t vSz = vs_cm_ve.size();
 
-  if( vSz == tSz )
+  bool is=false;
+
+  // each item of the table must be present in the file's cell_methods.
+  for( size_t i=0 ; i < tSz ; ++i )
   {
-    is=false;
+     if( ! hdhC::isAmong(vs_cm_te[i], vs_cm_ve) )
+     {
+         is=true;
+         break;
+     }
+  }
 
-    for( size_t i=0 ; i < vSz ; ++ i )
+  if( !is )
+  {
+    // each item of the table must be present in the file's cell_methods,
+    // except a comment.
+    for( size_t i=0 ; i < vSz ; ++i )
     {
-      size_t j;
-      for( j=0 ; j < tSz ; ++ j )
-        if( vs_cm_ve[i] == vs_cm_te[j] )
-          break;
+       if( vs_cm_ve[i][0] == '(' || vs_cm_ve[i][vs_cm_ve[i].size()-1] == ')')
+           continue;
 
-      if( j == tSz )
-      {
-        is=true;
-        break;
+       if( ! hdhC::isAmong(vs_cm_ve[i], vs_cm_te) )
+       {
+         is=true;
+         break;
       }
     }
   }
@@ -2921,7 +2930,7 @@ CMOR::checkMIPT_var_cellMethods(
 
       if( vMD.attMap[n_cell_methods].size() )
       {
-        capt += ", found" ;
+        capt += "found" ;
         capt += hdhC::tf_val(vMD.attMap[n_cell_methods]) ;
       }
       else
