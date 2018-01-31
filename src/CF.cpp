@@ -7750,9 +7750,9 @@ CF::chap73(void)
       if( notes->inq(bKey + "73f", var.name) )
       {
         std::string capt("Only data variables may have ");
-        capt += hdhC::tf_att(hdhC::empty, n_cell_methods, hdhC::no_colon);
+        capt += hdhC::tf_att(hdhC::empty, n_cell_methods);
         std::string text("Found for ") ;
-        text += hdhC::tf_val(var.name);
+        text += hdhC::tf_var(var.name);
 
         (void) notes->operate(capt, text) ;
         notes->setCheckStatus( n_CF, fail );
