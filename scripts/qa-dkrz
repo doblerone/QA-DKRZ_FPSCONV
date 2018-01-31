@@ -1889,9 +1889,9 @@ getNextVariable()
 
   # get files with fBase (temporal information added)
   if [ ${QUERY_NON_NC_FILE:-f} = t ] ; then
-    nV_fls=( $( find ${nextPath} -maxdepth 1 -type f -name "${1}*" 2> /dev/null ) )
+    nV_fls=( $( find -L ${nextPath} -maxdepth 1 -type f -name "${1}*" 2> /dev/null ) )
   else
-    nV_fls=( $( find ${nextPath} -maxdepth 1 -name "${1}*.nc" 2> /dev/null ) )
+    nV_fls=( $( find -L ${nextPath} -maxdepth 1 -name "${1}*.nc" 2> /dev/null ) )
   fi
   nV_fls=( ${nV_fls[*]#${nextPath}\/} )
 
@@ -2236,15 +2236,15 @@ getNextVariable()
     return 0
   fi
 
-  if [ ${DEREFERENCE_SYM_LINKS:-f} = f -a \
-        -h ${PROJECT_DATA}/${subPath}/$nextFile ] ; then
-    # make links for QA results, where links are in the DRS tree
-    # (not for links to the outside of the DRS tree).
-    testFileLink $1
-    nextFile= # ignore, try next
-    unset nV_fls
-    return 0
-  fi
+#  if [ ${DEREFERENCE_SYM_LINKS:-f} = f -a \
+#        -h ${PROJECT_DATA}/${subPath}/$nextFile ] ; then
+#    # make links for QA results, where links are in the DRS tree
+#    # (not for links to the outside of the DRS tree).
+#    testFileLink $1
+#    nextFile= # ignore, try next
+#    unset nV_fls
+#    return 0
+#  fi
 
   return 1
 }
