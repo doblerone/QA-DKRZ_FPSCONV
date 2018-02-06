@@ -61,7 +61,7 @@ class GetPaths(object):
         self.curr_walk_ix = 0
 
         # instance of a generator function
-        self.my_walk = os.walk(self.base_path[self.curr_walk_ix])
+        self.my_walk = os.walk(self.base_path[self.curr_walk_ix], followlinks=True)
 
 #        self.isCycle=True
 #        self.buffer_len=3

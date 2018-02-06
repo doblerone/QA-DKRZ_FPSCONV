@@ -397,8 +397,75 @@ def get_version(qaConf):
     return
 
 
-def run():
+def prepareExample(qaConf):
+    if qaConf.isOpt('WORK'):
+        currdir=qaConf.getOpt('WORK')
+    else:
+        currdir=qaConf.getOpt('CURR_DIR')
 
+    currdir=os.path.join(currdir, 'example')
+    qaConf.dOpts['QA_RESULTS'] = os.path.join(currdir, 'results')
+
+    if not qa_util.mkdirP(currdir):
+        sys.exit(1)
+
+    os.chdir(currdir)
+    qa_util.rm_r( 'results', 'config.txt', 'data', 'qa-test.task' )
+
+    print 'make examples in ' + currdir
+    print 'make qa_test.task'
+
+    taskFile = os.path.join(QA_SRC, 'example', 'templates', 'qa-test.task')
+    shutil.copy( taskFile, currdir)
+    taskFile = 'qa-test.task'
+
+    # replace templates
+    sub=[]
+    repl=[]
+
+    sub.append('PROJECT_DATA=data')
+    repl.append('PROJECT_DATA=' + os.path.join(currdir, 'data') )
+
+    sub.append('QA_RESULTS=results')
+    repl.append('QA_RESULTS=' + os.path.join(currdir, 'results') )
+
+    qa_util.f_str_replace(taskFile, sub, repl)
+
+    if not qa_util.which("ncgen"):
+        print "building data in example requires the ncgen utility"
+        sys.exit(1)
+
+    # data
+    print 'make data'
+    p=os.path.join(QA_SRC, 'example', 'templates', 'data.tbz')
+    subprocess.call(["tar", "--bzip2", "-xf", p ])
+
+    for rs, ds, fs in os.walk('data'):
+        for f in fs:
+            nc_f = f[:len(f)-3] + 'nc'
+            t_f=os.path.join(rs, f)
+            t_nc=os.path.join(rs, nc_f)
+            subprocess.call(["ncgen", "-k", "3", "-o", t_nc, t_f])
+            qa_util.rm_r(t_f)
+
+    #h,t = os.path.split(sys.argv [0])
+
+
+    print 'run'
+    cmd = 'python ' + sys.argv[0] + " -m -f example/qa-test.task"
+    print cmd
+
+    qaConf=QaConfig(QA_SRC, argv=['-m', '-f', 'qa-test.task'] )
+
+    #cmd = os.path.join(QA_SRC, 'scripts','qa-dkrz') + " -m -f qa-test.task"
+
+
+    #subprocess.call(cmd, shell=True)
+
+    return
+
+
+def run():
     if qaConf.isOpt("SHOW_EXP"):
         f_log = get_all_logfiles()
         sys.exit(0)
@@ -481,74 +548,6 @@ def run():
         launch_list[0].printStatusLine()
     else:
         launch_list[0].qa_exec.printStatusLine()
-
-    return
-
-
-def prepareExample(qaConf):
-    if qaConf.isOpt('WORK'):
-        currdir=qaConf.getOpt('WORK')
-    else:
-        currdir=qaConf.getOpt('CURR_DIR')
-
-    currdir=os.path.join(currdir, 'example')
-    qaConf.dOpts['QA_RESULTS'] = os.path.join(currdir, 'results')
-
-    if not qa_util.mkdirP(currdir):
-        sys.exit(1)
-
-    os.chdir(currdir)
-    qa_util.rm_r( 'results', 'config.txt', 'data', 'qa-test.task' )
-
-    print 'make examples in ' + currdir
-    print 'make qa_test.task'
-
-    taskFile = os.path.join(QA_SRC, 'example', 'templates', 'qa-test.task')
-    shutil.copy( taskFile, currdir)
-    taskFile = 'qa-test.task'
-
-    # replace templates
-    sub=[]
-    repl=[]
-
-    sub.append('PROJECT_DATA=data')
-    repl.append('PROJECT_DATA=' + os.path.join(currdir, 'data') )
-
-    sub.append('QA_RESULTS=results')
-    repl.append('QA_RESULTS=' + os.path.join(currdir, 'results') )
-
-    qa_util.f_str_replace(taskFile, sub, repl)
-
-    if not qa_util.which("ncgen"):
-        print "building data in example requires the ncgen utility"
-        sys.exit(1)
-
-    # data
-    print 'make data'
-    p=os.path.join(QA_SRC, 'example', 'templates', 'data.tbz')
-    subprocess.call(["tar", "--bzip2", "-xf", p ])
-
-    for rs, ds, fs in os.walk('data'):
-        for f in fs:
-            nc_f = f[:len(f)-3] + 'nc'
-            t_f=os.path.join(rs, f)
-            t_nc=os.path.join(rs, nc_f)
-            subprocess.call(["ncgen", "-k", "3", "-o", t_nc, t_f])
-            qa_util.rm_r(t_f)
-
-    #h,t = os.path.split(sys.argv [0])
-
-
-    print 'run'
-    cmd = 'python ' + sys.argv[0] + " -m -f example/qa-test.task"
-    print cmd
-
-    qaConf=QaConfig(QA_SRC, argv=['-m', '-f', 'qa-test.task'] )
-
-    #cmd = os.path.join(QA_SRC, 'scripts','qa-dkrz') + " -m -f qa-test.task"
-
-
-    #subprocess.call(cmd, shell=True)
 
     return
 

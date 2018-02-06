@@ -238,7 +238,9 @@ class QaConfig(object):
         if args.SHOW_CONF:           _ldo['SHOW_CONF']      = args.SHOW_CONF
         if args.SHOW_EXP:            _ldo['SHOW_EXP']       = args.SHOW_EXP
         if args.SHOW_VERSION:        _ldo['SHOW_VERSION']   = True
-        if args.STATUS_LINE:         _ldo['STATUS_LINE']    = args.STATUS_LINE
+        if args.STATUS_LINE:
+            _ldo['STATUS_LINE'] = args.STATUS_LINE
+            _ldo['STATUS_LINE_SZ'] = 0
         if args.WORK:                _ldo['WORK']           = args.WORK
 
         if args.QA_EXAMPLE:

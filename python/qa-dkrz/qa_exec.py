@@ -42,8 +42,6 @@ class QaExec(object):
         self.len_beg  = len(self.beg)
         self.len_end  = len(self.end)
 
-        self.prev_status_line_sz=0
-
         self.isStatusLine=False
         if self.qaConf.isOpt('STATUS_LINE'):
             self.isStatusLine=True
@@ -482,12 +480,12 @@ class QaExec(object):
             if len(nc):
                 void, f = os.path.split(nc)
 
-                print '\r' + (10+self.prev_status_line_sz)*' ',
+                print '\r' + (10+self.qaConf["STATUS_LINE_SZ"])*' ',
                 print '\rNEXT: ' + f ,
 
-                self.prev_status_line_sz = len(f)
+                self.qaConf["STATUS_LINE_SZ"]=len(f)
             else:
-                print '\r' + (10+self.prev_status_line_sz)*' ' ,
+                print '\r' + (10+self.qaConf["STATUS_LINE_SZ"])*' ' ,
 
             sys.stdout.flush()
 
