@@ -1237,7 +1237,7 @@ CF::finalAtt_axis(void)
     {
       if( notes->inq(bKey + "5h", var.name) )
       {
-        std::string capt("CF-" + cFVersion + ": Auxiliary coordinate ");
+        std::string capt(cFVersion + ": Auxiliary coordinate ");
         capt += hdhC::tf_var(var.name);
         capt += "must not have " + hdhC::tf_att(n_axis);
 
