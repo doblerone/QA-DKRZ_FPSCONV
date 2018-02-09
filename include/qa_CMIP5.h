@@ -356,8 +356,10 @@ struct DRS_CV
   void   checkPath(std::string&, struct DRS_CV_Table&);
   void   findFN_faults(Split&, Split&,
                    std::map<std::string, std::string>&,
+                   std::map<std::string, std::string>&,
                    std::string& capt, std::string& text);
   void   findPath_faults(Split&, Split&,
+                   std::map<std::string, std::string>&,
                    std::map<std::string, std::string>&,
                    std::string& text);
   void   checkProductName(std::string& drs_product,

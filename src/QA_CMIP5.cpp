@@ -48,7 +48,7 @@ DRS_CV::checkFilename(std::string& fName, struct DRS_CV_Table& drs_cv_table)
          if( notes->inq( key, pQA->qaTime.name) )
          {
            std::string capt("filename must no have a dot, found ");
-           capt += hdhC::tf_val(fName);
+           capt += hdhC::tf_val(x_filename[i]);
 
            (void) notes->operate(capt) ;
            notes->setCheckStatus(drsF, pQA->n_fail);
@@ -106,6 +106,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
   std::vector<size_t> countCI(enc_sz, 0);
   std::map<std::string, std::string> globMap[enc_sz] ;
   std::vector<std::vector<size_t> > specialFaultIx ;
+  std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
 
   for( size_t ds=0 ; ds < enc_sz ; ++ds)
   {
@@ -114,8 +115,6 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
     specialFaultIx.push_back( std::vector<size_t>() );
 
     x_e.setSeparator("_");
-
-    std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
 
     // could have a trailing ".nc" item; if yes, then remove this beforehand
     if( drs_cv_table.fNameEncoding[ds].rfind(".nc") < std::string::npos )
@@ -259,7 +258,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
 
   std::string txt;
   std::string cpt;
-  findFN_faults(drs, x_e, gM, cpt, txt) ;
+  findFN_faults(drs, x_e, gM, cvMap, cpt, txt) ;
   if( txt.size() )
   {
      capt.push_back(cpt);
@@ -668,14 +667,14 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
   Split x_enc[enc_sz];
   std::vector<size_t> countCI(enc_sz, 0);
   std::map<std::string, std::string> globMap[enc_sz] ;
+  std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
+
   for( size_t ds=0 ; ds < enc_sz ; ++ds)
   {
     Split& x_e = x_enc[ds] ;
     std::map<std::string, std::string>& gM = globMap[ds] ;
 
     x_e.setSeparator("/");
-
-    std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
 
     x_e = drs_cv_table.pathEncoding[ds] ;
 
@@ -777,7 +776,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
   std::map<std::string, std::string>& gM = globMap[m] ;
 
   std::string txt;
-  findPath_faults(drs, x_e, gM, txt) ;
+  findPath_faults(drs, x_e, gM, cvMap, txt) ;
   if( txt.size() )
   {
     text.push_back(txt);
@@ -786,7 +785,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 
   if( text.size() )
   {
-    std::string capt("DRS path:");
+    std::string capt("Path:");
 
     for(size_t i=0 ; i < text.size() ; ++i )
     {
@@ -825,6 +824,7 @@ DRS_CV::checkVariableName(std::string& f_vName)
 void
 DRS_CV::findFN_faults(Split& drs, Split& x_e,
                    std::map<std::string,std::string>& gM,
+                   std::map<std::string, std::string>& cvMap,
                    std::string& capt, std::string& text)
 {
   std::string t;
@@ -846,10 +846,9 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
 
     if( !(drs[j] == t || t == n_ast) )
     {
-      capt = "DRS CV filename: check failed";
-      text = "Found " + hdhC::tf_assign(x_e[j],drs[j]) ;
-      text += ", expected" ;
-      text += hdhC::tf_val(t) ;
+      capt = "Filename: ";
+      text  = " DRS item " + hdhC::tf_assign(x_e[j], drs[j]);
+      text += " vs. global attribute " + hdhC::tf_assign(cvMap[x_e[j]], t) ;
 
       return;
     }
@@ -861,6 +860,7 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
 void
 DRS_CV::findPath_faults(Split& drs, Split& x_e,
                    std::map<std::string,std::string>& gM,
+                   std::map<std::string, std::string>& cvMap,
                    std::string& text)
 {
   std::string t;
@@ -934,10 +934,8 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
           continue;
       }
 
-      text = " check failed, path component " ;
-      text += hdhC::tf_assign(x_e[j],drs[drsBeg+j]) ;
-      text += " does not match global attribute value " ;
-      text += hdhC::tf_val(t) ;
+      text += " DRS item " + hdhC::tf_assign(x_e[j], drs[j]);
+      text += " vs. global attribute " + hdhC::tf_assign(cvMap[x_e[j]], t) ;
       break;
     }
   }

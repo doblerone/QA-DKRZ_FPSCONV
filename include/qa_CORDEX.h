@@ -44,8 +44,10 @@ struct DRS_CV
                    std::map<std::string, std::string>& gM);
   void   findFN_faults(Split&, Split&,
                    std::map<std::string, std::string>&,
+                   std::map<std::string, std::string>&,
                    std::string& text);
   void   findPath_faults(Split&, Split&,
+                   std::map<std::string, std::string>&,
                    std::map<std::string, std::string>&,
                    std::string& text);
 

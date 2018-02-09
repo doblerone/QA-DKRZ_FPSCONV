@@ -175,7 +175,7 @@ DRS_CV::checkFilename(std::string& fName, struct DRS_CV_Table& drs_cv_table)
          if( notes->inq( key, pQA->qaTime.name) )
          {
            std::string capt("filename must no have a dot, found ");
-           capt += hdhC::tf_val(fName);
+           capt += hdhC::tf_val(x_filename[i]);
 
            (void) notes->operate(capt) ;
            notes->setCheckStatus(drsF, pQA->n_fail);
@@ -227,6 +227,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
   std::vector<size_t> countCI(enc_sz, 0);
   std::map<std::string, std::string> globMap[enc_sz] ;
   std::vector<std::vector<size_t> > specialFaultIx ;
+  std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
 
   for( size_t ds=0 ; ds < enc_sz ; ++ds)
   {
@@ -235,7 +236,6 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
 
     x_e.setSeparator("_");
 
-    std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
 
     // could have a trailing ".nc" item; if yes, then remove this beforehand
     if( drs_cv_table.fNameEncoding[ds].rfind(".nc") < std::string::npos )
@@ -330,7 +330,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
   std::vector<std::string> keys;
 
   std::string txt;
-  findFN_faults(drs, x_e, gM, txt) ;
+  findFN_faults(drs, x_e, cvMap, gM, txt) ;
   if( txt.size() )
   {
     keys.push_back("1_1b");
@@ -561,6 +561,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
   Split x_enc[enc_sz];
   std::vector<size_t> countCI(enc_sz, 0);
   std::map<std::string, std::string> globMap[enc_sz] ;
+  std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
 
   for( size_t ds=0 ; ds < enc_sz ; ++ds)
   {
@@ -569,7 +570,6 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 
     x_e.setSeparator("/");
 
-    std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
 
     x_e = drs_cv_table.pathEncoding[ds] ;
 
@@ -599,7 +599,6 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
       else
         gM[x_e[x]] = globalVar.getAttValue(cvMap[x_e[x]]) ;
     }
-
 
     // special: at least for the HH ESGF node, which has an additional trailing
     // item for a versioning, e.g. 'v20121231'. The digit nature is checked. But,
@@ -681,7 +680,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
   std::vector<std::string> keys;
 
   std::string txt;
-  findPath_faults(drs, x_e, gM, txt) ;
+  findPath_faults(drs, x_e, gM, cvMap, txt) ;
   if( txt.size() )
   {
     keys.push_back("1_1a");
@@ -690,7 +689,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 
   if( text.size() )
   {
-    std::string capt("DRS path: ");
+    std::string capt("Path: ");
 
     for( size_t i=0 ; i < text.size() ; ++i )
     {
@@ -742,6 +741,7 @@ DRS_CV::checkProductName(std::string& drs_product,
 void
 DRS_CV::findFN_faults(Split& drs, Split& x_e,
                    std::map<std::string,std::string>& gM,
+                   std::map<std::string, std::string>& cvMap,
                    std::string& text)
 {
   std::string t;
@@ -763,9 +763,11 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
           text += " probably " + hdhC::tf_val(x_e[j]) ;
       else
       {
-        text = " found " + hdhC::tf_val(drs[j]) ;
-        text += " as DRS item";
-        text += hdhC::tf_val(x_e[j]) ;
+        text += " DRS item " + hdhC::tf_assign(x_e[j], drs[j]);
+        text += " vs. global attribute " + hdhC::tf_assign(cvMap[x_e[j]], t) ;
+//        text = " found " + hdhC::tf_val(drs[j]) ;
+//        text += " as DRS item";
+//        text += hdhC::tf_val(x_e[j]) ;
       }
 
       break;
@@ -778,6 +780,7 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
 void
 DRS_CV::findPath_faults(Split& drs, Split& x_e,
                    std::map<std::string,std::string>& gM,
+                   std::map<std::string, std::string>& cvMap,
                    std::string& text)
 {
   std::string t;
@@ -837,9 +840,8 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
            continue;
         }
 
-        text += " found " + hdhC::tf_val(drs[j]) ;
-        text += " as DRS item " ;
-        text += hdhC::tf_val(x_e[j]) ;
+        text += " DRS item " + hdhC::tf_assign(x_e[j], drs[i]);
+        text += " vs. global attribute " + hdhC::tf_assign(cvMap[x_e[j]], t) ;
       }
 
       break;
@@ -3211,48 +3213,26 @@ QA_Exp::domainCheckDims(std::string item,
 
      f_name = dNames[i] ;
 
-     if( f_num >= t_num )
-        return;
-/*
-     else if( f_num > t_num )
+     if( f_num < t_num )
      {
-        std::string key = "7_7";
-        if( notes->inq(key, pQA->fileStr) )
-        {
-          std::string capt("CORDEX domain Table ") ;
-          capt += tbl_id ;
-          capt += ": CORDEX domain lies inside but dimension";
-          capt += hdhC::tf_val(f_name) ;
-          capt += " is recommended to follow the grid definition, found" ;
-          capt += hdhC::tf_val(hdhC::itoa(f_num)) ;
-          capt += ", required" ;
-          capt += hdhC::tf_val(t_num_str);
+       std::string key = "7_7";
+       if( notes->inq(key, pQA->fileStr) )
+       {
+         std::string capt("CORDEX domain Table ") ;
+         capt += tbl_id ;
+         capt += ": Dimension ";
+         capt += hdhC::tf_val(f_name) ;
+         capt += " does not match the grid definition";
 
-          (void) notes->operate(capt) ;
-          notes->setCheckStatus("CV", pQA->n_fail);
-        }
+         std::string text("Found ") ;
+         text += hdhC::tf_val(hdhC::itoa(f_num)) ;
+         text += ", required" ;
+         text += hdhC::tf_val(t_num_str);
 
-        return;
+         (void) notes->operate(capt, text) ;
+         notes->setCheckStatus("CV", pQA->n_fail);
+       }
      }
-*/
-  }
-
-  std::string key = "7_7";
-  if( notes->inq(key, pQA->fileStr) )
-  {
-    std::string capt("CORDEX domain Table ") ;
-    capt += tbl_id ;
-    capt += ": Dimension ";
-    capt += hdhC::tf_val(f_name) ;
-    capt += " does not match the grid definition";
-
-    std::string text("Found ") ;
-    text += hdhC::tf_val(hdhC::itoa(f_num)) ;
-    text += ", required" ;
-    text += hdhC::tf_val(t_num_str);
-
-    (void) notes->operate(capt, text) ;
-    notes->setCheckStatus("CV", pQA->n_fail);
   }
 
   return ;
