@@ -204,7 +204,7 @@ CMIP6_CV::check_string(std::string& id)
        {
          std::string capt(hdhC::tf_att(hdhC::empty, "institution", hdhC::colon) ) ;
 
-         std::string text("Found ");
+         std::string text("Found");
          text += hdhC::tf_val(f_inst);
          text += ", expected from CMIP6_institution_id.json ";
          text += hdhC::tf_val(str);
@@ -912,7 +912,7 @@ DRS_CV::checkFilename(std::string& fName, struct DRS_CV_Table& drs_cv_table)
          std::string key("1_2");
          if( notes->inq( key, pQA->qaTime.name) )
          {
-           std::string capt("filename must no have a dot, found ");
+           std::string capt("filename must no have a dot, found");
            capt += hdhC::tf_val(x_filename[i]);
 
            (void) notes->operate(capt) ;
@@ -1915,7 +1915,7 @@ DRS_CV::testPeriod(Split& x_f)
      {
        std::string capt("invalid period in the filename");
 
-       std::string text("Found ");
+       std::string text("Found");
        text += hdhC::tf_val(sd[0] + "-" + sd[1]);
 
        (void) notes->operate(capt, text) ;
@@ -2471,7 +2471,7 @@ DRS_CV::testPeriodFormat(Split& x_f, std::vector<std::string>& sd)
       if( notes->inq( key, pQA->fileStr) )
       {
         std::string capt("Wrong separation of filename's period's dates");
-        capt += ", found ";
+        capt += ", found";
         capt += hdhC::tf_val(sep);
 
         (void) notes->operate(capt) ;
@@ -2856,7 +2856,7 @@ CMOR::checkMIPT_dim_axis(
     else
     {
      capt += "missing, CMOR table request";
-     text = "Expected " ;
+     text = "Expected" ;
     }
     text += hdhC::tf_val(t_DMD.attMap[n_axis]);
 
@@ -2999,9 +2999,9 @@ CMOR::checkMIPT_dim_longName(
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, "long name" ));
     std::string text;
     if( f_long_name.size() )
-      text = "Found " + hdhC::tf_val(f_long_name);
+      text = "Found" + hdhC::tf_val(f_long_name);
 
-    text += ", expected " + hdhC::tf_val(t_DMD_long_name) ;
+    text += ", expected" + hdhC::tf_val(t_DMD_long_name) ;
 
     (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
@@ -3054,11 +3054,11 @@ CMOR::checkMIPT_dim_positive(
     std::string text;
     if( f_DMD.attMap[n_positive].size() )
     {
-      text += "Found " + hdhC::tf_val(f_DMD.attMap[n_positive]);
-      text +=", expected " ;
+      text += "Found" + hdhC::tf_val(f_DMD.attMap[n_positive]);
+      text +=", expected" ;
     }
     else
-      text = "Expected ";
+      text = "Expected";
 
     text += hdhC::tf_val(t_positive);
 
@@ -3120,10 +3120,10 @@ CMOR::checkMIPT_dim_stdName(
     {
       text = "Found";
       text += hdhC::tf_val(f_DMD.attMap[n_standard_name]);
-      text += ", expected ";
+      text += ", expected";
     }
     else
-      text += "Expected ";
+      text += "Expected";
 
     text += hdhC::tf_val(t_DMD.attMap[n_standard_name]);
 
@@ -3150,8 +3150,8 @@ CMOR::checkMIPT_dim_type(
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_type ));
     capt += " does not match the CMOR table request";
 
-    std::string text("Found " + hdhC::tf_val(f_DMD.attMap[n_type]) );
-    text += ", expected " + hdhC::tf_val(t_DMD.attMap[n_type]);
+    std::string text("Found" + hdhC::tf_val(f_DMD.attMap[n_type]) );
+    text += ", expected" + hdhC::tf_val(t_DMD.attMap[n_type]);
 
     (void) notes->operate(capt, text) ;
     notes->setCheckStatus("CV", pQA->n_fail);
@@ -3216,7 +3216,7 @@ CMOR::checkMIPT_dim_units(
         std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_units ));
         capt += "ill-formatted units";
 
-        std::string text("Found ");
+        std::string text("Found");
         text += hdhC::tf_val(f_units);
         text += ", expected <days since ...>";
 
@@ -3287,11 +3287,11 @@ CMOR::checkMIPT_dim_units(
     std::string text;
     if( f_units.size() )
     {
-      text= "Found " + hdhC::tf_val(f_units);
-      text += ", expected ";
+      text= "Found" + hdhC::tf_val(f_units);
+      text += ", expected";
     }
     else
-      text += "Expected ";
+      text += "Expected";
 
     text += hdhC::tf_val(t_units);
 
@@ -3329,7 +3329,7 @@ CMOR::checkMIPT_dim_validMin(
       {
         std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_valid_min ));
         capt += "data minimum is lower than requested by the CMOR table";
-        std::string text("Found ");
+        std::string text("Found");
         text += hdhC::tf_val(hdhC::double2String(min));
         text += ", expected";
         text += hdhC::tf_val(t_DMD.attMap[n_valid_min]);
@@ -3370,7 +3370,7 @@ CMOR::checkMIPT_dim_validMax(
       {
         std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, n_valid_max ));
         capt += "data maximum is higher than requested by the CMOR table";
-        std::string text("Found ");
+        std::string text("Found");
         text += hdhC::tf_val(hdhC::double2String(max));
         text += ", expected";
         text += hdhC::tf_val(t_DMD.attMap[n_valid_max]);
@@ -3502,7 +3502,7 @@ CMOR::checkMIPT_var_cellMeasures(
       std::string text;
       if( vMD.attMap[n_cell_measures].size() )
       {
-        text = "Found " + hdhC::tf_val(vMD.attMap[n_cell_measures]) ;
+        text = "Found" + hdhC::tf_val(vMD.attMap[n_cell_measures]) ;
       }
       else
         text = hdhC::tf_val(pQA->notAvailable) ;
@@ -3580,7 +3580,7 @@ CMOR::checkMIPT_var_cellMethods(
 
       std::string text;
       if( vMD.attMap[n_cell_methods].size() )
-        text = "Found " + hdhC::tf_val(vMD.attMap[n_cell_methods]) ;
+        text = "Found" + hdhC::tf_val(vMD.attMap[n_cell_methods]) ;
       else
         text = hdhC::tf_val(pQA->notAvailable) ;
 
@@ -4154,7 +4154,7 @@ CMOR::checkSource(void)
             std::string capt(hdhC::tf_att(n_global, n_source, hdhC::colon));
             capt += "The model_id does not match";
 
-            std::string text("Found " + hdhC::tf_val(x_word[j]) ) ;
+            std::string text("Found" + hdhC::tf_val(x_word[j]) ) ;
             text += ", expected";
             text += hdhC::tf_val(model_id) ;
 
@@ -4242,7 +4242,7 @@ CMOR::checkSource(void)
             std::string capt(hdhC::tf_att(n_global, n_source, hdhC::colon));
             capt += "faulty term (<technical_name>, <resolution_and_levels>)";
 
-            std::string text("Found ");
+            std::string text("Found");
             text += hdhC::tf_val(x_brackets_items.getStr()) ;
 
             (void) notes->operate(capt, text) ;
@@ -4296,7 +4296,7 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
            std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
            capt += "provision of more than the requested max(17+6) levels";
 
-           std::string text("Found ");
+           std::string text("Found");
            text += hdhC::tf_val(hdhC::double2String(vs_values.size()));
 
            (void) notes->operate(capt, text) ;
@@ -4326,7 +4326,7 @@ CMOR::checkStringValues( struct DimensionMetaData& f_DMD,
       std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
       capt += "mismatch of number of data values";
 
-      std::string text("Found ");
+      std::string text("Found");
       text += hdhC::tf_val(hdhC::double2String(vs_values.size()));
       text += " items in the file and ";
       text += hdhC::tf_assign(cName, hdhC::double2String(x_tVal.size()));
@@ -4480,7 +4480,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
            std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
            capt += " max. no. of levels=(17+6)";
 
-           std::string text("Found ");
+           std::string text("Found");
            text += hdhC::tf_val(hdhC::double2String(ma.size()));
 
            (void) notes->operate(capt, text) ;
@@ -4510,7 +4510,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
       std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
       capt += "mismatch of number of data values";
 
-      std::string text("Found ");
+      std::string text("Found");
       text += hdhC::tf_val(hdhC::double2String(ma.size()));
       text += " items in the file and ";
       text += hdhC::tf_assign(cName, hdhC::double2String(x_tVal.size()));
@@ -4568,7 +4568,7 @@ CMOR::checkWithTolerance( struct DimensionMetaData& f_DMD,
     std::string capt(QA_Exp::getCaptionIntroDim(f_DMD, t_DMD, cName ));
     capt += "Mismatch of data values between file and table";
 
-    std::string text("Found ");
+    std::string text("Found");
     text += hdhC::tf_val(hdhC::double2String(ma[i]));
     text += ", expected ";
     text += hdhC::tf_assign(cName, x_tVal[i]);

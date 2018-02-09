@@ -47,7 +47,7 @@ DRS_CV::checkFilename(std::string& fName, struct DRS_CV_Table& drs_cv_table)
          std::string key("1_2b");
          if( notes->inq( key, pQA->qaTime.name) )
          {
-           std::string capt("filename must no have a dot, found ");
+           std::string capt("filename must no have a dot, found");
            capt += hdhC::tf_val(x_filename[i]);
 
            (void) notes->operate(capt) ;
@@ -632,9 +632,9 @@ DRS_CV::checkProductName(std::string& drs_product,
   {
     std::string capt("DRS fault for path component");
     capt += hdhC::tf_val(CMOR::n_product);
-    std::string text("Found ") ;
+    std::string text("Found") ;
     text += hdhC::tf_val(drs_product) ;
-    text += ", expected ";
+    text += ", expected";
     text += hdhC::tf_val(prod_choice);
 
     (void) notes->operate(capt, text) ;
@@ -1110,7 +1110,7 @@ DRS_CV::testPeriod(Split& x_f)
      if( notes->inq( key, pQA->fileStr) )
      {
        std::string capt("invalid period in the filename");
-       std::string text("Found ");
+       std::string text("Found");
        text += hdhC::tf_val(sd[0] + "-" + sd[1]);
 
        (void) notes->operate(capt, text) ;
@@ -1622,7 +1622,7 @@ DRS_CV::testPeriodFormat(Split& x_f, std::vector<std::string>& sd)
       if( notes->inq( key, pQA->fileStr) )
       {
         std::string capt("Wrong separation of filename's period's dates");
-        capt += ", found ";
+        capt += ", found";
         capt += hdhC::tf_val(sep);
 
         (void) notes->operate(capt) ;
@@ -2222,7 +2222,7 @@ CMOR::checkMIPT_dim_axis(
     if( f_DMD.attMap[n_axis].size() )
     {
       capt += "no match with the CMOR table request";
-      text = "Found ";
+      text = "Found";
       text += hdhC::tf_val(f_DMD.attMap[n_axis]);
       text += ", expected";
     }
@@ -2429,12 +2429,12 @@ CMOR::checkMIPT_dim_positive(
     std::string text;
     if( f_DMD.attMap[n_positive].size() )
     {
-      text = "Found ";
+      text = "Found";
       text += hdhC::tf_val(f_DMD.attMap[n_positive]);
       text += ", expected ";
     }
     else
-      text += "Expected ";
+      text += "Expected";
 
     text += hdhC::tf_val(t_positive);
 
@@ -3107,7 +3107,7 @@ CMOR::checkMIPT_var_type(
       std::string currTable(QA::tableID) ;
 
       std::string capt(QA_Exp::getCaptionIntroVar(vMD, n_type));
-      capt += " expected ";
+      capt += " expected";
 
       if( tEntry.attMap[n_type].size() )
         capt += hdhC::tf_val(tEntry.attMap[n_type]) ;
@@ -3118,7 +3118,7 @@ CMOR::checkMIPT_var_type(
       if( vMD.attMap[n_type].size() )
         capt += hdhC::tf_val(vMD.attMap[n_type]) ;
       else
-        capt += "no type" ;
+        capt += " no type" ;
 
 
       (void) notes->operate(capt) ;
@@ -3797,7 +3797,7 @@ CMOR::checkTrackingID(std::string& rV, std::string& aV)
             if( is == 1 )
                 capt += " is missing";
             else if( is == 2 )
-                capt += " does not match requested prefix " + hdhC::tf_val(rV);
+                capt += " does not match requested prefix" + hdhC::tf_val(rV);
             else if( is == 3 )
                 capt += " with ill-formatted uuid";
 

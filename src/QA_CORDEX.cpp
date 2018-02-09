@@ -174,7 +174,7 @@ DRS_CV::checkFilename(std::string& fName, struct DRS_CV_Table& drs_cv_table)
          std::string key("1_1b");
          if( notes->inq( key, pQA->qaTime.name) )
          {
-           std::string capt("filename must no have a dot, found ");
+           std::string capt("filename must no have a dot, found");
            capt += hdhC::tf_val(x_filename[i]);
 
            (void) notes->operate(capt) ;
@@ -727,8 +727,8 @@ DRS_CV::checkProductName(std::string& drs_product,
   {
     std::string capt("DRS fault for path component <product>");
 
-    std::string text("Found " + hdhC::tf_val(drs_product) ) ;
-    text += ", expected ";
+    std::string text("Found" + hdhC::tf_val(drs_product) ) ;
+    text += ", expected";
     text += hdhC::tf_val(prod_choice);
 
     (void) notes->operate(capt, text) ;
@@ -760,7 +760,7 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
     if( !(drs[j] == t || t == n_ast) )
     {
       if( isMiss )
-          text += " probably " + hdhC::tf_val(x_e[j]) ;
+          text += " probably" + hdhC::tf_val(x_e[j]) ;
       else
       {
         text += " DRS item " + hdhC::tf_assign(x_e[j], drs[j]);
@@ -830,7 +830,7 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
     if( !( drs[i] == t || t == n_ast) )
     {
       if( isMiss )
-        text = " probably " + hdhC::tf_val(x_e[j]) ;
+        text = " probably" + hdhC::tf_val(x_e[j]) ;
       else
       {
         if(x_e[j] == "activity" )
@@ -997,7 +997,7 @@ DRS_CV::testPeriod(Split& x_f)
      if( notes->inq( key, pQA->fileStr) )
      {
        std::string capt("invalid period range in the filename");
-       std::string text("Found ");
+       std::string text("Found");
        text += hdhC::tf_val(sd[0] + "-" + sd[1]);
 
        (void) notes->operate(capt) ;
@@ -2627,7 +2627,7 @@ QA_Exp::checkTrackingID(std::string& rV, std::string& aV)
             capt += hdhC::tf_att(hdhC::empty, n_tracking_id, aV);
 
             if( is == 1 )
-                capt += " does not match requested prefix " + hdhC::tf_val(rV);
+                capt += " does not match requested prefix" + hdhC::tf_val(rV);
             else if( is == 2 )
                 capt += " with ill-formatted uuid";
 
@@ -3003,7 +3003,7 @@ QA_Exp::domainCheckData(std::string &var_lon, std::string &var_lat,
       capt += hdhC::tf_assign("domain", tName) ;
       capt += " does not match";
 
-      std::string text("Found ") ;
+      std::string text("Found") ;
       if( is_lon && is_lat )
       {
         text += hdhC::tf_val(f_resol_lon) ;
@@ -3220,11 +3220,11 @@ QA_Exp::domainCheckDims(std::string item,
        {
          std::string capt("CORDEX domain Table ") ;
          capt += tbl_id ;
-         capt += ": Dimension ";
+         capt += ": Dimension";
          capt += hdhC::tf_val(f_name) ;
          capt += " does not match the grid definition";
 
-         std::string text("Found ") ;
+         std::string text("Found") ;
          text += hdhC::tf_val(hdhC::itoa(f_num)) ;
          text += ", required" ;
          text += hdhC::tf_val(t_num_str);
@@ -3509,7 +3509,7 @@ QA_Exp::checkHeightValue(InFile &in)
          std::string text;
          if( tmp_mv.size() )
          {
-           text= "Found " ;
+           text= "Found" ;
            text += hdhC::tf_val( hdhC::double2String( tmp_mv[0]) ) ;
          }
 
@@ -3745,7 +3745,7 @@ QA_Exp::checkVarTableEntry_cell_methods(
         capt = hdhC::tf_att(vMD.var->name, cm_name) ;
         capt += "does not match";
 
-        text = "Found " ;
+        text = "Found" ;
         text += hdhC::tf_val(cm_val);
         text += ", expected";
         if( isOpt )
@@ -4060,7 +4060,7 @@ QA_Exp::checkVariableTypeX(size_t v, size_t i, size_t j, std::string& tName)
       capt += hdhC::tf_var(var.name);
       capt += "has wrong data type";
 
-      std::string text("Found ");
+      std::string text("Found");
       text += hdhC::tf_val(s);
       text += ", expected";
       text += hdhC::tf_val(tAttValue);
@@ -5221,7 +5221,7 @@ QA_Exp::reqAttCheckVariable(Variable &var)
          if( is &&  notes->inq( key, vName ) )
          {
            std::string capt(hdhC::tf_att(vName, aN, aV));
-           capt += "does not match required value " ;
+           capt += "does not match required value" ;
            capt += hdhC::tf_val(rqValue);
 
            (void) notes->operate(capt) ;
