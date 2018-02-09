@@ -40,6 +40,24 @@ DRS_CV::checkFilename(std::string& fName, struct DRS_CV_Table& drs_cv_table)
   x_filename.enableEmptyItems();
   x_filename = fName ;
 
+  for( size_t i=0 ; i < x_filename.size() ; ++i )
+  {
+      if( x_filename[i].find('.') < std::string::npos )
+      {
+         std::string key("1_2b");
+         if( notes->inq( key, pQA->qaTime.name) )
+         {
+           std::string capt("filename must no have a dot, found ");
+           capt += hdhC::tf_val(fName);
+
+           (void) notes->operate(capt) ;
+           notes->setCheckStatus(drsF, pQA->n_fail);
+         }
+
+         return;
+      }
+  }
+
   checkVariableName(x_filename[0]) ;
 
   checkFilenameGeographic(x_filename);
