@@ -329,29 +329,26 @@ QA_Time::init(std::vector<std::string>& optStr)
    // time_bnds available? Yes, then enable a check
    if( boundsName.size() )
    {
-      if( ! pIn->variable[timeBounds_ix].isExcluded )
+      timeBounds_ix = pIn->getVarIndex(boundsName);
+
+      if( timeBounds_ix == -1 )
       {
-        timeBounds_ix = pIn->getVarIndex(boundsName);
-
-        if( timeBounds_ix == -1 )
+        std::string key("13_15");
+        if( notes->inq( key, name) )
         {
-           std::string key("13_15");
-           if( notes->inq( key, name) )
-           {
-              std::string capt(hdhC::tf_var(boundsName));
-              capt += " is missing, but was declared by ";
-              capt += hdhC::tf_att(name, "time_bnds") ;
+            std::string capt(hdhC::tf_var(boundsName));
+            capt += " is missing, but was declared by ";
+            capt += hdhC::tf_att(name, "time_bnds") ;
 
-              if( notes->operate(capt) )
-              {
+            if( notes->operate(capt) )
+            {
                 notes->setCheckStatus("TIME", fail);
                 pQA->setExitState( notes->getExitState() ) ;
-              }
-           }
-       }
-       else
-          enableTimeBoundsTest();
+            }
+        }
       }
+      else if( ! pIn->variable[timeBounds_ix].isExcluded )
+        enableTimeBoundsTest();
    }
 
 //   if( pIn->nc.isEmptyData(name) )
