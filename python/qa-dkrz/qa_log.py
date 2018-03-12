@@ -28,7 +28,6 @@ class Log(object):
         self.write_lock = ''
         self.line_wrap_sz = 80
         self.word_line_sz = 50
-        self.isResumedSession=False
 
         self.indent = [''] # indentations for yaml
         for i in range(9):
@@ -459,18 +458,15 @@ class Log(object):
                 log_file = os.path.join(log_dir, 'tmp_' + log_fname + '.log')
 
                 # decider whether a preamble has to be written
-                if not self.isResumedSession:
-                    self.isResumedSession = os.path.isfile(log_file)
-                    if not self.isResumedSession:
-                        old_log_file = os.path.join(log_dir, log_fname + '.log')
-                        self.isResumedSession = os.path.isfile(old_log_file)
+                isOldFile = os.path.isfile(log_file)
+                #if not self.isResumedSession:
+                #    old_log_file = os.path.join(log_dir, log_fname + '.log')
+                #    self.isResumedSession = os.path.isfile(old_log_file)
 
                 with open(log_file, 'a') as fd:
 
                     # write the preamble
-                    if not self.isResumedSession:
-                        self.isResumed=True
-
+                    if not isOldFile:
                         entry = self.set_preamble(self.opts)
                         for e in entry:
                             fd.write(e + '\n')
