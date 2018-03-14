@@ -480,12 +480,12 @@ class QaExec(object):
             if len(nc):
                 void, f = os.path.split(nc)
 
-                print '\r' + (10+self.qaConf["STATUS_LINE_SZ"])*' ',
+                print '\r' + (10+self.qaConf.getOpt("STATUS_LINE_SZ"))*' ',
                 print '\rNEXT: ' + f ,
 
-                self.qaConf["STATUS_LINE_SZ"]=len(f)
+                self.qaConf.addOpt("STATUS_LINE_SZ", len(f) )
             else:
-                print '\r' + (10+self.qaConf["STATUS_LINE_SZ"])*' ' ,
+                print '\r' + (10+self.qaConf.getOpt("STATUS_LINE_SZ"))*' ' ,
 
             sys.stdout.flush()
 
