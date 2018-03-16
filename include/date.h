@@ -169,14 +169,10 @@ public:
   //! Add a period to the currently set Julian date.
   void   addYears( long double v );
   void   addMonths( long double v);
-  void   addDays( long double v )
-            { jul.add( v ) ;}
-  void   addHours( long double v )
-            { jul.add( v/24.) ; }
-  void   addMinutes( long double v )
-            { jul.add( v/1440. ) ; }
-  void   addSeconds( long double v )
-            { jul.add( v/86400.) ; }
+  void   addDays( long double v );
+  void   addHours( long double v );
+  void   addMinutes( long double v );
+  void   addSeconds( long double v );
 
   void   addYears( double v )
             {addYears(static_cast<long double>(v));}

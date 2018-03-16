@@ -1047,6 +1047,7 @@ DRS_CV::testPeriod(Split& x_f)
          pDates[2]->shift("beg,d");
          pDates[3]->shift("end,d");
      }
+/*
      else if( sd[0].size() < 11 )
      {
          //pDates[0]->shift("beg,h");
@@ -1063,6 +1064,7 @@ DRS_CV::testPeriod(Split& x_f)
          pDates[2]->shift("beg,mi");
          pDates[3]->shift("end,mi");
      }
+*/
   }
 
   if( pQA->qaTime.isTimeBounds)
@@ -1130,7 +1132,7 @@ DRS_CV::testPeriod(Split& x_f)
       if( text.size() )
       {
         std::string key("1_6e");
-        std::string capt("period in the filename") ;
+        std::string capt("period in the filename, ") ;
 
         for( size_t i=0 ; i < text.size() ; ++i )
         {
@@ -1185,15 +1187,21 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
   {
     if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
     {
-      is[0] = is[1] = true;
+      std::string freq( pQA->qaExp.getFrequency());
 
-      // time_bounds: left-side
-      dDiff[2] = fabs(*pDates[4] - *pDates[0]) ;
-      is[2] = dDiff[2] < uncertainty ;
+      if( freq.find("hr") == std::string::npos )
+      {
+        // the regular case
+        is[0] = is[1] = true;
 
-      // time_bounds: right-side
-      dDiff[3] = fabs(*pDates[5] - *pDates[1]) ;
-      is[3] = dDiff[5] < uncertainty ;
+        // time_bounds: left-side
+        dDiff[2] = fabs(*pDates[4] - *pDates[0]) ;
+        is[2] = dDiff[2] < uncertainty ;
+
+        // time_bounds: right-side
+        dDiff[3] = fabs(*pDates[5] - *pDates[1]) ;
+        is[3] = dDiff[3] < uncertainty ;
+      }
     }
   }
 
@@ -1294,14 +1302,8 @@ DRS_CV::testPeriodCutRegular(std::vector<std::string> &sd,
     std::string s_hr0( sd[0].substr(8,2) );
     std::string s_hr1( sd[1].substr(8,2) );
 
-    std::string t_found(", found ");
-    std::string t_hr0("00");
+    std::string t_hr0;
     std::string t_hr1;
-
-    if( frequency == "3hr" )
-      t_hr1 = "21";
-    else
-      t_hr1 = "18";
 
     if( isBegin )
     {
@@ -1310,30 +1312,45 @@ DRS_CV::testPeriodCutRegular(std::vector<std::string> &sd,
 
       if( isInstant )
       {
-        if( s_hr0 != t_hr0 )
+        double t = pQA->qaTime.firstTimeValue ;
+        // recalc remainder to hr
+        std::string fTV(hdhC::double2String( (t - static_cast<int>(t))*24.) );
+
+        if( s_hr0 != fTV )
         {
-          text.push_back(" (instantaneous + 1st date): expected hr=") ;
-          text.back() += t_hr0 + t_found + s_hr0 ;
+          text.push_back("instantaneous, start-date: expected hr=") ;
+          text.back() += fTV ;
         }
       }
       else
       {
-        if( frequency == "3hr" )
-        {
-           // alternative: edges of time values may be used in the filename
-           Date tv_beg(pQA->qaTime.refDate);
-           tv_beg.addTime(static_cast<double>(pQA->qaTime.firstTimeValue) );
+        bool isAlt = false;
+        double t = pQA->qaTime.firstTimeBoundsValue[0];
 
-           Date fv_beg(pQA->qaTime.refDate);
-           fv_beg.setFormattedDate();
-           fv_beg.setFormattedRange(""); // sharp
-           fv_beg.setDate(sd[0]);
+        std::string fTV;
+        std::string fTBV(hdhC::double2String( (t - static_cast<int>(t))*24.) );
+
+        if( frequency == "3hr" || frequency == "6hr" )
+        {
+          isAlt=true;
+          double t = pQA->qaTime.firstTimeValue;
+          fTV = hdhC::double2String( (t - static_cast<int>(t))*24.) ;
         }
 
-        if( sd[0].substr(8,2) != t_hr0 )
+        if( pQA->qaTime.isTimeBounds && s_hr0 == fTBV )
+          isAlt = false;
+        else if( isAlt && s_hr0 == fTV )
+          isAlt=false ;
+        else
         {
-          text.push_back(" (average + 1st date): expected hr=");
-          text.back() += t_hr0 + t_found + s_hr0 ;
+          text.push_back("mean, StartTime: expected hr=") ;
+          text.back() += fTBV ;
+        }
+
+        if( isAlt )
+        {
+          text.push_back("mean, StartTime: expected hr=") ;
+          text.back() += fTV ;
         }
       }
     }
@@ -1345,36 +1362,58 @@ DRS_CV::testPeriodCutRegular(std::vector<std::string> &sd,
 
       if( isInstant )
       {
-        if( s_hr1 != t_hr1 )
+        double t = pQA->qaTime.lastTimeValue ;
+        // recalc remainder to hr
+        std::string lTV(hdhC::double2String( (t - static_cast<int>(t))*24.) );
+
+        if( s_hr1 != lTV )
         {
-          text.push_back(" (instantaneous + 2nd date): expected hr=");
-          text.back() += t_hr1 + t_found + s_hr1 ;
+          text.push_back("instantaneous, EndTime: expected hr=");
+          text.back() += lTV ;
         }
       }
       else
       {
-        if( frequency == "3hr" )
-        {
-           // alternative: edges of time values may be used in the filename
-           Date tv_end(pQA->qaTime.refDate);
-           tv_end.addTime(static_cast<double>(pQA->qaTime.lastTimeValue) );
+        bool isAlt = false;
+        double t = pQA->qaTime.lastTimeBoundsValue[1];
+        std::string lTV;
+        std::string lTBV(hdhC::double2String( (t - static_cast<int>(t))*24.) );
 
-           Date fv_end(pQA->qaTime.refDate);
-           fv_end.setFormattedDate();
-           fv_end.setFormattedRange(""); // sharp
-           fv_end.setDate(sd[1]);
+        if( frequency == "3hr" || frequency == "6hr" )
+        {
+          isAlt=true;
+          double t = pQA->qaTime.lastTimeValue;
+          lTV = hdhC::double2String( (t - static_cast<int>(t))*24.) ;
         }
 
+        if( pQA->qaTime.isTimeBounds && s_hr1 == lTBV )
+          isAlt = false;
+        else if( isAlt && s_hr1 == lTV )
+          isAlt=false ;
+        else
+        {
+          text.push_back("mean, EndTime: expected hr=") ;
+          text.back() += lTBV ;
+        }
+
+        if( isAlt )
+        {
+          text.push_back("mean, EndTime: expected hr=") ;
+          text.back() += lTV ;
+        }
+
+/*
         if( isA && s_hr1 != "24" )
         {
-          text.push_back(" (averaged + 1st date): expected hr=");
+          text.push_back("mean, StartTime: expected hr=");
           text.back() += t_hr1 + t_found + s_hr1 ;
         }
         else if( isB && s_hr1 != "00" )
         {
-          text.push_back(" (averaged + 2nd date): expected hr=");
+          text.push_back("mean, EndTime): expected hr=");
           text.back() += t_hr1 + t_found + s_hr1 ;
         }
+*/
       }
     }
   }

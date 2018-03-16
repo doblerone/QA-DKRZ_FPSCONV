@@ -104,6 +104,39 @@ Date::operator-( const Date &d )
 }
 
 void
+Date::addDays( long double d )
+{
+  jul += d ;
+  //jul = date2Julian(currYr, currMon, currDay, currHr, currMin, currSec);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
+  isDateSet=true;
+
+  return;
+}
+
+void
+Date::addHours( long double v )
+{
+  jul += v/24. ;
+  //jul = date2Julian(currYr, currMon, currDay, currHr, currMin, currSec);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
+  isDateSet=true;
+
+  return;
+}
+
+void
+Date::addMinutes( long double v )
+{
+  jul += v / (24.*60.) ;
+  //jul = date2Julian(currYr, currMon, currDay, currHr, currMin, currSec);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
+  isDateSet=true;
+
+  return;
+}
+
+void
 Date::addMonths( long double v )
 {
   // Add months, but keep the current day, e.g. adding a
@@ -117,9 +150,20 @@ Date::addMonths( long double v )
   }
 
   // irregular calendars
-  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
   currMon += v ;
   jul = date2Julian(currYr, currMon, currDay, currHr, currMin, currSec);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
+  isDateSet=true;
+
+  return;
+}
+
+void
+Date::addSeconds( long double v )
+{
+  jul += v / ( 24.*3600.) ;
+  //jul = date2Julian(currYr, currMon, currDay, currHr, currMin, currSec);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
   isDateSet=true;
 
   return;
@@ -211,8 +255,8 @@ Date::addTime(std::string time, std::string unit)
 void
 Date::addYears( long double v )
 {
-  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
   jul=date2Julian( currYr+v, currMon, currDay, currHr, currMin, currSec );
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
   isDateSet=true;
   return;
 }
@@ -391,7 +435,6 @@ Date::convertFormattedToISO_8601(double f)
   }
 
   double h, m, s;
-  hour /= 24.;
   Date::getDayTime(hour, &h, &m, &s);
 
   str = hdhC::double2String(h, "w2,f=0,p=0|adj");
@@ -1588,6 +1631,7 @@ Date::parseISO_8601(std::string str0)
   getDayTime(hour, &currHr, &currMin, &currSec);
 
   jul = date2Julian( year, month, day, hour);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
   isDateSet=true;
 
   return false ;
@@ -1783,6 +1827,7 @@ Date::setDate( double y, double mo, double d, double h, double mi, double s)
   currSec = s;
 
   jul = date2Julian(y, mo, d, h, mi, s);
+  julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);
   isDateSet=true;
 
   return false;
@@ -2181,7 +2226,7 @@ void
 Date::shiftHourEnd(void)
 {
     if( currMin < 60. || currSec < 60. )
-       setDate( currYr, currMon, currDay, currHr, 60., 60.);
+       setDate( currYr, currMon, currDay, currHr, 59., 60.);
 
     return;
 }
