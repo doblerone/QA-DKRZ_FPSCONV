@@ -1636,7 +1636,7 @@ getExperimentNameFromPath()
   CURR_LOG_FNAME=
 
   if [ ${DRS_PATH_BASE} ] ; then
-    # for multiple occurrences of the base are possible
+    # for multiple occurrences of the base take the last one
     local base_ix
     for(( c=0 ; c < N ; ++c )) ; do
       test "${pcs[c]}" = ${DRS_PATH_BASE} && base_ix=$c
