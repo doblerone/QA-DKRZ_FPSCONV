@@ -1019,7 +1019,7 @@ DRS_CV::testPeriod(Split& x_f)
     pDates[3]->addTime(pQA->qaTime.lastTimeValue);
 
   if( ! ( pQA->pIn->variable[pQA->qaTime.time_ix].isInstant
-             || ! pQA->qaTime.isTimeBounds ) )
+             || pQA->qaTime.isTimeBounds ) )
   {
      // in case that the mid-frequency time value is provided.
      // sd[0] and sd[1] are of equal size.
@@ -1233,7 +1233,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
 
         if( pQA->qaTime.isTimeBounds )
         {
-          capt +="time bounds";
+          capt += "time bounds";
           text = "Found difference of ";
           ix = 4 + i ;
           text += hdhC::double2String(dDiff[2+i]);
@@ -1241,7 +1241,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
         }
         else
         {
-          capt="time values ";
+          capt += "time values ";
           ix = 2 + i ;
 
           text = "Found " + sd[i] ;
@@ -1249,7 +1249,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)
           text += pDates[ix]->str();
         }
 
-        (void) notes->operate(capt) ;
+        (void) notes->operate(capt, text) ;
         notes->setCheckStatus(drsF, pQA->n_fail );
 
         bRet=false;

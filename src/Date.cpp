@@ -2243,9 +2243,12 @@ Date::shiftDayBeg(void)
 void
 Date::shiftDayEnd(void)
 {
-    if( ! (currHr == 23. && currMin == 60. && currSec == 60.) )
-       if( ! (currHr == 24. && currMin == 0. && currSec == 0.) )
-          setDate( currYr, currMon, currDay, 24., 0., 0.);
+    bool isA = currHr == 23. && currMin == 60. && currSec == 0. ;
+    bool isB = currHr == 23. && currMin == 59. && currSec == 60. ;
+    bool isC = currHr == 24. && currMin ==  0. && currSec ==  0. ;
+
+    if( ! (isA || isB || isC) )
+       setDate( currYr, currMon, currDay, 24., 0., 0.);
 
     return;
 }
@@ -2253,8 +2256,8 @@ Date::shiftDayEnd(void)
 void
 Date::shiftMonthBeg(void)
 {
-    if( ! ( currDay == 1.
-              || currHr == 0. || currMin == 0. || currSec == 0. ) )
+    if( currDay > 1.
+              || currHr > 0. || currMin > 0. || currSec > 0. )
       setDate( currYr, currMon, 1., 0., 0., 0.);
 
     return;
@@ -2265,9 +2268,13 @@ Date::shiftMonthEnd(void)
 {
     double nd = getMonthDaysNum();
 
-    if( ! (nd == currDay && currHr == 24. && currMin == 0. && currSec == 0.) )
-       if( ! (nd == currDay && currHr == 23. && currMin == 60. && currSec == 60.) )
-          setDate( currYr, currMon, nd, 24., 0., 0.);
+    bool isLastDay = nd == currDay ;
+    bool isA = isLastDay && currHr == 24. && currMin == 0. && currSec == 0. ;
+    bool isB = isLastDay && currHr == 23. && currMin == 59. && currSec == 60. ;
+    bool isC = isLastDay && currHr == 23. && currMin == 60. && currSec == 0. ;
+
+    if( ! (isA || isB || isC) )
+       setDate( currYr, currMon, nd, 24., 0., 0.);
     return;
 }
 
@@ -2283,11 +2290,13 @@ Date::shiftYearBeg(void)
 void
 Date::shiftYearEnd(void)
 {
-    if( ! ( currMon == 12. && currDay == 31.
-              && currHr == 24. && currMin == 0. && currSec == 0. ) )
-      if( ! ( currMon == 12. && currDay == 31.
-                && currHr == 23. && currMin == 60. && currSec == 60. ) )
-         setDate( currYr, 12., 31., 24., 0., 0.);
+    bool isLastDay = currMon == 12. && currDay == 31.;
+    bool isA = isLastDay && currHr == 24. && currMin == 0. && currSec == 0. ;
+    bool isB = isLastDay && currHr == 23. && currMin == 59. && currSec == 60. ;
+    bool isC = isLastDay && currHr == 23. && currMin == 60. && currSec == 0. ;
+
+    if( ! ( isA || isB || isC) )
+       setDate( currYr, 12., 31., 24., 0., 0.);
     return;
 }
 

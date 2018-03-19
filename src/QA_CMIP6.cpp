@@ -1936,8 +1936,7 @@ DRS_CV::testPeriod(Split& x_f)
   if( pQA->qaTime.lastTimeValue != 0. )
     pDates[3]->addTime(pQA->qaTime.lastTimeValue);
 
-  if( ! ( pQA->pIn->variable[pQA->qaTime.time_ix].isInstant
-             || ! pQA->qaTime.isTimeBounds ) )
+  if( ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
   {
      // in case that the mid-frequency time value is provided.
      // sd[0] and sd[1] are of equal size.
@@ -1983,57 +1982,52 @@ DRS_CV::testPeriod(Split& x_f)
      }
   }
 
-  /*
-  if( ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
-  {
-    // shift to the left
-    if( *pDates[0] == *pDates[2] )
-       pDates[0]->addTime(-pQA->qaTime.refTimeStep/2.);
-    if( pQA->qaTime.firstTimeValue != 0. )
-       pDates[2]->addTime(-pQA->qaTime.refTimeStep/2.);
-
-    // shift to the right
-    pDates[1]->addTime(pQA->qaTime.refTimeStep);  // !!!
-    if( pQA->qaTime.lastTimeValue != 0. )
-       pDates[3]->addTime(pQA->qaTime.refTimeStep/2.);
-  }
-  */
-
   if( pQA->qaTime.isTimeBounds)
   {
-    pDates[4] = new Date(pQA->qaTime.refDate);
-    pDates[5] = new Date(pQA->qaTime.refDate);
+       if( pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
+       {
+           std::string tb_name(pQA->qaTime.getBoundsName());
 
-    if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
-      if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
-        pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
-
-    // regular: filename Start/End time vs. TB 1st_min/last_max
-    if( pQA->qaTime.lastTimeValue != pQA->qaTime.lastTimeBoundsValue[1] )
-      if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
-        pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
-  }
-  else
-  {
-    if( pQA->qaTime.time_ix > -1 &&
-        pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
-    {
-        std::string tb_name(pQA->qaTime.getBoundsName());
-
-        if( tb_name.size() )
-        {
-           std::string key("3_18");
-
-           if( notes->inq( key, tb_name ) )
+           if( tb_name.size() )
            {
-             std::string capt(hdhC::tf_var(tb_name));
-             capt += " contradicts " ;
-             capt += getInstantAtt() ;
+              std::string key("3_18");
 
-             (void) notes->operate(capt) ;
-             notes->setCheckStatus(drsF, pQA->n_fail);
+              if( notes->inq( key, tb_name ) )
+              {
+                std::string capt(hdhC::tf_var(tb_name));
+                capt += " contradicts " ;
+                capt += getInstantAtt() ;
+
+                (void) notes->operate(capt) ;
+                notes->setCheckStatus(drsF, pQA->n_fail);
+              }
            }
-        }
+       }
+       else
+       {
+         pDates[4] = new Date(pQA->qaTime.refDate);
+         pDates[5] = new Date(pQA->qaTime.refDate);
+
+         if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
+           if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
+             pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
+
+         // regular: filename Start/End time vs. TB 1st_min/last_max
+         if( pQA->qaTime.lastTimeValue != pQA->qaTime.lastTimeBoundsValue[1] )
+           if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
+             pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
+       }
+  }
+  else if( ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
+  {
+    std::string key("1_6g");
+
+    if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+    {
+      std::string capt("Missing time_bounds");
+
+      (void) notes->operate(capt) ;
+      notes->setCheckStatus(drsF, pQA->n_fail );
     }
   }
 
@@ -2095,18 +2089,6 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates)
     if( ! (is[3] = *pDates[1] == *pDates[5]) )
       dDiff[3] = *pDates[5] - *pDates[1] ;
   }
-  else
-  {
-    std::string key("1_6g");
-
-    if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
-    {
-      std::string capt("Missing time_bounds");
-
-      (void) notes->operate(capt) ;
-      notes->setCheckStatus(drsF, pQA->n_fail );
-    }
-  }
 
   bool bRet=true;
 
@@ -2127,24 +2109,24 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates)
 
         std::string capt("Misaligned ");
         if( i == 0 )
-          capt += "begin" ;
+          capt += "start-time: " ;
         else
-          capt += "end" ;
-        capt += " of periods in filename and ";
+          capt += "end-time: " ;
+        capt += "filename vs. ";
 
         size_t ix;
 
         if( pQA->qaTime.isTimeBounds )
         {
-          capt +="time bounds";
-          text = "Found difference of ";
+          capt += "time bounds";
+          text  = "Found difference of ";
           ix = 4 + i ;
           text += hdhC::double2String(dDiff[2+i]);
           text += " day(s)";
         }
         else
         {
-          capt="time values ";
+          capt += "time values ";
           ix = 2 + i ;
 
           text = "Found " + sd[i] ;
@@ -2152,7 +2134,7 @@ DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates)
           text += pDates[ix]->str();
         }
 
-        (void) notes->operate(capt) ;
+        (void) notes->operate(capt, text) ;
         notes->setCheckStatus(drsF, pQA->n_fail );
 
         bRet=false;
