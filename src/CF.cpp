@@ -2294,7 +2294,7 @@ CF::initDefaults()
   n_NC_GLOBAL="NC_GLOBAL";
   n_number_of_observations="number_of_observations";
   n_positive="positive";
-  n_reco="Recommendation";
+  n_reco="CF Recommendation";
   n_sample_dimension="sample_dimension";
   n_standard_name="standard_name";
   n_time="time";
@@ -4113,7 +4113,7 @@ CF::chap24_reco(void)
           std::string tag(bKey + "24b");
           if( notes->inq(tag, var.name) )
           {
-            std::string capt("reco: The order of " + n_dimension + "s of ");
+            std::string capt(n_reco + ": The order of " + n_dimension + "s of ");
             capt += hdhC::tf_var(var.getDimNameStr(true));
             capt += "should be T,Z,Y,X" ;
 
@@ -4135,7 +4135,7 @@ CF::chap24_reco(void)
       {
         if( notes->inq(bKey + "24c", var.name) )
         {
-          std::string capt("reco: ");
+          std::string capt(n_reco + ": ");
           capt += var.name + ": other " + n_dimension + "s than T,Z,Y,X should be on the left" ;
           std::string text("found ");
           text += var.getDimNameStr(true);
@@ -4172,7 +4172,7 @@ CF::chap251(void)
       {
         if( notes->inq(bKey + "251c", NO_MT) )
         {
-          std::string capt("reco for CF-1.4: " + hdhC::tf_att(n_missing_value));
+          std::string capt(n_reco + " for CF-1.4: " + hdhC::tf_att(n_missing_value));
           capt += " is deprecated";
 
           std::string text("Note that this recommendation is only given for CF-1.4");
@@ -4251,7 +4251,7 @@ CF::chap251(void)
            {
              if( notes->inq(bKey + "251a", var.name) )
              {
-               std::string capt("reco: ");
+               std::string capt(n_reco + ": ");
                capt += hdhC::tf_att(var.name, mfName[k], mfvStr[k], hdhC::upper);
                capt += "should not be within ";
                capt += hdhC::tf_assign(n_valid_range,
@@ -4269,7 +4269,7 @@ CF::chap251(void)
              {
                if( notes->inq(bKey + "251a", var.name) )
                {
-                 std::string capt("reco: ");
+                 std::string capt(n_reco + ": ");
                  capt += hdhC::tf_att(var.name, mfName[k], hdhC::upper) ;
                  capt += "should not be within the range specified by ";
                  capt += n_valid_min + " and " + n_valid_max  ;
@@ -4290,7 +4290,7 @@ CF::chap251(void)
              {
                if( notes->inq(bKey + "251a", var.name) )
                {
-                 std::string capt("reco: ");
+                 std::string capt(n_reco + ": ");
                  capt += hdhC::tf_att(var.name, mfName[k], hdhC::upper) ;
                  capt += "should not be smaller than the " ;
                  capt += n_valid_max +" value" ;
@@ -4309,7 +4309,7 @@ CF::chap251(void)
              {
                if( notes->inq(bKey + "251a", var.name) )
                {
-                 std::string capt("reco for ") ;
+                 std::string capt(n_reco + " for ") ;
                  capt += hdhC::tf_att(var.name, mfName[k]) ;
                  capt += "should not be larger than the ";
                  capt += n_valid_min + " value" ;
@@ -4365,7 +4365,7 @@ CF::chap251(void)
   {
     if( notes->inq(bKey + "251d", NO_MT) )
     {
-      std::string capt("reco: " + hdhC::tf_att(n_missing_value));
+      std::string capt(n_reco + ": " + hdhC::tf_att(n_missing_value));
       capt += " should be replaced by _FillValue";
 
       (void) notes->operate(capt) ;
@@ -4664,8 +4664,8 @@ CF::chap3_reco(void)
         {
           if( notes->inq(bKey + "32a", var.name) )
           {
-            std::string capt("reco for " + hdhC::tf_var(var.name, hdhC::colon));
-            capt += "Use "  + n_standard_name + " or " + n_long_name;
+            std::string capt(n_reco + " for " + hdhC::tf_var(var.name, hdhC::colon));
+            capt += "Use "  + n_standard_name + " and/or " + n_long_name;
 
             (void) notes->operate(capt) ;
             notes->setCheckStatus( n_CF, fail );
@@ -5162,7 +5162,7 @@ CF::chap35_reco(void)
               {
                  if( notes->inq(bKey + "35i", var.name) )
                  {
-                    std::string capt("reco for " + hdhC::tf_var(var.name, hdhC::colon));
+                    std::string capt(n_reco + " for " + hdhC::tf_var(var.name, hdhC::colon));
                     capt += "The boolean AND of each flag_values and flag_masks ";
                     capt += "should equal the flag_values entry";
 
@@ -5928,7 +5928,7 @@ CF::chap432_deprecatedUnits(Variable& var, std::string &units)
       std::string tag(bKey+"31a");
       if( notes->inq(tag, var.name) )
       {
-        std::string capt("reco: ");
+        std::string capt(n_reco + ": ");
         capt += hdhC::tf_att(var.name, n_units, units, hdhC::upper);
         capt += "is deprecated";
 
@@ -6572,7 +6572,7 @@ CF::chap5_reco(void)
          {
            if( notes->inq(bKey + "57a", var.name) )
            {
-             std::string capt("reco: Scalar ");
+             std::string capt(n_reco + ":: Scalar ");
              capt += hdhC::tf_var(var.name) ;
              capt += "should not match the name of " + n_dimension ;
              capt += hdhC::tf_val(dimensions[i]) ;
@@ -6597,7 +6597,7 @@ CF::chap5_reco(void)
           {
             if( notes->inq(bKey + "5c", var.name) )
             {
-              std::string capt("reco: Multi-" + n_dimension + "al ");
+              std::string capt(n_reco + ":: Multi-" + n_dimension + "al ");
               capt += hdhC::tf_var(var.name) ;
               capt += "should not match the name of any of its " + n_dimension + "s" ;
 
@@ -6943,7 +6943,7 @@ CF::chap56_gridMappingVar(Variable& var, std::string &s, std::string gmn)
      {
         if( notes->inq(bKey + "56d", var_gmv.name, NO_MT) )
         {
-          std::string capt("reco: Grid_mapping-") ;
+          std::string capt(n_reco + ":: Grid_mapping-") ;
           capt += hdhC::tf_assign(n_variable, var_gmv.name) ;
           capt += " should not have " + n_dimension + "s" ;
 
@@ -7521,7 +7521,7 @@ CF::chap71(void)
         {
           if( notes->inq(bKey + "71h", var_is.name) )
           {
-            std::string capt("reco: Variable");
+            std::string capt(n_reco + ":: Coordinate variable");
             capt += hdhC::tf_val(var_is.name, hdhC::blank) ;
             capt += "should not have " ;
             capt += hdhC::tf_att( *s[i]) ;
@@ -8396,7 +8396,7 @@ CF::chap73_inqBounds(Variable& var,
 
       if( !var_n.bounds.size() && notes->inq(bKey + "73e", var.name, NO_MT) )
       {
-        std::string capt("reco: Variable") ;
+        std::string capt(n_reco + ": Variable") ;
         capt += hdhC::tf_val(var_n.name) ;
         capt += " referenced by " + hdhC::tf_att(var.name, n_cell_methods);
         capt += "should have attached ";
@@ -8500,7 +8500,7 @@ CF::chap73b_reco(Variable& var, std::vector<std::string> &cm_name )
   {
     if( notes->inq(bKey + "73g", var.name) )
     {
-      std::string capt("reco for " + hdhC::tf_att(var.name, n_cell_methods));
+      std::string capt(n_reco + " for " + hdhC::tf_att(var.name, n_cell_methods));
       capt += "should specify an item for each " + n_dimension ;
       capt += ", also for " ;
 
@@ -8831,7 +8831,7 @@ CF::chap734b(Variable& var,
   // cell_methods when there are no coordinates.
   // Except for entries whose cell_methods attribute is point, all numeric variables
   // and scalar coordinate vars named by cell_methods should have
-  // bounds or climatology attributes.
+  // bounds or climatology attributes. Exception: area: for global
   std::string dim;
 
   for( size_t l=0 ; l < cm_name.size() ; ++l )
@@ -8852,7 +8852,7 @@ CF::chap734b(Variable& var,
                 || x_cm_name[x] == n_longitude
                     || x_cm_name[x] == n_latitude) )
       {
-        std::string meaning;
+        std::string meaning("none");
         std::string *kind=0;  // for preventing compiler warnings when -O2
 
         int i_lat, i_lon;
@@ -8909,9 +8909,9 @@ CF::chap734b(Variable& var,
           kind=&n_latitude;
         }
 
-        if( meaning.size() && notes->inq(bKey + "734a", var.name) )
+        if( meaning != n_global && notes->inq(bKey + "734a", var.name) )
         {
-          std::string capt("reco for " + hdhC::tf_att(var.name, n_cell_methods, hdhC::colon)) ;
+          std::string capt(n_reco + " for " + hdhC::tf_att(var.name, n_cell_methods, hdhC::colon)) ;
           capt += hdhC::tf_assign("Name", *kind +hdhC::colon) + " for " + meaning ;
           capt += " scope should have size-one-dimensioned " + n_variable;
 
