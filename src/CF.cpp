@@ -1537,6 +1537,12 @@ CF::finalAtt_coordinates_D(void)
      if( ! aux.isCoordinate() )
          continue;
 
+     if( aux.coord.isZ_DL || aux.isFormulaTermsVar)
+         continue ;
+
+     if( aux.boundsOf.size() )
+         continue ;
+
      bool is=true;
 
      for( size_t jx=0 ; jx < pIn->varSz ; ++jx )
@@ -1557,8 +1563,8 @@ CF::finalAtt_coordinates_D(void)
         }
      }
 
-    if(is)
-    {
+     if(is)
+     {
         if( notes->inq(bKey + "5k", aux.name, NO_MT ) )
         {
             std::string capt("Warning: auxiliary " + hdhC::tf_var(aux.name));
@@ -1567,7 +1573,7 @@ CF::finalAtt_coordinates_D(void)
             (void) notes->operate(capt) ;
             notes->setCheckStatus( n_CF, fail );
         }
-    }
+     }
   }
 
   return;
@@ -6971,8 +6977,9 @@ CF::chap56_attProps(
      {
         std::string capt(hdhC::tf_var(dataVar.name, hdhC::colon));
         capt += "Missing coordinates attribute" ;
+        std::string text("When the coordinate variables for a horizontal grid are not longitude and latitude, it is required that the true latitude and longitude coordinates be supplied via the coordinates attribute.");
 
-        (void) notes->operate(capt) ;
+        (void) notes->operate(capt, text) ;
         notes->setCheckStatus( n_CF, fail );
      }
    }
@@ -8091,11 +8098,8 @@ CF::chap73(void)
       var.attValue[jx][0] += cm_new  ;
     }
 
-    if( followRecommendations )
-    {
-//      chap73b_reco(var, cm_name);
-      chap734b(var, cm_name, cm_method);
-    }
+    //if( followRecommendations )
+    //  chap734b(var, cm_name, cm_method);
   }
 
   return;

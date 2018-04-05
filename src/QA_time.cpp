@@ -1612,7 +1612,8 @@ QA_Time::testTimeStep(void)
     else
       key="R2";
 
-    if( notes->inq( key, name, ANNOT_ACCUM) )
+    if( ! notes->findAnnotation("R1", name) &&
+           notes->inq( key, name, ANNOT_ACCUM) )
     {
       std::string capt;
       std::string text;
