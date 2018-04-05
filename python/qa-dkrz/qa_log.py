@@ -39,7 +39,7 @@ class Log(object):
                 start      =[]   , info       =[]   , txt  ='',
                 status     =-1   , set_qa_lock = False,
                 period=[]        , conclusion =''   , indent=-1,
-                is_events  =False, caption    =''   , impact='', tag='',
+                is_events  =False, annotation    =''   , impact='', tag='',
                 qa_res     =''   , sub_path   =''):
 
         # this is not self.entry
@@ -68,16 +68,16 @@ class Log(object):
         if is_events:
             entry.append(self.indent[3] + 'events:')
 
-        if len(caption):
+        if len(annotation):
             entry.append(self.indent[4] + '- event:')
-            entry.append(self.indent[7] + 'caption: ' + caption)
+            entry.append(self.indent[7] + 'annotation: ' + annotation)
             if len(impact):
                 entry.append(self.indent[7] + 'impact: ' + impact)
             if len(tag):
                 entry.append(self.indent[7] + 'tag: ' + tag)
 
         if len(info):
-            entry.append(self.indent[7] + 'text:')
+            entry.append(self.indent[7] + 'info:')
 
             for line in info:
                 if len(line) > self.line_wrap_sz:
@@ -111,7 +111,7 @@ class Log(object):
                     elif len(tag):
                         f_qa_lock.write(tag)
 
-                    f_qa_lock.write(': ' + caption + '\n')
+                    f_qa_lock.write(': ' + annotation + '\n')
 
 
 

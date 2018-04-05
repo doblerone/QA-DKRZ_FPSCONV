@@ -35,7 +35,7 @@ class LogSummary(object):
     def annotation_add(self, var_id, path_id, blk, i):
         # annotation and associated indices of properties
         # fse contains ( var, StartTime, EndTime )
-        # index i points to blk[i] == 'caption:'
+        # index i points to blk[i] == 'annotation:'
 
         # just to have them defined in case of an error
         capt=''
@@ -43,7 +43,7 @@ class LogSummary(object):
         tag=''
 
         words = blk[i+1].lstrip(' -').split(None,1)
-        if words[0] == 'caption:':
+        if words[0] == 'annotation:':
             capt = words[1]
             i=i+1
 
@@ -67,10 +67,10 @@ class LogSummary(object):
 
         # the sub-temporal range of a given variable (and path)
         try:
-            # index of a found caption
+            # index of a found annotation
             ix = self.annot_capt.index(capt)
         except:
-            # index of a new caption
+            # index of a new annotation
             ix = len(self.annot_capt)
 
             self.annot_capt.append(capt)
@@ -1155,13 +1155,13 @@ class LogSummary(object):
                 fd.write(keys + ' ],\n')
 
         capt = self.annot_capt[ix].strip("'")
-        fd.write(3*tab + '"caption": "' + capt + '"')
+        fd.write(3*tab + '"annotation": "' + capt + '"')
 
-        if len(self.annot_impact[ix]):
-            impact = self.annot_impact[ix].strip("'")
-            fd.write(',\n' + 3*tab + '"severity": "' + impact + '"\n')
-        else:
-            fd.write("\n")
+        #if len(self.annot_impact[ix]):
+        #    impact = self.annot_impact[ix].strip("'")
+        #    fd.write(',\n' + 3*tab + '"severity": "' + impact + '"\n')
+        #else:
+        #    fd.write("\n")
 
         fd.write(2*tab + '}')
 

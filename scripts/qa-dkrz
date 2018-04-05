@@ -800,7 +800,7 @@ checkClosedMessages()
                 word=( ${line} )
                 test ${word[0]} = 'file:'      && echo -e "\n${line}"
                 test ${word[0]} = 'data_path:' && echo "${line}"
-                test ${word[0]} = 'caption:'   && echo "${line}"
+                test ${word[0]} = 'annotation:'   && echo "${line}"
             done < ${ff}
          fi
 
@@ -2512,7 +2512,7 @@ getPaths()
       sTxt[0]="3data_path: [${tt// /, }]"
     fi
 
-    sTxt[1]="3text: 1"
+    sTxt[1]="3info: 1"
     sTxt[2]="3 - no valid sub-path found in data_path"
 
     std_out flush "${sTxt[0]:1}\n${sTxt[2]:4}"
@@ -3038,7 +3038,7 @@ init()
 
   # Are the executables in QA_BIN applicable?
   if ! ${QA_BIN#*:}/unixTime.x &> /dev/null ; then
-    sTxt[0]="3text: 1"
+    sTxt[0]="3info: 1"
     sTxt[1]="3 - no executables in ${QA_BIN}"
 
     std_out flush "${sTxt[0]:1}\n${sTxt[1]:4}"
@@ -3098,7 +3098,7 @@ init()
   PROC_POOL=$SESSION_LOGDIR/ProcPool
 
   if ! mkdir -p ${PROC_POOL} &> /dev/null ; then
-    sTxt[0]= "3text: 1"
+    sTxt[0]= "3info: 1"
     sTxt[1]= "3 - could not mkdir PROC_POOL=${PROC_POOL}"
 
     std_out flush "${sTxt[2]:4}"
@@ -3229,7 +3229,7 @@ initLog()
   sTxt[$((ix++))]="3conclusion: FAIL"
   sTxt[$((ix++))]="3events:"
   sTxt[$((ix++))]="3 - event:"
-  sTxt[$((ix++))]="7caption: \'${y_caption}\'"
+  sTxt[$((ix++))]="7annotation: \'${y_caption}\'"
   sTxt[$((ix++))]="7impact: ${y_impact}"
   sTxt[$((ix++))]="7tag: \'${y_tag}\'"
 
@@ -3239,7 +3239,7 @@ initLog()
 
   local i
   if [ "${y_text[0]}" ] ; then
-    sTxt[$((ix++))]="7text:"
+    sTxt[$((ix++))]="7info:"
     for(( i=0 ; i < ${#y_text[*]} ; ++i )) do
       sTxt[$((ix++))]='7 - '"${y_text[i]}"
     done
@@ -3858,8 +3858,8 @@ mkLinks()
 
   if [ ${grfs[0]} ] ; then
     sTxt[0]="3data_path: ${PROJECT_DATA}${saveSubPath}"
-    sTxt[1]="3caption: 'symbolic link to QA results'"
-    sTxt[2]="3text: $((${#grfs[*]}+2))"
+    sTxt[1]="3annotation: 'symbolic link to QA results'"
+    sTxt[2]="3info: $((${#grfs[*]}+2))"
     sTxt[3]="3 - qa_linkpath= ${dest_path}${saveSubPath}"
     sTxt[4]="3 - qa_target_path= ${grf[0]%/*}"
 
@@ -4540,7 +4540,7 @@ testFileLink()
     # this should not happen
     sendSubject="No valid link detected from source"
 
-    sTxt[0]="3text: 1"
+    sTxt[0]="3info: 1"
     sTxt[1]="3 - link detection failed for: ls -l ${PROJECT_DATA}/${subPath}/$nextFile"
 
     std_out flush "${sTxt[1]:4}"
@@ -4694,7 +4694,7 @@ testPathLink()
        # this should not happen
        sendSubject="No valid link detected from source"
 
-       sTxt[0]="3text: 1"
+       sTxt[0]="3info: 1"
        sTxt[1]="3 - Link detection failed for: ls -l ${PROJECT_DATA}$pc"
 
        std_out flush "${sTxt[1]:4}"
@@ -4734,10 +4734,10 @@ testPathLink()
     text="Symbolic link for a sub-tree"
 
     if [ ${link_target_path:0:1} = / ] ; then
-      sTxt[0]="3text: 1"
+      sTxt[0]="3info: 1"
       sTxt[1]="3 - $QA_RESULTS/data${pc} --> ${link_target_path}"
     else
-      sTxt[0]="text: 2"
+      sTxt[0]="info: 2"
       sTxt[1]="3 - common_path: $QA_RESULTS/data${pc%/*}"
       sTxt[2]="3 - link: ${pc##*/} --> ${link_target_path}"
     fi

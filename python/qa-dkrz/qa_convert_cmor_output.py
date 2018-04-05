@@ -92,7 +92,7 @@ def convert_CMOR_output(lines):
             annot[ix].append(phrase)
 
     for ix in range(len(annot)):
-        # the first annot of each annotation group is a caption
+        # the first annot of each annotation group acts a caption
         # the tag equals the length of the caption
         flag = ' FLAG-BEG:CAPT-BEG'
         flag += 'CMOR ' + annot[ix][0] + 'CAPT-END'

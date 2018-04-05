@@ -109,7 +109,7 @@ pre_logY()
 
   if [ "$1" != '--finally' ] ; then
     sTxt[$((ix++))]="3 - event:"
-    sTxt[$((ix++))]="7caption: \'${y_caption}\'"
+    sTxt[$((ix++))]="7annotation: \'${y_caption}\'"
     sTxt[$((ix++))]="7impact: ${y_impact}"
     sTxt[$((ix++))]="7tag: \'${y_tag}\'"
 
@@ -119,7 +119,7 @@ pre_logY()
 
     local i
     if [ ${#y_text[*]} -gt 0 ] ; then
-      sTxt[$((ix++))]='7text:'
+      sTxt[$((ix++))]='7info:'
       for(( i=0 ; i < ${#y_text[*]} ; ++i )) do
         sTxt[$((ix++))]="7 - ${y_text[i]}"
       done

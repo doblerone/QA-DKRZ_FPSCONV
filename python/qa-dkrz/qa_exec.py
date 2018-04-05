@@ -453,7 +453,7 @@ class QaExec(object):
 
                 elif key == 'CAPT':
                     # reached out of parse_FLAG
-                    dct['caption'] = issue.strip()
+                    dct['annotation'] = issue.strip()
 
                 elif key == 'TXT':
                     # reached out of parse_FLAG
@@ -554,7 +554,7 @@ class QaExec(object):
                 log_entry['is_event'] = True
                 log_entry['event'] = []
                 event = {}
-                event['caption']   = 'run-time error: segmentation fault'
+                event['annotation']   = 'run-time error: segmentation fault'
                 event['impact'] = 'L2'
                 event['tag']    ='S_1'
                 log_entry['event'].append(event)
@@ -585,7 +585,7 @@ class QaExec(object):
 
             for eve in log_entry['event']:
                 entry_id = self.log.append( entry_id,
-                                            caption  = eve['caption'],
+                                            annotation  = eve['annotation'],
                                             impact   = eve['impact'],
                                             tag      = eve['tag'])
 

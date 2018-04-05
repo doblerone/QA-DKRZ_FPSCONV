@@ -650,12 +650,11 @@ def get_name_from_path(path, drs_path_base, path_index):
         drs_path_base = path_items[0]
 
     # Take into account multiple occurrences.
-    # If so, then the right-most one
+    # If so, then take the right-most one
     base_ix=0
     for c in range(path_items_len):
         if path_items[c] == drs_path_base:
             base_ix = c
-            break
 
     pIx = []
     for ix in path_index:

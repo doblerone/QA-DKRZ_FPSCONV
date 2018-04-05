@@ -38,14 +38,14 @@ analyseExec()
     # nothing to do for 2, 3
     if [ $status -eq 4 ] ; then
 
-      sTxt[${#sTxt[*]}]='text: EMERGENCY STOP'
+      sTxt[${#sTxt[*]}]='info: EMERGENCY STOP'
 
       isSignalTerm=t  # emergency stop, if not intercepted
       issueMail=t
 
     elif [ $status -gt 4 ] ; then
 
-      sTxt[${#sTxt[*]}]="text: qA-${PROJECT}.x: run-time error. \
+      sTxt[${#sTxt[*]}]="info: qA-${PROJECT}.x: run-time error. \
 Note: possibly due to a bug in NetCDF 4.1.2 F90 lib. \
 However, the check was successful."
 
@@ -340,7 +340,7 @@ fi
 
     if [ "${ans}" ] ; then
       local ix=${#sTxt[*]}  # num of text lines later
-      sTxt[${ix}]="7text:"
+      sTxt[${ix}]="7info:"
 
       local cnt=1
       for(( pos1=0 ; pos1 < ${#ans} ; ++pos1 )) ; do
@@ -560,7 +560,7 @@ init()
   # No check for correct and full parameters.
   if [ ! "${PROC_POOL}" ] ; then
     test -c "$TTY" && echo 'No access to PROC_POOL'
-    sTxt[${#sTxt[*]}]='text: no access to PROC_POOL'
+    sTxt[${#sTxt[*]}]='info: no access to PROC_POOL'
 
     log --keep
     sendEMail
@@ -583,7 +583,7 @@ init()
 
   if [ ! -r $PROC_POOL/$PROC_FILE.lock ] ; then
     test -c "$TTY" && echo "PROC_POOL-file $PROC_POOL/$PROC_FILE not found"
-    sTxt[${#sTxt[*]}]="text: $PROC_POOL/$PROC_FILE no such file."
+    sTxt[${#sTxt[*]}]="info: $PROC_POOL/$PROC_FILE no such file."
 
     log --keep
     sendEMail
@@ -622,7 +622,7 @@ init()
 
   # Are the executables in QA_BIN applicable?
   if ! unixTime.x &> /dev/null ; then
-    sTxt[${#sTxt[*]}]="text: qaExecutor:\nBinaries are not applicable in  ${IMPORTED_PATH}"
+    sTxt[${#sTxt[*]}]="info: qaExecutor:\nBinaries are not applicable in  ${IMPORTED_PATH}"
 
     log --keep
     sendEMail
@@ -634,7 +634,7 @@ init()
 
   if ! tryCom get_status test -f "${ncFile}" ; then
     sTxt[${#sTxt[*]}]='--standard'
-    sTxt[${#sTxt[*]}]="text: file ${ncFile} not found by qa-exec-check."
+    sTxt[${#sTxt[*]}]="info: file ${ncFile} not found by qa-exec-check."
 
     log --keep
     sendEMail
@@ -663,7 +663,7 @@ initLog()
 
   sTxt[$((ix++))]="3events:"
   sTxt[$((ix++))]="3 - event:"
-  sTxt[$((ix++))]="7caption: \'${y_caption}\'"
+  sTxt[$((ix++))]="7annotation: \'${y_caption}\'"
   sTxt[$((ix++))]="7impact: ${y_impact}"
   sTxt[$((ix++))]="7tag: \'${y_tag}\'"
 
@@ -975,7 +975,7 @@ parseKey()
     fi
 
     sTxt[${#sTxt[*]}]="3 - event:"
-    sTxt[${#sTxt[*]}]="7caption: '${caption}'"
+    sTxt[${#sTxt[*]}]="7annotation: '${caption}'"
     test ${impact} && sTxt[${#sTxt[*]}]="7impact: $impact"
     test ${tag} && sTxt[${#sTxt[*]}]="7tag: \'$tag\'"
 
@@ -987,7 +987,7 @@ parseKey()
     local i
 
     if [ ${#sX} -gt 0 ] ; then
-      sTxt[${#sTxt[*]}]="7text:"
+      sTxt[${#sTxt[*]}]="7info:"
 
       # multiple lines are separated by ';'
       local p0=0

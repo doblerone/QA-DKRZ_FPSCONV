@@ -325,7 +325,7 @@ def get_next_variable(data_path, fBase, fNames):
 
             entry_id = log.append(t_vars.log_fname, f=fBase, d_path=data_path,
                        r_path=g_vars.res_dir_path, sub_path=t_vars.sub_path,
-                       caption='unspecific error in sub-temporal file sequence',
+                       annotation='unspecific error in sub-temporal file sequence',
                        impact='L2', tag='M5', info=info,
                        conclusion='DRS(F): FAIL', status=status)
             isLog = True
@@ -341,7 +341,7 @@ def get_next_variable(data_path, fBase, fNames):
 
             entry_id = log.append( t_vars.log_fname, f=fBase, d_path=data_path,
                         r_path=g_vars.res_dir_path, sub_path=t_vars.sub_path,
-                        caption='ambiguous sub-temporal file sequence',
+                        annotation='ambiguous sub-temporal file sequence',
                         impact='L2', tag='M6', info=info,
                         conclusion='DRS(F): FAIL', status=status)
             isLog = True
