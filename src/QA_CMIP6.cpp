@@ -2926,7 +2926,7 @@ CMOR::checkMIPT_dim_coordsAtt(
     if( t_DMD_coAtt == coAtt[ix] )
     {
       // Is coordinates-att set in the corresponding variable?
-      if( pQA->pIn->getVarIndex(dimVar[ix]) == -1 );
+      if( pQA->pIn->getVarIndex(dimVar[ix]) == -1 )
       {
         std::string key("4_4h");
         if( notes->inq( key, vMD.var->name) )
