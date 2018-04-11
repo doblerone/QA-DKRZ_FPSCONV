@@ -22,6 +22,7 @@ requirements:
     - expat
     - curl
     - gcc
+    - libc
   run:
     - libnetcdf 4.4.*
     - jpeg 9b
@@ -31,6 +32,7 @@ requirements:
     - expat
     - curl
     - libgcc
+    - libc
     - git
 #test:
 #  commands:

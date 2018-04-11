@@ -840,7 +840,7 @@ parseOutput()
   # xtract embedded string: KEY-BEG any text KEY-END
   local is key keys mess strX strY
   declare -a keys
-  keys=( PERIOD CHECK CPU EMAIL REAL STATUS SUBJECT FLAG )
+  keys=( TRACK PERIOD CHECK CPU EMAIL REAL STATUS SUBJECT FLAG )
 
   while : ; do  # for keys with multiple occurrence
     is=f
@@ -879,6 +879,8 @@ parseOutput()
       parseKey CHECK
     elif  [ ${key} = PERIOD ] ; then
       parseKey PERIOD
+    elif  [ ${key} = TRACK ] ; then
+      parseKey TRACK
     elif  [ ${key} = FLAG ] ; then
       parseKey FLAG
     else
@@ -914,6 +916,9 @@ parseKey()
     test ${#checkSum}     -gt 0 && sTxt[${#sTxt[*]}]="3checksum: $checkSum.${ext}"
     test ${#creationDate} -gt 0 && sTxt[${#sTxt[*]}]="3creation_date: $creationDate"
     test ${#trackingID}   -gt 0 && sTxt[${#sTxt[*]}]="3tracking_id: $trackingID"
+
+  elif [ ${key} = TRACK ] ; then
+    sTxt[${#sTxt[*]}]="3tracking_id: ${mess}"
 
   elif [ ${key} = PERIOD ] ; then
     local arr
