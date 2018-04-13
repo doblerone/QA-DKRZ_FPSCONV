@@ -7512,8 +7512,6 @@ CF::chap71(void)
     }
   }
 
-  if( followRecommendations )
-  {
     std::string* s[2];
     s[0] = &n_FillValue;
     s[1] = &n_missing_value;
@@ -7526,20 +7524,23 @@ CF::chap71(void)
       {
         if( var_is.isValidAtt( *s[i]) )
         {
-          if( notes->inq(bKey + "71h", var_is.name) )
+          if( notes->inq(bKey + "251e", var_is.name) )
           {
             std::string capt(n_reco + ":: Coordinate variable");
             capt += hdhC::tf_val(var_is.name, hdhC::blank) ;
             capt += "should not have " ;
             capt += hdhC::tf_att( *s[i]) ;
 
-            (void) notes->operate(capt) ;
+            std::string text("Appendix A: ... Not allowed for coordinate data " );
+            text += "except in the case of auxiliary coordinate varibles in ";
+            text += "discrete sampling geometries.";
+
+            (void) notes->operate(capt, text) ;
             notes->setCheckStatus( n_CF, fail );
           }
         }
       }
     }
-  }
 
   return;
 }
@@ -10840,6 +10841,9 @@ CF::chap9_timeSeriesProfile(std::vector<int>& xyzt_ix, std::vector<size_t>& dv_i
     // all dims of X and T should be different
     if( hdhC::isAmong(var_t.dimName, var_x.dimName, true ) )
       return false;
+
+    if( var_x.dimSize.size() > 1 )
+        return false; // distinguished from a multidimensional array representation
   }
 
   // data variable vs. Z
