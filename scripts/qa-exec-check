@@ -1395,6 +1395,10 @@ set_IN_par()
   if grep '^Infinite' $TABLE_PATH/$QA_CHECK_LIST 2> /dev/null | grep -q D ; then
      par=${par}":dIN"
   fi
+
+  if [ ${UNLIMITED_DIM_NAME} ] ; then
+     par=${par}":uDN=${UNLIMITED_DIM_NAME}"
+  fi
 }
 
 ##//! Input paramters of the QA class

@@ -106,6 +106,9 @@ class QaExec(object):
         if qaConf.isOpt('EXCLUDE_VARIABLE'):
             par += ':eV=' + qa_util.join(qaConf.getOpt('EXCLUDE_VARIABLE'), sep=',')
 
+        if qaConf.isOpt('UNLIMITED_DIM_NAME'):
+            par += ':uDM=' + qa_util.join(qaConf.getOpt('UNLIMITED_DIM_NAME'), sep=',')
+
         return par
 
 
