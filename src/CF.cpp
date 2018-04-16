@@ -765,7 +765,7 @@ CF::checkGroupRelation(void)
       // omitted in a coordinates attribute.
       if( isXYZinCoordAtt(i) )
         continue; // only once for all scalars
-      else if( ! (isCompressAux(var) || var.isFormulaTermsVar) )
+      else if( ! (isCompressAux(var) || var.isFormulaTermsVar || var.boundsOf.size() ) )
       {
         if( notes->inq(bKey + "0c", var.name) )
         {
@@ -6096,13 +6096,17 @@ CF::chap432_verify_FT(
   std::vector<std::string> valid_units;
   valid_units.push_back("Pa 1");
   valid_units.push_back("1 Pa Pa");
-  valid_units.push_back("1 Pa 1 Pa Pa");
+  valid_units.push_back("1 Pa 1 Pa");
   valid_units.push_back("m 1 m");
   valid_units.push_back("1 1 1 m m m");
   valid_units.push_back("1 m m");
   valid_units.push_back("1 m m 1 1 m");
   valid_units.push_back("1 m m m 1 m");
   valid_units.push_back("1 m m m 1 m 1");
+
+  // special for an alternative
+  if( valid_ft_ix == 2 && att_ft_pv.size() == 3 )
+    valid_units[2] = "Pa 1 Pa" ;
 
   Split x_fUnits(valid_units[valid_ft_ix]);
 
@@ -7526,13 +7530,13 @@ CF::chap71(void)
         {
           if( notes->inq(bKey + "251e", var_is.name) )
           {
-            std::string capt(n_reco + ":: Coordinate variable");
+            std::string capt("Coordinate variable");
             capt += hdhC::tf_val(var_is.name, hdhC::blank) ;
             capt += "should not have " ;
             capt += hdhC::tf_att( *s[i]) ;
 
-            std::string text("Appendix A: ... Not allowed for coordinate data " );
-            text += "except in the case of auxiliary coordinate varibles in ";
+            std::string text("Appendix A: Not allowed for coordinate data " );
+            text += "except in the case of auxiliary coordinate variables in ";
             text += "discrete sampling geometries.";
 
             (void) notes->operate(capt, text) ;
@@ -7753,16 +7757,15 @@ CF::chap73(void)
       continue;
 
     // only data variables may have this attribute
-    if( !var.isDataVar() )
+    if( !var.isDataVar() || var.coord.isAny || var.isAUX || var.isFormulaTermsVar )
     {
       if( notes->inq(bKey + "73f", var.name) )
       {
-        std::string capt("Only data variables may have ");
+        std::string capt(hdhC::tf_var(var.name, hdhC::colon) );
+        capt += " Only data variables may have ";
         capt += hdhC::tf_att(hdhC::empty, n_cell_methods);
-        std::string text("Found for ") ;
-        text += hdhC::tf_var(var.name);
 
-        (void) notes->operate(capt, text) ;
+        (void) notes->operate(capt) ;
         notes->setCheckStatus( n_CF, fail );
       }
 
@@ -8955,7 +8958,7 @@ CF::chap74a(void)
     // only time may have a climatology att
     if( var.isValidAtt(n_climatology) )
     {
-      // FTV may be dependend only on a dim without representation
+      // FTV may depend only on a dim without representation
       if( !var.isFormulaTermsVar )
         isClimatology = true;
 
