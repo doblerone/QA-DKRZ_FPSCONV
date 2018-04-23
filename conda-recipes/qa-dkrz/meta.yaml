@@ -3,7 +3,7 @@ package:
   version: '0.6.7'
 
 build:
-  number: 23
+  number: 24
 
 source:
 #   git_url: https://github.com/IS-ENES-Data/QA-DKRZ.git
@@ -22,7 +22,6 @@ requirements:
     - expat
     - curl
     - gcc
-    - libc
   run:
     - libnetcdf 4.4.*
     - jpeg 9b
@@ -32,7 +31,6 @@ requirements:
     - expat
     - curl
     - libgcc
-    - libc
     - git
 #test:
 #  commands:
