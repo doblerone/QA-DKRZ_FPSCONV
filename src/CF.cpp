@@ -7675,6 +7675,17 @@ CF::chap72(void)
         mvar.addAuxCount();
         var.push_aux(mvar.name);
 
+        if(mvar.name == var.name && notes->inq(bKey + "72f", mvar.name) )
+        {
+          std::string capt(hdhC::tf_att(var.name,mvar.name)) ;
+          capt += "must not declare the data variable itself" ;
+
+          (void) notes->operate(capt) ;
+          notes->setCheckStatus( n_CF, fail );
+
+          return;
+        }
+
         // must have units
         bool is=false;
         if( mvar.units.size() == 0 )
