@@ -6,7 +6,7 @@ Installation
 
 `QA-DKRZ` may be installed  either by the ``conda`` package manager or
 from a GitHub repository. Recommended is ``conda`` installing
-a ready-to-use package (a 64-bit processor is required). If you want to work with sources or use a different machine architecture, then the
+a ready-to-use package (a 64-bit processor is required). If you want to work with sources, use a different machine architecture, or the ``libc`` on the destination machine is older than the one used for building the conda package, then the
 installation from GitHUb should be the first choice.
 
 Running the QA_DKRZ tool requires external tables which are not provided by conda packages (neither by QA_DKRZ from GitHub). ``qa-dkrz`` starts a script for installation and updates, when the first argument is ``install`` .
@@ -118,24 +118,22 @@ Package for Shipping
 ====================
 
 When there is a request to use QA-DKRZ on a system **without any internet access**, then
-a package ready for shipping may be created on a system **with access**.
+a package ready for shipping has at first to be created on a system **with access** (this is required). Note that the prior
+installation must be done for all projects designated to be checked on the isolated system.
+
 
 .. code-block:: bash
 
-  $ qa-dkrz install --ship=/path
+  $ qa-dkrz --ship=/path
 
 This creates a tarball ``/path/QA-DKRZ.tar`` .
 
-Note that no ship-ready version is provided neither by conda nor by git. The
-installation must be done before execution of ``--ship=/path``
-for all projects designated to be checked on the isolated system.
-
-After the tarball was copied to the new location and ``tar -xf QA-DKRZ.tar``
+After the tarball was copied to the new location and ``tar -xf your-path/QA-DKRZ.tar``
 was executed, please, make sure that the conda-based script ``qa-dkrz`` or git-hub
 based ``qa-dkrz.sh`` , respectively, is accessable. Finally, run
 
 .. code-block:: bash
 
-  $ qa-dkrz install --unship
+  $ qa-dkrz --unship
 
 This will adjust the paths in the file ``.qa-config.txt`` , which is used internally.
