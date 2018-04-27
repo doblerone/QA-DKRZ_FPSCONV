@@ -326,6 +326,24 @@ QA_Time::init(std::vector<std::string>& optStr)
      }
    }
 
+   // is time unlimited?
+   if( isTime && ! pIn->nc.isDimUnlimitedGenuine() )
+   {
+        std::string key("4_2");
+        if( notes->inq( key, name) )
+        {
+            std::string capt("Warning: Dimension " + hdhC::tf_val(name));
+            capt += " is not unlimited";
+
+            if( notes->operate(capt) )
+            {
+                notes->setCheckStatus("TIME", fail);
+                pQA->setExitState( notes->getExitState() ) ;
+            }
+        }
+
+   }
+
    // time_bnds available? Yes, then enable a check
    if( boundsName.size() )
    {

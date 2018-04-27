@@ -160,6 +160,11 @@ ship()
 {
     local ov=$1
 
+    if [ ! ${ov} ] ; then
+      echo "--ship=path requires a path"
+      exit
+    fi
+
     if ! mkdir -p $ov ; then
       exit
     fi

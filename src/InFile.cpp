@@ -53,6 +53,13 @@ InFile::applyOptions(void)
         continue;
       }
 
+      if( split[0] == "unlimitedDimName"
+             || split[0] == "uDN" )
+      {
+        unlimitedDimName = split[1];
+        continue;
+      }
+
       if( split[0] == "variableName"
              || split[0] == "vN" )
       {
@@ -816,8 +823,11 @@ InFile::openNc(bool isNew)
   {
     try
     {
-      if( path.size() > 0 )
+      if( path.size() )
         nc.setPath(str);
+      if( unlimitedDimName.size() )
+        nc.setUnlimitedDimName(unlimitedDimName);
+
       if( ! nc.open(file.getFile().c_str()) )
         throw "Exception";
     }

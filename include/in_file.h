@@ -177,6 +177,7 @@ private:
   std::string fixedFieldVars;
   std::string explicitVariable;
 
+  std::string unlimitedDimName;
 };
 
 #endif

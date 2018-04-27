@@ -616,6 +616,9 @@ void
     bool
       isDimUnlimited(void);
 
+    bool
+      isDimUnlimitedGenuine(void){ return isGenuineUnlimitedDim ;}
+
 //! Return true if string is a valid dimension
     bool
       isDimValid(std::string);
@@ -896,6 +899,12 @@ void
 //      setPseudoUnlimitedDim(std::string vName)
 //          {pseudoUnlimitedDim.push_back(vName);}
 
+//! Set the name of the unlimited dimension.
+/*! If there is a limited dim that acts as an unlimited one.*/
+    std::string
+      setUnlimitedDimName(std::string s)
+        {return unlimitedDimName=s;}
+
     void
       temporarily_disable_annotation(void){with_annotation=false;}
 
@@ -914,7 +923,7 @@ private:
     int         unlimitedDimID;
     std::string unlimitedDimName;
     std::string unlimitedDimRepName;
-
+    bool isGenuineUnlimitedDim ;
 
     struct ExternalSetting
     {

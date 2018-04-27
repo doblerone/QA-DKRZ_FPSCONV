@@ -3387,6 +3387,7 @@ NcAPI::getLayout(void)
   char name_buf[NC_MAX_NAME+1];
   size_t len;
   int attNum;
+  isGenuineUnlimitedDim = true;
 
   // inquire dim IDs
   for( int id=0 ; id < dimNum ; ++id)
@@ -3406,6 +3407,12 @@ NcAPI::getLayout(void)
      layout.dimName.push_back( name_buf );
      layout.dimSize.push_back( len );
      layout.dimMap[name_buf] = id ;
+
+     if( unlimitedDimName.size() && unlimitedDimName == layout.dimName.back() )
+     {
+         unlimitedDimID = id ;
+         isGenuineUnlimitedDim = false;
+     }
   }
 
   if( unlimitedDimID > -1 )

@@ -1936,9 +1936,12 @@ DRS_CV::testPeriod(Split& x_f)
   if( pQA->qaTime.lastTimeValue != 0. )
     pDates[3]->addTime(pQA->qaTime.lastTimeValue);
 
-  if( ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
+  bool isInstant = pQA->pIn->variable[pQA->qaTime.time_ix].isInstant ;
+  if( pQA->qaTime.isTimeBounds )
+      isInstant = false;
+
+  if( ! isInstant )
   {
-     // in case that the mid-frequency time value is provided.
      // sd[0] and sd[1] are of equal size.
      if( sd[0].size() < 5 )
      {
@@ -1996,27 +1999,25 @@ DRS_CV::testPeriod(Split& x_f)
               {
                 std::string capt(hdhC::tf_var(tb_name));
                 capt += " contradicts " ;
-                capt += getInstantAtt() ;
+                capt += hdhC::tf_att("cell_methods") + "time: point" ;
 
                 (void) notes->operate(capt) ;
                 notes->setCheckStatus(drsF, pQA->n_fail);
               }
            }
        }
-       else
-       {
-         pDates[4] = new Date(pQA->qaTime.refDate);
-         pDates[5] = new Date(pQA->qaTime.refDate);
 
-         if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
-           if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
+       pDates[4] = new Date(pQA->qaTime.refDate);
+       pDates[5] = new Date(pQA->qaTime.refDate);
+
+       if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
+          if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
              pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
 
-         // regular: filename Start/End time vs. TB 1st_min/last_max
-         if( pQA->qaTime.lastTimeValue != pQA->qaTime.lastTimeBoundsValue[1] )
-           if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
+       // regular: filename Start/End time vs. TB 1st_min/last_max
+       if( pQA->qaTime.lastTimeValue != pQA->qaTime.lastTimeBoundsValue[1] )
+          if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
              pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
-       }
   }
   else if( ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
   {

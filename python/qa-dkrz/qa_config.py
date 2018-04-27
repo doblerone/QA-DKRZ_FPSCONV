@@ -289,6 +289,16 @@ class QaConfig(object):
                 str0 += ','
             str0 += '--up=automatic'
 
+        if args.SHIPPING_PATH != None and len(args.SHIPPING_PATH):
+            if len(str0) > 0:
+                str0 += ','
+            str0 += '--ship=' + args.SHIPPING_PATH
+
+        if args.IS_UNSHIPPING):
+            if len(str0) > 0:
+                str0 += ','
+            str0 += '--unship'
+
         if str0:
             _ldo['install_args']=str0
 
@@ -388,6 +398,9 @@ class QaConfig(object):
         parser.add_argument('-S', '--select', dest='CL_S',
             help='''Selection of variables; overrules any SELECT assignment.''')
 
+        parser.add_argument('--ship', dest='SHIPPING_PATH',
+            help='''Path to store QA-DKRZ for shipping.''')
+
         parser.add_argument('--show_call', '--show-call', dest='SHOW_CALL',
             action="store_true",
             help='''Show C++ executable call; number depends on --next''')
@@ -403,6 +416,10 @@ class QaConfig(object):
         parser.add_argument('--show_next', '--show-next',
             type=int, nargs='?', default=0, const=1, dest='SHOW_NEXT',
             help="Show the N next path/file for executaion [N=1].")
+
+        parser.add_argument('--unship', dest='IS_UNSHIPPING',
+            action="store_true",
+            help='''Initialisation after shippingi at path.''')
 
         parser.add_argument('--up', '--update', dest='UPDATE',
             nargs='?',  const='schedule',

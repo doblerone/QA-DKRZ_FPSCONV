@@ -1780,6 +1780,11 @@ for(( i=1 ; i <= $# ; ++i )) ; do
     fi
 
   else
+    test ${item} = --debug      && set -x
+    test ${item%=*} = ship      && item=--${item}
+    test ${item} = up           && item=--up
+    test ${item%=*} = install   && item=--${item}
+
     arg[${#arg[*]}]="$item"
   fi
 done
@@ -1995,6 +2000,12 @@ do
 
         elif [ "${OPTNAME}" = PROJECT_AS ] ; then
           setKWL PROJECT_AS=${OPTVAL}
+
+        elif [ "${OPTNAME}" = SHIP ] ; then
+          installArgs="--ship=${OPTVAL}"
+
+        elif [ "${OPTNAME}" = UNSHIP ] ; then
+          installArgs="--unship"
 
         elif [ "${OPTNAME:0:2}" = UP ] ; then
           setKWL CMD_UP=t

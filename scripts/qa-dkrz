@@ -5209,6 +5209,7 @@ for OPTARG in $* ; do
   for arg in ${optargs[*]} ; do
     test ${arg} = '-h' -o ${arg} = '--help' \
         && . $QA_SRC/scripts/qa-help
+    test ${arg} = '--debug' && set -x
 
     tr_option arg $prev_opt
     OPTNAME=${arg%%=*}
@@ -5221,7 +5222,7 @@ for OPTARG in $* ; do
     elif [ ${OPTNAME} = CONFIG_FILE ] ; then
       CONFIG_FILE=${OPTARG#*=}
     elif [ ${OPTNAME} = QA_CONFIG ] ; then
-      QA_CONFIG==${OPTARG#*=}
+      QA_CONFIG=${OPTARG#*=}
     elif [ ${OPTNAME} = QA_TABLES ] ; then
       QA_TABLES=${OPTARG#*=}
     elif [ ${OPTNAME} = QA_SRC ] ; then

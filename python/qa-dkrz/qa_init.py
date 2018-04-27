@@ -398,6 +398,23 @@ def run_install(qaConf):
 
         isInq=True
 
+   if len(l_ia):
+        ia=l_ia[0].split('=')
+        if ia[0] == '--ship':
+            p = os.path.join(qaConf.qa_src, 'install')
+            p += ' ' + l_ia[0]
+        elif ia[0] == '--unship':
+            p = os.path.join(qaConf.qa_src, 'install')
+            p += ' ' + ia[0]
+
+        if len(p):
+            try:
+                subprocess.check_call(p, shell=True)
+            except:
+                sys.exit(41)
+
+            sys.exit(0)
+
    if isUp:
       # checksum of the current qa_dkrz.py
       # list of python scripts
