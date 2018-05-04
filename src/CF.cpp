@@ -5573,7 +5573,7 @@ CF::chap432(void)
   std::vector<std::string> valid_ft;
   valid_ft.push_back("p0: lev:");
   valid_ft.push_back("sigma: ps: ptop:");
-  valid_ft.push_back("a: ap: b: ps: p0:");
+  valid_ft.push_back("a: p0: b: ps:"); // alternative is substituted later
   valid_ft.push_back("a: b: orog:");
   valid_ft.push_back("a: b1: b2: ztop: zsurf1: zsurf2:");
   valid_ft.push_back("sigma: eta: depth:");
@@ -5751,6 +5751,11 @@ CF::chap432(Variable& var,
 
   chap432_getParamVars(var, valid_sn, valid_ft, valid_ft_ix, valid_sn_ix,
                    att_ft_ix, att_ft_pv) ;
+
+
+  // special for the alternative hybrid sigma pressure coord.
+  if( valid_ft_ix == 2 && att_ft_pv.size() == 3 )
+    valid_ft[valid_ft_ix]="ap: b: ps:";
 
   // sn and ft from the same valid algorithm?
   if( att_sn_ix > -1 && valid_ft_ix > -1 && valid_ft_ix != valid_sn_ix)
@@ -6104,9 +6109,8 @@ CF::chap432_verify_FT(
   valid_units.push_back("1 m m m 1 m");
   valid_units.push_back("1 m m m 1 m 1");
 
-  // special for an alternative
   if( valid_ft_ix == 2 && att_ft_pv.size() == 3 )
-    valid_units[2] = "Pa 1 Pa" ;
+    valid_units[valid_ft_ix] = "Pa 1 Pa" ;
 
   Split x_fUnits(valid_units[valid_ft_ix]);
 

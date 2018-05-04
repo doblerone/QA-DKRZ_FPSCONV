@@ -840,8 +840,8 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
            continue;
         }
 
-        text += " DRS item " + hdhC::tf_assign(x_e[j], drs[i]);
-        text += " vs. global attribute " + hdhC::tf_assign(cvMap[x_e[j]], t) ;
+        text += " DRS failed for " + hdhC::tf_assign("item",x_e[j]);
+        text += ", found " + hdhC::tf_val(drs[i]) ;
       }
 
       break;

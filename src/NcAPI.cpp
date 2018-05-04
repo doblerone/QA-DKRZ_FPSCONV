@@ -3387,7 +3387,6 @@ NcAPI::getLayout(void)
   char name_buf[NC_MAX_NAME+1];
   size_t len;
   int attNum;
-  isGenuineUnlimitedDim = true;
 
   // inquire dim IDs
   for( int id=0 ; id < dimNum ; ++id)
@@ -3408,15 +3407,17 @@ NcAPI::getLayout(void)
      layout.dimSize.push_back( len );
      layout.dimMap[name_buf] = id ;
 
-     if( unlimitedDimName.size() && unlimitedDimName == layout.dimName.back() )
+     if( id == unlimitedDimID )
      {
-         unlimitedDimID = id ;
-         isGenuineUnlimitedDim = false;
+       unlimitedDimName=layout.dimName[unlimitedDimID];
+       isGenuineUnlimitedDim = true;
+     }
+     else if( unlimitedDimID < 0 && unlimitedDimName == layout.dimName.back() )
+     {
+       unlimitedDimID = id ;
+       isGenuineUnlimitedDim = false;
      }
   }
-
-  if( unlimitedDimID > -1 )
-      unlimitedDimName=layout.dimName[unlimitedDimID];
 
   for( int id=0 ; id < varNum ; ++id)
   {
