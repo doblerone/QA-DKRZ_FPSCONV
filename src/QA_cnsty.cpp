@@ -429,7 +429,7 @@ Consistency::lockFile(std::string &fName )
 
     if( count == 1800 )  // 1/2 hr
     {
-      std::string key("8_3");
+      std::string key("IE_3");
       if( notes->inq( key, "PT") )
       {
          std::string capt("consistency-check table is locked for 1/2 hour") ;
@@ -442,7 +442,7 @@ Consistency::lockFile(std::string &fName )
 
   if( system( lock.c_str() ) )
   {
-     std::string key("8_2");
+     std::string key("IE_2");
      if( notes->inq( key, "PT") )
      {
         std::string capt("could not lock the consistency-check table") ;
@@ -670,7 +670,7 @@ Consistency::write(Variable &dataVar, std::string& entryID)
 
   if (! oifs.is_open() )
   {
-    std::string key("8_1");
+    std::string key("IE_1");
     if( notes->inq( key, "PT") )
     {
       std::string capt("could not create a consistency-check table") ;

@@ -217,7 +217,7 @@ DRS_CV_Table::read(void)
     // attributes
     if( attName.size() == 0 )
     {
-      std::string key("7_2");
+      std::string key("IE_5");
       if( notes->inq( key) )
       {
         std::string capt(

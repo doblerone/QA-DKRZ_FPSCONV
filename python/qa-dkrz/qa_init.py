@@ -370,6 +370,7 @@ def run_install(qaConf):
    # update external tables and in case of running qa_dkrz.py from
    # sources update C++ executables
    prj=''
+   l_ia=''
 
    if qaConf.isOpt("PROJECT"):
       prj = qaConf.getOpt("PROJECT")

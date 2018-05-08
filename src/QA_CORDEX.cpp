@@ -252,7 +252,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
     {
       if( cvMap.count(x_e[x]) == 0 )
       {
-        std::string key("7_3");
+        std::string key("IE_6");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile();
         capt += ": encoding";
@@ -369,12 +369,12 @@ DRS_CV::checkModelName(std::string &aName, std::string &aValue,
 
    if( ! ifs.isOpen() )
    {
-      std::string key("7_4") ;
+      std::string key ;
 
       if( des == 'G' )
-        key += "a" ;
+        key += "IE_7" ;
       else
-        key += "b" ;
+        key += "IE_8" ;
 
       if( notes->inq(key) )
       {
@@ -577,7 +577,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
     {
       if( cvMap.count(x_e[x]) == 0 )
       {
-        std::string key("7_3");
+        std::string key("IE_6");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding " ;
@@ -4623,7 +4623,7 @@ QA_Exp::inqTables(void)
 
   for( size_t i=0 ; i <  pPath.size() ; ++i)
   {
-     std::string key("7_1");
+     std::string key("IE_4");
      if( notes->inq( key, pQA->fileStr) )
      {
         std::string capt("no path to the tables, tried " + *(pPath[i])) ;
@@ -5324,7 +5324,7 @@ QA_Exp::varReqTableCheck(InFile &in, VariableMetaData &vMD,
 
    if( ! ifs.isOpen() )
    {
-      std::string key("7_4c") ;
+      std::string key("IE_11") ;
       if( notes->inq( key, vMD.var->name) )
       {
          std::string capt(

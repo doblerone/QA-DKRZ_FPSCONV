@@ -294,7 +294,7 @@ class QaConfig(object):
                 str0 += ','
             str0 += '--ship=' + args.SHIPPING_PATH
 
-        if args.IS_UNSHIPPING):
+        if args.IS_UNSHIPPING:
             if len(str0) > 0:
                 str0 += ','
             str0 += '--unship'

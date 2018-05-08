@@ -114,7 +114,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
     {
       if( cvMap.count(x_e[x]) == 0 )
       {
-        std::string key("7_3b");
+        std::string key("IE_6");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding ";
@@ -240,7 +240,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
 
   std::string txt;
   findFN_faults(drs, x_e, gM, txt) ;
-  
+
   if( txt.size() )
   {
      text.push_back(txt);
@@ -661,7 +661,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
     {
       if( cvMap.count(x_e[x]) == 0 )
       {
-        std::string key("7_3a");
+        std::string key("IE_6");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding not available in CV, found " ;
@@ -755,7 +755,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 
   std::string txt;
   findPath_faults(drs, x_e, gM, txt) ;
-  
+
   if( txt.size() )
   {
     text.push_back(txt);
@@ -1113,11 +1113,11 @@ DRS_CV::testPeriod(Split& x_f)
       if( !isInstantTime() )
       {
         std::string tb_name(pQA->qaTime.getBoundsName());
-        
+
         if( ! notes->findAnnotation("6_15", tb_name) )
         {
           std::string key("3_8");
-          
+
           if( notes->inq( key, tb_name ) )
           {
             std::string capt(hdhC::tf_var("time_bnds"));
@@ -1274,12 +1274,12 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
     std::string key("1_6e");
     std::string capt("period in the filename:") ;
     capt += " Start- and EndTime of different size" ;
-    
+
     (void) notes->operate(capt + text) ;
     notes->setCheckStatus(drsF, pQA->n_fail );
     return;
   }
-  
+
   int len ;
 
   size_t sz = QA_Exp::MIP_tableNames.size() ;
@@ -1288,16 +1288,16 @@ DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
   {
      if( QA::tableID == QA_Exp::MIP_tableNames[i] )
      {
-        len = QA_Exp::MIP_FNameTimeSz[i] ;  
+        len = QA_Exp::MIP_FNameTimeSz[i] ;
         break;
      }
   }
-  
+
   if( len == -1 || i == sz )
      return;
 
   int len_sd = sd[0].size() ;
-  
+
   // a) yyyy
   if( len_sd == 4 && len_sd != len )
       text = ", expected yyyy, found " + sd[0] + "-" + sd[1] ;
@@ -1666,7 +1666,7 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
   x_aV.addStripSides(" ");
 
   std::vector<char> sep {',', ' '} ;
-  
+
   for(size_t i=0 ; i < sep.size() ; ++i )
   {
     x_aV.setSeparator(sep[i]);
@@ -1686,7 +1686,7 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
          notes->setCheckStatus("CV",  pQA->n_fail );
       }
     }
-    
+
     if( x_aV.size() > 1 )
     {
       if(i)
@@ -1704,8 +1704,8 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
           notes->setCheckStatus("CV",  pQA->n_fail );
         }
       }
-      
-      break; 
+
+      break;
     }
   }
 
@@ -1726,7 +1726,7 @@ CMOR::checkForcing(std::vector<std::string>& vs_rqValue, std::string& aV)
          item = vs_item[0];
       else
          item = hdhC::getUniqueString(vs_item, ',');
-      
+
       std::string capt(pQA->s_global);
       capt += hdhC::blank;
       capt += hdhC::tf_att(hdhC::empty, n_forcing);
@@ -1907,7 +1907,7 @@ CMOR::checkMIP_table(InFile& in, VariableMetaData& vMD,
       notes->setCheckStatus("CV", pQA->n_fail);
       pQA->setExitState( notes->getExitState() ) ;
     }
-    
+
     return false;
   }
 
@@ -2833,7 +2833,7 @@ CMOR::checkMIPT_var_longName(
   }
   else if( tEntry.attMap[n_long_name] == vMD.attMap[n_long_name] )
     return;
-  
+
 
   std::string key("3_2f");
 
@@ -3114,7 +3114,7 @@ CMOR::checkReqAtt_global(void)
 
           else if( x_rqValue[0] == "YYYY-MM-DDTHH:MM:SSZ" )
             checkFullDate(rqName, aV);
-          
+
           else if( x_rqValue[0] == "runNNN" )
              checkRunID(rqName, aV);
 
@@ -3262,8 +3262,8 @@ void
 CMOR::checkRunID(std::string& rqName, std::string& aV)
 {
    // check a sequence of digits
-   if( ! (aV.size() == 6 
-             && aV.substr(0,3) == "run" 
+   if( ! (aV.size() == 6
+             && aV.substr(0,3) == "run"
                 && hdhC::isDigit(aV.substr(3)) ) )
    {
       std::string key("2_8");
@@ -4482,7 +4482,7 @@ QA_Exp::getFrequency(void)
     if( frequencyPosition > -1 )
     {
       size_t fp=static_cast<size_t>(frequencyPosition);
-      
+
       if( fp < splt.size() )
          frequency = splt[fp] ;
     }
@@ -4540,13 +4540,13 @@ QA_Exp::getMIP_tableName(std::string tName)
      std::string key("7_6");
      std::string capt;
      std::string text;
-     
+
      if( notes->inq( key, CMOR::n_global) )
      {
        capt = "Missing global " ;
        capt += hdhC::tf_att(hdhC::empty, CMOR::n_table_id) ;
      }
-     
+
      // try the filename
      if( mipPosition > -1 )
      {
@@ -4565,7 +4565,7 @@ QA_Exp::getMIP_tableName(std::string tName)
           (void) notes->operate(capt, text) ;
           pQA->setExitState( notes->getExitState() ) ;
        }
-     }    
+     }
 
      return tableID ;
   }
@@ -4725,14 +4725,14 @@ QA_Exp::initDataOutputBuffer(void)
 void
 QA_Exp::initDefaults(void)
 {
-  notMIP_table_avail=false; 
+  notMIP_table_avail=false;
   isUseStrict=false;
   bufferSize=1500;
 
   frequencyPosition=-1;  // not set
   mipPosition=-1;
   varnamePosition=-1;
-  
+
   return;
 }
 

@@ -131,7 +131,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
     {
       if( cvMap.count(x_e[x]) == 0 )
       {
-        std::string key("7_3b");
+        std::string key("IE_6");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding ";
@@ -682,7 +682,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
     {
       if( cvMap.count(x_e[x]) == 0 )
       {
-        std::string key("7_3a");
+        std::string key("IE_6");
         std::string capt("Fault in table ");
         capt += pQA->drs_cv_table.table_DRS_CV.getFile() ;
         capt += ": encoding not available in CV";
@@ -1997,7 +1997,7 @@ CMOR::checkMIP_table(InFile& in, VariableMetaData& vMD,
 
    if( ! ifs.isOpen() )
    {
-      std::string key("7_4") ;
+      std::string key("IE_9") ;
 
       if( notes->inq( key, vMD.var->name) )
       {
