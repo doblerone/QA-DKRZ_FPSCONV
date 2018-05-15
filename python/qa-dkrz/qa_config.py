@@ -43,6 +43,8 @@ class QaConfig(object):
         self.lSelect=[]
         self.lLock=[]
 
+        self.prjs_avail = [ 'CORDEX', 'CMIP5', 'CMIP6', 'HAPPI' ]
+
         # a list of dicts, first for the command-line options,
         # then those from successive QA_CONF files.
         self.ldOpts=[]
@@ -224,7 +226,7 @@ class QaConfig(object):
         if args.CONFIG_FILE != None: _ldo['CONFIG_FILE']  = args.CONFIG_FILE
         if args.QA_TABLES   != None: _ldo['QA_TABLES']    = args.QA_TABLES
         if args.TASK        != None: _ldo['TASK']         = args.TASK
-        if args.UPDATE      != None: _ldo['UPDATE']       = args.UPDATE
+        if args.CMD_UPDATE  != None: _ldo['CMD_UPDATE']   = args.CMD_UPDATE
 
         if args.DRYRUN:              _ldo['DRY_RUN']        = True
         if args.NEXT  > 0:
@@ -256,6 +258,15 @@ class QaConfig(object):
                 s= 'SELECT ' + args.CL_S
                 self.lSelect.append(self.setSelLock(s.replace(' ','') ) )
         else:
+            # plain nc-files and/or something like install="arg1 arg2"
+            for arg in args.NC_FILE:
+                if arg[0:7] == 'install':
+                    x_s = arg.split('=')
+                    if len(x_s) > 1:
+                        args.INSTALL = x_s[1]
+
+                    del args.NC_FILE[0]
+
             #str0='SELECT'
             #for i in range(len(args.NC_FILE)):
             #    if i > 0:
@@ -263,44 +274,60 @@ class QaConfig(object):
             #    str0 += args.NC_FILE[i]
             #h,t = os.path.split(args.NC_FILE[0])
             #_ldo['SELECT'] = str0 + h + '=' + t
-            self.lSelect.append(args.NC_FILE[0])
+            if len(args.NC_FILE):
+                self.lSelect.append(args.NC_FILE[0])
 
         # collect for passing to QA-DKRZ/install.
         str0=''
-        if args.INSTALL:
-            lst = args.INSTALL.split(',')
+        isForce=False
 
-            for l in lst:
-                ll = l.lower()
+        if args.INSTALL:
+            l_0 = args.INSTALL.split(',')
+            l_1=[]
+            for l in l_0:
+                l_1.extend(args.INSTALL.split(' '))
+
+            for val in l_1:
                 if len(str0) > 0:
                     str0 += ','
 
-                if l[0:2] != '--':
-                    str0 += '--'
-                str0 += l
+                pos=0
+                if val[0:2] == '--':
+                    pos=2
+
+                if val in self.prjs_avail:
+                    str0 += val
+                elif val[pos:] == 'freeze' or val == 'FREEZE':
+                    _ldo['FREEZE']=True
+                    str0=str0[0:-1]
+                else:
+                    str0 += val[pos:]
+
+                if val[pos:] == 'force':
+                    _ldo['FORCE']=True
 
         if args.QA_TABLES != None:
             if len(str0) > 0:
                 str0 += ','
-            str0 += '--qa_tables=' + args.QA_TABLES
+            str0 += 'qa_tables=' + args.QA_TABLES
 
         if args.AUTO_UP != None:
             if len(str0) > 0:
                 str0 += ','
-            str0 += '--up=automatic'
+            str0 += 'up=auto'
 
-        if args.SHIPPING_PATH != None and len(args.SHIPPING_PATH):
+        if args.SHIP != None and len(args.SHIP):
             if len(str0) > 0:
                 str0 += ','
-            str0 += '--ship=' + args.SHIPPING_PATH
+            str0 += 'ship=' + args.SHIP
 
-        if args.IS_UNSHIPPING:
+        if args.UNSHIP:
             if len(str0) > 0:
                 str0 += ','
-            str0 += '--unship'
+            str0 += 'unship'
 
         if str0:
-            _ldo['install_args']=str0
+            _ldo['INSTALL']=str0
 
         return _ldo
 
@@ -310,11 +337,8 @@ class QaConfig(object):
         1. The user should have write-access to tables.
         2. The tables in QA_SRC may be write-protected (e.g. installed by admins)
         3. User applications will wget external tables.
-        Solution: the tables are copied to another location writable by the user.
-            i) The home directory by default.
-           ii) A directory QA_TABLES. If i) is not possible or other persons
-               should share the same set of tables, then use option --qa-tables=path.
-               When there is no tables, yet --> copy from QA_SRC:
+        Solution: The tables are copied to another location writable by the user.
+                Users are asked for a path stored in QA_TABLES during 'install'
         '''
 
         # rsync the default tables
@@ -367,6 +391,9 @@ class QaConfig(object):
         parser.add_argument('-f', '--task', dest='TASK',
             help="QA task-file with frequently changing options.")
 
+        parser.add_argument('--freeze', action="store_true", dest='FREEZE',
+            help="Freeze QA, externals and tables.")
+
         parser.add_argument('--install', dest='INSTALL',
             help="Comma-sep-list passed to the install script.")
 
@@ -398,8 +425,8 @@ class QaConfig(object):
         parser.add_argument('-S', '--select', dest='CL_S',
             help='''Selection of variables; overrules any SELECT assignment.''')
 
-        parser.add_argument('--ship', dest='SHIPPING_PATH',
-            help='''Path to store QA-DKRZ for shipping.''')
+        parser.add_argument('--ship', dest='SHIP',
+            help='''Path to store QA-DKRZ for ship.''')
 
         parser.add_argument('--show_call', '--show-call', dest='SHOW_CALL',
             action="store_true",
@@ -417,13 +444,13 @@ class QaConfig(object):
             type=int, nargs='?', default=0, const=1, dest='SHOW_NEXT',
             help="Show the N next path/file for executaion [N=1].")
 
-        parser.add_argument('--unship', dest='IS_UNSHIPPING',
+        parser.add_argument('--unship', dest='UNSHIP',
             action="store_true",
             help='''Initialisation after shippingi at path.''')
 
-        parser.add_argument('--up', '--update', dest='UPDATE',
-            nargs='?',  const='schedule',
-            help='auto | [schedule] | force | freeze: Run with QA_DKRZ/install.')
+        parser.add_argument('--up', '--update', dest='CMD_UPDATE',
+            nargs='?',  const='freeze',
+            help='auto | [freeze] | daily : Run with QA_DKRZ/install.')
 
         parser.add_argument('--version',
             action="store_true", dest='SHOW_VERSION',
@@ -804,57 +831,18 @@ class QaConfig(object):
 
         self.cfg_opts = self.getCFG_opts(self.qa_src) # (multiple) ..._qa.conf files
 
-        # dictionaries with options( precedence: high --> low)
+        # concatenate dictionaries with precedence: high --> low
         if len(cLO):
             self.ldOpts.append(cLO)
+
         if len(self.cfg_opts):
             self.ldOpts.append(self.cfg_opts)  # config file in HOME/.qa-conf
+        else:
+            self.ldOpts[-1]
 
-        #if self.getOpt("QA_TABLES", dct=self.cfg_opts):
-        qa_tables=''
-        for i in range(len(self.ldOpts)):
-            if 'QA_TABLES' in self.ldOpts[i].keys():
-                qa_tables = self.ldOpts[i]["QA_TABLES"]
-                break
-            elif 'QA_HOME' in self.ldOpts[i].keys():
-                # backward-compatibility
-                qa_tables = self.ldOpts[i]["QA_HOME"]
-                self.cfg_opts["QA_TABLES"] = self.cfg_opts["QA_HOME"]
-                self.cfg.entry("QA_HOME", value='d')
-                self.cfg.entry("QA_TABLES", value=self.cfg_opts["QA_TABLES"])
-                break
-
-        while not qa_tables:
-            # QA_TABLES: is it defined?
-            # Any QA_TABLES defined in another section?
-            qtc = self.get_qa_tables()
-            isSame=False
-            if len(qtc):
-                isSame=True
-                for i in range(1,len(qtc)):
-                    if qtc[0] != qtc[i]:
-                        isSame=False
-                        break
-
-            if isSame:
-                qa_tables = qtc[0]
-                self.cfg.entry("QA_TABLES", qa_tables)
-                self.cfg_opts["QA_TABLES"] = qa_tables
-            else:
-                ext_tables_dialog(self.qa_src)
-                sys.exit(1)
-                '''
-                qa_tables = raw_input("QA_TABLES: ")
-                self.cfg.entry("QA_TABLES", qa_tables)
-                self.cfg_opts["QA_TABLES"] = qa_tables
-                '''
-
-
-        if len(qa_tables):
+        if self.isOpt("QA_TABLES", dct=self.cfg_opts):
+            self.getOpt("QA_TABLES", dct=self.cfg_opts)
             self.readQA_CONF_files()
-        elif 'QA_EXAMPLE' in cLO:
-             print 'example requires tables, please, run ' + self.qa_src + '/install up CORDEX'
-             sys.exit(0)
 
         self.setDefault()
 
@@ -865,7 +853,7 @@ class QaConfig(object):
 
         # backward compatibility
         if "AUTO_UP" in self.dOpts.keys() or "AUTO_UPDATE" in self.dOpts.keys():
-            self.dOpts["UPDATE"] = "automatic"
+            self.dOpts["CMD_UPDATE"] = "auto"
 
         # modify definitions if P_AS is set: P_AS --> P and P --> P_DRVD
         if 'PROJECT_AS' in self.dOpts:
@@ -885,13 +873,19 @@ class QaConfig(object):
 
         self.project = self.getOpt('PROJECT')
 
-        if not self.isOpt("QA_TABLES", dct=self.cfg_opts):
-            return  # ramifications are caught later
+        if self.isOpt("QA_EXAMPLE"):
+            if not self.isOpt("QA_TABLES"):
+                if not self.isOpt("INSTALL"):
+                    self.addOpt("INSTALL", "up CORDEX")
+        elif not self.isOpt("QA_TABLES"):
+            if not self.isOpt("INSTALL"):
+                self.addOpt("INSTALL", "up")
 
         # the location of tables must be known before config files are analysed.
-        self.copyDefaultTables()
+        #self.copyDefaultTables()
 
         # find valid projects
+        '''
         self.definedProjects=[]
         lst=[]
         if not len(self.definedProjects):
@@ -907,6 +901,7 @@ class QaConfig(object):
             if key[:4] == 'SHOW':
                 self.dOpts['SHOW'] = True
                 break
+        '''
 
         return
 

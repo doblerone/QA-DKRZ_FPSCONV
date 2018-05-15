@@ -170,7 +170,7 @@ ship()
     fi
 
     if [ ${OPTVAL} ] ; then
-        test -f $QA_SRC/.ship-qa-config.txt && \rm -f $QA_SRC/.ship-qa-config.txt
+        test -f $QA_SRC/.ship-qa-config.tx && \rm -f $QA_SRC/.ship-qa-config.txt
         . $QA_SRC/scripts/parseConfigFile --ship
 
         # conda or github repo
@@ -290,10 +290,11 @@ unship()
    fi
 
    local line
-   echo -n '' > .qa-config.txt
+   mkdir ~/.qa-dkrz
+   echo -n '' > ~/.qa-dkrz/config.txt
 
    while read line ; do
-     echo ${line//SUBST/${base_path}} >> .qa-config.txt
+     echo ${line//SUBST/${base_path}} >> ~/.qa-dkrz/config.txt
    done < .ship-qa-config.txt
 
    \rm -f .ship-qa-config.txt
@@ -338,11 +339,11 @@ update()
   fi
 
   # now for non-QA-DKRZ tables and programs
-  for prj in $* ; do
+#  for prj in ${prjs[*]} ; do
     if ! update_external $prj ; then
       return $?
     fi
-  done
+#  done
 
   if ! mkdir -p ${QA_TABLES}/tables  ; then
     echo "could not mkdir -p ${QA_TABLES}/tables"
@@ -561,7 +562,7 @@ do
         elif [ "${OPTNAME}" = CF ] ; then
             CONFIG_FILE=${OPTVAL}
         elif [ ${UOPTARG:0:5} = DEBUG -o ${UOPTARG} = 'DEBUG=INSTALL' ] ; then
-          DEBUG='--debug'
+          export DEBUG='--debug'
           set -x
         elif [ "${OPTNAME}" = HOME ] ; then
           export QA_TABLES=${OPTVAL}
@@ -580,10 +581,10 @@ done
 # is it in a conda built?
 . ${QA_SRC}/scripts/getCondaPath
 
-# convert AUTO_UPDATE --> UPDATE=automatic
+# convert AUTO_UPDATE --> UPDATE=auto
 if . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE ; then
    . ${QA_SRC}/scripts/parseConfigFile AUTO_UPDATE=delete
-   . ${QA_SRC}/scripts/parseConfigFile UPDATE=automatic
+   . ${QA_SRC}/scripts/parseConfigFile UPDATE=auto
 fi
 
 # delete obsolete names
@@ -611,19 +612,12 @@ do
             tr_option OV
             . ${QA_SRC}/scripts/parseConfigFile UPDATE
 
-            if [ "${OV:0:1}" = D -o "${OV:0:1}" = F -o "${OV:0:1}" = S ] ; then
-              # disable
-              if [ "${UPDATE}" = 'automatic' ] ; then
-                 . ${QA_SRC}/scripts/parseConfigFile UPDATE=enabled
-              fi
-            else
-              # enable
-              if [ "${UPDATE}" != 'automatic' ] ; then
-                 . ${QA_SRC}/scripts/parseConfigFile UPDATE=automatic
-              fi
-              isUpdate=t
+            # enable
+            if [ "${UPDATE}" != 'auto' ] ; then
+                . ${QA_SRC}/scripts/parseConfigFile UPDATE=auto
             fi
-          continue
+            isUpdate=t
+            continue
         elif [ "${OPTNAME}" = BUILD ] ; then
           isBuild=t
         elif [ "${OPTNAME}" = CONDA_BUILD ] ; then
@@ -646,8 +640,7 @@ do
 
         elif [ "${OPTNAME}" = FORCE ] ; then
           test ! -d ~/.qa-dkrz && mkdir ~/.qa-dkrz
-          test ! -f ~/.qa-dkrz/config.txt && cp -T .qa-config.txt ~/.qa-dkrz/config.txt
-          \rm -rf ${QA_SRC}/.qa-config.txt
+          \rm -rf ${QA_SRC}/.qa-config.frozen
 
           CONFIG_FILE=  # unset
           . $QA_SRC/scripts/getConfigFile
@@ -656,8 +649,7 @@ do
           isForceUpdate=t
           isUpdate=t
         elif [ "${OPTNAME}" = FREEZE ] ; then
-          . $QA_SRC/scripts/parseConfigFile --freeze
-          exit
+          isFreeze=t
         elif [ "${OPTNAME}" = HELP ] ; then
           descript
           exit 41
@@ -682,6 +674,8 @@ do
 #          . ${QA_SRC}/scripts/parseConfigFile INTERNET=${OPTVAL}
         elif [ "${OPTNAME:0:6}" = ONLY_Q ] ; then
           :  # for backward compatibilty
+        elif [ "${OPTNAME}" = POST_FREEZE ] ; then
+          isPostFreeze=t
         elif [ "${OPTNAME}" = PROJECT -a ${#OPTVAL} -gt 0 ] ; then
           projects[${#projects[*]}]="${OPTVAL}"
         elif [ "${OPTNAME}" = QA_SRC ] ; then
@@ -700,7 +694,7 @@ do
           isUpdate=t
 
           if [ "${OPTVAL:0:4}" = auto ] ; then
-             . ${QA_SRC}/scripts/parseConfigFile UPDATE=automatic
+             . ${QA_SRC}/scripts/parseConfigFile UPDATE=auto
 
           elif [ "${OPTVAL:0:1}" = 'd' -o "${OPTVAL:0:1}" = 'D' ] ; then
              . ${QA_SRC}/scripts/parseConfigFile UPDATE=delete
@@ -741,7 +735,13 @@ done
 
 shift $(( $OPTIND - 1 ))
 
-if [ -f $QA_SRC/.qa-config.txt ] ; then
+if [ ${isFreeze:-f} = t -a ${isPostFreeze:-f} = f ] ; then
+    . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
+    touch ${QA_SRC}/.qa-config.frozen
+    exit
+fi
+
+if [ -f $QA_SRC/.qa-config.frozen ] ; then
   echo "currently frozen; use install --force ... to re-enable"
   exit
 fi
@@ -830,6 +830,11 @@ elif [ ${isBuild:-f} = t -o ${isLink:-f} = t ] ; then
   log ${initialArgs[*]}
 else
   pcks=
+fi
+
+if [ ${isPostFreeze} ] ; then
+    . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
+    touch ${QA_SRC}/.qa-config.frozen
 fi
 
 exec ${QA_SRC}/scripts/install.sh ${debug} --pack=${package} \

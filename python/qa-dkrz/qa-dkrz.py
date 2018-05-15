@@ -608,9 +608,7 @@ if __name__ == '__main__':
 
     if not qaConf.isOpt("QA_TABLES"):
         qa_init.run_install(qaConf)
-        #print "Please, restart"
-        #sys.exit(0)
-        qaConf=QaConfig(QA_SRC)
+        qaConf.delOpt("INSTALL")
 
     g_vars = GlobalVariables()
     t_vars = ThreadVariables()

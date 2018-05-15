@@ -14,9 +14,47 @@ import re
 
 import qa_util
 
+def copyDefaultTables():
+    '''
+    1. The user should have write-access to tables.
+    2. The tables in QA_SRC may be write-protected (e.g. installed by admins)
+    3. User applications will wget external tables.
+    Solution: the tables are copied to another location writable by the user.
+        i) The home directory by default.
+        ii) A directory QA_TABLES. If i) is not possible or other persons
+            should share the same set of tables, then use option --qa-tables=path.
+            When there is no tables, yet --> copy from QA_SRC:
+    '''
+
+    # rsync the default tables
+    src=os.path.join(self.qa_src, 'tables')
+
+    if os.path.isdir(src):
+        dest=self.getOpt('QA_TABLES')
+
+        if not dest:
+            dest=os.path.join(self.home, 'tables')
+
+        rsync_cmd='rsync' + ' -auz' + ' --exclude=*~ ' + src + ' ' + dest
+
+        try:
+            subprocess.call(rsync_cmd, shell=True)
+            #shutil.copytree(src, dest)
+        except:
+            print 'could not rsync ' + src + ' --> ' + dest
+            sys.exit(1)
+
+    return
+
+
 def cpTables(key, fTable, tTable, tTable_path, qaConf, prj_from, prj_to, pDir):
 
     qaTables = qaConf.getOpt('QA_TABLES')
+
+    # only for the very first time
+    #if os.path.isfile
+    #copyDefaultTables(qaConf)
+
 
     if len(pDir) == 0:
         if prj_from == prj_to:
@@ -361,101 +399,109 @@ def run(log, g_vars, qaConf):
 
 
 def run_install(qaConf):
-   # check read-only mode
-   if os.path.isfile( os.path.join(qaConf.qa_src, '.qa-config.txt') ):
-        return
-   if os.path.isfile( os.path.join(qaConf.qa_src, '.qa.cfg') ):
-        return
+    isInstall=False
+    update=''
 
-   # update external tables and in case of running qa_dkrz.py from
-   # sources update C++ executables
-   prj=''
-   l_ia=''
+    p = os.path.join(qaConf.qa_src, 'install')
+    p_args=[]
 
-   if qaConf.isOpt("PROJECT"):
-      prj = qaConf.getOpt("PROJECT")
-
-   if qaConf.isOpt('install_args'):
-      # extract project item(s)
-      if not len(prj):
-         l_ia = qaConf.getOpt('install_args').split(',')
-         for ia in l_ia:
-            if ia[0:2] != '--':
-               prj = ia
-               break
-
-   isUp=False
-   isInq=False
-
-   if not qaConf.cfg.is_read_only:
-        if qaConf.isOpt("UPDATE"):
-            if qaConf.dOpts["UPDATE"][0] == 'automatic':
-                isUp=True
-        if qaConf.isOpt("UPDATE"):
-            if qaConf.dOpts["UPDATE"] == 'frozen':
-                isUp=False
+    # from ~/.qa-dkrz/config.txt
+    if qaConf.isOpt("UPDATE"):
+        update=qaConf.getOpt("UPDATE")
+        if update == 'frozen':
+            if qaConf.isOpt('FORCE'):
+                isInstall=True
+                if len(update) == 0:
+                    update = 'up'
+                    p_args.append('post-freeze')
             else:
-                isUp=True
+                return  # still frozen
+        elif update[0:4] == 'auto':
+            update='up'
+        elif update[0:6] == 'enable':
+            update='daily'
 
-        isInq=True
+    else:
+        # convert because of a missing UPDATE in the config-file
+        update='up'
+        p_args.append('post-freeze')
 
-   if len(l_ia):
-        ia=l_ia[0].split('=')
-        if ia[0] == '--ship':
-            p = os.path.join(qaConf.qa_src, 'install')
-            p += ' ' + l_ia[0]
-        elif ia[0] == '--unship':
-            p = os.path.join(qaConf.qa_src, 'install')
-            p += ' ' + ia[0]
+    # from the command-line by --up
+    if qaConf.isOpt("CMD_UPDATE"):
+        x_cu = qaConf.getOpt("CMD_UPDATE").split('=')
+        if len(x_cu) == 2:
+            update = x_cu[1]
+        else:
+            update = 'up'
 
-        if len(p):
-            try:
-                subprocess.check_call(p, shell=True)
-            except:
-                sys.exit(41)
+    # from the command-line within install=str
+    if qaConf.isOpt("INSTALL"):
+        # works for both comma and blank separation, e.g.: "arg0 arg1,arg2"
+        # note that '--' are stripped in qa_config.commandLineOpts()
+        isInstall=True
+        x_cs=qaConf.getOpt("INSTALL").split(',')
 
-            sys.exit(0)
+        for x_c in x_cs:
+            x_bcs = x_c.split(' ')
 
-   if isUp:
-      # checksum of the current qa_dkrz.py
-      # list of python scripts
-      (p5, f) = os.path.split(sys.argv[0])
-      md5_0 = qa_util.get_md5sum( glob.glob(p5 + '/*.py'))
+            for x_bc in x_bcs:
+                if x_bc[0:2] == 'up' or x_bc[0:2] == 'UP':
+                    x_u = update.split('=')
+                    if len(x_u) == 1:
+                        if len(update) == 0:
+                            update='up'
+                    else:
+                        update = x_u[1]
+                else:
+                    p_args.append(x_bc)
 
-      p = os.path.join(qaConf.qa_src, 'install')
-      if qaConf.isOpt('install_args'):
-         p += ' ' + qaConf.getOpt('install_args')
+    if qaConf.isOpt("QA_TABLES"):
+        p_args.append( 'qa_tables=' + qaConf.getOpt("QA_TABLES") )
+    else:
+        update = 'up'
 
-      if not (p.find('up') > -1 or p.find('UP') > -1 ):
-          p += ' --up'
-      if len(prj):
-         p += ' ' + prj
+    if update == 'up':
+        p_args.append( update )
+    else:
+        p_args.append( 'up=' + update )
 
-      try:
-         subprocess.check_call(p, shell=True)
-      except:
-         sys.exit(41)
+    if len(update) or len(p_args):
+        if qaConf.isOpt("FREEZE"):
+            if not 'post-freeze' in p_args:
+                p_args.append('post-freeze')
+    elif qaConf.isOpt("FREEZE"):
+        p_args.append('freeze')
 
-      md5_1 = qa_util.get_md5sum( glob.glob(p5 + '/*.py'))
-#      md5_1 = qa_util.get_md5sum(p)
+    if len(p_args) == 0:
+        return
 
-      if md5_0 != md5_1:
-         text = '\nAt least one of the py scripts was updated; please, restart.'
-         print text
-         sys.exit(1)
-   elif isInq:
-        # inquire whether the state of tables is ok
-        p = os.path.join(qaConf.qa_src, 'install')
-        p += ' ' + '--inq-tables'
-        if qaConf.isOpt("QA_TABLES"):
-            p += ' --qa_tables=' + qaConf.getOpt("QA_TABLES")
-        if len(prj):
-            p += ' ' + prj
+    for pa in p_args:
+        p += ' --' + pa
 
-        try:
-            subprocess.check_call(p, shell=True)
-        except:
-            ext_tables_dialog(qaConf.getOpt("QA_SRC"), prj)
-            sys.exit(1)
+    if qaConf.isOpt("PROJECT"):
+        prj = qaConf.getOpt("PROJECT")
+    else:
+        # default
+        prj = "CORDEX"
+        qaConf.addOpt("PROJECT", prj)
 
-   return
+    p += ' ' + prj
+
+    # checksum of the current qa_dkrz.py
+    # list of python scripts
+    (p5, f) = os.path.split(sys.argv[0])
+    md5_0 = qa_util.get_md5sum( glob.glob(p5 + '/*.py'))
+
+    try:
+        subprocess.check_call(p, shell=True)
+    except:
+        print '\ncould not run install.'
+        sys.exit(41)
+
+    md5_1 = qa_util.get_md5sum( glob.glob(p5 + '/*.py'))
+
+    if md5_0 != md5_1:
+        print '\nat least one of the py scripts was updated; please, restart.'
+        sys.exit(1)
+
+    return
