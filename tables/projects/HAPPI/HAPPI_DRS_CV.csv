@@ -33,8 +33,8 @@ BEGIN: DRS
 # Special format: <DRS-CV name> = global attribute name.
 # Components of directory and file structure.
 # Note that requested values are not part of the DRS_CV check.
-  <activity>          = HAPPI
-  <product>           = output
+  <activity>          = project_id = HAPPI
+  <product>           = product = output
   <institute>         = institute_id
   <model>             = model_id
   <exp family>        = experiment_family

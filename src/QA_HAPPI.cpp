@@ -2889,15 +2889,16 @@ CMOR::checkMIPT_var_type(
   // the standard table has type==real. Is it for
   // float only, or also for double? So, in case of real,
   // any non-int type is accepted
-  bool isTblTypeDouble =
-      (tEntry.attMap[n_type] == "double") ? true : false ;
-  bool isNcTypeDouble =
-      (vMD.attMap[n_type] == "double") ? true : false ;
+  bool isTblType =
+      (tEntry.attMap[n_type] == "real") ? true : false ;
+  bool isNcType =
+      (vMD.attMap[n_type] == "float") ? true : false ;
 
-  bool isTblTypeInt =
-      (tEntry.attMap[n_type] == "integer") ? true : false ;
-  bool isNcTypeInt =
-      (vMD.attMap[n_type] == "int") ? true : false ;
+  if( ! isTblType )
+  {
+      isTblType = (tEntry.attMap[n_type] == "integer") ? true : false ;
+      isNcType = (vMD.attMap[n_type] == "int") ? true : false ;
+  }
 
   if( tEntry.attMap[n_type].size() == 0 && vMD.attMap[n_type].size() != 0 )
   {
@@ -2916,8 +2917,7 @@ CMOR::checkMIPT_var_type(
       pQA->setExitState( notes->getExitState() ) ;
     }
   }
-  else if( ! ( (isTblTypeDouble && isNcTypeDouble)
-                   || ( isTblTypeInt && isNcTypeInt) ) )
+  else if( ! ( isTblType && isNcType ) )
   {
     std::string key("3_2g");
 
