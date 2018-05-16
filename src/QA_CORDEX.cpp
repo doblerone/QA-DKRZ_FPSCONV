@@ -236,7 +236,6 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
 
     x_e.setSeparator("_");
 
-
     // could have a trailing ".nc" item; if yes, then remove this beforehand
     if( drs_cv_table.fNameEncoding[ds].rfind(".nc") < std::string::npos )
     {
@@ -330,7 +329,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
   std::vector<std::string> keys;
 
   std::string txt;
-  findFN_faults(drs, x_e, cvMap, gM, txt) ;
+  findFN_faults(drs, x_e, gM, cvMap, txt) ;
   if( txt.size() )
   {
     keys.push_back("1_1b");
@@ -570,7 +569,6 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 
     x_e.setSeparator("/");
 
-
     x_e = drs_cv_table.pathEncoding[ds] ;
 
     for(size_t x=0 ; x < x_e.size() ; ++x )
@@ -689,7 +687,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 
   if( text.size() )
   {
-    std::string capt("Path: ");
+    std::string capt("DRS (path): ");
 
     for( size_t i=0 ; i < text.size() ; ++i )
     {
@@ -763,11 +761,9 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
           text += " probably" + hdhC::tf_val(x_e[j]) ;
       else
       {
-        text += " DRS item " + hdhC::tf_assign(x_e[j], drs[j]);
-        text += " vs. global attribute " + hdhC::tf_assign(cvMap[x_e[j]], t) ;
-//        text = " found " + hdhC::tf_val(drs[j]) ;
-//        text += " as DRS item";
-//        text += hdhC::tf_val(x_e[j]) ;
+        text += " failed for " + hdhC::tf_val(x_e[j]);
+        text += ", found in filename " + hdhC::tf_val(drs[j]) ;
+        text += " and global " + hdhC::tf_att(hdhC::empty,cvMap[x_e[j]],t) ;
       }
 
       break;
@@ -840,8 +836,9 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
            continue;
         }
 
-        text += " DRS failed for " + hdhC::tf_assign("item",x_e[j]);
-        text += ", found " + hdhC::tf_val(drs[i]) ;
+        text += " failed for " + hdhC::tf_val(x_e[j]) ;
+        text += ", found in path " + hdhC::tf_val(drs[i]) ;
+        text += " and global " + hdhC::tf_att(hdhC::empty,cvMap[x_e[j]],t) ;
       }
 
       break;
@@ -3792,11 +3789,7 @@ QA_Exp::checkVarTableEntry_cell_methods(
         else
           text += hdhC::tf_val(t_DMD_entry.attMap[n_cell_methods]) ;
       }
-      else
-      {
-        capt = hdhC::tf_att(vMD.var->name, cm_name) ;
-        capt += "is missing";
-      }
+      // else caught in CF
 
       (void) notes->operate(capt, text) ;
       notes->setCheckStatus("CV", pQA->n_fail );
