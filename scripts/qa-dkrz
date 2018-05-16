@@ -2868,11 +2868,11 @@ init()
   NO_STATUS=f
   isTPUT=f
 
+  # set QA_TABLES
+  . ${QA_SRC}/scripts/getTablesPath
+
   if [ ${QA_EXAMPLE:-f} = t ] ; then
     initExample
-  else
-    # set QA_TABLES
-    . ${QA_SRC}/scripts/getTablesPath
   fi
 
   # check whether tables have been initially copied from QA_SRC to QA_TABLES;
@@ -4254,19 +4254,24 @@ rmConsistTableEntry()
 
 initExample()
 {
-  # for running an example for CORDEX
+  # an example for CORDEX
     #if [ "${QA_TABLES}" ] ; then
     #  setKWL EXAMPLE_PATH=${QA_TABLES}/example
     #  example_args[${#example_args[*]}]="--up=no"
     #else
-      setKWL EXAMPLE_PATH=$PWD/example
-      setKWL QA_TABLES=${EXAMPLE_PATH}
+    #  setKWL EXAMPLE_PATH=$PWD/example
+    #  setKWL QA_TABLES=${EXAMPLE_PATH}
     #fi
 
-    #if [ ! "${QA_RESULTS}" ] ; then
-      setKWL QA_RESULTS=${EXAMPLE_PATH}/results
+    if [ "${QA_RESULTS}" ] ; then
+      setKWL EXAMPLE_PATH=${QA_RESULTS}
       example_args[${#example_args[*]}]="-E_QA_RESULTS=${QA_RESULTS}"
-    #fi
+    else
+      setKWL EXAMPLE_PATH=$PWD
+      example_args[${#example_args[*]}]="-E_QA_RESULTS=${EXAMPLE_PATH}"
+    fi
+
+    . $QA_SRC/scripts/parseConfigFile QA_TABLES
 
     example_args[${#example_args[*]}]='-m -f qa-test.task'
 
@@ -4310,7 +4315,7 @@ initExample()
     touch $CONFIG_FILE
 
     $QA_SRC/install --config-file=${CONFIG_FILE} \
-                    --qa_tables=$QA_TABLES \
+                    ${QA_TABLES:+--qa_tables=${QA_TABLES}} \
                     up CORDEX
 
   return
@@ -5199,6 +5204,8 @@ QA_CONFIG=qa-config
 QA_FILE_EXECUTER=qa-exec-check
 
 rootPID=$$
+
+args=()
 for OPTARG in $* ; do
   if [ ${OPTARG:0:2} = '-E' -o ${OPTARG:0:2} = '-e' ] ; then
      optargs=( ${OPTARG/_/ } )
@@ -5220,7 +5227,7 @@ for OPTARG in $* ; do
       QA_EXAMPLE=t
 
     elif [ ${OPTNAME} = CONFIG_FILE ] ; then
-      CONFIG_FILE=${OPTARG#*=}
+      export CONFIG_FILE=${OPTARG#*=}
     elif [ ${OPTNAME} = QA_CONFIG ] ; then
       QA_CONFIG=${OPTARG#*=}
     elif [ ${OPTNAME} = QA_TABLES ] ; then
@@ -5229,19 +5236,21 @@ for OPTARG in $* ; do
       QA_SRC=${OPTARG#*=}
     elif [ ${OPTNAME} = WORK ] ; then
       QA_RESULTS=${OPTARG#*=}
+      arg="QA_RESULTS=${OPTARG#*=}"
     fi
 
-    uu_opts[${#uu_opts[*]}]=${arg}
+    args[${#args[*]}]=${arg}
     prev_opt=${arg}
   done
 done
 
-. $QA_SRC/scripts/getConfigFile
+# HOME/.qa-dkrz/config.txt by default
+. ${QA_SRC}/scripts/getConfigFile
 
 # is it in a conda built?
 . ${QA_SRC}/scripts/getCondaPath
 
-init $*
+init ${args[*]}
 
 test ${FLOW_TRACE:-f} = t && traceCalibration
 

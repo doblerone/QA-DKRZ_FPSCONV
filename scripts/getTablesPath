@@ -38,7 +38,8 @@ getTablesPath()
      if [ ${#TTY} -gt 0 ] ; then
         local  dpath=${QA_SRC}/QA_Tables
 
-set +x
+        test ${DEBUG} && set +x
+
         echo -e "\nPlease, specify variable QA_TABLES [default: ${dpath}], " > ${TTY}
         read -p "the spot for external tables and programs: " QA_TABLES 2> ${TTY}
 
