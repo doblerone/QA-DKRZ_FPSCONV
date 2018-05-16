@@ -4434,7 +4434,8 @@ NcAPI::layoutVarDataPushes(std::string& vName, nc_type type)
 void
 NcAPI::layoutVarDataPushesStr(MtrxArr<char*>& ma, std::string& vName)
 {
-  char* p='\0';
+  char pp='\0';
+  char* p=&pp;
 
   std::vector<char*> fMV;
   fMV.push_back(p);
