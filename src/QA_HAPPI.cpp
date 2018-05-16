@@ -88,6 +88,8 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
   std::vector<size_t> countCI(enc_sz, 0);
   std::map<std::string, std::string> globMap[enc_sz] ;
   std::vector<std::vector<size_t> > specialFaultIx ;
+  std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
+
 
   for( size_t ds=0 ; ds < enc_sz ; ++ds)
   {
@@ -96,8 +98,6 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
     specialFaultIx.push_back( std::vector<size_t>() );
 
     x_e.setSeparator("_");
-
-    std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
 
     // could have a trailing ".nc" item; if yes, then remove this beforehand
     if( drs_cv_table.fNameEncoding[ds].rfind(".nc") < std::string::npos )
@@ -239,7 +239,7 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
   }
 
   std::string txt;
-  findFN_faults(drs, x_e, gM, txt) ;
+  findFN_faults(drs, x_e, gM, cvMap, txt) ;
 
   if( txt.size() )
   {
@@ -646,15 +646,14 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
   Split x_enc[enc_sz];
   std::vector<size_t> countCI(enc_sz, 0);
   std::map<std::string, std::string> globMap[enc_sz] ;
+  std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
+
   for( size_t ds=0 ; ds < enc_sz ; ++ds)
   {
     Split& x_e = x_enc[ds] ;
     std::map<std::string, std::string>& gM = globMap[ds] ;
 
     x_e.setSeparator("/");
-
-    std::map<std::string, std::string>& cvMap = drs_cv_table.cvMap ;
-
     x_e = drs_cv_table.pathEncoding[ds] ;
 
     for(size_t x=0 ; x < x_e.size() ; ++x )
@@ -754,7 +753,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
   std::map<std::string, std::string>& gM = globMap[m] ;
 
   std::string txt;
-  findPath_faults(drs, x_e, gM, txt) ;
+  findPath_faults(drs, x_e, gM, cvMap, txt) ;
 
   if( txt.size() )
   {
@@ -764,7 +763,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
 
   if( text.size() )
   {
-    std::string capt("DRS path:");
+    std::string capt("DRS (path):");
 
     for(size_t i=0 ; i < text.size() ; ++i )
     {
@@ -803,6 +802,7 @@ DRS_CV::checkVariableName(std::string& f_vName)
 void
 DRS_CV::findFN_faults(Split& drs, Split& x_e,
                    std::map<std::string,std::string>& gM,
+                   std::map<std::string, std::string>& cvMap,
                    std::string& text)
 {
   std::string t;
@@ -810,26 +810,27 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
   int x_eSz = x_e.size();
   int drsSz = drs.size() ;
 
+  bool isMiss = drsSz < x_eSz ;
+
+  if( isMiss )
+    text = " suspicion of a missing item, " ;
+
   for( int j=0 ; j < x_eSz ; ++j)
   {
     t = gM[ x_e[j] ];
 
-    if( drsSz == x_eSz )
-    {
-      text = " check failed, suspicion of a missing item in the filename, found" ;
-      text += hdhC::tf_val(drs.getStr()) ;
-
-      return;
-    }
-
     if( !(drs[j] == t || t == n_ast) )
     {
-      text = " check failed, found " ;
-      text += hdhC::tf_assign(x_e[j],drs[j]) ;
-      text += ", expected" ;
-      text += hdhC::tf_val(t) ;
+      if( isMiss )
+        text = " suspicion of a missing item," ;
+      else
+      {
+        text += " failed for " + hdhC::tf_val(x_e[j]);
+        text += ", found in filename " + hdhC::tf_val(drs[j]) ;
+        text += " and global " + hdhC::tf_att(hdhC::empty,cvMap[x_e[j]],t) ;
+      }
 
-      return;
+      break;
     }
   }
 
@@ -839,13 +840,13 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
 void
 DRS_CV::findPath_faults(Split& drs, Split& x_e,
                    std::map<std::string,std::string>& gM,
+                   std::map<std::string,std::string>& cvMap,
                    std::string& text)
 {
   std::string t;
   std::string n_ast="*";
   int x_eSz = x_e.size();
   int drsSz = drs.size() ;
-
   int drsBeg=-1;
 
   if( drsSz > x_eSz )
@@ -875,11 +876,10 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
     }
   }
 
-  if( drsBeg < 0)
-  {
-    text = " check failed" ;
-    return; // fewer path items than expected
-  }
+  bool isMiss = drsBeg < 0 ;
+
+  if( isMiss)
+    text = "suspicion of a missing item, " ;
 
   for( int j=0 ; j < x_eSz ; ++j)
   {
@@ -887,35 +887,33 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
 
     int i = drsBeg+j ;
 
-    if( i == -1 )
-    {
-      text = " suspicion of a missing item in the path, found" ;
-      text += hdhC::tf_val(drs.getStr()) ;
-      break;
-    }
-
     if( !( drs[i] == t || t == n_ast) )
     {
-      if(x_e[j] == "activity" )
+      if( isMiss )
+        text = " probably" + hdhC::tf_val(x_e[j]) ;
+      else
       {
-        if( notes->inq( "1_1a", pQA->fileStr, "INQ_ONLY") )
+        if(x_e[j] == "activity" )
         {
-          std::string s( hdhC::Upper()(drs[i]) ) ;
-          if( s == t )
+          if( notes->inq( "1_1a", pQA->fileStr, "INQ_ONLY") )
+          {
+            std::string s( hdhC::Upper()(drs[i]) ) ;
+            if( s == t )
+              continue;
+          }
+        }
+
+        if(x_e[j] == "version number" )
+        {
+          if( drs[i][0] == 'v' && hdhC::isDigit(drs[i].substr(1)) )
             continue;
         }
+
+        text += " failed for " + hdhC::tf_val(x_e[j]) ;
+        text += ", found in path " + hdhC::tf_val(drs[i]) ;
+        text += " and global " + hdhC::tf_att(hdhC::empty,cvMap[x_e[j]],t) ;
       }
 
-      if(x_e[j] == "version number" )
-      {
-        if( drs[i][0] == 'v' && hdhC::isDigit(drs[i].substr(1)) )
-          continue;
-      }
-
-      text = " check failed, path component " ;
-      text += hdhC::tf_assign(x_e[j],drs[drsBeg+j]) ;
-      text += " does not match global attribute value " ;
-      text += hdhC::tf_val(t) ;
       break;
     }
   }

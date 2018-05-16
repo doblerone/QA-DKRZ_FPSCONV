@@ -4464,11 +4464,10 @@ CF::chap26(void)
               if( notes->inq(bKey + "26c", var.name) )
               {
                 std::string capt(hdhC::tf_att(var.name, aName));
-                capt += "should be numeric type";
-                std::string text("Found ");
-                capt += pIn->nc.getTypeStr(var.attType[j]) ;
+                capt += "should be of numeric type, found ";
+                capt += hdhC::tf_val(pIn->nc.getTypeStr(var.attType[j])) ;
 
-                (void) notes->operate(capt, text) ;
+                (void) notes->operate(capt) ;
                 notes->setCheckStatus( n_CF, fail );
               }
             }
