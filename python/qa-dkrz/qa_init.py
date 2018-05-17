@@ -411,9 +411,8 @@ def run_install(qaConf):
         if update == 'frozen':
             if qaConf.isOpt('FORCE'):
                 isInstall=True
-                if len(update) == 0:
-                    update = 'up'
-                    p_args.append('post-freeze')
+                update = 'up'
+                p_args.append('post-freeze')
             else:
                 return  # still frozen
         elif update[0:4] == 'auto':

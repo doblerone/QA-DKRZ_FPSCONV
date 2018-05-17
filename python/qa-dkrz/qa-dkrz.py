@@ -619,7 +619,6 @@ if __name__ == '__main__':
 
     if 'QA_EXAMPLE' in qaConf.dOpts:
         qaConf = prepareExample(qaConf)
-        #sys.exit(0)
 
     if isCONDA:
         qaConf.addOpt('CONDA', True)
