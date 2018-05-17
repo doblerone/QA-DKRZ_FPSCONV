@@ -243,11 +243,11 @@ class QaConfig(object):
         if args.STATUS_LINE:
             _ldo['STATUS_LINE'] = args.STATUS_LINE
             _ldo['STATUS_LINE_SZ'] = 0
-        if args.WORK:                _ldo['WORK']           = args.WORK
+        if args.WORK:               _ldo['WORK']            = args.WORK
 
-        if args.QA_EXAMPLE:
-             print 'Please, use the bash version for the example.'
-             sys.exit(0)
+        #if args.QA_EXAMPLE:
+        #     print 'Please, use the bash version for the example.'
+        #     sys.exit(0)
 
         # special: SELECT | LOCK
         if len(args.NC_FILE) == 0:
@@ -457,7 +457,7 @@ class QaConfig(object):
             help='Display version information of QA_DKRZ and tables.')
 
         parser.add_argument( '--work', dest='WORK',
-            help='''You don't need this.''')
+            help='''Only used for --example.''')
 
         parser.add_argument('NC_FILE', nargs='*',
             help= "NetCDF files [file1.nc[, file2.nc[, ...]]].")
@@ -810,10 +810,7 @@ class QaConfig(object):
     def run(self):
         cLO = self.commandLineOpts( self.create_parser() )
 
-        if 'WORK' in cLO.keys():
-            self.curr_dir = cLO['WORK']
-        else:
-            self.curr_dir = os.getcwd()
+        self.curr_dir = os.getcwd()
 
         # is it defined in QA_SRC/.qa-conf ? Else: try home
         self.home = os.path.join( os.environ['HOME'], '.qa-dkrz')

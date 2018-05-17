@@ -398,19 +398,22 @@ def get_version(qaConf):
 
 
 def prepareExample(qaConf):
+    if not qaConf.isOpt('PROJECT'):
+        qaConf.addOpt("PROJECT", 'CORDEX')
+
     if qaConf.isOpt('WORK'):
         currdir=qaConf.getOpt('WORK')
     else:
         currdir=qaConf.getOpt('CURR_DIR')
 
-    currdir=os.path.join(currdir, 'example')
+    #currdir=os.path.join(currdir, 'example')
     qaConf.dOpts['QA_RESULTS'] = os.path.join(currdir, 'results')
 
     if not qa_util.mkdirP(currdir):
         sys.exit(1)
 
     os.chdir(currdir)
-    qa_util.rm_r( 'results', 'config.txt', 'data', 'qa-test.task' )
+    qa_util.rm_r( 'results', 'config.txt', 'qa-test.task' )
 
     print 'make examples in ' + currdir
     print 'make qa_test.task'
@@ -419,7 +422,7 @@ def prepareExample(qaConf):
     shutil.copy( taskFile, currdir)
     taskFile = 'qa-test.task'
 
-    # replace templates
+    # replace templates within QA_SRC/example
     sub=[]
     repl=[]
 
@@ -435,34 +438,30 @@ def prepareExample(qaConf):
         print "building data in example requires the ncgen utility"
         sys.exit(1)
 
-    # data
-    print 'make data'
-    p=os.path.join(QA_SRC, 'example', 'templates', 'data.tbz')
-    subprocess.call(["tar", "--bzip2", "-xf", p ])
+    if not os.path.isdir( os.path.join(currdir, 'data') ):
+        # data
+        print 'make data'
+        p=os.path.join(QA_SRC, 'example', 'templates', 'data.tbz')
+        subprocess.call(["tar", "--bzip2", "-xf", p ])
 
-    for rs, ds, fs in os.walk('data'):
-        for f in fs:
-            nc_f = f[:len(f)-3] + 'nc'
-            t_f=os.path.join(rs, f)
-            t_nc=os.path.join(rs, nc_f)
-            subprocess.call(["ncgen", "-k", "3", "-o", t_nc, t_f])
-            qa_util.rm_r(t_f)
+        for rs, ds, fs in os.walk('data'):
+            for f in fs:
+                nc_f = f[:len(f)-3] + 'nc'
+                t_f=os.path.join(rs, f)
+                t_nc=os.path.join(rs, nc_f)
+                try:
+                    subprocess.call(["ncgen", "-k", "3", "-o", t_nc, t_f])
+                except:
+                    print 'making of example failed'
+                    sys.exit(1)
+                else:
+                    qa_util.rm_r(t_f)
 
-    #h,t = os.path.split(sys.argv [0])
+    print 'run' + sys.argv[0] + " -m -f " + currdir + "/qa-test.task"
 
+    qaConf = QaConfig(QA_SRC, ['-m', '-f', currdir + "/qa-test.task" ])
 
-    print 'run'
-    cmd = 'python ' + sys.argv[0] + " -m -f example/qa-test.task"
-    print cmd
-
-    qaConf=QaConfig(QA_SRC, argv=['-m', '-f', 'qa-test.task'] )
-
-    #cmd = os.path.join(QA_SRC, 'scripts','qa-dkrz') + " -m -f qa-test.task"
-
-
-    #subprocess.call(cmd, shell=True)
-
-    return
+    return qaConf
 
 
 def run():
@@ -617,10 +616,15 @@ if __name__ == '__main__':
     g_vars.isConda = isCONDA
     g_vars.pid = str(os.getpid())
 
-    log = Log(qaConf.dOpts)
+
+    if 'QA_EXAMPLE' in qaConf.dOpts:
+        qaConf = prepareExample(qaConf)
+        #sys.exit(0)
 
     if isCONDA:
         qaConf.addOpt('CONDA', True)
+
+    log = Log(qaConf.dOpts)
 
     # obj for getting and iteration next path
     getPaths = GetPaths(qaConf)
@@ -630,10 +634,6 @@ if __name__ == '__main__':
             # opt: key=value
             print opt
         sys.exit(0)
-
-    if 'QA_EXAMPLE' in qaConf.dOpts:
-        prepareExample(qaConf)
-        #sys.exit(0)
 
     get_version(qaConf)
 

@@ -333,7 +333,7 @@ def run(log, g_vars, qaConf):
     g_vars.cs_enable = False
     if qaConf.isOpt('CHECKSUM'):
         g_vars.cs_enable = True
-        if qaConf.isOpt('CHECKSUM', True):
+        if qaConf.isOpt('CHECKSUM'):
             g_vars.cs_type = 'md5'
         else:
             g_vars.cs_type = qaConf.getOpt('CHECKSUM')
