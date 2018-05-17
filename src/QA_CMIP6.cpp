@@ -1124,11 +1124,11 @@ DRS_CV::checkFilenameEncoding(Split& x_filename, struct DRS_CV_Table& drs_cv_tab
   {
     std::string capt("DRS (filename):");
 
-    for( size_t i=0 ; i < capt.size() ; ++i )
+    for( size_t i=0 ; i < text.size() ; ++i )
     {
       if( notes->inq( keys[i], "DRS") )
       {
-        (void) notes->operate(capt[i], text[i]) ;
+        (void) notes->operate(capt + text[i]) ;
         notes->setCheckStatus(drsF, pQA->n_fail);
       }
     }
@@ -1603,7 +1603,7 @@ DRS_CV::checkPath(std::string& path, struct DRS_CV_Table& drs_cv_table)
   std::map<std::string, std::string>& gM = globMap[m] ;
 
   std::string txt;
-  findPath_faults(drs, static_cast<int>(drsBeg),  x_e, gM, cvMap, txt) ;
+  findPath_faults(drs, x_e, gM, cvMap, txt) ;
   if( txt.size() )
   {
     text.push_back(txt);
@@ -1685,7 +1685,7 @@ DRS_CV::findFN_faults(Split& drs, Split& x_e,
 }
 
 void
-DRS_CV::findPath_faults(Split& drs, int drsBeg, Split& x_e,
+DRS_CV::findPath_faults(Split& drs, Split& x_e,
                    std::map<std::string,std::string>& gM,
                    std::map<std::string, std::string>& cvMap,
                    std::string& text)
