@@ -1988,7 +1988,7 @@ do
         elif [ "${OPTNAME}" = NET ] ; then
           installArgs+="${OPTARG},"
 
-		  elif [ "${OPTNAME}" = NEXT ] ; then
+		elif [ "${OPTNAME}" = NEXT ] ; then
           setKWL NEXT=${OPTVAL:-t}
 
         elif [ "${OPTARG:0:2}" = pb ] ; then

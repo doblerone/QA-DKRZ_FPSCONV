@@ -1015,8 +1015,7 @@ DRS_CV::testPeriod(Split& x_f)
   if( pQA->qaTime.lastTimeValue != 0. )
     pDates[3]->addTime(pQA->qaTime.lastTimeValue);
 
-  if( ! ( pQA->pIn->variable[pQA->qaTime.time_ix].isInstant
-             || pQA->qaTime.isTimeBounds ) )
+  if( ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
   {
      // in case that the mid-frequency time value is provided.
      // sd[0] and sd[1] are of equal size.
@@ -1044,7 +1043,6 @@ DRS_CV::testPeriod(Split& x_f)
          pDates[2]->shift("beg,d");
          pDates[3]->shift("end,d");
      }
-/*
      else if( sd[0].size() < 11 )
      {
          //pDates[0]->shift("beg,h");
@@ -1061,60 +1059,70 @@ DRS_CV::testPeriod(Split& x_f)
          pDates[2]->shift("beg,mi");
          pDates[3]->shift("end,mi");
      }
-*/
   }
 
   if( pQA->qaTime.isTimeBounds)
   {
-    pDates[4] = new Date(pQA->qaTime.refDate);
-    pDates[5] = new Date(pQA->qaTime.refDate);
-
-    if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
-      if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
-        pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
-
-    // regular: filename Start/End time vs. TB 1st_min/last_max
-    if( pQA->qaTime.lastTimeValue != pQA->qaTime.lastTimeBoundsValue[1] )
-      if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
-        pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
-
-    double db_centre=(pQA->qaTime.firstTimeBoundsValue[0]
-                        + pQA->qaTime.firstTimeBoundsValue[1])/2. ;
-    if( ! hdhC::compare(db_centre, "=", pQA->qaTime.firstTimeValue) )
-    {
-      std::string key("5_7");
-      if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+      if( pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
       {
-        std::string capt("Range of ");
-        capt += hdhC::tf_var("time_bnds") ;
-        capt += "is not centred around <time> value." ;
+          std::string tb_name(pQA->qaTime.getBoundsName());
 
-        (void) notes->operate(capt) ;
-        notes->setCheckStatus("TIME", pQA->n_fail );
-      }
-    }
-  }
-  else
-  {
-    if( pQA->qaTime.time_ix > -1 &&
-        pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
-    {
-      std::string tb_name(pQA->qaTime.getBoundsName());
+          if( tb_name.size() )
+          {
+             std::string key("3_16");
 
-      if( tb_name.size() )
-      {
-         std::string key("3_16");
+             if( notes->inq( key, tb_name ) )
+             {
+                std::string capt(hdhC::tf_var(tb_name));
+                capt += " contradicts " ;
+                capt += getInstantAtt() ;
 
-         if( notes->inq( key, tb_name ) )
+                (void) notes->operate(capt) ;
+                notes->setCheckStatus(drsF, pQA->n_fail);
+              }
+          }
+       }
+       else
+       {
+         pDates[4] = new Date(pQA->qaTime.refDate);
+         pDates[5] = new Date(pQA->qaTime.refDate);
+
+         if( pQA->qaTime.firstTimeValue != pQA->qaTime.firstTimeBoundsValue[0] )
+           if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
+             pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
+
+         // regular: filename Start/End time vs. TB 1st_min/last_max
+         if( pQA->qaTime.lastTimeValue != pQA->qaTime.lastTimeBoundsValue[1] )
+           if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
+             pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
+
+         double db_centre=(pQA->qaTime.firstTimeBoundsValue[0]
+                             + pQA->qaTime.firstTimeBoundsValue[1])/2. ;
+         if( ! hdhC::compare(db_centre, "=", pQA->qaTime.firstTimeValue) )
          {
-            std::string capt(hdhC::tf_var(tb_name));
-            capt += " contradicts " ;
-            capt += getInstantAtt() ;
+           std::string key("5_7");
+           if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+           {
+             std::string capt("Range of ");
+             capt += hdhC::tf_var("time_bnds") ;
+             capt += "is not centred around <time> value." ;
 
-            (void) notes->operate(capt) ;
-            notes->setCheckStatus(drsF, pQA->n_fail);
+             (void) notes->operate(capt) ;
+             notes->setCheckStatus("TIME", pQA->n_fail );
+           }
          }
       }
+  }
+  else if( ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
+  {
+    std::string key("5_8");
+
+    if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+    {
+      std::string capt("Missing time_bounds");
+
+      (void) notes->operate(capt) ;
+      notes->setCheckStatus(drsF, pQA->n_fail );
     }
   }
 
