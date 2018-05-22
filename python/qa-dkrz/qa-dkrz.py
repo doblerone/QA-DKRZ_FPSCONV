@@ -606,6 +606,7 @@ if __name__ == '__main__':
     qaConf=QaConfig(QA_SRC)
 
     if not qaConf.isOpt("QA_TABLES"):
+        qaConf.addOpt('FORCE', True)
         qa_init.run_install(qaConf)
         qaConf.delOpt("INSTALL")
 
@@ -615,7 +616,6 @@ if __name__ == '__main__':
     g_vars.qa_src = QA_SRC
     g_vars.isConda = isCONDA
     g_vars.pid = str(os.getpid())
-
 
     if 'QA_EXAMPLE' in qaConf.dOpts:
         qaConf = prepareExample(qaConf)
@@ -634,7 +634,10 @@ if __name__ == '__main__':
             print opt
         sys.exit(0)
 
-    get_version(qaConf)
+    try:
+        get_version(qaConf)
+    except:
+        sys.exit(1)
 
     qa_init.run(log, g_vars, qaConf)
 
@@ -644,3 +647,4 @@ if __name__ == '__main__':
 
     final()
 
+    # asdf

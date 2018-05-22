@@ -53,11 +53,17 @@ class GetVersion(object):
 
         if prj == "CMIP6":
             f=os.path.join(self.p_projects, prj, "CMIP6_CVs")
+            if not os.path.isdir(f):
+                self.no_such_table(prj, f)
+
             branch, curr_id = self.get_git_branch(f)
             vStr  = sep0 + "CMIP6_CVs:" + sep1
             vStr += branch + '-' + curr_id
 
             f=os.path.join(self.p_projects, prj, "CMIP6_MIP_tables.xlsx")
+            if not os.path.isdir(f):
+                self.no_such_table(prj, f)
+
             cmd="ls -l --time-style='+%F' " + f + "| awk '{print $6}'"
 
             try:
@@ -86,11 +92,17 @@ class GetVersion(object):
                     vStr += sep0 + "CMOR:" + sep1 + t
 
                 f=os.path.join(self.p_projects, prj, "cmip6-cmor-tables")
+                if not os.path.isdir(f):
+                    self.no_such_table(prj, f)
+
                 branch, curr_id = self.get_git_branch(f)
                 vStr += sep0 + "cmip6-cmor-tables:" + sep1 + branch + '-' + curr_id
 
         elif prj == "CORDEX":
             f=os.path.join(self.p_projects, prj, "IS-ENES-Data.github.io")
+            if not os.path.isdir(f):
+                self.no_such_table(prj, f)
+
             branch, curr_id = self.get_git_branch(f)
 
             vStr  = sep0 + prj + "/IS-ENES-Data.github.io:" + sep1
@@ -101,6 +113,8 @@ class GetVersion(object):
                 vStr += self.opts["CF_STD_NAME_VERSION"]
             else:
                 f=os.path.join(self.p_projects, prj, "standard-names.html")
+                if not os.path.isdir(f):
+                    self.no_such_table(prj, f)
 
                 if os.path.isfile(f):
                     with open(f, 'r') as fd:
@@ -236,6 +250,14 @@ class GetVersion(object):
         return False
 
 
+    def no_such_table(self, prj, path):
+        print 'Missing external tables for project ' + prj
+        print 'Is ' + path + ' installed?'
+        print 'If not, then run: install --up [--force] [--freeze] ' + prj
+
+        return
+
+
     def read_file(self, file, section=''):
 
         self.section = section
@@ -366,7 +388,6 @@ def getOpt(self, key, dct={}, bStr=False):
 
     return ''
 
-
 def get_version(extern=False, opts={}, com_line_opts={}):
     # 1st param: CfgFile object, imported from qa_config
     # 2nd param: command-line options {}
@@ -374,6 +395,7 @@ def get_version(extern=False, opts={}, com_line_opts={}):
     rev = gv.run()
 
     return rev
+
 
 
 if __name__ == '__main__':

@@ -644,7 +644,7 @@ do
 
           CONFIG_FILE=  # unset
           . $QA_SRC/scripts/getConfigFile
-          . $QA_SRC/scripts/parseConfigFile UPDATE=enabled
+          . $QA_SRC/scripts/parseConfigFile UPDATE=daily
 
           isForceUpdate=t
           isUpdate=t
@@ -700,7 +700,7 @@ do
              . ${QA_SRC}/scripts/parseConfigFile UPDATE=delete
              isUpdate=
           else
-             . $QA_SRC/scripts/parseConfigFile UPDATE=enabled
+             . $QA_SRC/scripts/parseConfigFile UPDATE=daily
           fi
           continue
         elif [ "${OPTNAME:0:1}" = U ] ; then

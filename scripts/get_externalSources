@@ -610,7 +610,7 @@ do
 done
 
 if [ ! ${QA_TABLES} ] ; then
-  echo "could not cd ${HOME}"
+  echo "QA_TABLES not specified in $HOME/.qa-dkrz/config.txt?"
   return 41
 fi
 

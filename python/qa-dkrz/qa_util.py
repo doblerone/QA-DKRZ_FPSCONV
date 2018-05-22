@@ -293,6 +293,12 @@ class GetPaths(object):
 
 # ------------ plain functions ---------
 
+def add_unique(arg, lst):
+    if arg not in lst:
+        lst.append(arg)
+
+    return
+
 def cat( srcs, dest, append=False):
     # convert a string into a list
     if type(srcs) == StringType:

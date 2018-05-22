@@ -14,47 +14,9 @@ import re
 
 import qa_util
 
-def copyDefaultTables():
-    '''
-    1. The user should have write-access to tables.
-    2. The tables in QA_SRC may be write-protected (e.g. installed by admins)
-    3. User applications will wget external tables.
-    Solution: the tables are copied to another location writable by the user.
-        i) The home directory by default.
-        ii) A directory QA_TABLES. If i) is not possible or other persons
-            should share the same set of tables, then use option --qa-tables=path.
-            When there is no tables, yet --> copy from QA_SRC:
-    '''
-
-    # rsync the default tables
-    src=os.path.join(self.qa_src, 'tables')
-
-    if os.path.isdir(src):
-        dest=self.getOpt('QA_TABLES')
-
-        if not dest:
-            dest=os.path.join(self.home, 'tables')
-
-        rsync_cmd='rsync' + ' -auz' + ' --exclude=*~ ' + src + ' ' + dest
-
-        try:
-            subprocess.call(rsync_cmd, shell=True)
-            #shutil.copytree(src, dest)
-        except:
-            print 'could not rsync ' + src + ' --> ' + dest
-            sys.exit(1)
-
-    return
-
-
 def cpTables(key, fTable, tTable, tTable_path, qaConf, prj_from, prj_to, pDir):
 
     qaTables = qaConf.getOpt('QA_TABLES')
-
-    # only for the very first time
-    #if os.path.isfile
-    #copyDefaultTables(qaConf)
-
 
     if len(pDir) == 0:
         if prj_from == prj_to:
@@ -399,7 +361,6 @@ def run(log, g_vars, qaConf):
 
 
 def run_install(qaConf):
-    isInstall=False
     update=''
 
     p = os.path.join(qaConf.qa_src, 'install')
@@ -407,23 +368,27 @@ def run_install(qaConf):
 
     # from ~/.qa-dkrz/config.txt
     if qaConf.isOpt("UPDATE"):
-        update=qaConf.getOpt("UPDATE")
-        if update == 'frozen':
+        up=qaConf.getOpt("UPDATE")
+        if up == 'frozen':
             if qaConf.isOpt('FORCE'):
-                isInstall=True
                 update = 'up'
-                p_args.append('post-freeze')
+                qa_util.add_unique('post-freeze', p_args)
             else:
                 return  # still frozen
-        elif update[0:4] == 'auto':
+        elif up[0:4] == 'auto' or up == 'daily':
             update='up'
-        elif update[0:6] == 'enable':
+        elif up[0:6] == 'enable':
             update='daily'
 
     else:
         # convert because of a missing UPDATE in the config-file
         update='up'
-        p_args.append('post-freeze')
+        if not qaConf.isOpt('FORCE'):
+            qa_util.add_unique('force', p_args)
+            qa_util.add_unique('post-freeze', p_args)
+
+    if qaConf.isOpt('FORCE'):
+        qa_util.add_unique('force', p_args)
 
     # from the command-line by --up
     if qaConf.isOpt("CMD_UPDATE"):
@@ -437,7 +402,6 @@ def run_install(qaConf):
     if qaConf.isOpt("INSTALL"):
         # works for both comma and blank separation, e.g.: "arg0 arg1,arg2"
         # note that '--' are stripped in qa_config.commandLineOpts()
-        isInstall=True
         x_cs=qaConf.getOpt("INSTALL").split(',')
 
         for x_c in x_cs:
@@ -452,24 +416,25 @@ def run_install(qaConf):
                     else:
                         update = x_u[1]
                 else:
-                    p_args.append(x_bc)
+                    qa_util.add_unique(x_bc, p_args)
 
     if qaConf.isOpt("QA_TABLES"):
         p_args.append( 'qa_tables=' + qaConf.getOpt("QA_TABLES") )
     else:
-        update = 'up'
+        update='up'
+        qa_util.add_unique('post-freeze', p_args)
 
     if update == 'up':
-        p_args.append( update )
+        qa_util.add_unique(update, p_args)
     else:
-        p_args.append( 'up=' + update )
+        qa_util.add_unique('up=' + update, p_args)
 
     if len(update) or len(p_args):
         if qaConf.isOpt("FREEZE"):
             if not 'post-freeze' in p_args:
-                p_args.append('post-freeze')
+                qa_util.add_unique('post-freeze', p_args)
     elif qaConf.isOpt("FREEZE"):
-        p_args.append('freeze')
+        qa_util.add_unique('freeze', p_args)
 
     if len(p_args) == 0:
         return
@@ -483,6 +448,9 @@ def run_install(qaConf):
         # default
         prj = "CORDEX"
         qaConf.addOpt("PROJECT", prj)
+
+    if qaConf.isOpt("DEBUG_INSTALL"):
+        p += ' --debug=/hdh/hdh/QA-DKRZ/test/bsdf'
 
     p += ' ' + prj
 

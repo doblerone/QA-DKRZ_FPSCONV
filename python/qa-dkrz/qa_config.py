@@ -243,7 +243,9 @@ class QaConfig(object):
         if args.STATUS_LINE:
             _ldo['STATUS_LINE'] = args.STATUS_LINE
             _ldo['STATUS_LINE_SZ'] = 0
+
         if args.WORK:               _ldo['WORK']            = args.WORK
+        if args.DEBUG_INSTALL:      _ldo['DEBUG_INSTALL']   = args.DEBUG_INSTALL
 
         #if args.QA_EXAMPLE:
         #     print 'Please, use the bash version for the example.'
@@ -383,6 +385,9 @@ class QaConfig(object):
         parser.add_argument( '--example',
             action="store_true", dest='QA_EXAMPLE',
             help="Run the example.")
+
+        parser.add_argument('--debug-install', action="store_true", dest='DEBUG_INSTALL',
+            help="run install with set -x.")
 
         parser.add_argument( '-e', '-E',
             action='append', dest='eTypeOpt',
