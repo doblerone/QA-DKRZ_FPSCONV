@@ -42,7 +42,6 @@ getTablesPath()
 
         echo -e "\nPlease, specify variable QA_TABLES [default: ${dpath}], " > ${TTY}
         read -p "the spot for external tables and programs: " QA_TABLES 2> ${TTY}
-        echo -e "\n... restart " > ${TTY}
 
         test ${DEBUG} && set -x
 

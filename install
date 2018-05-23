@@ -339,12 +339,9 @@ update()
   fi
 
   # now for non-QA-DKRZ tables and programs
-  #for prj in ${prjs[*]} ; do
-  for prj in * ; do
-    if ! update_external $prj ; then
-      return $?
-    fi
-  done
+  if ! update_external $prj ; then
+    return $?
+  fi
 
   if ! mkdir -p ${QA_TABLES}/tables  ; then
     echo "could not mkdir -p ${QA_TABLES}/tables"
