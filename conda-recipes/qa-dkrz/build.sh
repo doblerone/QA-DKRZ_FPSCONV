@@ -33,10 +33,10 @@ touch ${QA_SRC}/.ignore_GitHub # avoids git update!
 # run build
 export QA_LIBS="-ludunits2 -lnetcdf -lhdf5_hl -lhdf5 -lz -luuid -lmfhdf -ldf -ljpeg -lssl -lcrypto"
 QA_TABLES=/hdh/hdh/QA_Tables
-./install --debug --conda-build --net=no --cf --qa-src=$QA_SRC --qa-tables="$QA_TABLES" CF CMIP5 CMIP6 CORDEX
+./install --debug --conda-build --net=no --cf --qa-src=$QA_SRC --qa-tables="$QA_TABLES" CF CMIP5 CMIP6 CORDEX 2> /hdh/hdh/QA-DKRZ/test/asdf
 
 # copy generated files to opt/qa-dkrz
-#cp -r ./bin ${QA_SRC}
+cp -r ./bin ${QA_SRC}
 
 # write git version to install.log
 echo "branch=$(git branch | grep '*' | awk '{print $2}')" > ${QA_SRC}/install.log
