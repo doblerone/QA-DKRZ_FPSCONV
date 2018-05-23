@@ -42,7 +42,7 @@ unset LD_LIBRARY_PATH
 #export LD_LIBRARY_PATH=${QA_PATH}/lib
 
 if [ ${isInstall:-f} = t ] ; then
-  exec ${QA_PATH}/opt/qa-dkrz/install $*
+  exec ${QA_PATH}/opt/qa-dkrz/install --post-freeze $*
 else
   exec ${QA_PATH}/opt/qa-dkrz/scripts/qa-dkrz $*
 fi
