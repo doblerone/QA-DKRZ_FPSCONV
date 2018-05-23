@@ -529,6 +529,8 @@ if [ $# -gt 0 ] ; then
       sArgs[${i}]=--${sArgs[${i}]}
     elif [ "${A:0:5}" = DEBUG ] ; then
       sArgs[${i}]=--${sArgs[${i}]}
+    elif [ "${A:0:6}" = FREEZE ] ; then
+      sArgs[${i}]=--${sArgs[${i}]}
     elif [ "${A:0:4}" = HELP ] ; then
       sArgs[${i}]=--${sArgs[${i}]}
     elif [ "${A:0:4}" = LINK ] ; then
@@ -576,7 +578,9 @@ do
   esac
 done
 
-. $QA_SRC/scripts/getConfigFile
+if ! . $QA_SRC/scripts/getConfigFile ; then
+  isPostFreeze=t
+fi
 
 # is it in a conda built?
 . ${QA_SRC}/scripts/getCondaPath
@@ -813,8 +817,6 @@ if [ ! ${isCondaBuild} ] ; then
       done
     fi
   fi
-
-  test ${CONDA_QA_PATH} && exit  # miniconda built executables
 fi
 
 #if [ ${#projects[*]} -eq 0 ] ; then
@@ -836,6 +838,9 @@ if [ ${isPostFreeze} ] ; then
     . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
     touch ${QA_SRC}/.qa-config.frozen
 fi
+
+
+test ${CONDA_QA_PATH} && exit  # miniconda built executables
 
 exec ${QA_SRC}/scripts/install.sh ${debug} --pack=${package} \
 ${isContinueLog:+--continue_log} ${pcks} \
