@@ -597,6 +597,12 @@ fi
 . ${QA_SRC}/scripts/parseConfigFile QA_REVISION=delete
 . ${QA_SRC}/scripts/parseConfigFile DEFAULT_PROJECT=delete
 
+. ${QA_SRC}/scripts/parseConfigFile UPDATE
+
+if [ "${UPDATE}" != frozen ] ; then
+    isUpdate=t
+fi
+
 OPTIND=
 while getopts BdhT:-: option ${sArgs[*]}
 do
@@ -650,10 +656,9 @@ do
 
           CONFIG_FILE=  # unset
           . $QA_SRC/scripts/getConfigFile
-          . $QA_SRC/scripts/parseConfigFile UPDATE=daily
+          # . $QA_SRC/scripts/parseConfigFile UPDATE=daily
 
           isForceUpdate=t
-          isUpdate=t
         elif [ "${OPTNAME}" = FREEZE ] ; then
           isFreeze=t
         elif [ "${OPTNAME}" = HELP ] ; then
@@ -747,7 +752,7 @@ if [ ${isFreeze:-f} = t -a ${isPostFreeze:-f} = f ] ; then
     exit
 fi
 
-if [ -f $QA_SRC/.qa-config.frozen ] ; then
+if [ "${UPDATE}" = frozen ] ; then # -o -f $QA_SRC/.qa-config.frozen ] ; then
   echo "currently frozen; use install --force ... to re-enable"
   exit
 fi
