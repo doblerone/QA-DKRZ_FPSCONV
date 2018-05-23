@@ -634,6 +634,8 @@ do
           isBuild=t
         elif [ "${OPTNAME}" = COMPILE ] ; then
           FORCE_COMPILE=-B
+        elif [ "${OPTNAME}" = CONDA_BUILD ] ; then
+          isCondaBuild=t
         elif [ "${OPTNAME}" = CONDA_CMOR_ENV -o "${OPTNAME}" = CCE ] ; then
           export CONDA_CMOR_ENV=${OPTVAL}
           . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${OPTVAL}
@@ -842,7 +844,7 @@ else
 fi
 
 if [ ${isPostFreeze} ] ; then
-    . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
+  . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
 fi
 
 
