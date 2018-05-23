@@ -338,7 +338,7 @@ update()
      test ${isForceUpdate} && \
           $QA_SRC/scripts/getVersion --force ${DEBUG} &> /dev/null
 
-     update_QA_SRC
+     test -w ${QA_SRC} && update_QA_SRC
   fi
 
   # now for non-QA-DKRZ tables and programs
@@ -372,8 +372,9 @@ update_CONDA()
   test "${conda_env}" = '-n ' && conda_env=
 
   if [ ! -w "${QA_SRC}" ] ; then
-    echo "no write-permission for ${QA_SRC}"
-    exit 41
+    return
+    #echo "no write-permission for ${QA_SRC}"
+    #exit 41
   elif [ ${action} = update ] ; then
     # look for a new conda-built package
     echo "searching ${conda_name} updates" > ${TTY}
