@@ -18,6 +18,8 @@ netcdf=netcdf-4.4.1
 zlib=zlib-1.2.8
 udunits=udunits-2.2.20
 
+valid_projects=( CF CORDEX CMIP5 CMIP6 HAPPI )
+
 # options with auto-update feature (option: --auto-up_feature)
 #   CMOR_LLNL:     the CMOR checker (D. Nadeau, LLNL)
 #   GIT_QA:         all QA updates touching write-protected locations
@@ -43,6 +45,7 @@ descript()
   echo "  --conda-cmor-path=path Alias: --ccp=path"
   echo "                    If a separate conda is neither in PATH nor aliased."
   echo "  --config-file=path  HOME/.qa-dkrz/config.txt by default"
+  echo "  --compile         Force recompilation, even for a conda repository."
   echo "  --debug[=script]  Display execution commands. If the name of a script"
   echo "                    is assigned, then debug only this one."
   echo "  --force           Force update of the given project."
@@ -60,7 +63,7 @@ descript()
   echo "  --ship=/path      Prepare the current QA-DKRZ installation for shipping."
   echo "  --show-inst       Display properties of the current installation."
   echo "  --unship          See ReadTheDocs:installation."
-  echo "  --up[date]        Update external packages from the repository."
+  echo "  --up[date]        Update external packages/tables from respective repository."
   echo "                    Note: not for netCDF, HDF5, udunits2 or zlib."
   echo "  --up              Update the qa-dkrz package when installed by conda."
   echo "  --update-frequency=num"
@@ -629,8 +632,8 @@ do
             continue
         elif [ "${OPTNAME}" = BUILD ] ; then
           isBuild=t
-        elif [ "${OPTNAME}" = CONDA_BUILD ] ; then
-          isCondaBuild=t
+        elif [ "${OPTNAME}" = COMPILE ] ; then
+          FORCE_COMPILE=-B
         elif [ "${OPTNAME}" = CONDA_CMOR_ENV -o "${OPTNAME}" = CCE ] ; then
           export CONDA_CMOR_ENV=${OPTVAL}
           . ${QA_SRC}/scripts/parseConfigFile CONDA_CMOR_ENV=${OPTVAL}
@@ -649,7 +652,6 @@ do
 
         elif [ "${OPTNAME}" = FORCE ] ; then
           test ! -d ~/.qa-dkrz && mkdir ~/.qa-dkrz
-          \rm -rf ${QA_SRC}/.qa-config.frozen
 
           CONFIG_FILE=  # unset
           . $QA_SRC/scripts/getConfigFile
@@ -700,16 +702,7 @@ do
           exit
         elif [ "${OPTNAME:0:2}" = UP ] ; then
           isUpdate=t
-
-          if [ "${OPTVAL:0:4}" = auto ] ; then
-             . ${QA_SRC}/scripts/parseConfigFile UPDATE=auto
-
-          elif [ "${OPTVAL:0:1}" = 'd' -o "${OPTVAL:0:1}" = 'D' ] ; then
-             . ${QA_SRC}/scripts/parseConfigFile UPDATE=delete
-             isUpdate=
-          else
-             . $QA_SRC/scripts/parseConfigFile UPDATE=daily
-          fi
+          test "${OPTVAL}" && . ${QA_SRC}/scripts/parseConfigFile UPDATE=${OPTVAL}
           continue
         elif [ "${OPTNAME:0:1}" = U ] ; then
           name_0=${OPTNAME%%_*}
@@ -745,11 +738,10 @@ shift $(( $OPTIND - 1 ))
 
 if [ ${isFreeze:-f} = t -a ${isPostFreeze:-f} = f ] ; then
     . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
-    touch ${QA_SRC}/.qa-config.frozen
     exit
 fi
 
-if [ "${UPDATE}" = frozen ] ; then # -o -f $QA_SRC/.qa-config.frozen ] ; then
+if [ "${UPDATE}" = frozen ] ; then
   echo "currently frozen; use install --force ... to re-enable"
   exit
 fi
@@ -774,7 +766,11 @@ for pck in $* ; do
     QA_TABLES=${PCK:8}
   else
     coll[${#coll[*]}]=$pck  # collect projects names
-    projects[${#projects[*]}]=$pck
+    for p in ${valid_projects[*]} ; do
+      if [ $p = $pck ] ; then
+         projects[${#projects[*]}]=$pck
+      fi
+    done
   fi
 done
 
@@ -822,7 +818,12 @@ if [ ! ${isCondaBuild} ] ; then
     fi
   fi
 
-  test ${CONDA_QA_PATH} && exit  # miniconda built executables
+  if [ ${isPostFreeze} ] ; then
+      . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
+  fi
+
+  # miniconda built executables
+  test ${FORCE_COMPILE:-f} = f -a ${#CONDA_QA_PATH} -gt 0 && exit
 fi
 
 #if [ ${#projects[*]} -eq 0 ] ; then
@@ -842,10 +843,9 @@ fi
 
 if [ ${isPostFreeze} ] ; then
     . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
-    touch ${QA_SRC}/.qa-config.frozen
 fi
 
 
 exec ${QA_SRC}/scripts/install.sh ${debug} --pack=${package} \
 ${isContinueLog:+--continue_log} ${pcks} \
---qa-src=${QA_SRC} ${coll[*]}
+--qa-src=${QA_SRC} ${FORCE_COMPILE} ${coll[*]}
