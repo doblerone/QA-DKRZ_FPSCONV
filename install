@@ -339,11 +339,12 @@ update()
   fi
 
   # now for non-QA-DKRZ tables and programs
-#  for prj in ${prjs[*]} ; do
+  #for prj in ${prjs[*]} ; do
+  for prj in * ; do
     if ! update_external $prj ; then
       return $?
     fi
-#  done
+  done
 
   if ! mkdir -p ${QA_TABLES}/tables  ; then
     echo "could not mkdir -p ${QA_TABLES}/tables"
@@ -818,6 +819,8 @@ if [ ! ${isCondaBuild} ] ; then
       done
     fi
   fi
+
+  test ${CONDA_QA_PATH} && exit  # miniconda built executables
 fi
 
 #if [ ${#projects[*]} -eq 0 ] ; then
@@ -840,8 +843,6 @@ if [ ${isPostFreeze} ] ; then
     touch ${QA_SRC}/.qa-config.frozen
 fi
 
-
-test ${CONDA_QA_PATH} && exit  # miniconda built executables
 
 exec ${QA_SRC}/scripts/install.sh ${debug} --pack=${package} \
 ${isContinueLog:+--continue_log} ${pcks} \
