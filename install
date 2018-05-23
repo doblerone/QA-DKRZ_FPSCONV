@@ -557,7 +557,7 @@ do
   case $option in
     -)  OPTVAL=${OPTARG#*=}
         OPTNAME=${UOPTARG%%=*}
-        tesdt ${OPTVAL} = ${OPTNAME} && OPTVAL=
+        test ${OPTVAL} = ${OPTNAME} && OPTVAL=
 
         if [ "${OPTNAME}" = CONFIG_FILE ] ; then
           CONFIG_FILE=${OPTVAL}
