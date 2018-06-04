@@ -229,6 +229,7 @@ ges_checkDate()
 ges_cmip6()
 {
    local status=0
+   local isCMIP6=t
 
    if [ ! ${XLSX2CSV} ] || [ ! -f "${XLSX2CSV}" ] ; then
      if ! ges_xlsx2csv ; then

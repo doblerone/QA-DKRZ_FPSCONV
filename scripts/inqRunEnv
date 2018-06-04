@@ -386,7 +386,7 @@ iRE_scanCondaEnv()
   fi
 
   if [ $1 = PrePARE ] ; then
-    test ! ${CMIP6} && return
+    test ! ${isCMIP6} && return
     test "${CONDA_CMOR_PATH}" -a "${CONDA_CMOR_ENV}" && return
 
     # try to restore some lost config-file items
