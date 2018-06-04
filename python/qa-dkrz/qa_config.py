@@ -191,7 +191,7 @@ class QaConfig(object):
                 # comma-sep list --> python list, but protect
                 # those containing braces
                 if type(val) == StringType:
-                    if val.find('{') == -1:
+                    if not '{' in val:
                         try:
                             # --> list of integers
                             val=[ int(x) for x in val.split(',') ]
@@ -200,7 +200,7 @@ class QaConfig(object):
                         except ValueError:
                             # --> list of strings
                             s=repr(val)
-                            if s.find(',') > -1:
+                            if ',' in s:
                                 val=val.split(',')
 
                             if len(val) == 1:
@@ -245,11 +245,48 @@ class QaConfig(object):
             _ldo['STATUS_LINE_SZ'] = 0
 
         if args.WORK:               _ldo['WORK']            = args.WORK
-        if args.DEBUG_INSTALL:      _ldo['DEBUG_INSTALL']   = args.DEBUG_INSTALL
 
-        #if args.QA_EXAMPLE:
-        #     print 'Please, use the bash version for the example.'
-        #     sys.exit(0)
+        # collect for passing to QA-DKRZ/install.
+
+        # plain nc-files and/or something like install="arg1 arg2=asdf,arg3"
+        # at first, decompose items of install and then, items themselves.
+        inst_args=[] # if any, then reversely, because of del
+        for i in range(len(args.NC_FILE)-1,-1,-1):
+            arg = args.NC_FILE[i]
+
+            if arg[0:8] == 'install=':
+                x = arg[8:].split(' ')
+                x_s=[]
+                for y in x:
+                    x_s.extend(y.split(','))
+
+                for x in x_s:
+                    if x[0:2] == '--':
+                        x=x[2:]
+
+                    if x.upper() in self.prjs_avail:
+                        # note: multiple assignments possible for install, but
+                        # only a single one for operation.
+                        qa_util.add_unique(x.upper(), inst_args)
+                        _ldo['PROJECT'] = arg.upper()
+                    else:
+                        qa_util.add_unique(x, inst_args)
+
+                    if 'ship' in x and not 'unship' in x:
+                        qa_util.add_unique('force', inst_args)
+            else:
+                # this allows for something like 'install up PROJECTS'
+                # Note that --arg is caught elsewhere by the parser
+                if arg.upper() in self.prjs_avail:
+                    # note: multiple assignments possible for install, but
+                    # only a single one for operation.
+                    qa_util.add_unique(arg.upper(), inst_args)
+                    _ldo['PROJECT'] = arg.upper()
+                else:
+                    qa_util.add_unique(arg, inst_args)
+
+            if arg[-3:] != '.nc':
+                del args.NC_FILE[i]
 
         # special: SELECT | LOCK
         if len(args.NC_FILE) == 0:
@@ -260,29 +297,9 @@ class QaConfig(object):
                 s= 'SELECT ' + args.CL_S
                 self.lSelect.append(self.setSelLock(s.replace(' ','') ) )
         else:
-            # plain nc-files and/or something like install="arg1 arg2"
-            for arg in args.NC_FILE:
-                if arg[0:7] == 'install':
-                    x_s = arg.split('=')
-                    if len(x_s) > 1:
-                        args.INSTALL = x_s[1]
+            self.lSelect.append(args.NC_FILE[0])
 
-                    del args.NC_FILE[0]
-
-            #str0='SELECT'
-            #for i in range(len(args.NC_FILE)):
-            #    if i > 0:
-            #        str0 += ','
-            #    str0 += args.NC_FILE[i]
-            #h,t = os.path.split(args.NC_FILE[0])
-            #_ldo['SELECT'] = str0 + h + '=' + t
-            if len(args.NC_FILE):
-                self.lSelect.append(args.NC_FILE[0])
-
-        # collect for passing to QA-DKRZ/install.
-        str0=''
-        isForce=False
-
+        # regular --install='args'
         if args.INSTALL:
             l_0 = args.INSTALL.split(',')
             l_1=[]
@@ -290,45 +307,38 @@ class QaConfig(object):
                 l_1.extend(args.INSTALL.split(' '))
 
             for val in l_1:
-                if len(str0) > 0:
-                    str0 += ','
+                if val == '--':
+                    val=val[2:]
 
-                pos=0
-                if val[0:2] == '--':
-                    pos=2
-
-                if val in self.prjs_avail:
-                    str0 += val
-                elif val[pos:] == 'freeze' or val == 'FREEZE':
-                    _ldo['FREEZE']=True
-                    str0=str0[0:-1]
-                else:
-                    str0 += val[pos:]
-
-                if val[pos:] == 'force':
-                    _ldo['FORCE']=True
+                qa_util.add_unique(val, inst_args)
 
         if args.QA_TABLES != None:
-            if len(str0) > 0:
-                str0 += ','
-            str0 += 'qa_tables=' + args.QA_TABLES
+            qa_util.add_unique('qa_tables=' + args.QA_TABLES, inst_args)
 
         if args.AUTO_UP != None:
-            if len(str0) > 0:
-                str0 += ','
-            str0 += 'up=auto'
+            qa_util.add_unique('auto-up', inst_args)
+
+        if args.FORCE:
+            qa_util.add_unique('force', inst_args)
+
+        if args.FREEZE:
+            qa_util.add_unique('freeze', inst_args)
 
         if args.SHIP != None and len(args.SHIP):
-            if len(str0) > 0:
-                str0 += ','
-            str0 += 'ship=' + args.SHIP
+            qa_util.add_unique('ship=' + args.SHIP, inst_args)
+            qa_util.add_unique('force', inst_args)
+
+        if args.UNFREEZE:
+            qa_util.add_unique('unfreeze', inst_args)
 
         if args.UNSHIP:
-            if len(str0) > 0:
-                str0 += ','
-            str0 += 'unship'
+            qa_util.add_unique('unship', inst_args)
 
-        if str0:
+        if inst_args:
+            str0=''
+            for s in inst_args:
+                str0 += s + ' '
+
             _ldo['INSTALL']=str0
 
         return _ldo
@@ -386,15 +396,15 @@ class QaConfig(object):
             action="store_true", dest='QA_EXAMPLE',
             help="Run the example.")
 
-        parser.add_argument('--debug-install', action="store_true", dest='DEBUG_INSTALL',
-            help="run install with set -x.")
-
         parser.add_argument( '-e', '-E',
             action='append', dest='eTypeOpt',
             help="QA configuration: [-e|-E]key[=value].")
 
         parser.add_argument('-f', '--task', dest='TASK',
             help="QA task-file with frequently changing options.")
+
+        parser.add_argument('--force', action="store_true", dest='FORCE',
+            help="Force QA install update.")
 
         parser.add_argument('--freeze', action="store_true", dest='FREEZE',
             help="Freeze QA, externals and tables.")
@@ -449,13 +459,16 @@ class QaConfig(object):
             type=int, nargs='?', default=0, const=1, dest='SHOW_NEXT',
             help="Show the N next path/file for executaion [N=1].")
 
+        parser.add_argument('--unfreeze', action="store_true", dest='UNFREEZE',
+            help="Unfreeze QA.")
+
         parser.add_argument('--unship', dest='UNSHIP',
             action="store_true",
             help='''Initialisation after shippingi at path.''')
 
         parser.add_argument('--up', '--update', dest='CMD_UPDATE',
             nargs='?',  const='freeze',
-            help='auto | [freeze] | daily : Run with QA_DKRZ/install.')
+            help='auto | [freeze] | daily : Run with qa-dkrz install.')
 
         parser.add_argument('--version',
             action="store_true", dest='SHOW_VERSION',
@@ -544,15 +557,14 @@ class QaConfig(object):
         else:
             curr_dct = self.dOpts
 
+        val=''
         if key in curr_dct:
             val = curr_dct[key]
 
             if bStr:
                val = str(val)
 
-            return val
-
-        return ''
+        return val
 
 
     def get_qa_tables(self):
@@ -645,7 +657,7 @@ class QaConfig(object):
         else:
             curr_dct = self.dOpts
 
-        if key in curr_dct.keys():
+        if key in curr_dct:
             val = curr_dct[key]
 
             if type(val) == BooleanType:
@@ -661,7 +673,7 @@ class QaConfig(object):
         # merge reversed, i.e. from low to high priority
         for ix in range(len(self.ldOpts)-1,-1,-1):
             if len(self.ldOpts[ix]):
-                for key in self.ldOpts[ix].keys():
+                for key in self.ldOpts[ix]:
                     if key == 'QA_CONF' and key in self.dOpts:
                         self.dOpts[key] += ',' + self.ldOpts[ix][key]
 
@@ -762,7 +774,7 @@ class QaConfig(object):
 
                         # comma-sep list --> python list, but protect
                         # those containing braces
-                        if val.find('{') == -1:
+                        if not '{' in val:
                             try:
                                 # --> list of integers
                                 val=[ int(x) for x in val.split(',') ]
@@ -773,7 +785,7 @@ class QaConfig(object):
                             except ValueError:
                             # --> list of strings
                                 s=repr(val)
-                                if s.find(',') > -1:
+                                if ',' in s:
                                     val=val.split(',')
                             except:
                                 pass
@@ -785,7 +797,7 @@ class QaConfig(object):
                     if len(lock):
                         self.lLock.extend(lock.split(','))
 
-            if 'QA_CONF' in _ldo.keys():
+            if 'QA_CONF' in _ldo:
                 str0 = _ldo['QA_CONF']
                 del _ldo['QA_CONF']
             else:
@@ -794,8 +806,8 @@ class QaConfig(object):
             self.searchQA_CONF_chain(str0, lCfgFiles)
 
         # special
-        if 'NEXT' in _ldo.keys():
-            if not 'NEXT_VAR' in _ldo.keys():
+        if 'NEXT' in _ldo:
+            if not 'NEXT_VAR' in _ldo:
                 _ldo['NEXT_VAR'] = 1
 
         # preserve the list of configuration files
@@ -854,8 +866,17 @@ class QaConfig(object):
         self.finalSelLoc()
 
         # backward compatibility
-        if "AUTO_UP" in self.dOpts.keys() or "AUTO_UPDATE" in self.dOpts.keys():
+        if "AUTO_UP" in self.dOpts or "AUTO_UPDATE" in self.dOpts:
             self.dOpts["CMD_UPDATE"] = "auto"
+
+        '''
+        if not "DEFAULT_PROJECT" in self.dOpts :
+            self.dOpts['DEFAULT_PROJECT'] = 'CORDEX'
+            if not 'INSTALL' in self.dOpts:
+                self.dOpts['INSTALL'] = 'set-default-project=CORDEX'
+            else:
+                self.dOpts['INSTALL'] += ' set-default-project=CORDEX'
+        '''
 
         # modify definitions if P_AS is set: P_AS --> P and P --> P_DRVD
         if 'PROJECT_AS' in self.dOpts:
@@ -864,24 +885,23 @@ class QaConfig(object):
                 self.addOpt('PROJECT_VIRT', self.dOpts['PROJECT'])
                 self.addOpt('PROJECT', self.dOpts['PROJECT_AS'])
             else:
-                self.addOpt('PROJECT_VIRT', self.dOpts['PROJECT'])
-                self.addOpt('PROJECT', self.dOpts['DEFAULT_PROJECT'])
+                self.addOpt('PROJECT_VIRT', self.dOpts['PROJECT_AS'])
+                self.addOpt('PROJECT', self.dOpts['PROJECT_AS'])
 
             self.project_virt = self.dOpts['PROJECT_VIRT']
             self.delOpt('PROJECT_AS')
 
-        if not self.isOpt('PROJECT') and self.isOpt('DEFAULT_PROJECT'):
-            self.addOpt('PROJECT', self.dOpts['DEFAULT_PROJECT'])
+        #if not self.isOpt('PROJECT') and self.isOpt('DEFAULT_PROJECT'):
+        #    self.addOpt('PROJECT', self.dOpts['DEFAULT_PROJECT'])
 
         self.project = self.getOpt('PROJECT')
 
-        if self.isOpt("QA_EXAMPLE"):
-            if not self.isOpt("QA_TABLES"):
-                if not self.isOpt("INSTALL"):
-                    self.addOpt("INSTALL", "up CORDEX")
-        elif not self.isOpt("QA_TABLES"):
+        if not self.isOpt("QA_TABLES"):
             if not self.isOpt("INSTALL"):
-                self.addOpt("INSTALL", "up")
+                self.addOpt("INSTALL", "up force")
+
+        if self.isOpt("QA_EXAMPLE"):
+            self.dOpt["INSTALL"] =  "up force CORDEX"
 
         # the location of tables must be known before config files are analysed.
         #self.copyDefaultTables()

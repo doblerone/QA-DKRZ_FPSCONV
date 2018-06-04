@@ -1989,7 +1989,7 @@ do
           installArgs+="${OPTARG},"
 
 		elif [ "${OPTNAME}" = NEXT ] ; then
-          setKWL NEXT=${OPTVAL:-t}
+          setKWL NEXT=${OPTVAL:-1}
 
         elif [ "${OPTARG:0:2}" = pb ] ; then
           if [ ${OPTARG} = ${OPTVAL} ] ; then

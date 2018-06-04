@@ -43,7 +43,7 @@ def convert_CMOR_output(lines):
             else:
                 # replace every ';' by '.', because semi-colon serves as line delimiter
                 # in qa-exec-check
-                if blk[ix][jx].find(';'):
+                if ';' in blk[ix][jx]:
                     blk[ix][jx] = blk[ix][jx].replace(';', '.')
 
     # re-sort according to annots (terminated py a period)
@@ -52,7 +52,7 @@ def convert_CMOR_output(lines):
     # remove the 'Ceterum censeo Karthaginem esse delendam' phrase
     if len(blk) > 0:
         cicero=blk[len(blk)-1]
-        if cicero[0].find('The input file is not CMIP6 compliant'):
+        if 'The input file is not CMIP6 compliant' in cicero[0]:
             del blk[len(blk)-1]
 
     for ix in range(len(blk)):

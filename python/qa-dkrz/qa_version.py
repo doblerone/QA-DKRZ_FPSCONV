@@ -25,7 +25,7 @@ class GetVersion(object):
         self.p_projects=''
 
     def construct_cfg(self):
-        if not "SECTION" in self.opts.keys():
+        if not "SECTION" in self.opts:
             sys.exit(1)
 
         self.opts["QA_SRC"] = self.opts["SECTION"]
@@ -119,7 +119,7 @@ class GetVersion(object):
                 if os.path.isfile(f):
                     with open(f, 'r') as fd:
                         for line in fd:
-                            if line.find('Standard Name Table') > -1:
+                            if 'Standard Name Table' in line:
                                 p0 = line.find('(') + 1
                                 p1 = line.find(')')
                                 if p0 > 1 and p1 > -1:
@@ -184,7 +184,7 @@ class GetVersion(object):
             curr_id = qa_util.lstrip(t[1], 'hexa=')
 
             if len(t) > 2:
-                if t[2].find('tag') > -1:
+                if 'tag' in t[2]:
                     tag = qa_util.lstrip(t[2], 'tag=')
 
         return branch, curr_id, tag
@@ -202,13 +202,13 @@ class GetVersion(object):
             if os.path.isfile(f):
                 with open(f, 'r') as fd:
                     for line in fd:
-                        if line.find('name:') > -1:
+                        if 'name:' in line:
                             words=line.split()
                             tag=words[-1]
-                        elif line.find('version:') > -1:
+                        elif 'version:' in line:
                             words=line.split()
                             tag += '-' + words[-1].strip("'")
-                        elif line.find('number:') > -1:
+                        elif 'number:' in line:
                             words=line.split()
                             tag += '-' + words[-1]
                             break
@@ -238,7 +238,7 @@ class GetVersion(object):
         else:
             curr_dct = self.opts
 
-        if key in curr_dct.keys():
+        if key in curr_dct:
             val = curr_dct[key]
 
             if type(val) == BooleanType:

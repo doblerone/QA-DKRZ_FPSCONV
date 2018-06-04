@@ -5101,7 +5101,7 @@ tr_option()
     line="${tmp0}""${line:i}"
   fi
 
-  test "${pref}" = '--' && pref=
+  #test "${pref}" = '--' && pref=
   eval ${1}=\${pref}\${line}
 
   return

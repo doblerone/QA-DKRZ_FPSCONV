@@ -1161,7 +1161,7 @@ DRS_CV::testPeriod(Split& x_f)
      }
      else if( sd[0].size() < 11 )
      {
-         //pDates[0]->shift("beg,h");
+         pDates[0]->shift("beg,h");
          pDates[1]->shift("end,h");
 
          pDates[2]->shift("beg,h");
@@ -1169,7 +1169,7 @@ DRS_CV::testPeriod(Split& x_f)
      }
      else if( sd[0].size() < 13 )
      {
-         //pDates[0]->shift("beg,mi");
+         pDates[0]->shift("beg,mi");
          pDates[1]->shift("end,mi");
 
          pDates[2]->shift("beg,mi");

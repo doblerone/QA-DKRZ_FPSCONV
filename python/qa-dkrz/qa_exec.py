@@ -348,7 +348,7 @@ class QaExec(object):
         p0 = remainder.find(':')
         event['impact'] = issue[:p0]
 
-        if 'impact' in event.keys():
+        if 'impact' in event:
             p0 = event['impact'].find('-')
             event['tag'] = event['impact'][p0+1:]
 
@@ -465,7 +465,7 @@ class QaExec(object):
                     # internally separated by ';'
                     issue = issue.strip(' ;')
 
-                    if issue.find(';') > -1:
+                    if ';' in issue:
                         dct['info'] = issue.split(';')
                     else:
                         dct['info'] = [ issue ]
@@ -583,7 +583,7 @@ class QaExec(object):
                                         conclusion  = log_entry['conclusion'],
                                         set_qa_lock = set_qa_lock)
 
-        if 'is_event' in log_entry.keys():
+        if 'is_event' in log_entry:
             entry_id = self.log.append(entry_id, is_events=True)
 
             for eve in log_entry['event']:
@@ -592,7 +592,7 @@ class QaExec(object):
                                             impact   = eve['impact'],
                                             tag      = eve['tag'])
 
-                if 'info' in eve.keys():
+                if 'info' in eve:
                     entry_id = self.log.append(entry_id, info=eve['info'])
 
         entry_id = self.log.append(entry_id, status=istatus)

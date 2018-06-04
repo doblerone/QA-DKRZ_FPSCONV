@@ -37,8 +37,8 @@ class GetPaths(object):
 
         prj_data_path = qaConf.getOpt('PROJECT_DATA')
 
-        self.is_only_ncfiles = False if 'QUERY_NON_NC_FILE' in dOpts.keys() else True
-        self.is_empty_dir    = False if 'QUERY_EMPTY_DIR'   in dOpts.keys() else True
+        self.is_only_ncfiles = False if 'QUERY_NON_NC_FILE' in dOpts else True
+        self.is_empty_dir    = False if 'QUERY_EMPTY_DIR'   in dOpts else True
 
         # SELECTed variables and paths as well as the LOCKed counterpart
         # may contain several RegExp expressions.
@@ -778,7 +778,7 @@ def get_QA_SRC(path):
 
     target=path
 
-    if target[0] == '.' or target.find('/.') > -1:
+    if target[0] == '.' or '/.' in target:
         old_path=os.getcwd()
         os.chdir(p)     # remove . and .. anywhere in the path
         target=os.path.join(os.getcwd(), tail)

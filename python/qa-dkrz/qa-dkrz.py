@@ -250,7 +250,7 @@ def get_all_logfiles():
             f_log = qa_util.get_experiment_name(g_vars, qaConf, fB=fBase,
                                             sp=sub_path)
             if isShowExp:
-                if f_log in lfn_var.keys():
+                if f_log in lfn_var:
                     if not sub_path in lfn_var[f_log]:
                         lfn_var[f_log].append(sub_path)
                 else:
@@ -259,7 +259,7 @@ def get_all_logfiles():
             f_logs.append( f_log )
 
     if isShowExp:
-        for key in lfn_var.keys():
+        for key in lfn_var:
             print '\nLogfile-name: ' + key
 
             for p in lfn_var[key]:
@@ -605,10 +605,7 @@ if __name__ == '__main__':
     # for options on the command-line as well as in configuration files
     qaConf=QaConfig(QA_SRC)
 
-    if not qaConf.isOpt("QA_TABLES"):
-        qaConf.addOpt('FORCE', True)
-        qa_init.run_install(qaConf)
-        qaConf.delOpt("INSTALL")
+    qa_init.run_install(qaConf)
 
     g_vars = GlobalVariables()
     t_vars = ThreadVariables()

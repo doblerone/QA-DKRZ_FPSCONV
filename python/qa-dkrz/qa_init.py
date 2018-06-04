@@ -45,7 +45,7 @@ def cpTables(key, fTable, tTable, tTable_path, qaConf, prj_from, prj_to, pDir):
             if fTable[0:3] == 'CF_' or fTable[0:3] == 'cf-':
                 pDir.append( os.path.join('tables', 'projects', 'CF') )
 
-    if key.find('CHECK_LIST') > -1:
+    if 'CHECK_LIST' in key:
         # concatenate existing files
         # is any of the files newer than the destination?
         dest = os.path.join(tTable_path, tTable)
@@ -171,11 +171,11 @@ def init_tables(g_vars, qaConf):
         tName = ''
 
         # project tables
-        if key.find('TABLE') > -1:
+        if 'TABLE' in key:
             tName = qaConf.getOpt(key)
-        elif key.find('CHECK_LIST') > -1:
+        elif 'CHECK_LIST' in key:
             tName = qaConf.getOpt(key)
-        elif key.find('CF_') > -1 and key[3] != 'F':
+        elif 'CF_' in key and key[3] != 'F':
             tName = qaConf.getOpt(key)
 
         if len(tName):
@@ -202,7 +202,7 @@ def init_tables(g_vars, qaConf):
         pHT=os.path.join(qaConf.getOpt('QA_TABLES'), 'tables', prj_from)
         for key in tables.keys():
             name = tables[key]
-            if name.find(prj_to) > -1:
+            if prj_to in name:
                 name = name.replace(prj_to, prj_from)
 
                 if os.path.isfile( os.path.join(pHT, name) ):
@@ -226,12 +226,10 @@ def rsync_default_tables(g_vars, qaConf):
    if not src_0:
       src_0=os.path.join(qaConf.getOpt('QA_SRC'), 'tables')
 
-   if qaConf.isOpt('PROJECT'):
-      prj=qaConf.getOpt('PROJECT')
-   elif qaConf.isOpt('DEFAULT_PROJECT'):
-      prj=qaConf.getOpt('DEFAULT_PROJECT')
-   else:
-      prj=''
+   prj=qaConf.getOpt('PROJECT')  # '' wqhen not defined
+   #elif qaConf.isOpt('DEFAULT_PROJECT'):
+   #   prj=qaConf.getOpt('DEFAULT_PROJECT')
+   #else:
 
    src=''  # prevent a fatal state below
    if prj:
@@ -276,7 +274,7 @@ def run(log, g_vars, qaConf):
 
     # update external tables and in case of running qa_dkrz.py from
     # sources update C++ executables
-    run_install(qaConf)
+    # run_install(qaConf)
 
     if qaConf.isOpt('NUM_EXEC_THREADS'):
         g_vars.thread_num = \
@@ -328,6 +326,23 @@ def run(log, g_vars, qaConf):
     g_vars.qa_revision = qv
     '''
 
+    # abort criteria
+    isAbort=False
+    abortStr=''
+    if len( qaConf.getOpt('PROJECT') ) == 0:
+        isAbort=True
+        abortStr='PROJECT'
+    elif len( qaConf.getOpt('PROJECT_DATA') ) == 0:
+        if len( qaConf.dOpts['SELECT_PATH_LIST'] ) == 0:
+            isAbort=True
+            abortStr='PROJECT_DATA or explicit filename'
+
+    if isAbort:
+        print abortStr + ' was not defined.'
+        print ' Did you miss to provide any of the sufficient options,'
+        print ' e.g. -f task-file, QA_CONF, -P PROJECT + filename?'
+        sys.exit(1)
+
     # table path and copy of tables for operational runs
     init_tables(g_vars, qaConf)
 
@@ -366,29 +381,40 @@ def run_install(qaConf):
     p = os.path.join(qaConf.qa_src, 'install')
     p_args=[]
 
+    is_force=False
+    x_install=[]
+    if qaConf.isOpt('INSTALL'):
+        install = qaConf.getOpt('INSTALL')
+        x_install = install.split(',')
+
+    # works for both comma and blank separation, e.g.: "arg0 arg1,arg2"
+    # note that '--' is stripped in qa_config.commandLineOpts()
+    x_i0=qaConf.getOpt("INSTALL").split(',')
+    for x_i in x_i0:
+        x_install = x_i.split(' ')
+
+    if 'force' in x_install or qaConf.isOpt('FORCE'):
+        is_force=True
+        qa_util.add_unique('force', p_args)
+
     # from ~/.qa-dkrz/config.txt
     if qaConf.isOpt("UPDATE"):
         up=qaConf.getOpt("UPDATE")
         if up == 'frozen':
-            if qaConf.isOpt('FORCE'):
+            if qaConf.isOpt('UNFREEZE'):
                 update = 'up'
-                qa_util.add_unique('post-freeze', p_args)
-            else:
+            elif not ( is_force or 'ship' in install):
                 return  # still frozen
         elif up[0:4] == 'auto' or up == 'daily':
             update='up'
-        elif up[0:6] == 'enable':
+        elif up[0:6] == 'enable':  # conversion of former usage
             update='daily'
 
     else:
         # convert because of a missing UPDATE in the config-file
         update='up'
-        if not qaConf.isOpt('FORCE'):
-            qa_util.add_unique('force', p_args)
-            qa_util.add_unique('post-freeze', p_args)
-
-    if qaConf.isOpt('FORCE'):
-        qa_util.add_unique('force', p_args)
+        if not is_force:
+            qa_util.add_unique('freeze', p_args)
 
     # from the command-line by --up
     if qaConf.isOpt("CMD_UPDATE"):
@@ -398,77 +424,84 @@ def run_install(qaConf):
         else:
             update = 'up'
 
-    # from the command-line within install=str
+    # from the command-line within install=str, already split
     if qaConf.isOpt("INSTALL"):
-        # works for both comma and blank separation, e.g.: "arg0 arg1,arg2"
-        # note that '--' are stripped in qa_config.commandLineOpts()
-        x_cs=qaConf.getOpt("INSTALL").split(',')
-
-        for x_c in x_cs:
-            x_bcs = x_c.split(' ')
-
-            for x_bc in x_bcs:
-                if x_bc[0:2] == 'up' or x_bc[0:2] == 'UP':
-                    x_u = update.split('=')
-                    if len(x_u) == 1:
-                        if len(update) == 0:
-                            update='up'
-                    else:
-                        update = x_u[1]
+        for x_i in x_install:
+            if x_i[0:2] == '--':
+                x_i=x_i[2:]
+            if x_i.lower() == 'up':
+                x_u = update.split('=')
+                if len(x_u) == 1:
+                    update='up'
                 else:
-                    qa_util.add_unique(x_bc, p_args)
+                    update = x_u[1]
+            else:
+                qa_util.add_unique(x_i, p_args)
 
     if qaConf.isOpt("QA_TABLES"):
-        p_args.append( 'qa_tables=' + qaConf.getOpt("QA_TABLES") )
-    else:
-        update='up'
-        qa_util.add_unique('post-freeze', p_args)
+        qa_util.add_unique('qa_tables=' + qaConf.getOpt("QA_TABLES"), p_args )
+    # else: solved in qa_config.run()
 
     if update == 'up':
         qa_util.add_unique(update, p_args)
-    else:
+    elif len(update):
         qa_util.add_unique('up=' + update, p_args)
 
     if len(update) or len(p_args):
         if qaConf.isOpt("FREEZE"):
-            if not 'post-freeze' in p_args:
-                qa_util.add_unique('post-freeze', p_args)
-    elif qaConf.isOpt("FREEZE"):
-        qa_util.add_unique('freeze', p_args)
+            qa_util.add_unique('freeze', p_args)
+
+    if qaConf.isOpt("FREEZE"):
+      qa_util.add_unique('freeze', p_args)
 
     if len(p_args) == 0:
         return
 
-    for pa in p_args:
-        p += ' --' + pa
-
     if qaConf.isOpt("PROJECT"):
-        prj = qaConf.getOpt("PROJECT")
-    else:
-        # default
-        prj = "CORDEX"
-        qaConf.addOpt("PROJECT", prj)
+        qa_util.add_unique(qaConf.getOpt("PROJECT"), p_args)
 
-    if qaConf.isOpt("DEBUG_INSTALL"):
-        p += ' --debug=/hdh/hdh/QA-DKRZ/test/bsdf'
+    #firstly, options
+    isHelp=False
+    for pa in p_args:
+        if len(pa):
+            if pa == 'install':
+                continue
+            elif pa == '-h' or pa == 'help':
+                isHelp=True
+            elif not pa.upper() in qaConf.prjs_avail:
+                if pa[0] == '-' and pa[1] != '-':
+                    p += ' ' + pa  # preserve short options
+                else:
+                    p += ' --' + pa
 
-    p += ' ' + prj
+    # followed by projects
+    for pa in p_args:
+        if len(pa):
+            if pa.upper() in qaConf.prjs_avail:
+                p += ' ' + pa
 
     # checksum of the current qa_dkrz.py
     # list of python scripts
-    (p5, f) = os.path.split(sys.argv[0])
-    md5_0 = qa_util.get_md5sum( glob.glob(p5 + '/*.py'))
+    if not isHelp:
+        (p5, f) = os.path.split(sys.argv[0])
+        md5_0 = qa_util.get_md5sum( glob.glob(p5 + '/*.py'))
 
     try:
         subprocess.check_call(p, shell=True)
-    except:
+    except subprocess.CalledProcessError as e:
+        if e.returncode == 41:
+            sys.exit(41)
+
         print '\ncould not run install.'
-        sys.exit(41)
+        sys.exit(1)
 
     md5_1 = qa_util.get_md5sum( glob.glob(p5 + '/*.py'))
 
     if md5_0 != md5_1:
         print '\nat least one of the py scripts was updated; please, restart.'
+        sys.exit(1)
+
+    if 'ship' in p_args or 'unship' in p_args:
         sys.exit(1)
 
     return
