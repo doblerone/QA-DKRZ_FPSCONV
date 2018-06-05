@@ -3244,7 +3244,7 @@ CF::timeUnitsFormat(Variable& var, bool isAnnot)
       {
         if( notes->inq(bKey + "44b", var.name) )
         {
-          (void) notes->operate(capt0+capt[i], text[i]+hdhC::tf_val(var.units)) ;
+          (void) notes->operate(capt0+capt[i], text[i]) ;
           notes->setCheckStatus( n_CF, fail );
         }
       }
@@ -3343,6 +3343,7 @@ CF::timeUnitsFormat_date(Variable& var, std::string item,
     ++countNo;
 
   size_t countItems=0;
+  bool isInvalidValue=false;
 
   for( size_t j=0 ; j < x_item.size() ; ++j )
   {
@@ -3358,9 +3359,19 @@ CF::timeUnitsFormat_date(Variable& var, std::string item,
           ++countItems;
         else
           ++countNo;
+
+        if( j && num == 0 )
+            isInvalidValue=true;
     }
     else
       ++countNo;
+  }
+
+  if( isInvalidValue )
+  {
+    capt.push_back("Invalid date, expected yyyy-mm-dd") ;
+    text.push_back("Found " + hdhC::tf_val(item));
+    return false;
   }
 
   // decision whether a date or not
@@ -3373,7 +3384,7 @@ CF::timeUnitsFormat_date(Variable& var, std::string item,
     capt.push_back("The date item should be separated by");
     capt.back() += hdhC::tf_val("-");
     text.push_back("Found ");
-    text.back() += hdhC::tf_val(":") + " in";
+    text.back() += hdhC::tf_val(":");
   }
 
   if( countItems == 3 && !isBC )
@@ -3390,7 +3401,7 @@ CF::timeUnitsFormat_date(Variable& var, std::string item,
   if( countItems < 3 )
   {
     capt.push_back("Invalid date, expected yyyy-mm-dd") ;
-    text.push_back("Found " + hdhC::tf_val(item) + " in ");
+    text.push_back("Found " + hdhC::tf_val(item));
   }
 
   return true;
@@ -4728,20 +4739,43 @@ CF::chap33(void)
         bool ordCase = cmpUnits( var.units, var.snTableEntry.canonical_units) ;
         bool spcCase = var.snTableEntry.remainder == n_number_of_observations ;
         bool dimlessZ=false;
+
         if( var.units == "level" && var.snTableEntry.canonical_units == "1" )
            dimlessZ = true;
 
+
         if( !ordCase && !spcCase && !dimlessZ )
         {
-          if( notes->inq(bKey + "33e", var.name) )
-          {
-            std::string capt(hdhC::tf_att(var.name, n_units, var.units));
-            capt += "is not CF compatible with " ;
-            capt += hdhC::tf_assign(n_standard_name, var.snTableEntry.std_name) ;
+           if( var.snTableEntry.canonical_units == "s" )
+           {
+               Split x_units(var.units) ;
+               if( x_units.size() > 2
+                      && ! hdhC::isDigit(x_units[0])
+                         && ! hdhC::isDigit(x_units[1]) )
+               {
+                  std::vector<std::string> capt;
+                  std::vector<std::string> text;
+                  if( ! timeUnitsFormat_date(var, x_units[2], capt, text, false) )
+                  {
+                     std::string capt0(hdhC::tf_att(var.name, n_units, hdhC::colon)) ;
+                     if( notes->inq(bKey + "44b", var.name) )
+                     {
+                        (void) notes->operate(capt0+capt[0]+". "+text[0]) ;
+                        notes->setCheckStatus( n_CF, fail );
+                    }
+                  }
+               }
+           }
 
-            (void) notes->operate(capt) ;
-            notes->setCheckStatus( n_CF, fail );
-          }
+           else if( notes->inq(bKey + "33e", var.name) )
+           {
+             std::string capt(hdhC::tf_att(var.name, n_units, var.units));
+             capt += "is not CF compatible with " ;
+             capt += hdhC::tf_assign(n_standard_name, var.snTableEntry.std_name) ;
+
+             (void) notes->operate(capt) ;
+             notes->setCheckStatus( n_CF, fail );
+           }
         }
 
         if(spcCase && var.units.size() && var.units != "1" )
