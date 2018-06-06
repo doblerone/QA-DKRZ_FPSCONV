@@ -3149,45 +3149,45 @@ CF::timeUnitsFormat(Variable& var, bool isAnnot)
     {
       if( timeUnitsFormat_key(x_units[itm], capt, text) )
       {
-        tryKey=false;
         seq[itm]=itm;
 
         if( prevSz == text.size() )
           isInvalidKey=false;
       }
+      tryKey=false;
     }
     else if( tryDate )
     {
       if( timeUnitsFormat_date(var, x_units[itm], capt, text, isAnnot) )
       {
-        tryDate=false;
         seq[itm]=itm;
 
         if( prevSz == text.size() )
           isInvalidDate=false;
       }
+      tryDate=false;
     }
     else if( tryTime )
     {
       if( timeUnitsFormat_time(x_units[itm], capt, text) )
       {
-        tryTime=false;
         seq[itm]=itm;
 
         if( prevSz < text.size() )
           isInvalidTime=true;
       }
+      tryTime=false;
     }
     else if( tryTZ )
     {
       if( timeUnitsFormat_TZ(x_units[itm], capt, text) )
       {
-        tryTZ=false;
         seq[itm]=itm;
 
         if( prevSz < text.size() )
           isInvalidTZ=true;
       }
+      tryTZ=false;
     }
   }
 
@@ -3369,8 +3369,9 @@ CF::timeUnitsFormat_date(Variable& var, std::string item,
 
   if( isInvalidValue )
   {
-    capt.push_back("Invalid date, expected yyyy-mm-dd") ;
-    text.push_back("Found " + hdhC::tf_val(item));
+    capt.push_back("Invalid date, expected yyyy-mm-dd, found ") ;
+    capt.back() += hdhC::tf_val(item);
+    text.push_back("");
     return false;
   }
 
@@ -3383,8 +3384,9 @@ CF::timeUnitsFormat_date(Variable& var, std::string item,
   {
     capt.push_back("The date item should be separated by");
     capt.back() += hdhC::tf_val("-");
-    text.push_back("Found ");
-    text.back() += hdhC::tf_val(":");
+    capt.back() += "Found " ;
+    capt.back() += hdhC::tf_val(":");
+    text.push_back("");
   }
 
   if( countItems == 3 && !isBC )
@@ -3400,8 +3402,9 @@ CF::timeUnitsFormat_date(Variable& var, std::string item,
 
   if( countItems < 3 )
   {
-    capt.push_back("Invalid date, expected yyyy-mm-dd") ;
-    text.push_back("Found " + hdhC::tf_val(item));
+    capt.push_back("Invalid date, expected yyyy-mm-dd, found ") ;
+    capt.back() += hdhC::tf_val(item);
+    text.push_back("");
   }
 
   return true;
@@ -4753,17 +4756,7 @@ CF::chap33(void)
                       && ! hdhC::isDigit(x_units[0])
                          && ! hdhC::isDigit(x_units[1]) )
                {
-                  std::vector<std::string> capt;
-                  std::vector<std::string> text;
-                  if( ! timeUnitsFormat_date(var, x_units[2], capt, text, false) )
-                  {
-                     std::string capt0(hdhC::tf_att(var.name, n_units, hdhC::colon)) ;
-                     if( notes->inq(bKey + "44b", var.name) )
-                     {
-                        (void) notes->operate(capt0+capt[0]+". "+text[0]) ;
-                        notes->setCheckStatus( n_CF, fail );
-                    }
-                  }
+                  ;  // the date is tested elsewhere
                }
            }
 
