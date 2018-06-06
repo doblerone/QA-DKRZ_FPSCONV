@@ -5068,8 +5068,9 @@ tryCom()
 tr_option()
 {
   local line="${!1}"
-  local i pref
+  local i pref name value
 
+  # only parameter of -e, -E is processed
   test ${line:0:1} != '-' -a ! \( "${2}" = '-E' -o "${2}" = '-e' \) && return
 
   for(( i=0 ; i < ${#line} ; ++i )) ; do
@@ -5081,28 +5082,44 @@ tr_option()
     fi
   done
 
-  local sz
-  sz=${#line}
+  local name value x_line
+  declare -a x_line
+  x_line=( ${line/=/ } )
 
-  for((i=0 ; i < sz ; ++i )) ; do
-    test "${line:i:1}" = '=' && break
-  done
+  name=
+  value=
+  if [ ${#x_line[*]} -gt 1 ] ; then
+      name="${x_line[0]/% /}"
+      value="=${x_line[1]/% /}"
 
-  if [ ${i} -eq ${sz} ] ; then
-    if [ ${i} -gt 1 ] ; then
-      line=$( echo "${line/% /}" | tr "[:lower:]" "[:upper:]" )
-      line=$( echo "${line}" | tr "-" "_" )
-    fi
+      name=$( echo "${name/% /}" | tr "[:lower:]" "[:upper:]" )
+      name=$( echo "${name}" | tr "-" "_" )
+      name=${name//QC/QA}
   else
-    local tmp0="${line:0:i}"
-    tmp0="${tmp0//QC/QA}"
-    tmp0=$( echo "${tmp0/% /}" | tr "[:lower:]" "[:upper:]" )
-    tmp0=$( echo "${tmp0}" | tr "-" "_" )
-    line="${tmp0}""${line:i}"
+      value=${x_line[0]}
   fi
 
-  #test "${pref}" = '--' && pref=
-  eval ${1}=\${pref}\${line}
+#  local sz
+#  sz=${#line}
+
+#  for((i=0 ; i < sz ; ++i )) ; do
+#    test "${line:i:1}" = '=' && break
+#  done
+
+#  if [ ${i} -eq ${sz} ] ; then
+#    if [ ${i} -gt 1 ] ; then
+#      line=$( echo "${line/% /}" | tr "[:lower:]" "[:upper:]" )
+#      line=$( echo "${line}" | tr "-" "_" )
+#    fi
+#  else
+#    local tmp0="${line:0:i}"
+#    tmp0="${tmp0//QC/QA}"
+#    tmp0=$( echo "${tmp0/% /}" | tr "[:lower:]" "[:upper:]" )
+#    tmp0=$( echo "${tmp0}" | tr "-" "_" )
+#    line="${tmp0}""${line:i}"
+#  fi
+
+  eval ${1}=\${pref}\${name}\${value}
 
   return
 }
