@@ -78,7 +78,7 @@ descript()
 freeze()
 {
     if [ ${UPDATE} ] ; then
-       if [ ${UPDATE} != "${CFG_UPDATE} ] ; then
+       if [ ${UPDATE} != "${CFG_UPDATE}" ] ; then
           if [ ${isForce} ] ; then
              . $QA_SRC/scripts/parseConfigFile UPDATE=${UPDATE}
           elif [ "${CFG_UPDATE}" != frozen ] ; then
