@@ -403,7 +403,7 @@ def run_install(qaConf):
         if up == 'frozen':
             if qaConf.isOpt('UNFREEZE'):
                 update = 'up'
-            elif not ( is_force or 'ship' in install):
+            elif not ( is_force or 'ship' in x_install):
                 return  # still frozen
         elif up[0:4] == 'auto' or up == 'daily':
             update='up'
