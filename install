@@ -77,7 +77,22 @@ descript()
 
 freeze()
 {
-    test "${CFG_UPDATE}" != frozen && . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
+    if [ ${UPDATE} ] ; then
+       if [ ${UPDATE} != "${CFG_UPDATE} ] ; then
+          if [ ${isForce} ] ; then
+             . $QA_SRC/scripts/parseConfigFile UPDATE=${UPDATE}
+          elif [ "${CFG_UPDATE}" != frozen ] ; then
+             . $QA_SRC/scripts/parseConfigFile UPDATE=${UPDATE}
+          fi
+       fi
+    else
+       test ${isForce} && . $QA_SRC/scripts/parseConfigFile UPDATE=frozen
+    fi
+
+    test ${isForce} && return
+    test "${CFG_UPDATE}" != frozen && return
+    test "${UPDATE}" != freeze && return
+
     exit 0
 }
 
@@ -621,6 +636,7 @@ fi
 if ! . ${QA_SRC}/scripts/parseConfigFile UPDATE ; then
   # after the first installation or when UPDATE is missing
   isFreeze=t
+  isForce=t
 fi
 
 CFG_UPDATE=$UPDATE
@@ -862,7 +878,7 @@ else
   pcks=
 fi
 
-test ${isFreeze} && freeze  # and exit
+freeze
 
 if [ ${#projects[*]} -eq 0 ] ; then
    echo "$0 ${initialArgs[*]}:  at least one PROJECT name is required"
