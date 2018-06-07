@@ -4517,6 +4517,8 @@ CF::chap261(void)
       (void) notes->operate(capt) ;
       notes->setCheckStatus( n_CF, fail );
     }
+
+    return false;  // no more checks
   }
 
   Split x_glob_cf(glob_cf, ",; ", true);
