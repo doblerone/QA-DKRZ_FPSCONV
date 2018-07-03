@@ -46,14 +46,14 @@ DRS_CV::checkFilename(std::string& fName, struct DRS_CV_Table& drs_cv_table)
 
   std::string frq = pQA->qaExp.getFrequency();
 
-  if( testPeriod(x_filename) && frq.size() && frq != "fx" )
+  if( pQA->qaTime.testPeriod(x_filename) && frq.size() && frq != "fx" )
   {
     // no period in the filename
     std::string key("1_6a");
 
     if( notes->inq( key, pQA->fileStr) )
     {
-      std::string capt("filename requires a period") ;
+      std::string capt("filename requires a time_stamp") ;
 
       (void) notes->operate(capt) ;
       notes->setCheckStatus(drsF, pQA->n_fail);
@@ -909,9 +909,8 @@ DRS_CV::findPath_faults(Split& drs, Split& x_e,
             continue;
         }
 
-        text += " failed for " + hdhC::tf_val(x_e[j]) ;
-        text += ", found in path " + hdhC::tf_val(drs[i]) ;
-        text += " and global " + hdhC::tf_att(hdhC::empty,cvMap[x_e[j]],t) ;
+        text += " failed for " + hdhC::tf_assign(x_e[j],t) ;
+        text += ", found" + hdhC::tf_val(drs[i]) + " in the path" ;
       }
 
       break;
@@ -946,47 +945,63 @@ DRS_CV::getEnsembleMember(void)
   return ensembleMember ;
 }
 
+std::string
+DRS_CV::getInstantAtt(void)
+{
+//  if( pQA->qaExp.getFrequency() == "6hr" )
+//    return true;
+
+  size_t i;
+  for( i=0; i < pQA->qaExp.varMeDa.size() ; ++i )
+    if( pQA->qaExp.varMeDa[i].attMap[pQA->n_cell_methods].size()
+          && pQA->qaExp.varMeDa[i].attMap[pQA->n_cell_methods] != "time: point" )
+        break;
+
+  if( i == pQA->qaExp.varMeDa.size() )
+      return "";
+  else
+      return hdhC::tf_att(pQA->qaExp.varMeDa[i].var->name,
+                  pQA->qaExp.varMeDa[i].attMap[pQA->n_cell_methods] ) ;
+}
+
 int
 DRS_CV::getPathBegIndex(
     Split& drs, Split& x_e,
     std::map<std::string, std::string>& gM )
 {
   int ix=-1;
-  std::string sU;
-  bool isActivity; // applied case-insensivity
+
+  // find the first match of a drs item with one of the gMs
+  std::vector<std::string> val;
+  for( size_t i=0 ; i < x_e.size() ; ++i)
+      val.push_back(gM[ x_e[i] ]) ;
 
   for( size_t i=0 ; i < drs.size() ; ++i)
   {
     std::string s(drs[i]);
+    std::string sU = hdhC::Upper()(s);
 
-    for( size_t j=0 ; j < x_e.size() ; ++j)
+    bool is=false;
+
+    if( hdhC::isAmong(s, val) )
+       is=true ;
+    else if( hdhC::isAmong(sU, val) )
+       is=true ;
+
+    if(is)
     {
-      if( x_e[j] == CMOR::n_activity )
-      {
-        isActivity=true;
-        sU = hdhC::Upper()(s);
-      }
-      else
-        isActivity=false;
-
-      if( s == gM[ x_e[j] ] || sU == gM[ x_e[j] ] )
-      {
         ix = static_cast<int>(i);
-
-        // the match could be a leading false one, requested is the last one
-        for( ++i ; i < drs.size() ; ++i)
+        // the match could be a leading false one, requested is the last one, so
+        // search another one.
+        for( size_t j=i+1 ; j < drs.size() ; ++j)
         {
-          s = drs[i];
+            std::string tU = hdhC::Upper()(drs[j]);
 
-          if(isActivity)
-            s = hdhC::Upper()(s);
-
-          if( s == gM[ x_e[j] ]  )
-            ix = static_cast<int>(i);
+            if( tU == sU )
+                ix = static_cast<int>(j);
         }
 
-        return ix;
-      }
+        break;
     }
   }
 
@@ -1034,531 +1049,6 @@ DRS_CV::run(void)
   return;
 }
 
-bool
-DRS_CV::testPeriod(Split& x_f)
-{
-  // return true, if a file is supposed to be not complete.
-  // return false, a) if there is no period in the filename
-  //               b) if an error was found
-  //               c) times of period and file match
-
-  // The time value given in the first/last record is assumed to be
-  // in the range of the period of the file, if there is any.
-
-  // If the first/last date in the filename period and the
-  // first/last time value match within the uncertainty of the
-  // time-step, then the file is complete.
-  // If the end of the period exceeds the time data figure,
-  // then the nc-file is considered to be not completely processed.
-
-  // Does the filename have a trailing date range?
-  std::vector<std::string> sd;
-  sd.push_back( "" );
-  sd.push_back( "" );
-
-  // is it formatted as expected?
-  if( testPeriodFormat(x_f, sd) )
-    return true;
-
-  // now that we have found two candidates for a date
-  // compose ISO-8601 strings
-  std::vector<Date> period;
-  pQA->qaTime.getDRSformattedDateRange(period, sd);
-
-  // necessary for validity (not sufficient)
-  if( period[0] > period[1] )
-  {
-     std::string key("1_6c");
-     if( notes->inq( key, pQA->fileStr) )
-     {
-       std::string capt("invalid period in the filename, found ");
-       capt += hdhC::tf_val(sd[0] + "-" + sd[1]);
-
-       (void) notes->operate(capt) ;
-       notes->setCheckStatus(drsF, pQA->n_fail );
-     }
-
-     return false;
-  }
-
-  Date* pDates[6];
-  pDates[0] = &period[0];  // StartTime in the filename
-  pDates[1] = &period[1];  // EndTime in the filename
-
-  // index 2: date of first time value
-  // index 3: date of last  time value
-  // index 4: date of first time-bound value, if available; else 0
-  // index 5: date of last  time-bound value, if available; else 0
-
-  for( size_t i=2 ; i < 6 ; ++i )
-    pDates[i] = 0 ;
-
-  if( pQA->qaTime.isTimeBounds)
-  {
-    pDates[4] = new Date(pQA->qaTime.refDate);
-    if( pQA->qaTime.firstTimeBoundsValue[0] != 0 )
-      pDates[4]->addTime(pQA->qaTime.firstTimeBoundsValue[0]);
-
-    pDates[5] = new Date(pQA->qaTime.refDate);
-    if( pQA->qaTime.lastTimeBoundsValue[1] != 0 )
-      pDates[5]->addTime(pQA->qaTime.lastTimeBoundsValue[1]);
-  }
-  else
-  {
-    if( pQA->qaTime.time_ix > -1 &&
-        ! pQA->pIn->variable[pQA->qaTime.time_ix].isInstant )
-    {
-      if( !isInstantTime() )
-      {
-        std::string tb_name(pQA->qaTime.getBoundsName());
-
-        if( ! notes->findAnnotation("6_15", tb_name) )
-        {
-          std::string key("3_8");
-
-          if( notes->inq( key, tb_name ) )
-          {
-            std::string capt(hdhC::tf_var("time_bnds"));
-            capt += "is missing" ;
-
-            (void) notes->operate(capt) ;
-            notes->setCheckStatus(drsF, pQA->n_fail);
-          }
-        }
-      }
-    }
-  }
-
-  pDates[2] = new Date(pQA->qaTime.refDate);
-  if( pQA->qaTime.firstTimeValue != 0. )
-    pDates[2]->addTime(pQA->qaTime.firstTimeValue);
-
-  pDates[3] = new Date(pQA->qaTime.refDate);
-  if( pQA->qaTime.lastTimeValue != 0. )
-    pDates[3]->addTime(pQA->qaTime.lastTimeValue);
-
-  // Alignment of of contained dates and those in the filename.
-  // The boolean indicate faults,
-  // bool is_t_beg = is_t_end = is_tb_beg = is_tb_end = false;
-  bool isFault[4];
-  for(size_t i=0 ; i < 4 ; ++i )
-    isFault[i]=false;
-
-  // time value: left-side
-  Date myDate( *pDates[2] );
-  myDate.addTime(-pQA->qaTime.refTimeStep);
-  isFault[0] = myDate == *pDates[0] ;
-
-  // time value: right-side
-  myDate = *pDates[3] ;
-  myDate.addTime(pQA->qaTime.refTimeStep);
-  isFault[1] = myDate ==*pDates[1] ;
-
-  if(pQA->qaTime.isTimeBounds)
-  {
-    // time_bounds: left-side
-    myDate = *pDates[4] ;
-    myDate.addTime(pQA->qaTime.refTimeStep);
-    isFault[2] = myDate == *pDates[0] ;
-
-    // time_bounds: right-side
-    myDate = *pDates[5] ;
-    myDate.addTime(-pQA->qaTime.refTimeStep);
-    isFault[3] = myDate == *pDates[1] ;
-  }
-
-  // the annotations
-  if( testPeriodAlignment(sd, pDates, isFault) )
-  {
-    std::string key("1_6g");
-
-    if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
-    {
-      std::string capt("Warn: Filename's period: No time_bounds, ");
-      capt += "StartTime-EndTime rounded to time values";
-
-      (void) notes->operate(capt) ;
-      notes->setCheckStatus(drsF, pQA->n_fail );
-    }
-  }
-  else if( testPeriodDatesFormat(sd) ) // format of period dates.
-  {
-    // period requires a cut specific to the various frequencies.
-    testPeriodPrecision(sd) ;
-  }
-
-  // note that indices 0 and 1 belong to a vector
-  for(size_t i=2 ; i < 6 ; ++i )
-    if( pDates[i] )
-      delete pDates[i];
-
-  // complete
-  return false;
-}
-
-bool
-DRS_CV::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates, bool b[])
-{
-  // some pecularities of CMOR, which will probably not be modified
-  // for a behaviour as expected.
-  // The CORDEX Archive Design doc states in Appendix C:
-  // "..., for using CMOR, the StartTime-EndTime element [in the filename]
-  //  is based on the first and last time value included in the file ..."
-
-  // if a test for a CMOR setting fails, testing goes on
-  if( *pDates[0] == *pDates[2] && *pDates[1] == *pDates[3] )
-      return true;
-
-  for(size_t i=0 ; i < 2 ; ++i)
-  {
-    // i == 0: left; 1: right
-
-    // skip for the mode of checking during production
-    if( i && !pQA->isFileComplete )
-       continue;
-
-    if( !( !b[0+i] || !b[2+i] ) )
-    {
-      std::string key("1_6f");
-      if( notes->inq( key, pQA->fileStr) )
-      {
-        std::string token;
-
-        std::string capt("Misaligned ");
-        if( i == 0 )
-          capt += "begin" ;
-        else
-          capt += "end" ;
-        capt += " of periods in filename and ";
-
-        size_t ix;
-
-        if( pQA->qaTime.isTimeBounds )
-        {
-          capt="time bounds: ";
-          ix = 4 + i ;
-        }
-        else
-        {
-          capt="time values: ";
-          ix = 2 + i ;
-        }
-
-        capt += sd[i] ;
-        capt += " vs. " ;
-        capt += pDates[ix]->str();
-
-        (void) notes->operate(capt) ;
-        notes->setCheckStatus(drsF, pQA->n_fail );
-      }
-    }
-  }
-
-  return false;
-}
-
-void
-DRS_CV::testPeriodPrecision(std::vector<std::string>& sd)
-{
-  // Partitioning of files check are equivalent.
-  // Note that the format was tested before.
-  // Note that desplaced start/end points, e.g. '02' for monthly data, would
-  // lead to a wrong cut.
-
-  std::string text;
-
-  if( sd[0].size() != sd[1].size() )
-  {
-    std::string key("1_6e");
-    std::string capt("period in the filename:") ;
-    capt += " Start- and EndTime of different size" ;
-
-    (void) notes->operate(capt + text) ;
-    notes->setCheckStatus(drsF, pQA->n_fail );
-    return;
-  }
-
-  int len ;
-
-  size_t sz = QA_Exp::MIP_tableNames.size() ;
-  size_t i;
-  for( i=0 ; i < sz ; ++i )
-  {
-     if( QA::tableID == QA_Exp::MIP_tableNames[i] )
-     {
-        len = QA_Exp::MIP_FNameTimeSz[i] ;
-        break;
-     }
-  }
-
-  if( len == -1 || i == sz )
-     return;
-
-  int len_sd = sd[0].size() ;
-
-  // a) yyyy
-  if( len_sd == 4 && len_sd != len )
-      text = ", expected yyyy, found " + sd[0] + "-" + sd[1] ;
-
-  // b) ...mon, aero, Oclim, and cfOff
-  else if( len_sd == 6 && len_sd != len )
-      text = ", expected YYYYMM, found " + sd[0] + "-" + sd[1] ;
-
-  // c) Aday, day, cfDay
-  else if( len_sd == 8 && len_sd != len )
-      text = ", expected YYYYMMDD, found " + sd[0] + "-" + sd[1] ;
-
-    // d) x-hr
-  else if( len_sd == 10 && len_sd != len )
-      text = ", expected YYYYMMDDhh, found " + sd[0] + "-" + sd[1] ;
-
-  // e) cfSites
-  else if( len_sd == 12 && len_sd != len )
-      text = ", expected YYYYMMDDhhmm, found " + sd[0] + "-" + sd[1] ;
-
-  else if( len_sd == 14 && len_sd != len )
-      text = ", expected YYYYMMDDhhmmss, found " + sd[0] + "-" + sd[1] ;
-
-  if( text.size() )
-  {
-    std::string key("1_6d");
-    std::string capt("period in the filename with wrong precision") ;
-
-    if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
-    {
-      (void) notes->operate(capt + text) ;
-      notes->setCheckStatus(drsF, pQA->n_fail );
-    }
-  }
-
-  return;
-}
-
-bool
-DRS_CV::testPeriodDatesFormat(std::vector<std::string>& sd)
-{
-  // return: true means go on for testing the period cut
-  // partitioning of files
-  if( sd.size() != 2 )
-    return false;  // no period; is variable time invariant?
-
-  std::string frequency(pQA->qaExp.getFrequency());
-  std::string str;
-
-  if( frequency == "3hr" || frequency == "6hr" )
-  {
-      if( sd[0].size() != 10 || sd[1].size() != 10 )
-      {
-        str += "YYYYMMDDhh for ";
-        if( frequency == "3hr" )
-          str += "3";
-        else
-          str += "6";
-        str += "-hourly time step";
-      }
-  }
-  else if( frequency == "day" )
-  {
-      if( sd[0].size() != 8 || sd[1].size() != 8 )
-        str += "YYYYMMDD for daily time step";
-  }
-  else if( frequency == "mon" || frequency == "sem" )
-  {
-     if( sd[0].size() != 6 || sd[1].size() != 6 )
-     {
-        str += "YYYYMM for ";
-        if( frequency == "mon" )
-          str += "monthly";
-        else
-          str += "seasonal";
-        str += " data";
-     }
-  }
-
-  if( str.size() )
-  {
-    std::string key("1_6e");
-
-     if( notes->inq( key, pQA->fileStr) )
-     {
-        std::string capt("period in filename of incorrect format, found ");
-        capt += sd[0] + "-" +  sd[1];
-        capt += " expected " + str ;
-
-        (void) notes->operate(capt) ;
-        notes->setCheckStatus(drsF, pQA->n_fail );
-     }
-  }
-
-  return true;
-}
-
-bool
-DRS_CV::testPeriodFormat(Split& x_f, std::vector<std::string>& sd)
-{
-  int x_fSz=x_f.size();
-
-  if( ! x_fSz )
-    return true; // trapped before
-
-  // any geographic subset? Even with wrong separator '_'?
-  if( x_f[x_fSz-1].substr(0,2) == "g-" )
-    --x_fSz;
-  else if( x_f[x_fSz-1] == "g" )
-    --x_fSz;
-  else if( x_fSz > 1 && x_f[x_fSz-2].substr(0,2) == "g" )
-    x_fSz -= 2 ;
-
-  if( x_fSz < 1 )
-    return true;
-
-  if( x_f[x_fSz-1] == "clim" || x_f[x_fSz-1] == "ave" )
-  {
-    // Wrong separator for appendix clim or ave, found '_'
-    std::string key = "1_6b" ;
-    if( notes->inq( key, pQA->fileStr) )
-    {
-      std::string capt("Wrong separation of filename's period's appendix");
-      capt += hdhC::tf_val(x_f[x_fSz-1]);
-      capt += ", found underscore";
-
-      (void) notes->operate(capt) ;
-      notes->setCheckStatus(drsF, pQA->n_fail );
-    }
-
-    --x_fSz;
-  }
-
-  if( x_fSz < 1 )
-    return true;
-
-  Split x_last(x_f[x_fSz-1],'-') ;
-  int x_lastSz = x_last.size();
-
-  // minimum size of x_last could never be zero
-
-  // elimination of 'ave' or 'clim' separated by a dash
-  if( x_last[x_lastSz-1] == "clim" || x_last[x_lastSz-1] == "ave" )
-    --x_lastSz ;
-
-  bool isRegular=true;
-  if( x_lastSz == 2 )
-  {
-    // the regular case
-    std::vector<int> ix;
-    if( hdhC::isDigit(x_last[0]) )
-      sd[0]=x_last[0] ;
-    else
-    {
-      ix.push_back(0);
-      isRegular=false;
-    }
-
-    if( hdhC::isDigit(x_last[1]) )
-      sd[1]=x_last[1] ;
-    else
-    {
-      isRegular=false;
-      ix.push_back(1);
-    }
-
-    if( ix.size() == 2 )
-      return true;  // apparently not a period
-    else if( ix.size() == 1 )
-    {
-      // try for clim or ave without any separator with a wrong one
-      size_t pos;
-      std::string f(x_last[ix[0]]);
-      if( (pos=f.rfind("clim")) < std::string::npos
-             || (pos=f.rfind("ave")) < std::string::npos )
-      {
-        if( pos && hdhC::isDigit( f.substr(0, pos-1) ) )
-        {
-          if( ix[0] == 1 )
-            isRegular = true;
-
-          sd[ix[0]] = f.substr(0,pos-1) ;
-        }
-        else if( pos && hdhC::isDigit( f.substr(0,pos) ) )
-        {
-          if( ix[0] == 1 )
-            isRegular = true;
-
-          sd[ix[0]] = f.substr(0,pos) ;
-        }
-        else
-          isRegular=false;
-
-        if(ix.size())
-        {
-          // Wrong separator for appendix clim or ave, found '_'
-          std::string key("1_6b") ;
-          if( notes->inq( key, pQA->fileStr) )
-          {
-            std::string capt("Wrong separation of filename's period's appendix");
-            capt += hdhC::tf_val(x_last[ix[0]]);
-
-            (void) notes->operate(capt) ;
-            notes->setCheckStatus(drsF, pQA->n_fail );
-          }
-        }
-      }
-    }
-  }
-  else
-    isRegular=false;
-
-  if( ! isRegular )
-  {
-    std::string f;
-    if( sd[0].size() )
-      f = x_last[1];
-    else
-      f = x_last[0];
-
-    // could be a period with a wrong separator
-    std::string sep;
-    size_t pos=std::string::npos;
-
-    bool isSep=false;
-    for( size_t i=0 ; i < f.size() ; ++i )
-    {
-      if( !hdhC::isDigit(f[i]) )
-      {
-        if(isSep)
-          return true;  // not a wrong separator, just anything
-
-        isSep=true;
-        sep=f[i];
-        pos=i;
-      }
-    }
-
-    if( pos < std::string::npos )
-    {
-      sd[0]=f.substr(0, pos) ;
-      sd[1]=f.substr(pos+1) ;
-
-      // Wrong separator for appendix clim or ave, found '_'
-      std::string key("1_6b") ;
-      if( notes->inq( key, pQA->fileStr) )
-      {
-        std::string capt("Wrong separation of filename's period's dates");
-        capt += ", found ";
-        capt += hdhC::tf_val(sep);
-
-        (void) notes->operate(capt) ;
-        notes->setCheckStatus(drsF, pQA->n_fail );
-      }
-    }
-  }
-
-  // in case of something really nasty
-  if( !( hdhC::isDigit(sd[0]) && hdhC::isDigit(sd[1]) ) )
-    return true;
-
-  return false;
-}
 
 // class for comparing meta-data from the file to the
 // "CMIP5 Model Output Requirements", but global attributes

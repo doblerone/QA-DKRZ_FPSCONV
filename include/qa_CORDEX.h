@@ -58,20 +58,6 @@ struct DRS_CV
 
   void run(void);
 
-  //! Test the time-period of the input file.
-  /*! If the end-date in the filename and the last time value
-      match within the uncertainty of 0.75% of the time-step, then
-      the file is assumed to be completely qa-processed.
-      Syntax of date ranges as given in CORDEX  DRS Syntax.*/
-  bool   testPeriod(Split&);
-  bool   testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)  ;
-  void   testPeriodCut(std::vector<std::string> &sd) ;
-  bool   testPeriodCut_CMOR_isGOD(std::vector<std::string> &sd, Date**);
-  void   testPeriodCutRegular(std::vector<std::string> &sd,
-              std::vector<std::string>& text);
-  bool   testPeriodDatesFormat(std::vector<std::string> &sd) ;
-  bool   testPeriodFormat(Split&, std::vector<std::string> &sd) ;
-
   hdhC::FileSplit GCM_ModelnameTable;
   hdhC::FileSplit RCM_ModelnameTable;
 
@@ -402,6 +388,10 @@ class QA_Exp
   std::string n_cell_methods_opt;
   std::string n_positive;
   std::string n_tracking_id;
+
+  // a dummy
+  std::vector<std::string> MIP_tableNames;
+  std::vector<int>         MIP_FNameTimeSz;
 
   std::string getCaptIntroDim(VariableMetaData &vMD,
                    struct DimensionMetaData &nc_entry,

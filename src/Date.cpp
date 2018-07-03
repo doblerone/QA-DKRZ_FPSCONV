@@ -1378,51 +1378,62 @@ Date::julian2ModelDate( const Date::Julian &j,
   double *y, double *mo, double *d, double *h, double *mi, double *s )
 {
   double resid;
+  long double jd=j.jdn + j.time ;
+
   *mo = *d = 1.;
   *h = *mi = *s = 0.;
 
   if( currCalendarEnum == EQUAL_MONTHS )
   {
-     long double jd=j.jdn + j.time ;
-     // this kind of julian day starts at 0000-01-01T00:00:00
+     // this kind of julian day starts at 0000-00-00T00:00:00
      *y = static_cast<double>
-          (  static_cast<long long int> (jd / 360. ) ) ;
+          (  static_cast<long long int> (jd / 360. ) )  ;
 
-     resid = static_cast<double>( jd - *y*360. );
+     resid = static_cast<double>(jd - *y*360.) ;
+     *y += 1.;
+
      if( resid == 0. )
-     {
-       *y += 1.;
        return;
-     }
 
-     *mo = static_cast<double>( static_cast<int>(resid / 30.) ) ;
+     *mo = static_cast<double>( static_cast<int>(resid / 30.) )  ;
      resid -= *mo*30 ;
+     *mo += 1. ;
 
      *d = static_cast<double>( static_cast<int>(resid) ) ;
      resid -= *d ;
+     *d += 1.;
   }
   else
   {
     // explicitly: months and/or leap year and/or leap_month
     // For calender: NO_LEAP, ALL_LEAP, UNDEF and not provided
-    long double jd=j.jdn + j.time ;
-
     long double yrDays;
     if( currCalendarEnum == ALL_LEAP )
+    {
       yrDays = 366. ;
+      lY_is=false ;
+    }
+    else if( currCalendarEnum == NO_LEAP )
+    {
+      yrDays = 365. ;
+      lY_is=false ;
+    }
     else if( lY_is )
       yrDays = lY_yrDays + 0.25;
     else
+    {
       yrDays = 365. ;
+      lY_is=false ;
+    }
 
-    // this kind of julian day==0 starts at 0000-01-01T00:00:00
     *y = static_cast<double>
         (  static_cast<long long int> (jd / yrDays ) ) ;
 
-    resid = static_cast<double>( jd - *y*yrDays );
+    resid = static_cast<double>( jd - *y*yrDays ) ;
+    *y += 1.;
 
     if( resid == 0. )
-      return;
+        return;
 
     bool isCurrLY = false;
     if( lY_is )
@@ -1441,7 +1452,7 @@ Date::julian2ModelDate( const Date::Julian &j,
 
       if( tmp > resid )
       {
-         *mo = static_cast<double>(imon) ;
+         *mo = static_cast<double>(imon) ;  //the previous month is indicated by imon
          resid -= (tmp - cMon);
          *d=static_cast<double>( static_cast<int>(resid) ) ;
          resid -= *d;
@@ -1451,13 +1462,14 @@ Date::julian2ModelDate( const Date::Julian &j,
   }
 
   // day time
-  getDayTime(resid, h, mi, s);
+  if( resid > 0. )
+     getDayTime(resid, h, mi, s);
 
   // convert from numerical to date representation
   // y=1900, mo=11, d=30, h=24 <--> 1901-01-01 00:00:00
-  *y  += 1. ;
-  *mo += 1. ;
-  *d  += 1. ;
+  //*y  += 1. ;
+  //*mo += 1. ;
+  //*d  += 1. ;
 
   return ;
 }
@@ -1546,15 +1558,13 @@ Date::modelDate2Julian( double y, double mo, double d, double h,
        j.jdn += regularMonthDays[i] ;
    }
 
-   j.jdn += d;
 
-   j.time = ( h + mi/60. + s/3600.) / 24. ;
+   d += ( h + mi/60. + s/3600.) / 24. ;
+   int id = static_cast<int>(d) ;
+   d -= static_cast<double>(id) ;
 
-   if( j.time == 1. )
-   {
-      j.jdn += 1.;
-      j.time=0;
-   }
+   j.jdn += static_cast<double>(id) ;
+   j.time = d ;
 
    isDateSet=true;
 
@@ -1628,7 +1638,8 @@ Date::parseISO_8601(std::string str0)
   currMon = month;
   currDay = day;
 
-  getDayTime(hour, &currHr, &currMin, &currSec);
+  if( hour > 0. )
+     getDayTime(hour, &currHr, &currMin, &currSec);
 
   jul = date2Julian( year, month, day, hour);
   julian2Date(jul, &currYr, &currMon, &currDay, &currHr, &currMin, &currSec);

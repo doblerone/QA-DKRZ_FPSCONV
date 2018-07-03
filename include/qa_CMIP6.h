@@ -388,6 +388,7 @@ struct CMOR
   static std::string n_frequency;
   static std::string n_global;
   static std::string n_index_axis;
+  static std::string n_mip_era;
   static std::string n_long_name;
   static std::string n_outname;
   static std::string n_output;
@@ -430,6 +431,7 @@ std::string CMOR::n_forcing             ="forcing";
 std::string CMOR::n_frequency           ="frequency";
 std::string CMOR::n_global              ="global";
 std::string CMOR::n_index_axis          ="index_axis";
+std::string CMOR::n_mip_era             ="mip_era";
 std::string CMOR::n_long_name           ="long_name";
 std::string CMOR::n_output              ="output";
 std::string CMOR::n_output_dim_name     ="output_dimension_name";
@@ -482,17 +484,6 @@ struct DRS_CV
          getInstantAtt(void);
 
   void   run(void);
-
-    //! Test the time-period of the input file.
-  /*! If the end-date in the filename and the last time value
-      match within the uncertainty of 0.75% of the time-step, then
-      the file is assumed to be completely qa-processed.
-      Syntax of date ranges as given in CORDEX  DRS Syntax.*/
-  bool   testPeriod(Split&);
-  bool   testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)  ;
-  void   testPeriodPrecision(std::vector<std::string> &sd);
-  bool   testPeriodDatesFormat(std::vector<std::string> &sd) ;
-  bool   testPeriodFormat(Split&, std::vector<std::string> &sd) ;
 
   bool enabledCompletenessCheck;
 
@@ -636,8 +627,8 @@ public:
   std::string cfStndNames;
   std::string currMIP_tableName;
   std::string frequency;
-  static std::vector<std::string> MIP_tableNames;
-  static std::vector<int>         MIP_FNameTimeSz;
+  std::vector<std::string> MIP_tableNames;
+  std::vector<int>         MIP_FNameTimeSz;
 
   std::string experiment_id;
   std::string fVarname;

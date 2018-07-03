@@ -366,22 +366,13 @@ struct DRS_CV
 
   std::string
          getEnsembleMember(void);
+  std::string
+         getInstantAtt(void);
   int    getPathBegIndex( Split& drs, Split& x_e,
             std::map<std::string, std::string>& gM );
   bool   isInstantTime(void);
 
   void   run(void);
-
-    //! Test the time-period of the input file.
-  /*! If the end-date in the filename and the last time value
-      match within the uncertainty of 0.75% of the time-step, then
-      the file is assumed to be completely qa-processed.
-      Syntax of date ranges as given in CORDEX  DRS Syntax.*/
-  bool   testPeriod(Split&);
-  bool   testPeriodAlignment(std::vector<std::string> &sd, Date** pDates, bool b[])  ;
-  void   testPeriodPrecision(std::vector<std::string> &sd);
-  bool   testPeriodDatesFormat(std::vector<std::string> &sd) ;
-  bool   testPeriodFormat(Split&, std::vector<std::string> &sd) ;
 
   bool enabledCompletenessCheck;
 

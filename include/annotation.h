@@ -211,6 +211,7 @@ class Annotation : public IObj
   bool isMultipleTags;
   bool isDisplay;
   bool isOutputPASS;
+  bool isApply_MORE;
   bool isUseDefault;
 
   size_t      levelLimit;

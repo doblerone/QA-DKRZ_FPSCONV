@@ -329,7 +329,7 @@ QA_Time::init(std::vector<std::string>& optStr)
    // is time unlimited?
    if( isTime && ! pIn->nc.isDimUnlimitedGenuine() )
    {
-        std::string key("4_2");
+        std::string key("T_1");
         if( notes->inq( key, name) )
         {
             std::string capt("Warning: Dimension " + hdhC::tf_val(name));
@@ -351,7 +351,7 @@ QA_Time::init(std::vector<std::string>& optStr)
 
       if( timeBounds_ix == -1 )
       {
-        std::string key("13_15");
+        std::string key("T_2");
         if( notes->inq( key, name) )
         {
             std::string capt(hdhC::tf_var(boundsName));
@@ -650,7 +650,7 @@ QA_Time::initRelativeTime(std::string &units)
        {
           // empty equivalent to only _FillValue
           isTimeBounds=false;
-          std::string key("6_15");
+          std::string key("T_3");
 
           if( notes->inq( key, boundsName ) )
           {
@@ -920,7 +920,7 @@ QA_Time::initTimeTable(void)
 
      if( refDate.getDate(currTimeValue) < tt_dateRange[0] )
      { // error: time record out of range (before)
-       std::string key("6_4");
+       std::string key("T_4");
        if( notes->inq( key, name) )
        {
          std::string capt("time value before the first time-table range");
@@ -993,7 +993,7 @@ QA_Time::parseTimeTable(size_t rec)
 
      if( tt_count_recs > num )
      {  // issue an error flag; number of records too large
-        std::string key("6_7");
+        std::string key("T_5");
         if( notes->inq( key, name) )
         {
           std::string capt("too many time values compared to the time-table");
@@ -1034,10 +1034,10 @@ QA_Time::parseTimeTable(size_t rec)
 
      if( tt_index == tt_xmode.size() || t0 != tt_xmode[tt_index] )
      {
-       std::string key("6_6");
+       std::string key("T_6");
        if( notes->inq( key, name) )
        {
-         std::string capt("time record does not match time-table value");
+         std::string capt("time value does not match time_table value");
 
          std::string text("frequency=" + tt_id);
          text += "\nrec#=" + hdhC::double2String(rec);
@@ -1068,14 +1068,13 @@ QA_Time::parseTimeTable(size_t rec)
   {
     if( tt_index == tt_xmode.size() )
     { // error: not enough ranges or misplaced
-       std::string key("6_5");
+       std::string key("T_7");
        if( notes->inq( key, name) )
        {
-         std::string capt("time record after the last time-table range");
+         std::string capt("time record exceeds the time-table range");
 
          std::ostringstream ostr(std::ios::app);
-         ostr << "frequency=" << tt_id;
-         ostr << "\nrec#=" << rec;
+         ostr << "rec#=" << rec;
          ostr << "\ndate in record=" << refDate.getDate(currTimeValue).str() ;
          ostr << "\nrange from time-table="
               << tt_dateRange[0].str() << " - "
@@ -1460,6 +1459,1229 @@ QA_Time::testDate(NcAPI &nc)
   prevTimeValue=currTimeValue;
 
   return;
+}
+
+bool
+QA_Time::testPeriod(Split& x_f)
+{
+  // return true, if a file is supposed to be not complete.
+  // return false, a) if there is no period in the filename
+  //               b) if an error was found
+  //               c) times of period and file match
+
+  // The time value given in the first/last record is assumed to be
+  // in the range of the period of the file, if there is any.
+
+  // If the first/last date in the filename period and the
+  // first/last time value match within the uncertainty of the
+  // time-step, then the file is complete.
+  // If the end of the period exceeds the time data figure,
+  // then the nc-file is considered to be not completely processed.
+
+  // Does the filename have a trailing date range?
+  std::vector<std::string> sd;
+  sd.push_back( "" );
+  sd.push_back( "" );
+
+  // is it formatted as expected?
+  if( testPeriodFormat(x_f, sd) )
+    return true;
+
+  // now that we have found two candidates for a date
+  // compose ISO-8601 strings
+
+  Date* pDates[6];
+  // index 2: date of first time value
+  // index 3: date of last  time value
+  // index 4: date of first time-bound value, if available; else 0
+  // index 5: date of last  time-bound value, if available; else 0
+
+  pDates[0] = new Date() ;
+  pDates[1] = new Date() ;
+
+  pDates[0]->setFormattedDate();
+  pDates[0]->setDate(sd[0], refDate.getCalendar());
+
+  pDates[1]->setFormattedDate();
+  pDates[1]->setDate(sd[1], refDate.getCalendar());
+
+  // necessary for validity (not sufficient)
+  if( *(pDates[0]) != *(pDates[1]) && *(pDates[0]) > *(pDates[1]) )
+  {
+     std::string key("T_10a");
+     if( notes->inq( key, pQA->fileStr) )
+     {
+       std::string capt("Filename: invalid StartTime-EndTime");
+       std::string text("Found");
+       text += hdhC::tf_val(sd[0] + "-" + sd[1]);
+
+       (void) notes->operate(capt, text) ;
+       notes->setCheckStatus(pQA->drsF, pQA->n_fail );
+     }
+
+     return false;
+  }
+
+  for( size_t i=2 ; i < 6 ; ++i )
+     pDates[i] = 0 ;
+
+  pDates[2] = new Date(refDate);
+  if( firstTimeValue != 0. )
+    pDates[2]->addTime(firstTimeValue);
+
+  pDates[3] = new Date(refDate);
+  if( lastTimeValue != 0. )
+    pDates[3]->addTime(lastTimeValue);
+
+  if( isTimeBounds)
+  {
+    if( pQA->pIn->variable[time_ix].isInstant )
+    {
+        std::string tb_name(getBoundsName());
+
+        if( tb_name.size() )
+        {
+            std::string key("3_20");
+
+            if( notes->inq( key, tb_name ) )
+            {
+            std::string capt(hdhC::tf_var(tb_name));
+            capt += " is inconsistent with " ;
+            capt += pQA->getInstantAtt() ;
+
+            (void) notes->operate(capt) ;
+            notes->setCheckStatus(pQA->drsF, pQA->n_fail);
+            }
+        }
+    }
+    else
+    {
+        pDates[4] = new Date(refDate);
+        pDates[5] = new Date(refDate);
+
+        if( firstTimeValue != firstTimeBoundsValue[0] )
+           if( firstTimeBoundsValue[0] != 0 )
+             pDates[4]->addTime(firstTimeBoundsValue[0]);
+
+         // regular: filename Start/End time vs. TB 1st_min/last_max
+         if( lastTimeValue != lastTimeBoundsValue[1] )
+           if( lastTimeBoundsValue[1] != 0 )
+             pDates[5]->addTime(lastTimeBoundsValue[1]);
+
+         if( notes->inq( "T_8", getBoundsName() ) )
+         {
+           // disabled for all but CORDEX
+           double db_centre=(firstTimeBoundsValue[0]
+                             + firstTimeBoundsValue[1])/2. ;
+           if( ! hdhC::compare(db_centre, "=", firstTimeValue) )
+           {
+             std::string key("T_8");
+             if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+             {
+                std::string capt("Range of ");
+                capt += hdhC::tf_var("time_bnds") ;
+                capt += "is not centred around <time> value." ;
+
+                (void) notes->operate(capt) ;
+                notes->setCheckStatus("TIME", pQA->n_fail );
+             }
+           }
+         }
+    }
+  }
+  else if( ! pQA->pIn->variable[time_ix].isInstant )
+  {
+    std::string key("T_9");
+
+    if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+    {
+      std::string capt("Missing time_bounds");
+
+      (void) notes->operate(capt) ;
+      notes->setCheckStatus(pQA->drsF, pQA->n_fail );
+    }
+  }
+
+  std::vector<std::string> key0;
+  std::vector<std::string> capt0;
+  std::vector<std::string> text0;
+
+  std::vector<std::string> key1;
+  std::vector<std::string> capt1;
+  std::vector<std::string> text1;
+
+  if( ! testPeriod_regularBounds(sd, pDates, key0, capt0, text0) )
+  {
+    if( ! testPeriod_FN_with_centre(sd, pDates, key1, capt1, text1) )
+    {
+       for( size_t i=0 ; i < key0.size() ; ++i )
+       {
+          if( notes->inq( key0[i], pQA->qaExp.getVarnameFromFilename()) )
+          {
+             (void) notes->operate(capt0[i], text0[i]) ;
+             notes->setCheckStatus(pQA->drsF, pQA->n_fail );
+          }
+       }
+    }
+  }
+
+  // note that indices 0 and 1 belong to a vector
+  for(size_t i=0 ; i < 6 ; ++i )
+    if( pDates[i] )
+      delete pDates[i];
+
+  // complete
+  return false;
+}
+
+bool
+QA_Time::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates,
+  std::vector<std::string> &key, std::vector<std::string> &capt,
+  std::vector<std::string> &text)
+{
+  // return true for matching dates
+
+  // regular test: filename vs. time_bounds
+  if( pDates[4] && pDates[5] )
+    if( *pDates[0] == *pDates[4] && *pDates[1] == *pDates[5] )
+       return true;
+
+    // alignment of time bounds and period in the filename
+  bool is[] = { true, true, true, true };
+  double dDiff[]={0., 0., 0., 0.};
+
+  double uncertainty= refTimeStep * 0.25;
+
+      // time value: already extended to the left-side
+  dDiff[0] = fabs(*pDates[2] - *pDates[0]) ;
+  is[0] = dDiff[0] < uncertainty ;
+
+  // time value: already extended to the right-side
+  dDiff[1] = fabs(*pDates[3] - *pDates[1]) ;
+  is[1] = dDiff[1] < uncertainty ;
+
+  if(isTimeBounds)
+  {
+    if( firstTimeValue != firstTimeBoundsValue[0] )
+    {
+      is[0] = is[1] = true;
+
+      // time_bounds: left-side
+      if( ! (is[2] = *pDates[0] == *pDates[4]) )
+        dDiff[2] = *pDates[4] - *pDates[0] ;
+
+      // time_bounds: right-side
+      if( ! (is[3] = *pDates[1] == *pDates[5]) )
+        dDiff[3] = *pDates[5] - *pDates[1] ;
+    }
+  }
+
+  bool bRet=true;
+
+  for(size_t i=0 ; i < 2 ; ++i)
+  {
+    // i == 0: left; 1: right
+
+    // skip for the mode of checking during production
+    if( i && !pQA->isFileComplete )
+       continue;
+
+    if( !is[0+i] || !is[2+i] )
+    {
+      key.push_back("T_10h");
+      capt.push_back("Misaligned ");
+      text.push_back(hdhC::empty);
+
+      if( i == 0 )
+        capt.back() += "start-time: " ;
+      else
+        capt.back() += "end-time: " ;
+      capt.back() += "filename vs. ";
+
+      size_t ix;
+
+      if( isTimeBounds )
+      {
+        capt.back() += "time bounds";
+        text.back() = "Found difference of ";
+        ix = 4 + i ;
+        text.back() += hdhC::double2String(dDiff[2+i]);
+        text.back() += " day(s)";
+      }
+      else
+      {
+        capt.back() += "time values ";
+        ix = 2 + i ;
+
+        text.back() = "Found " + sd[i] ;
+        text.back() += " vs. " ;
+        text.back() += pDates[ix]->str();
+      }
+
+      bRet=false;
+    }
+  }
+
+  return bRet;
+}
+
+void
+QA_Time::testPeriodPrecision(std::vector<std::string>& sd,
+  std::vector<std::string> &key, std::vector<std::string> &capt,
+  std::vector<std::string> &text)
+{
+  // Partitioning of files check are equivalent.
+  // Note that the format was tested before.
+  // Note that desplaced start/end points, e.g. '02' for monthly data, would
+  // lead to a wrong cut.
+
+  if( sd[0].size() != sd[1].size() )
+  {
+    std::string ky("T_10b");
+    if( notes->inq(ky, pQA->fileStr) )
+    {
+       key.push_back(ky);
+       capt.push_back("Filename: Start- and EndTime of different precision") ;
+       text.push_back(hdhC::empty);
+    }
+    return;
+  }
+
+  if( notes->inq("P_1", pQA->fileStr) )
+  {
+    // only CORDEX
+    testPeriodPrecision_CORDEX(sd, key, capt, text);
+    return;
+  }
+
+  if( ! notes->inq("P_2", pQA->fileStr) )
+      return ;  // CMIP6
+
+
+  int len ;
+
+  size_t sz = pQA->qaExp.MIP_tableNames.size() ;
+  size_t i;
+  for( i=0 ; i < sz ; ++i )
+  {
+     if( QA::tableID == pQA->qaExp.MIP_tableNames[i] )
+     {
+        len = pQA->qaExp.MIP_FNameTimeSz[i] ;
+        break;
+     }
+  }
+
+  if( len == -1 || i == sz )
+     return;
+
+  int len_sd = sd[0].size() ;
+  std::string txt;
+
+  // a) yyyy
+  if( len_sd == 4 && len_sd != len )
+      txt =", expected YYYY, found " + sd[0] + "-" + sd[1] ;
+
+  // b) ...mon, aero, Oclim, and cfOff
+  else if( len_sd == 6 && len_sd != len )
+      txt = ", expected YYYYMM, found " + sd[0] + "-" + sd[1] ;
+
+  // c) day, cfDay
+  else if( len_sd == 8 && len_sd != len )
+      txt = ", expected YYYYMMDD, found " + sd[0] + "-" + sd[1] ;
+
+    // d) x-hr
+  else if( len_sd == 10 && len_sd != len )
+      txt = ", expected YYYYMMDDhh, found " + sd[0] + "-" + sd[1] ;
+
+  // e) cfSites
+  else if( len_sd == 12 && len_sd != len )
+      txt = ", expected YYYYMMDDhhmm, found " + sd[0] + "-" + sd[1] ;
+
+  else if( len_sd == 14 && len_sd != len )
+      txt = ", expected YYYYMMDDhhmmss, found " + sd[0] + "-" + sd[1] ;
+
+  if( txt.size() )
+  {
+    key.push_back("T_10f");
+    capt.push_back("period in the filename with wrong precision") ;
+    text.push_back(txt);
+  }
+
+  return;
+}
+
+void
+QA_Time::testPeriodPrecision_CORDEX(std::vector<std::string>& sd,
+  std::vector<std::string> &key, std::vector<std::string> &capt,
+  std::vector<std::string> &text)
+{
+  // Partitioning of files check are equivalent.
+  // Note that the format was tested before.
+  // Note that desplaced start/end points, e.g. '02' for monthly data, would
+  // lead to a wrong cut.
+
+  bool isInstant = ! isTimeBounds ;
+
+  bool isBegin = pQA->fileSequenceState == 'l' || pQA->fileSequenceState == 's' ;
+  bool isEnd   = pQA->fileSequenceState == 'f' || pQA->fileSequenceState == 's' ;
+
+  std::string frequency(pQA->qaExp.getFrequency());
+  std::string my_key("T_10e");
+
+  // period length per file as recommended?
+  if( frequency == "3hr" || frequency == "6hr" )
+  {
+    // same year.
+    bool isA = sd[1].substr(4,4) == "1231";
+    bool isB = sd[1].substr(4,4) == "0101" && sd[1].substr(8,2) == "00" ;
+
+    // should be the same year
+    if( isBegin && isEnd )
+    {
+      int yBeg=hdhC::string2Double( sd[0].substr(0,4) );
+      int yEnd=hdhC::string2Double( sd[1].substr(0,4) );
+      if( isB )  // begin of a next year
+        --yEnd;
+
+      if( (yEnd-yBeg) )
+      {
+        key.push_back(my_key);
+        capt.push_back("Filename: non-conforming precision of StartTime-EndTime");
+        text.push_back("Time span of a full year is exceeded");
+      }
+    }
+
+    // cut of period
+    std::string s_sd0( sd[0].substr(4,4) );
+    std::string s_sd1( sd[1].substr(4,4) );
+
+    std::string s_hr0( sd[0].substr(8,2) );
+    std::string s_hr1( sd[1].substr(8,2) );
+
+    std::string t_hr0;
+    std::string t_hr1;
+
+    if( isBegin )
+    {
+      if( s_sd0 != "0101" )
+      {
+        key.push_back(my_key);
+        capt.push_back("Filename: non-conforming precision of StartTime");
+        text.push_back( "Not the begin of the year, found " + s_sd0);
+      }
+
+      if( isInstant )
+      {
+        double t = firstTimeValue ;
+        // recalc remainder to hr
+        std::string fTV(hdhC::double2String( (t - static_cast<int>(t))*24.) );
+
+        if( s_hr0 != fTV )
+        {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming StartTime");
+          text.push_back("expected hr=" + fTV + ", because of cell_methods");
+        }
+      }
+      else
+      {
+        bool isAlt = false;
+        double t = firstTimeBoundsValue[0];
+
+        std::string fTV;
+        std::string fTBV(hdhC::double2String( (t - static_cast<int>(t))*24.) );
+
+        if( frequency == "3hr" || frequency == "6hr" )
+        {
+          isAlt=true;
+          double t = firstTimeValue;
+          fTV = hdhC::double2String( (t - static_cast<int>(t))*24.) ;
+        }
+
+        if( isTimeBounds && s_hr0 == fTBV )
+          isAlt = false;
+        else if( isAlt && s_hr0 == fTV )
+          isAlt=false ;
+        else
+        {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of StartTime");
+          text.push_back("expected hr=" + fTBV + ", because of cell_methods");
+        }
+
+        if( isAlt )
+        {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of StartTime");
+          text.push_back("expected hr=" + fTBV + ", because of cell_methods");
+        }
+      }
+    }
+
+    if( isEnd )
+    {
+      if( !(isA || isB)  )
+      {
+        key.push_back(my_key);
+        capt.push_back("Filename: non-conforming precision of EndTime");
+        text.push_back("Not the end of the year, found " + s_sd1);
+      }
+
+      if( isInstant )
+      {
+        double t = pQA->qaTime.lastTimeValue ;
+        // recalc remainder to hr
+        std::string lTV(hdhC::double2String( (t - static_cast<int>(t))*24.) );
+
+        if( s_hr1 != lTV )
+        {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of EndTime");
+          text.push_back("expected hr=" + lTV + ", because of cell_methods");
+        }
+      }
+      else
+      {
+        bool isAlt = false;
+        double t = pQA->qaTime.lastTimeBoundsValue[1];
+        std::string lTV;
+        std::string lTBV(hdhC::double2String( (t - static_cast<int>(t))*24.) );
+
+        if( frequency == "3hr" || frequency == "6hr" )
+        {
+          isAlt=true;
+          double t = pQA->qaTime.lastTimeValue;
+          lTV = hdhC::double2String( (t - static_cast<int>(t))*24.) ;
+        }
+
+        if( pQA->qaTime.isTimeBounds && s_hr1 == lTBV )
+          isAlt = false;
+        else if( isAlt && s_hr1 == lTV )
+          isAlt=false ;
+        else
+        {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of EndTime");
+          text.push_back("expected hr=" + lTBV + ", because of cell_methods");
+        }
+
+        if( isAlt )
+        {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of EndTime");
+          text.push_back("expected hr=" + lTV + ", because of cell_methods");
+        }
+      }
+    }
+  }
+
+  else if( frequency == "day" )
+  {
+     // 5 years or less
+     if( isBegin && isEnd )
+     {
+       int yBeg=hdhC::string2Double(sd[0].substr(0,4));
+       int yEnd=hdhC::string2Double(sd[1].substr(0,4));
+       if( (yEnd-yBeg) > 5 )
+       {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of StartTime-EndTime");
+          text.push_back("time span of 5 years is exceeded");
+       }
+     }
+
+     if( isBegin )
+     {
+       if( ! (sd[0][3] == '1' || sd[0][3] == '6') )
+       {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of StartTime");
+          text.push_back("StartTime should begin with YYY1 or YYY6");
+       }
+
+       if( sd[0].substr(4,4) != "0101" )
+       {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of StartTime");
+          text.push_back("StartTime should be YYYY0101");
+       }
+     }
+
+     if( isEnd )
+     {
+       if( ! (sd[1][3] == '0' || sd[1][3] == '5') )
+       {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of EndTime");
+          text.push_back("StartTime should begin with YYY0 or YYY5");
+       }
+
+       std::string numDec(hdhC::double2String(
+                          pQA->qaTime.refDate.regularMonthDays[11]));
+       if( sd[1].substr(4,4) != "12"+numDec )
+       {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of EndTime");
+          text.push_back("StartTime should be YYYY12"+numDec);
+       }
+     }
+  }
+  else if( frequency == "mon" )
+  {
+     if( isBegin && isEnd )
+     {
+       // 10 years or less
+       int yBeg=hdhC::string2Double(sd[0].substr(0,4));
+       int yEnd=hdhC::string2Double(sd[1].substr(0,4));
+       if( (yEnd-yBeg) > 10 )
+       {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of StartTime-EndTime");
+          text.push_back("Time span of 10 years is exceeded");
+       }
+     }
+
+     if( isBegin )
+     {
+       if( sd[0][3] != '1')
+       {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of StartTime");
+          text.push_back("StartTime should begin with YYY1");
+       }
+
+       if( sd[0].substr(4,4) != "01" )
+       {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of StartTime");
+          text.push_back("StartTime should be YYYY01");
+       }
+     }
+
+     if( isEnd )
+     {
+       if( ! (sd[1][3] == '0' || sd[1][3] == '5') )
+       {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of EndTime");
+          text.push_back("EndTime should begin with YYY0");
+       }
+
+       std::string numDec(hdhC::double2String(
+                          pQA->qaTime.refDate.regularMonthDays[11]));
+       if( sd[1].substr(4,4) != "12" )
+       {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of EndTime");
+          text.push_back(": EndTime should be YYYY12"+numDec);
+       }
+     }
+  }
+  else if( frequency == "sem" )
+  {
+      if( isBegin && isEnd )
+      {
+        // 10 years or less
+        int yBeg=hdhC::string2Double(sd[0].substr(0,4));
+        int yEnd=hdhC::string2Double(sd[1].substr(0,4));
+        if( (yEnd-yBeg) > 11 )  // because of winter across two year
+         {
+           key.push_back(my_key);
+           capt.push_back("Filename: non-conforming precision of StartTime-EndTime");
+           text.push_back("Time span of 10 years is exceeded");
+        }
+      }
+
+      if( isBegin )
+      {
+        if( sd[0].substr(4,2) != "12" )
+       {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of StartTime");
+          text.push_back("StartTime should be YYYY12");
+       }
+      }
+
+      if( isEnd )
+      {
+        if( sd[1].substr(4,2) != "11" )
+        {
+          key.push_back(my_key);
+          capt.push_back("Filename: non-conforming precision of EndTime");
+          text.push_back("EndTime should be YYYY11");
+        }
+      }
+
+      {
+        // background: CMOR doesn't know seasonal
+        // CMOR cuts/extends the first and last time value, which are centred,
+        // to the respective time interval. Saesons hoewever, start/end the
+        // month before/after such a time value.
+
+        bool is;
+        int shiftedMon[]={ 1, 4, 7, 10};
+
+        if( isBegin )
+        {
+            int currMon = hdhC::string2Double(sd[0].substr(4,2));
+            for( size_t i=0 ; i < 4 ; ++i )
+            {
+                if( currMon == shiftedMon[i] )
+                {
+                    is=true;
+                    break;
+                }
+            }
+        }
+
+        if( !is && isEnd )
+        {
+            int currMon = hdhC::string2Double(sd[0].substr(4,2));
+            for( size_t i=0 ; i < 4 ; ++i )
+            {
+                if( currMon == shiftedMon[i] )
+                {
+                    is=true;
+                    break;
+                }
+            }
+        }
+
+        if(is)
+        {
+           key.push_back("T_10g");
+           capt.push_back("Filename: CMOR shifted seasonal StartTime-EndTime by one month");
+           text.push_back("");
+        }
+      }
+  }
+
+  return;
+}
+
+bool
+QA_Time::testPeriodDatesFormat(std::vector<std::string>& sd,
+  std::vector<std::string> &key, std::vector<std::string> &capt,
+  std::vector<std::string> &text)
+{
+  // return: true means go on for testing the period cut
+  // partitioning of files
+  if( sd.size() != 2 )
+    return false;  // no period; is variable time invariant?
+
+  std::string frequency(pQA->qaExp.getFrequency());
+  std::string str;
+
+  if( frequency == "3hr" )
+  {
+      if( ! ( (sd[0].size() == 10 && sd[1].size() == 10)
+            || (sd[0].size() == 12 && sd[1].size() == 12) ) )
+        str += "YYYYMMDDhh[mm] for 3-hourly time step";
+  }
+  else if( frequency == "6hr" )
+  {
+      if( sd[0].size() != 10 || sd[1].size() != 10 )
+        str += "YYYYMMDDhh for 6-hourly time step";
+  }
+  else if( frequency == "day" )
+  {
+      if( sd[0].size() != 8 || sd[1].size() != 8 )
+        str += "YYYYMMDD for daily time step";
+  }
+  else if( frequency == "mon" || frequency == "sem" )
+  {
+     if( sd[0].size() != 6 || sd[1].size() != 6 )
+     {
+        str += "YYYYMM for ";
+        if( frequency == "mon" )
+          str += "monthly";
+        else
+          str += "seasonal";
+        str += " data";
+     }
+  }
+
+  if( str.size() )
+  {
+     key.push_back("T_10a");
+
+     capt.push_back("period in filename is incorrectly format");
+     text.push_back("Found ");
+     text.back() += sd[0] + "-" +  sd[1];
+     text.back() += " expected " + str ;
+  }
+
+  return true;
+}
+
+bool
+QA_Time::testPeriodFormat(Split& x_f, std::vector<std::string>& sd)
+{
+  // return true, if the format is invalid
+  bool is=false;
+
+  // CMIP5, CMIP6, or HAPPI
+  if( notes->inq("P_0", pQA->fileStr)
+        || notes->inq("P_2", pQA->fileStr)
+          || notes->inq("P_3", pQA->fileStr) )
+     is = testPeriodFormat_C56(x_f, sd) ;
+
+  //CORDEX
+  else if( notes->inq("P_1", pQA->fileStr) )
+     is = testPeriodFormat_CORDEX(x_f, sd) ;
+
+  return is;
+}
+
+bool
+QA_Time::testPeriodFormat_C56(Split& x_f, std::vector<std::string>& sd)
+{
+  // CMIP5, CMIP6, HAPPI
+  int x_fSz=x_f.size();
+
+  if( ! x_fSz )
+    return true; // caught before
+
+  // skip any geographic subset even with wrong separator '_'?
+  if( x_f[x_fSz-1].substr(0,2) == "g-" )
+    --x_fSz;
+  else if( x_f[x_fSz-1] == "g" )
+    --x_fSz;
+  else if( x_fSz > 1 && x_f[x_fSz-2].substr(0,2) == "g" )
+    x_fSz -= 2 ;
+
+  if( x_fSz < 1 )
+    return true;
+
+  if( x_f[x_fSz-1] == "clim" || x_f[x_fSz-1] == "ave" )
+  {
+    // Wrong separator for appendix clim or ave, found '_'
+    std::string key = "T_10c" ;
+    if( notes->inq( key, pQA->fileStr) )
+    {
+      std::string capt("Filename: wrong separator for ");
+      capt += hdhC::tf_val(x_f[x_fSz-1]);
+      capt += ", found underscore";
+
+      (void) notes->operate(capt) ;
+      notes->setCheckStatus(pQA->drsF, pQA->n_fail );
+    }
+
+    --x_fSz;
+  }
+
+  if( x_fSz < 1 )
+    return true;
+
+  Split x_last(x_f[x_fSz-1],'-') ;
+  int x_lastSz = x_last.size();
+
+  // minimum size of x_last could never be zero
+
+  // elimination of 'ave' or 'clim' separated by a dash
+  if( x_last[x_lastSz-1] == "clim" || x_last[x_lastSz-1] == "ave" )
+    --x_lastSz ;
+
+  bool isRegular=true;
+  if( x_lastSz == 2 )
+  {
+    // the regular case
+    std::vector<int> ix;
+    if( hdhC::isDigit(x_last[0]) )
+      sd[0]=x_last[0] ;
+    else
+    {
+      ix.push_back(0);
+      isRegular=false;
+    }
+
+    if( hdhC::isDigit(x_last[1]) )
+      sd[1]=x_last[1] ;
+    else
+    {
+      isRegular=false;
+      ix.push_back(1);
+    }
+
+    if( ix.size() == 2 )
+      return true;  // apparently not a period
+    else if( ix.size() == 1 )
+    {
+      // try for clim or ave without any separator with a wrong one
+      size_t pos;
+      std::string f(x_last[ix[0]]);
+      if( (pos=f.rfind("clim")) < std::string::npos
+             || (pos=f.rfind("ave")) < std::string::npos )
+      {
+        if( pos && hdhC::isDigit( f.substr(0, pos-1) ) )
+        {
+          if( ix[0] == 1 )
+            isRegular = true;
+
+          sd[ix[0]] = f.substr(0,pos-1) ;
+        }
+        else if( pos && hdhC::isDigit( f.substr(0,pos) ) )
+        {
+          if( ix[0] == 1 )
+            isRegular = true;
+
+          sd[ix[0]] = f.substr(0,pos) ;
+        }
+        else
+          isRegular=false;
+
+        if(ix.size())
+        {
+          // Wrong separator for appendix clim or ave, found '_'
+          std::string key("T_10d") ;
+          if( notes->inq( key, pQA->fileStr) )
+          {
+            std::string capt("Filename: wrong separator ");
+            capt += hdhC::tf_val(x_last[ix[0]]);
+
+            (void) notes->operate(capt) ;
+            notes->setCheckStatus(pQA->drsF, pQA->n_fail );
+          }
+        }
+      }
+    }
+  }
+  else
+    isRegular=false;
+
+  if( ! isRegular )
+  {
+    std::string f;
+    if( sd[0].size() )
+      f = x_last[1];
+    else
+      f = x_last[0];
+
+    // could be a period with a wrong separator
+    std::string sep;
+    size_t pos=std::string::npos;
+
+    bool isSep=false;
+    for( size_t i=0 ; i < f.size() ; ++i )
+    {
+      if( !hdhC::isDigit(f[i]) )
+      {
+        if(isSep)
+          return true;  // not a wrong separator, just anything
+
+        isSep=true;
+        sep=f[i];
+        pos=i;
+      }
+    }
+
+    if( pos < std::string::npos )
+    {
+      sd[0]=f.substr(0, pos) ;
+      sd[1]=f.substr(pos+1) ;
+
+      // Wrong separator for appendix clim or ave, found '_'
+      std::string key("T_10c") ;
+      if( notes->inq( key, pQA->fileStr) )
+      {
+        std::string capt("Filename: wrong separator in StartTime-EndTime");
+        std::string text("Found "+ hdhC::tf_val(sep) );
+
+        (void) notes->operate(capt, text) ;
+        notes->setCheckStatus(pQA->drsF, pQA->n_fail );
+      }
+    }
+  }
+
+  // in case of something really nasty
+  if( !( hdhC::isDigit(sd[0]) && hdhC::isDigit(sd[1]) ) )
+    return true;
+
+  return false;
+}
+
+bool
+QA_Time::testPeriodFormat_CORDEX(Split& x_f, std::vector<std::string> &sd)
+{
+  int x_fSz=x_f.size();
+
+  if( ! x_fSz )
+    return true; // trapped before
+
+  // any geographic subset? Even with wrong separator '_'?
+  if( x_f[x_fSz-1].substr(0,2) == "g-" )
+    --x_fSz;
+  else if( x_f[x_fSz-1] == "g" )
+    --x_fSz;
+  else if( x_fSz > 1 && x_f[x_fSz-2].substr(0,2) == "g" )
+    x_fSz -= 2 ;
+
+  if( x_fSz < 1 )
+    return true;
+
+  if( x_f[x_fSz-1] == "clim" || x_f[x_fSz-1] == "ave" )
+  {
+    // Wrong separator for appendix clim or ave, found '_'
+    std::string key = "1_6b" ;
+    if( notes->inq( key, pQA->fileStr) )
+    {
+      std::string capt("Wrong separation of filename's period's appendix");
+      capt += hdhC::tf_val(x_f[x_fSz-1]);
+      capt += ", found underscore";
+
+      (void) notes->operate(capt) ;
+      notes->setCheckStatus(pQA->drsF, pQA->n_fail );
+    }
+
+    --x_fSz;
+  }
+
+  if( x_fSz < 1 )
+    return true;
+
+  Split x_last(x_f[x_fSz-1],'-') ;
+  int x_lastSz = x_last.size();
+
+  // minimum size of x_last could never be zero
+
+  // elimination of 'ave' or 'clim' separated by a dash
+  if( x_last[x_lastSz-1] == "clim" || x_last[x_lastSz-1] == "ave" )
+    --x_lastSz ;
+
+  bool isRegular=true;
+  if( x_lastSz == 2 )
+  {
+    // the regular case
+    std::vector<int> ix;
+    if( hdhC::isDigit(x_last[0]) )
+      sd[0]=x_last[0] ;
+    else
+    {
+      ix.push_back(0);
+      isRegular=false;
+    }
+
+    if( hdhC::isDigit(x_last[1]) )
+      sd[1]=x_last[1] ;
+    else
+    {
+      isRegular=false;
+      ix.push_back(1);
+    }
+
+    if( ix.size() == 2 )
+      return true;  // apparently not a period
+    else if( ix.size() == 1 )
+    {
+      // try for clim or ave without any separator with a wrong one
+      size_t pos;
+      std::string f(x_last[ix[0]]);
+      if( (pos=f.rfind("clim")) < std::string::npos
+             || (pos=f.rfind("ave")) < std::string::npos )
+      {
+        if( pos && hdhC::isDigit( f.substr(0, pos-1) ) )
+        {
+          if( ix[0] == 1 )
+            isRegular = true;
+
+          sd[ix[0]] = f.substr(0,pos-1) ;
+        }
+        else if( pos && hdhC::isDigit( f.substr(0,pos) ) )
+        {
+          if( ix[0] == 1 )
+            isRegular = true;
+
+          sd[ix[0]] = f.substr(0,pos) ;
+        }
+        else
+          isRegular=false;
+
+        if(ix.size())
+        {
+          // Wrong separator for appendix clim or ave, found '_'
+          std::string key = "1_6b" ;
+          if( notes->inq( key, pQA->fileStr) )
+          {
+            std::string capt("Wrong separation of filename's period's appendix");
+            capt += hdhC::tf_val(x_last[ix[0]]);
+
+            (void) notes->operate(capt) ;
+            notes->setCheckStatus(pQA->drsF, pQA->n_fail );
+          }
+        }
+      }
+    }
+  }
+  else
+    isRegular=false;
+
+  if( ! isRegular )
+  {
+    std::string f;
+    if( sd[0].size() )
+      f = x_last[1];
+    else
+      f = x_last[0];
+
+    // could be a period with a wrong separator
+    std::string sep;
+    size_t pos=std::string::npos;
+
+    bool isSep=false;
+    for( size_t i=0 ; i < f.size() ; ++i )
+    {
+      if( !hdhC::isDigit(f[i]) )
+      {
+        if(isSep)
+          return true;  // not a wrong separator, just anything
+
+        isSep=true;
+        sep=f[i];
+        pos=i;
+      }
+    }
+
+    if( pos < std::string::npos )
+    {
+      sd[0]=f.substr(0, pos) ;
+      sd[1]=f.substr(pos+1) ;
+
+      // Wrong separator for appendix clim or ave, found '_'
+      std::string key = "1_6b" ;
+      if( notes->inq( key, pQA->fileStr) )
+      {
+        std::string capt("Wrong separation of filename's period's dates");
+        capt += ", found";
+        capt += hdhC::tf_val(sep);
+
+        (void) notes->operate(capt) ;
+        notes->setCheckStatus(pQA->drsF, pQA->n_fail );
+      }
+    }
+  }
+
+  // in case of something really nasty
+  if( !( hdhC::isDigit(sd[0]) && hdhC::isDigit(sd[1]) ) )
+    return true;
+
+  return false;
+}
+
+
+
+
+bool
+QA_Time::testPeriod_regularBounds(std::vector<std::string> &sd, Date** pDatesOrig,
+  std::vector<std::string> &key, std::vector<std::string> &capt,
+  std::vector<std::string> &text)
+{
+  Date* pDates[6];
+
+  for( size_t i=0 ; i < 6 ; ++i )
+  {
+     pDates[i] = 0 ;
+
+     if( pDatesOrig[i] )
+        pDates[i] = new Date(*pDatesOrig[i]);
+  }
+
+  if( ! pQA->pIn->variable[time_ix].isInstant )
+  {
+     // in case that the mid-frequency time value is provided.
+     // sd[0] and sd[1] are of equal size.
+     if( sd[0].size() < 5 )
+     {
+         //pDates[0]->shift("beg,yr");
+         pDates[1]->shift("end,yr");
+
+         pDates[2]->shift("beg,yr");
+         pDates[3]->shift("end,yr");
+     }
+     else if( sd[0].size() < 7 )
+     {
+         //pDates[0]->shift("beg,mo");
+         pDates[1]->shift("end,mo");
+
+         pDates[2]->shift("beg,mo");
+         pDates[3]->shift("end,mo");
+     }
+     else if( sd[0].size() < 9 )
+     {
+         //pDates[0]->shift("beg,d");
+         pDates[1]->shift("end,d");
+
+         pDates[2]->shift("beg,d");
+         pDates[3]->shift("end,d");
+     }
+     else if( sd[0].size() < 11 )
+     {
+         pDates[0]->shift("beg,h");
+         pDates[1]->shift("end,h");
+
+         pDates[2]->shift("beg,h");
+         pDates[3]->shift("end,h");
+     }
+     else if( sd[0].size() < 13 )
+     {
+         pDates[0]->shift("beg,mi");
+         pDates[1]->shift("end,mi");
+
+         pDates[2]->shift("beg,mi");
+         pDates[3]->shift("end,mi");
+     }
+  }
+
+  bool retVal=true;
+
+  // the annotations
+  if( testPeriodAlignment(sd, pDates, key, capt, text) )
+  {
+    if( testPeriodDatesFormat(sd, key, capt, text) ) // format of period dates.
+    {
+      // period requires a cut specific to the various frequencies.
+      testPeriodPrecision(sd, key, capt, text) ;
+    }
+  }
+  else
+      retVal=false;
+
+  for(size_t i=2 ; i < 6 ; ++i )
+    if( pDates[i] )
+      delete pDates[i];
+
+  return retVal;
+}
+
+bool
+QA_Time::testPeriod_FN_with_centre(std::vector<std::string> &sd, Date** pDates,
+  std::vector<std::string> &key, std::vector<std::string> &capt,
+  std::vector<std::string> &text)
+{
+  if( ! pQA->pIn->variable[time_ix].isInstant )
+  {
+     double delta_tb = firstTimeBoundsValue[1];
+     delta_tb -= firstTimeBoundsValue[0];
+
+     // shift t-vals of FN by half the time bounds
+     pDates[0]->addDays(-delta_tb/2.);
+     pDates[1]->addDays(delta_tb/2.);
+  }
+
+  bool retVal=true;
+
+  // the annotations
+  if( testPeriodAlignment(sd, pDates, key, capt, text) )
+  {
+    if( testPeriodDatesFormat(sd, key, capt, text) ) // format of period dates.
+    {
+      // period requires a cut specific to the various frequencies.
+      testPeriodPrecision(sd, key, capt, text) ;
+    }
+  }
+  else
+      retVal=false;
+
+  return retVal;
 }
 
 bool

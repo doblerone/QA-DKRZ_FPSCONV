@@ -376,15 +376,6 @@ struct DRS_CV
 
   void   run(void);
 
-    //! Test the time-period of the input file.
-  /*! If the end-date in the filename and the last time value
-      match within the uncertainty of 0.75% of the time-step, then
-      the file is assumed to be completely qa-processed.
-      Syntax of date ranges as given in CORDEX  DRS Syntax.*/
-  bool   testPeriod(Split&);
-  bool   testPeriodAlignment(std::vector<std::string> &sd, Date** pDates)  ;
-  void   testPeriodPrecision(std::vector<std::string> &sd);
-  bool   testPeriodDatesFormat(std::vector<std::string> &sd) ;
   bool   testPeriodFormat(Split&, std::vector<std::string> &sd) ;
 
   bool enabledCompletenessCheck;

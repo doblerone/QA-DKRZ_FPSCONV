@@ -87,6 +87,9 @@ class QA : public IObj
 
   int    getExitState(int e=-1);
 
+  std::string
+         getInstantAtt(void);
+
   //! Get path componenents.
   /*! mode: "total": filename with total path, "file": filename,
       "base": filename without extension, "ext": extension without '.',
@@ -217,15 +220,17 @@ class QA : public IObj
   static std::string tableID;
   static std::string tableIDSub;
 
+  std::string drsF;
+  std::string fileStr;
+  std::string notAvailable;
+  std::string s_global;
+  std::string s_mismatch;
+
   std::string n_data;
   std::string n_time;
   std::string n_disabled;
   std::string n_pass;
   std::string n_fail;
-  std::string fileStr;
-  std::string notAvailable;
-  std::string s_global;
-  std::string s_mismatch;
 
   std::string n_axis;
   std::string n_cell_methods;

@@ -94,11 +94,6 @@ class QA_Time
   double currTimeBoundsValue[2];
   double lastTimeBoundsValue[2];
 
-//  Date prevTimeBoundsDate[2];
-//  Date firstTimeBoundsDate[2];
-//  Date currTimeBoundsDate[2];
-//  Date lastTimeBoundsDate[2];
-
   // proleptic Gregorian, no_leap, 30day-month
   std::string calendar;  //default is empty for Gregorian
   std::string currDateStr;
@@ -158,6 +153,35 @@ class QA_Time
   //! Test time value.
   /*! This member is just the entry to different tests.*/
   void   testDate(NcAPI &);
+
+  //! Test the time-period of the input file.
+  /*! If the end-date in the filename and the last time value
+      match within the uncertainty of 0.75% of the time-step, then
+      the file is assumed to be completely qa-processed.
+      Syntax of date ranges as given in CORDEX  DRS Syntax.*/
+  bool   testPeriod(Split&);
+  bool   testPeriod_regularBounds(std::vector<std::string> &sd, Date** pDates,
+             std::vector<std::string> &key, std::vector<std::string> &capt,
+             std::vector<std::string> &text );
+  bool   testPeriod_FN_with_centre(std::vector<std::string> &sd, Date** pDates,
+             std::vector<std::string> &key, std::vector<std::string> &capt,
+             std::vector<std::string> &text );
+  bool   testPeriodAlignment(std::vector<std::string> &sd, Date** pDates,
+             std::vector<std::string> &key, std::vector<std::string> &capt,
+             std::vector<std::string> &text );
+  void   testPeriodPrecision(std::vector<std::string> &sd,
+             std::vector<std::string> &key, std::vector<std::string> &capt,
+             std::vector<std::string> &text );
+  void   testPeriodPrecision_CORDEX(std::vector<std::string> &sd,
+             std::vector<std::string> &key, std::vector<std::string> &capt,
+             std::vector<std::string> &text );
+  bool   testPeriodDatesFormat(std::vector<std::string> &sd,
+             std::vector<std::string> &key, std::vector<std::string> &capt,
+             std::vector<std::string> &text );
+
+  bool   testPeriodFormat(Split&, std::vector<std::string> &sd) ;
+  bool   testPeriodFormat_C56(Split&, std::vector<std::string> &sd) ;
+  bool   testPeriodFormat_CORDEX(Split&, std::vector<std::string> &sd) ;
 
   //! Check for valid time bounds
   /*! No overlap with previous time bounds, reasonable span etc.. */

@@ -478,6 +478,25 @@ QA::getExitState(int e_in)
   return exitState;
 }
 
+std::string
+QA::getInstantAtt(void)
+{
+//  if( pQA->qaExp.getFrequency() == "6hr" )
+//    return true;
+
+  size_t i;
+  for( i=0; i < qaExp.varMeDa.size() ; ++i )
+    if( qaExp.varMeDa[i].attMap[n_cell_methods].size()
+          && qaExp.varMeDa[i].attMap[n_cell_methods] != "time: point" )
+        break;
+
+  if( i == qaExp.varMeDa.size() )
+      return "";
+  else
+      return hdhC::tf_att(qaExp.varMeDa[i].var->name,
+                  qaExp.varMeDa[i].attMap[n_cell_methods] ) ;
+}
+
 void
 QA::help(void)
 {
@@ -658,14 +677,16 @@ QA::initDefaults(void)
   // time steps are regular. Unsharp logic (i.e. month
   // Jan=31, Feb=2? days is ok, but also numerical noise).
 
-  n_data="DATA";
-  n_fail="FAIL";
-  n_time="TIME";
-  n_disabled="disabled";
+  drsF = "DRS(F)" ;
   fileStr="file";
   notAvailable="not available";
   s_global="global";
   s_mismatch="mismatch";
+
+  n_disabled="disabled";
+  n_data="DATA";
+  n_fail="FAIL";
+  n_time="TIME";
 
   n_axis="axis";
   n_cell_methods="cell_methods";

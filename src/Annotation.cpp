@@ -472,6 +472,9 @@ Annotation::inq( std::string key, std::string name, std::string mode)
   isMultipleTags=true;
   isDescriptionFromTable=false;
   isAccumText=false;
+  isApply_MORE=true;
+  if( key[0] == 'R' && hdhC::isDigit(key.substr(1)) )
+      isApply_MORE=false;
 
   if( mode.size() )
   {
@@ -1131,18 +1134,21 @@ Annotation::printNotes(std::string &tag, std::string &caption,
 //     return;
 
   // prevent error message flooding
-  if( count[currIndex]++ > recErrCountLimit )
-    return;
-
-  if( count[currIndex] > recErrCountLimit )
+  if( isApply_MORE )
   {
-    std::string more("more ...");
+    if( count[currIndex]++ > recErrCountLimit )
+      return;
 
-    //*ofsNotes << more << std::endl;
-    ofs_text += more + "\n";
-    mp_txt[tag] += more ;
+    if( count[currIndex] > recErrCountLimit )
+    {
+      std::string more("more ...");
 
-    return;
+      //*ofsNotes << more << std::endl;
+      ofs_text += more + "\n";
+      mp_txt[tag] += more ;
+
+      return;
+    }
   }
 
   // write caption+message, but the caption only once
