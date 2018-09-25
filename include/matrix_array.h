@@ -1451,20 +1451,18 @@ void
 MtrxArr<T>::operator+(MtrxArr<T> &g)
 {
   if( size() != g.size() )
-  {
     status.push_back("MtrxArr objects of different size.");
+  else
+  {
+    rep=rep->makeRoot();
+    arr=rep->arr;
 
-    return ;
+    for( size_t i=0 ; i < rep->arr_sz ; ++i)
+       arr[i] += g.arr[i] ;
+
+    if( ! g.isValid )
+      testValueException();
   }
-
-  rep=rep->makeRoot();
-  arr=rep->arr;
-
-  for( size_t i=0 ; i < rep->arr_sz ; ++i)
-     arr[i] += g.arr[i] ;
-
-  if( ! g.isValid )
-    testValueException();
 
   return ;
 }
