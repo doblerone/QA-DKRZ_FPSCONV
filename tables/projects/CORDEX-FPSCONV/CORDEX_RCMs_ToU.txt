@@ -1,1 +1,110 @@
-IS-ENES-Data.github.io/CORDEX_RCMs_ToU.txt
+# List of CORDEX RCMs (short, machine readable version)  
+# Do not change this file - it is auto-generated based on the contents 
+# of the CORDEX RCM registration sheet  
+# To register CORDEX simulations please contact cordex-registration /at/ cordex.org 
+# Timestamp:  2021-06-25 17:52:29
+# -------------------------------------------------------------- 
+# model id           institute id             ToU  
+# --------------------------------------------------------------- 
+AUTH-MC-WRF371M          AUTH-MC        unrestricted   
+AWI-HIRHAM5              AWI            unrestricted   
+BCCR-WRF331              BCCR           unrestricted   
+BCCR-WRF331C             BCCR           unrestricted   
+BCCR-WRF361              BCCR           unrestricted   
+BOUN-RegCM4-3            BOUN           non-commercial 
+CCCma-CanRCM4            CCCma          unrestricted   
+CHMI-ALADIN53            CHMI           non-commercial 
+CLMcom-BTU-CCLM5-0-14    CLMcom-BTU     unrestricted   
+CLMcom-CCLM4-8-17        CLMcom         unrestricted   
+CLMcom-CCLM4-8-17-CLM3-5 CLMcom         unrestricted   
+CLMcom-CCLM5-0-0         CLMcom         unrestricted   
+CLMcom-CCLM5-0-2         CLMcom         unrestricted   
+CLMcom-CCLM5-0-6         CLMcom         unrestricted   
+CLMcom-CMCC-CCLM4-21-2   CLMcom-CMCC    unrestricted   
+CLMcom-CMCC-CCLM5-0-9    CLMcom-CMCC    unrestricted   
+CLMcom-DWD-CCLM5-0-15    CLMcom-DWD     unrestricted   
+CLMcom-ETH-COSMO-crCLIM-v1-1CLMcom-ETH     unrestricted   
+CLMcom-GUF-CCLM5-0-9     CLMcom-GUF     unrestricted   
+CLMcom-GUF-CCLM5-0-9-NEMOMED12-3-6CLMcom-GUF     unrestricted   
+CLMcom-GUF-CCLM5-0-9-NEMOMED12-3-6-NEMONORDIC3-3CLMcom-GUF     unrestricted   
+CLMcom-HZG-CCLM5-0-15    CLMcom-HZG     unrestricted   
+CLMcom-JLU-CCLM5-0-15    CLMcom-JLU     unrestricted   
+CLMcom-KIT-CCLM5-0-10    CLMcom-KIT     unrestricted   
+CLMcom-KIT-CCLM5-0-14    CLMcom-KIT     unrestricted   
+CLMcom-KIT-CCLM5-0-15    CLMcom-KIT     unrestricted   
+CLMcom-KIT-CCLM5-0-9     CLMcom-KIT     unrestricted   
+CLMcom-WEGC-CCLM5-0-9    CLMcom-WEGC    unrestricted   
+CLMcom-ZAMG-CCLM5-0-14   CLMcom-ZAMG    unrestricted   
+CMCC-REMHI               CMCC           non-commercial 
+CNRM-ALADIN52            CNRM           unrestricted   
+CNRM-ALADIN53            CNRM           unrestricted   
+CNRM-ALADIN63            CNRM           unrestricted   
+CNRM-ALADIN64            CNRM           unrestricted   
+CNRM-AROME41t1           CNRM           unrestricted   
+CNRM-ARPEGE52            CNRM           unrestricted   
+CNRM-RCSM4               CNRM           unrestricted   
+CNRM-RCSM6               CNRM           unrestricted   
+CRC-BGS-WRF381           CRC-BGS        non-commercial 
+CRP-GL-WRF331A           CRP-GL         unrestricted   
+CSIRO-CCAM               CSIRO          unrestricted   
+CSIRO-CCAM-1704          CSIRO          unrestricted   
+CSIRO-CCAM-2008          CSIRO          unrestricted   
+CUNI-RegCM4-2            CUNI           unrestricted   
+DHMZ-RegCM4-2            DHMZ           non-commercial 
+DMI-HIRHAM5              DMI            unrestricted   
+ENEA-RegCM4-3            ENEA           non-commercial 
+GERICS-AWI-REMO2009      GERICS-AWI     unrestricted   
+GERICS-AWI-ROM1.1        GERICS-AWI     unrestricted   
+GERICS-REMO2009          GERICS         unrestricted   
+GERICS-REMO2015          GERICS         unrestricted   
+HCLIMcom-HCLIM38-AROME   HCLIMcom       unrestricted
+HMS-ALADIN52             HMS            non-commercial 
+ICTP-RegCM4-3            ICTP           unrestricted   
+ICTP-RegCM4-4            ICTP           unrestricted   
+ICTP-RegCM4-6            ICTP           unrestricted   
+ICTP-RegCM4-7            ICTP           unrestricted   
+IDL-WRF350D              IDL            non-commercial 
+IITM-RegCM4-1            IITM           non-commercial 
+IITM-RegCM4-4            IITM           non-commercial 
+INPE-ETA                 INPE           unrestricted   
+IPSL-INERIS-WRF331F      IPSL-INERIS    unrestricted   
+IPSL-INERIS-WRF361F      IPSL-INERIS    unrestricted   
+IPSL-WRF311              IPSL           non-commercial 
+IPSL-WRF311NEMO          IPSL           non-commercial 
+KNMI-RACMO21P            KNMI           unrestricted   
+KNMI-RACMO22E            KNMI           unrestricted   
+KNMI-RACMO22T            KNMI           unrestricted   
+KNU-RegCM4-0             KNU            unrestricted   
+MGO-RRCM                 MGO            unrestricted   
+MIUB-WRF331A             MIUB           unrestricted   
+MOHC-HadGEM3-RA          MOHC           unrestricted   
+MOHC-HadREM3-GA7-05      MOHC           unrestricted   
+MOHC-HadRM3P             MOHC           unrestricted   
+MPI-CSC-REMO2009         MPI-CSC        unrestricted   
+MU-WRF360M               MU             non-commercial 
+NIMS-KMA-HadGEM3-RA      NIMS-KMA       unrestricted   
+NUIM-WRF341E             NUIM           non-commercial 
+OURANOS-CRCM5            OURANOS        unrestricted   
+PNU-WRF370               PNU            unrestricted   
+POSTECH-CCLM5-0-9        POSTECH        unrestricted   
+RMIB-UGent-ALARO-0       RMIB-UGent     unrestricted   
+SMHI-RCA4                SMHI           unrestricted   
+SMHI-RCA4-SN             SMHI           unrestricted   
+SMHI-RCAO                SMHI           unrestricted   
+SMHI-RCAO-SN             SMHI           unrestricted   
+UCAN-WRF331G             UCAN           unrestricted   
+UCAN-WRF341I             UCAN           unrestricted   
+UCLM-PROMES              UCLM           unrestricted   
+UHOH-WRF361H             UHOH           non-commercial 
+ULg-MAR36                ULg            unrestricted   
+UM-RegCM4-3              UM             unrestricted   
+UM-WRF331                UM             unrestricted   
+UNIBELGRADE-EBU1         UNIBELGRADE    non-commercial 
+UNIBELGRADE-EBUPOM2c1    UNIBELGRADE    non-commercial 
+UNIST-SNURCM             UNIST          unrestricted   
+UNSW-WRF360J             UNSW           unrestricted   
+UNSW-WRF360K             UNSW           unrestricted   
+UNSW-WRF360L             UNSW           unrestricted   
+UQAM-CRCM5               UQAM           unrestricted   
+UQAM-CRCM5-SN            UQAM           unrestricted   
+WEGC-WRF371O             WEGC           unrestricted   
