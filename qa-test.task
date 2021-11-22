@@ -11,7 +11,7 @@
 # Path to QC's results and log dir. Required. This will be expanded
 # automatically by the last path component of option DATA_ROOT.
 # Note: the former QC_DATA_ROOT was replaced by this, but is still valid.
-  QA_RESULTS=/mnt/CORDEX_FPS_CPCM/Software/adobler/QA/results
+  QA_RESULTS=/mnt/CORDEX_FPS_CPCM/Software/$USER/QA/results
 
 # A project name. If the project is unknown, but it is similar to
 # a known one, then use additionaly PROJECT_AS=name
