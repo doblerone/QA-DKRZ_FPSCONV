@@ -1,0 +1,151 @@
+# QA CORDEX_DRS_CV.csv
+
+# A comment begins with '#'; leading or trailing blanks are discarded.
+# '!' at the beginning of a line indicates a continous line, whose leading blanks
+# are ingored.
+# Variables or keyword 'global' are indicated by a trailing ':'.
+# Attributes must not have a trailing ':'.
+# Requested value by a plain assignment, one out of several |-separated values,
+# as well as ranges [val1, val2].
+# Special Blocks are framed by BEGIN: name and END: name, each alone
+# on a line, where name==DRS is decomposed in function DRS_CV_Table.read().
+# Another kind of block is introduced by BEGIN_LINE: name. Each line is stored
+# literally in a vector of vectors corresponding to name stored in a vector.
+# The interpretation of such lines is left to the QA_Exp class.
+
+# Checking of date formats: DATE: [num][*][str][|]YYYY[-]MM[-]DD[Thh][:][mm][:][ss][*]
+# DATE:  start of a check of a provided format.
+# '|' separates an optional prefix from the date specification. i
+#     Even '|' is optional, when str is a prefix containing no digits.
+#     DATE: my be omitted for a string begin with YYYY
+#
+# Prefix:
+#    num*     a variable prefix of fixed size; may contain digits
+#    num str  a static prefix of fixed size; may contain digits
+#    str      a prefix of non-digits of variable size
+# Date and/or time format
+#    The width of a field, e.g. MM, could be 2 or 02.
+#    If '-' is missing, then no fields can be distinguished, i.e.
+#    20170228 is valid as well as 790822 or 79822. Furthermore, 20170230 would pass undetected.
+#    If '-' is provided, then the number of fields must match; same for time with ':',
+#    i.e. 2017-02 does not match YYYY-MM-DD, but 2017-2-8 does.
+#    '*' anywhere in date or time indicates that fields may be without
+#        a leading 0 for single digits
+# TimeZone: if Z is requested, then it may be omitted
+
+
+DS-SEP=/
+FE-SEP=_
+
+BEGIN: DRS
+# possible DRS paths with names (including blanks) from the DRS-CV.
+# DS: directory structure, FE: filename encoding.
+# Embracing <> may be omitted
+  CORDEX-DS: <activity>/<product>/<Domain>/<Institution>/<GCMModelName>
+!            /<CMIP5ExperimentName>/<CMIP5EnsembleMember>/<RCMModelName>
+!            /<RCMVersionID>/<Frequency>/<VariableName>
+
+  CORDEX-FE:VariableName_Domain_GCMModelName_CMIP5ExperimentName
+!           _CMIP5EnsembleMember_RCMModelName_RCMVersionID
+!           _Frequency_StartTime-EndTime.nc
+
+# Special format: <DRS-CV name> = global attribute name.
+# Components of directory and file structure.
+# Note that requested values are not part of the DRS_CV check.
+  activity            = project_id = CORDEX-FPSCONV
+  product             = product    = output
+  Domain              = CORDEX_domain
+  Institution         = institute_id
+  GCMModelName        = driving_model_id
+  CMIP5ExperimentName = driving_experiment_name
+  CMIP5EnsembleMember = driving_model_ensemble_member
+  VariableName
+  RCMModelName        = model_id
+  RCMVersionID        = rcm_version_id
+  Frequency           = frequency
+  StartTime-EndTime
+END: DRS
+
+# VAR_TYPE is the type of a variable
+DATA_VAR:
+   VAR_TYPE=float
+AUX_VAR:
+   VAR_TYPE=double
+
+rotated_pole:
+   VAR_TYPE=char
+
+plev:
+   long_name=pressure level    # differs from CMIP5
+   units=Pa
+   axis=Z
+   positive=down
+   standard_name=air_pressure
+   values=22000|56000|84000    # only for cloud amounts, if available
+
+plev_bnds:  # if available
+   long_name=Boundaries of the layer in which cloud area fraction is computed
+   units=Pa
+   values=[44000,0]|[68000,44000]|[100000,68000]  # only for cloud amounts, if available
+
+height:
+   long_name=height
+   standard_name=height
+   units=m
+   positive=up
+   axis=Z
+
+global:
+   contact
+   Conventions
+   CORDEX_domain
+   creation_date                   = YYYY-MM-DDThh:mm:ssZ
+   driving_model_id
+   driving_model_ensemble_member
+   driving_experiment_name
+   experiment_id
+   frequency                       = 1hr, 3hr, 6hr, day, mon, sem, fx
+   institute_id
+   model_id
+   product                         = output
+   project_id                      = CORDEX-FPSCONV
+   rcm_version_id
+
+BEGIN_LINE: Table1
+# area,             name, reso[deg],N-Pole lon,N-Pole lat,Nlon,Nlat,West,East,South,North
+South America,       SAM-44, 0.44,  -56.06, 70.60, 146, 167, 143.92, 207.72,  -38.28, 34.76
+Central America,     CAM-44, 0.44,  113.98, 75.74, 210, 113, -52.80,  39.16,  -28.6 , 20.68
+North America,       NAM-44, 0.44,   83.0 , 42.5,  155, 130, -33.88,  33.88,  -28.4 , 28.36
+Europe,              EUR-44, 0.44, -162.0 , 39.25, 106, 103, -28.21,  17.99,  -23.21, 21.67
+Africa,              AFR-44, 0.44,     N/A, 90.0,  194, 201, -24.64,  60.28,  -45.76, 42.24
+West Asia,           WAS-44, 0.44, -123.34, 79.95, 193, 130, -32.12,  52.36,  -21.56, 35.2
+East Asia,           EAS-44, 0.44,  -64.78, 77.61, 203, 167, -40.92,  47.96,  -26.84, 46.2
+Central Asia,        CAS-44, 0.44, -103.39, 43.48, 153, 100, -34.32,  32.56,  -20.68, 22.88
+Australasia,         AUS-44, 0.44,  141.38, 60.31, 200, 129, 142.16, 229.72,  -22.88, 33.44
+Antarctica,          ANT-44, 0.44, -166.92,  6.08, 125,  97, 152.72, 207.28,  -27.72, 14.52
+The Arctic,          ARC-44, 0.44,    0.0,   6.55, 116, 133, -22.88,  27.72,  -24.2,  33.88
+Med-CORDEX,          MED-44, 0.44,  198.0,  39.25,  98,  63, -23.22,  19.46,  -21.34,  5.94
+MENA-CORDEX,         MNA-44, 0.44,    N/A,  90.0,  232, 118, -26.4,   75.24,   -6.6,  44.88
+MENA-CORDEX high,    MNA-22, 0.22,    N/A,  90.0,  464, 236, -26.51,  75.35,   -6.71, 44.99
+Euro-CORDEX high,    EUR-11, 0.11, -162.0,  39.25, 424, 412, -28.375, 18.155, -23.375,21.835
+CORDEX-FPSCONV,      ALP-3, 0.0275,-162.0,  39.25, 476, 444, -13.51125, -0.44875, -10.93125, 1.25125
+END_LINE: Table1
+
+BEGIN_LINE: Table2
+# id,area,              name, reso[deg],Nlon,Nlat,West,East,South,North
+South America,       SAM-44i, 0.5,  181, 155, -106.25, -16.25,   -58.25,  18.75
+Central America,     CAM-44i, 0.5,  207, 111, -124.75, -21.75,   -19.75,  35.25
+North America,       NAM-44i, 0.5,  100, 129, -171.75, -22.25,    12.25,  76.25
+Europe,              EUR-44i, 0.5,  221, 103,  -44.75,  65.25,    21.75,  72.75
+Africa,              AFR-44i, 0.5,  173, 179,  -25.25,  60.75,   -46.25,  42.75
+West Asia,           WAS-44i, 0.5,  195, 124,   19.25, 116.25,   -15.75,  45.75
+East Asia,           EAS-44i, 0.5,  227, 157,   62.75, 175.75,   -18.75,  59.25
+Central Asia,        CAS-44i, 0.5,  260, 133,   10.75, 140.25,    17.75,  69.75
+Australasia,         AUS-44i, 0.5,  238, 133,   88.75, 207.25,   -53.25,  12.75
+Antarctica,          ANT-44i, 0.5,  720,  70, -179.75, 179.75,   -89.75, -55.25
+The Arctic,          ARC-44i, 0.5,  720,  83, -179.75, 179.75,    48.75,  89.75
+Med-CORDEX,          MED-44i, 0.5,  144,  65,  -20.75,  51.75,    25.25,  57.25
+MENA-CORDEX,         MNA-44i, 0.5,  206, 106,  -26.75,  75.75,    -7.25,  45.25
+MENA-CORDEX high,    MNA-22i, 0.25, 410, 209,  -26.625, 75.625,   -6.875, 45.125
+High-res. Europe,    EUR-11i, 0.125,881, 408,  -44.8125,65.1875,  21.8125,72.6875
+END_LINE: Table2

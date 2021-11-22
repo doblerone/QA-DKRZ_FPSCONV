@@ -1,0 +1,12 @@
+SVN revision numbers of CORDEX_variables_requirement_table.xls in
+repository http://svn-mad.dkrz.de/svn/mad/Model/DOCs/cordex_specs
+mapped to the corresponding csv file in
+repository http://svn-mad.zmaw.de/svn/mad/Model/QualCheck/QC/branches/QC-0.4
+
+mapped revision (xls -> csv): 5504 -> 5495
+mapped revision (xls -> csv): 5506 -> 5509
+mapped revision (xls -> csv): 5550 -> 5551
+mapped revision (xls -> csv): 5554 -> 5556
+mapped revision (xls -> csv): 5564 -> 5572
+mapped revision (xls -> csv): 5608 -> 5628
+mapped revision (xls -> csv): 5781 -> 5788
