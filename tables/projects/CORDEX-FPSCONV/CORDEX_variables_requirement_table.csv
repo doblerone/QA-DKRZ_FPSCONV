@@ -109,6 +109,7 @@ orog
 rootd
 sftgif
 sftlf
+,Table:,all
 CORDEX:  requested variables
 ,,Tier 2,,Tier 1,,Core,,,,,,,
 output variable name,units,frq
