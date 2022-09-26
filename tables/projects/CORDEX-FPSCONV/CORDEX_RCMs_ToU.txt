@@ -6,6 +6,8 @@
 # -------------------------------------------------------------- 
 # model id           institute id             ToU  
 # --------------------------------------------------------------- 
+AUTH-MC-WRF381D          AUTH-MC        unrestricted
+AUTH-MC-WRF381BG         AUTH-MC        unrestricted
 AUTH-MC-WRF371M          AUTH-MC        unrestricted   
 AWI-HIRHAM5              AWI            unrestricted   
 BCCR-WRF331              BCCR           unrestricted   
