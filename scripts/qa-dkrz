@@ -4011,7 +4011,12 @@ operatePipes()
       metaV=${nFstore[nFcurr]}[*]
       metaW=${nFstore[nFcurr]}
 
-      p_nF=(${!metaV})
+      if [ ! ${metaW} ] ; then
+         p_nF=()
+      else
+         p_nF=(${!metaV})
+      fi
+      
       CURR_LOG_FNAME=${nF_EXP[nFcurr]}
       PROJECT_TABLE=${nF_TP[nFcurr]}
 
