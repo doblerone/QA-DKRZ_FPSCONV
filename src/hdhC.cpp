@@ -1578,6 +1578,27 @@ bool isAlphaNum(unsigned char c)
   return is;
 }
 
+bool isAlphaNum(std::string s, bool isContains)
+{
+  if( ! s.size() )
+    return false;
+
+  if( isContains )
+  {
+    for(size_t k=0; k < s.size(); ++k)
+      if( isAlphaNum(s[k]) )
+        return true;
+  }
+  else
+  {
+    for(size_t k=0; k < s.size(); ++k)
+      if( !isAlphaNum(s[k]) )
+        return false;
+  }
+
+  return true;
+}
+
 bool
 isAmong(std::string& item, std::vector<std::vector<std::string> >& set,
   std::string mode)

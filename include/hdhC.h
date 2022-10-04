@@ -388,8 +388,14 @@ isAlpha(unsigned char);
 bool
 isAlpha(std::string, bool isContains=false);
 
+//! Is unsigned char a alphanumeric?
 bool
 isAlphaNum(unsigned char);
+
+//! Is string composed of alphanumerics?
+/*! If 'isContains' is true, then a single alphanumeric is sufficient.*/
+bool
+isAlphaNum(std::string, bool isContains=false);
 
 // "mode": exact, "beg"|"end": match from begin|end, "find": anywhere
 bool

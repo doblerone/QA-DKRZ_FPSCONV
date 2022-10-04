@@ -1633,7 +1633,7 @@ QA_Exp::checkPressureCoord(InFile &in)
 
    std::string fVal = fVarname.substr(2);
 
-   if( ! (fVal == "200" || fVal == "500" || fVal == "850" ) )
+   if( ! (fVal == "200" || fVal == "500" || fVal == "700"|| fVal == "850" || fVal == "925" || fVal == "1000") )
    {
      std::string key("1_5b");
      if( notes->inq( key ) )
@@ -1641,7 +1641,7 @@ QA_Exp::checkPressureCoord(InFile &in)
        std::string capt("Pressure level value=");
        capt += fVal + " in the filename is inappropriate" ;
 
-       std::string text("Expected: 200 500 or 850");
+       std::string text("Expected: 200 500 700 850 925 or 1000");
 
        (void) notes->operate( capt, text ) ;
        notes->setCheckStatus("CV", pQA->n_fail);
@@ -3848,7 +3848,7 @@ BREAK2:
      if( (p=str0.find(',')) < std::string::npos )
        p0=p;
 
-     if( hdhC::isAlpha( str0.substr(0,p0) ) )
+     if( hdhC::isAlphaNum( str0.substr(0,p0) ) )
          break;
 
      splt_line += str0;
