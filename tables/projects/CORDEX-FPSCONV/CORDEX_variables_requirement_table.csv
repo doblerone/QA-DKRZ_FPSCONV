@@ -1,6 +1,6 @@
 ,Table:,1hr
 # created by Tim Keber, kber@iau.uni-frankfurt.de
-# adapted to CORDEX FPS Convection by Andreas Dobler, 20.4.2022, andreasd@met.no
+# adapted to CORDEX FPS Convection by Andreas Dobler, andreasd@met.no
 output variable name,cell_methods
 clgvi,time: point
 clhvi,time: point
@@ -61,7 +61,7 @@ wa500,time: point
 wa700,time: point
 wa850,time: point
 wa925,time: point
-,Table:,6hr 
+,Table:,6hr
 ,6-hourly output (6hr)
 output variable name,cell_methods,cell_methods (2nd option)
 ps,time: point,time: point
