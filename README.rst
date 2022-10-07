@@ -24,15 +24,18 @@ Use the conda environment provided:
 ::
 
   conda env create -f qa-dkrz-env.yml
+  conda activate qa-dkrz-env
 
 Installation
 ------------
+
+Within the previous environment:
 
 ::
 
   git clone https://github.com/doblerone/QA-DKRZ_FPSCONV.git
   cd QA-DKRZ_FPSCONV
-  ./install --compile
+  ./install --compile # Enter QA tables path when prompted 
   ./install --force CORDEX
   ./install --force CF
 
