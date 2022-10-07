@@ -511,7 +511,7 @@ callQaConfig()
   if [ ! ${CONDA_QA_PATH} ] ; then
     local lib
     lib=$( grep '^[[:space:]]*LIB=' ${QA_SRC}/install_configure )
-    export LD_LIBRARY_PATH=${lib#*=}
+    export LD_LIBRARY_PATH=$(eval echo "${lib#*=}")
   fi
 
   return

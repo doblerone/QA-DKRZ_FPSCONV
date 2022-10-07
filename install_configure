@@ -16,9 +16,9 @@ CXXFLAGS="-Wall -std=c++11 -D NC4"
 # Path to libraries (netcdf4 and related, uuid, udunits).
 # Prefix of '-L' may be skipped.
 # e.g. LIB=/path/local/lib:/path/local/lib64
-LIB=/home/adobler/fpscpcm/Software/adobler/miniconda2/lib
+LIB=${CONDA_PREFIX}/lib
 
 # Path to header files (netcdf4 and related, uuid, udunits).
 # Prefix of '-I' may be skipped.
 # e.g. INCLUDE=/path/local/include
-INCLUDE=/home/adobler/fpscpcm/Software/adobler/miniconda2/include
+INCLUDE=${CONDA_PREFIX}/include
