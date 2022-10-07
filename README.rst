@@ -16,7 +16,34 @@ THIS is the adaptation for the CORDEX FPS Convection project
 Getting Started
 ===============
 
-TO be DONE
+Prerequisites
+-------------
+
+Use the conda environment provided:
+
+::
+
+  conda env create -f qa-dkrz-env.yml
+
+Installation
+------------
+
+::
+
+  git clone https://github.com/doblerone/QA-DKRZ_FPSCONV.git
+  cd QA-DKRZ_FPSCONV
+  ./install --compile
+  ./install --force CORDEX
+  ./install --force CF
+
+Test
+----
+
+Edit ``qa-test.task`` for your needs and:
+
+::
+
+  ./scripts/qa-dkrz -f qa-test.task
 
 
 Documentation
