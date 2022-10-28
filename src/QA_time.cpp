@@ -1554,37 +1554,35 @@ QA_Time::testPeriod(Split& x_f)
             }
         }
     }
-    else
+
+    pDates[4] = new Date(refDate);
+    pDates[5] = new Date(refDate);
+
+    if( firstTimeValue != firstTimeBoundsValue[0] )
+       if( firstTimeBoundsValue[0] != 0 )
+         pDates[4]->addTime(firstTimeBoundsValue[0]);
+
+    // regular: filename Start/End time vs. TB 1st_min/last_max
+    if( lastTimeValue != lastTimeBoundsValue[1] )
+       if( lastTimeBoundsValue[1] != 0 )
+         pDates[5]->addTime(lastTimeBoundsValue[1]);
+
+    if( notes->inq( "T_8", getBoundsName() ) )
     {
-        pDates[4] = new Date(refDate);
-        pDates[5] = new Date(refDate);
+        // disabled for all but CORDEX
+        double db_centre=(firstTimeBoundsValue[0]
+                          + firstTimeBoundsValue[1])/2. ;
+        if( ! hdhC::compare(db_centre, "=", firstTimeValue) )
+        {
+          std::string key("T_8");
+          if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
+          {
+             std::string capt("Range of ");
+             capt += hdhC::tf_var("time_bnds") ;
+             capt += "is not centred around <time> value." ;
 
-        if( firstTimeValue != firstTimeBoundsValue[0] )
-           if( firstTimeBoundsValue[0] != 0 )
-             pDates[4]->addTime(firstTimeBoundsValue[0]);
-
-         // regular: filename Start/End time vs. TB 1st_min/last_max
-         if( lastTimeValue != lastTimeBoundsValue[1] )
-           if( lastTimeBoundsValue[1] != 0 )
-             pDates[5]->addTime(lastTimeBoundsValue[1]);
-
-         if( notes->inq( "T_8", getBoundsName() ) )
-         {
-           // disabled for all but CORDEX
-           double db_centre=(firstTimeBoundsValue[0]
-                             + firstTimeBoundsValue[1])/2. ;
-           if( ! hdhC::compare(db_centre, "=", firstTimeValue) )
-           {
-             std::string key("T_8");
-             if( notes->inq( key, pQA->qaExp.getVarnameFromFilename()) )
-             {
-                std::string capt("Range of ");
-                capt += hdhC::tf_var("time_bnds") ;
-                capt += "is not centred around <time> value." ;
-
-                (void) notes->operate(capt) ;
-                notes->setCheckStatus("TIME", pQA->n_fail );
-             }
+             (void) notes->operate(capt) ;
+             notes->setCheckStatus("TIME", pQA->n_fail );
            }
          }
     }
