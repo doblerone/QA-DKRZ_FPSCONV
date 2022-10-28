@@ -21,7 +21,7 @@ int main(int argc, const char* argv[])
    argv[4]     elapsedTime
  */
 
-  double expected, checkTime, usedStorage, totalStorage;
+  double checkTime, usedStorage, totalStorage;
   double elapsedTime;
 
   if( ! hdhC::isDigit(argv[1]) )
