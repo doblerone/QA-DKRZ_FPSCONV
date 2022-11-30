@@ -42,7 +42,7 @@ The QA-checker does not need any environment variables to be set.
 The centrally installed and maintained production version of the QA-checker is 
 under (based on this github repo)::
 
-   $FPSCONV_ROOT/Software/adobler/git/QA-DKRZ_FPSCON
+   $FPSCONV_ROOT/Software/adobler/git/QA-DKRZ_FPSCONV
 
 The configuration tables, needed to adjust the QA-checker to specific 
 experiments are in the their pmost current version here::
@@ -120,6 +120,10 @@ Finally run the QA-checker::
    cd $FPSCONV_ROOT/tmp/kgoergen/qa-dkrz-check
    ./$FPSCONV_ROOT/Software/adobler/git/QA-DKRZ_FPSCONV/scripts/qa-dkrz -f qa-test.task
 
+On a daily basis mainly Step 4 and 5 will be repeated. It may be useful to have
+multiple task files, dependent on the temporal rersolution and experiment to 
+check.
+
 **5. Results**
 
 The outcome of the checking, via ASCII log file, can be found here, keep the
@@ -133,6 +137,12 @@ To run the QA-checker concurrently (x4) on several netCDF files and / or variabl
 set this in the ``qa-test.task``::
 
    NUM_EXEC_THREADS=4
+
+**7. Custom QA-tables**
+
+Customized tables in addition / combination with the official tables might help to
+capture real issues with the data which may just be ignored as warnings with the
+default tables otherwise.
 
 Documentation
 =============
