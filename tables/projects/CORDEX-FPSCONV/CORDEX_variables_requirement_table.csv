@@ -89,6 +89,7 @@ tas,time: mean,time: mean
 tasmax,time: maximum,time: maximum
 tasmin,time: minimum,time: minimum
 total_lightning,time: sum,time: sum
+wsgsmax,time: maximum,time: maximum
 wsgsmax100m,time: maximum,time: maximum
 ,Table:,mon
 ,monthly output (mon)
