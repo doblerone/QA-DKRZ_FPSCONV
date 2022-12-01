@@ -28,10 +28,11 @@ CLMcom-CCLM5-0-6         CLMcom         unrestricted
 CLMcom-CMCC-CCLM4-21-2   CLMcom-CMCC    unrestricted   
 CLMcom-CMCC-CCLM5-0-9    CLMcom-CMCC    unrestricted   
 CLMcom-DWD-CCLM5-0-15    CLMcom-DWD     unrestricted   
-CLMcom-ETH-COSMO-crCLIM-v1-1CLMcom-ETH     unrestricted   
+CLMcom-ETH-COSMO-crCLIM-v1-1 CLMcom-ETH     unrestricted   
+CLMcom-ETH-COSMO-crCLIM  CLMcom-ETH     unrestricted
 CLMcom-GUF-CCLM5-0-9     CLMcom-GUF     unrestricted   
-CLMcom-GUF-CCLM5-0-9-NEMOMED12-3-6CLMcom-GUF     unrestricted   
-CLMcom-GUF-CCLM5-0-9-NEMOMED12-3-6-NEMONORDIC3-3CLMcom-GUF     unrestricted   
+CLMcom-GUF-CCLM5-0-9-NEMOMED12-3-6 CLMcom-GUF     unrestricted   
+CLMcom-GUF-CCLM5-0-9-NEMOMED12-3-6-NEMONORDIC3-3 CLMcom-GUF     unrestricted   
 CLMcom-HZG-CCLM5-0-15    CLMcom-HZG     unrestricted   
 CLMcom-JLU-CCLM5-0-15    CLMcom-JLU     unrestricted   
 CLMcom-KIT-CCLM5-0-10    CLMcom-KIT     unrestricted   

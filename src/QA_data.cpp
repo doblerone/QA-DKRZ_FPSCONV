@@ -1252,7 +1252,7 @@ QA_Data::checkFinally(Variable *var)
    }
    else if( constValueRecord.size() )
    {
-     if( constValueRecordStartTime.size() == (constValueRecordEndTime.size() + 1) )
+     if( constValueRecordEndTime.size() == 0 )	   
      {
        // the range with constant records reached the file end
        constValueRecordEndTime.push_back(pQA->qaTime.currTimeValue) ;
