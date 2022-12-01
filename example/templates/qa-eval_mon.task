@@ -2,7 +2,8 @@
 # Note: all other sub-paths are appended to QC_RESULTS/data
 # Note: the former DATA_ROOT_FS was replaced by this, but is still valid.
 # PROJECT_DATA=your-path/QC/example/data/CMIP5
-  PROJECT_DATA=/mnt/CORDEX_FPS_CPCM/CORDEX-FPSCONV/output/ALP-3/HCLIMcom/ECMWF-ERAINT/evaluation/
+# PROJECT_DATA=/mnt/CORDEX_FPS_CPCM/CORDEX-FPSCONV/output/ALP-3/HCLIMcom/ECMWF-ERAINT/evaluation/
+ PROJECT_DATA=/mnt/CORDEX_FPS_CPCM/CORDEX-FPSCONV/4ESGF/CORDEX-FPSCONV/output/ALP-3/HCLIMcom/ECMWF-ERAINT/evaluation/
 
 # automatic generation of unique experiment names composed of DRS path
 # items, which start from a base component (case-sensitive).
@@ -11,7 +12,7 @@
 # Path to QC's results and log dir. Required. This will be expanded
 # automatically by the last path component of option DATA_ROOT.
 # Note: the former QC_DATA_ROOT was replaced by this, but is still valid.
-  QA_RESULTS=/mnt/CORDEX_FPS_CPCM/Software/$USER/QA/results
+  QA_RESULTS=/mnt/CORDEX_FPS_CPCM/Software/$USER/QA/results/eval/mon
 
 # A project name. If the project is unknown, but it is similar to
 # a known one, then use additionaly PROJECT_AS=name
@@ -28,7 +29,7 @@
 # SELECT pr_*     # all variables named pr_What-Ever-You-Like
 # SELECT .*/6hr,.*/mon/atmos/=v1  # example for a path selection
 # SELECT := .*/v?[[:digit:]]{3}=  # example for all DRS versions
-SELECT .*/day/rlds 
+ SELECT=.*/mon
 
 # Send a summary of notifications and checked periods of variables
 # to this (list of) email recipients after each finished QC session.
@@ -46,10 +47,12 @@ SELECT .*/day/rlds
 # Controlled Vocabulary (CV), and consistency check (CNSTY).
 # CHECK_MODE=meta  #[data]
 
-  CHECKSUM
+ CHECKSUM
+ 
+ NUM_EXEC_THREADS=4
 
 # embedded path to another qc configuration file with lower priority
   QA_CONF=CORDEX_qa.conf
 
 # ignore suspicion of outlier for minima and maxima
-note={R400,R800,D}
+# note={R400,R800,D}
