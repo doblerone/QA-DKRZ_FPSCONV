@@ -124,19 +124,19 @@ Finally, to run it::
 
 On a daily basis mainly Step 4 and 5 will be repeated. It may be useful to have
 multiple task files, dependent on the temporal rersolution and experiment to 
-check. You can find a set of templates for that in
+check. You can find a set of templates for that in::
 
    $FPSCONV_ROOT/Software/adobler/git/QA-DKRZ_FPSCONV/example/templates/
 
 **6. Results**
 
-The outcome of the checking, via ASCII log files, can be found in the QA_RESULT directory you defined in the task file, e.g.
+The outcome of the checking, via ASCII log files, can be found in the QA_RESULT directory you defined in the task file, e.g.::
 
    $FPSCONV_ROOT/tmp/$USER/QA/results/check_logs/FZJ-IDL_SMHI-EC-EARTH_historical_fpsconv-x1n2-v1_r12i1p1_1hr.log
 
 For testing the checker, it is useful to move, remove or have a unique name for the results folder
 each time you start the checker. Otherwise the reusults may be confusing.
-Once you enter the final checking stage however, keep the logs, they might be needed or at least useful as proof later on::
+Once you enter the final checking stage however, keep the logs, they might be needed or at least useful as proof later on.
 
 **7. Performance**
 
