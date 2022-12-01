@@ -6,7 +6,7 @@ QA-DKRZ - Quality Assurance Tool for Climate Data -- FPSCONV branch
 
 :Version: 0.6.7-41c_conv
 
-The Quality Assurance tool QA-DKRZ developed at DKRZ checks conformance
+The Quality Assurance tool QA-DKRZ developed at DKRZ checks data and conformance
 of meta-data of climate simulations given in `netCDF` format with conventions
 and rules of projects. At present, checking of CF Conventions, CORDEX, CMIP5, 
 and CMIP6, the latter with the option to run PrePARE (D. Nadeau, LLNL) is 
@@ -45,7 +45,7 @@ under (based on this github repo)::
    $FPSCONV_ROOT/Software/adobler/git/QA-DKRZ_FPSCONV
 
 The configuration tables, needed to adjust the QA-checker to specific 
-experiments are in the their pmost current version here::
+experiments are in the their most current version here::
 
    $FPSCONV_ROOTS/Software/adobler/git/QA-DKRZ_FPSCONV/tables/projects/CORDEX-FPSCONV
 
@@ -61,7 +61,7 @@ the users::
    mkdir -p $FPSCONV_ROOT/tmp/$USER/qa-dkrz-check
    mkdir -p $FPSCONV_ROOT/tmp/$USER/QA/results
 
-Now get the task file, which is runcontrol or namelist file for the QA-checker.
+Now get the task file, which is a runcontrol or namelist file for the QA-checker.
 Copy the default, you may have as many of these files as needed, they contain 
 the instructions which tasks the QA-checker is supposed to do this file will
 be edited later::
@@ -73,7 +73,7 @@ The QA-checker works with tabulated information that describes what to check
 and which results to expect; the QA-checker needs to know where to find these 
 tables; one may either use the "official" tables that are provided with the 
 checker (our default here) or use modified tables at alternative locations. Run
-the following command which creates mandatory config file under 
+the following command which creates a mandatory config file under 
 ``$HOME/.qa-dkrz/config.txt`` whith the location of the tables; when run for 
 the first time or when no config file is found it asks for the location of the
 QA-tables::
@@ -87,7 +87,7 @@ leave this unchanged (now without the ``$FPSCONV_ROOT`` nomenclature::
    QA_TABLES=/mnt/CORDEX_FPS_CPCM/Software/adobler/git/QA-DKRZ_FPSCONV/tables
    UPDATE=frozen
 
-**4. Run the QA-checker**
+**4. Set-up the QA-checker task**
 
 In the working directory adjust the ``task``-file, it contains several 
 examples on how it might be modified::
@@ -95,13 +95,13 @@ examples on how it might be modified::
    cd $FPSCONV_ROOT/tmp/kgoergen/qa-dkrz-check
    vim qa-test.task
 
-If you want to run the QA-checker with a defaultconfiguration in terms of range
+If you want to run the QA-checker with a default configuration in terms of range
 checking etc., then the most important / only things to adjust are the 
 following variables in ``qa-test.task``.
 
 The path to the CMORized netCDF files to be checked, on ``jsc-cordex`` 
 (replace ``$USER`` and ``$FPSCONV_ROOT`` accordingly); the checker goes through
-directoryi hierarchy recursively::
+directory hierarchy recursively::
 
    PROJECT_DATA=$FPSCONV_ROOT/CORDEX-FPSCONV/output/ALP-3/FZJ-IDL/SMHI-EC-Earth/rcp85
 
@@ -115,30 +115,37 @@ finds under ``$PROJECT_DATA``::
 
    SELECT .*/1hr/*
 
-Finally run the QA-checker::
+**5. Run the QA-checker**
+
+Finally, to run it::
 
    cd $FPSCONV_ROOT/tmp/kgoergen/qa-dkrz-check
    ./$FPSCONV_ROOT/Software/adobler/git/QA-DKRZ_FPSCONV/scripts/qa-dkrz -f qa-test.task
 
 On a daily basis mainly Step 4 and 5 will be repeated. It may be useful to have
 multiple task files, dependent on the temporal rersolution and experiment to 
-check.
+check. You can find a set of templates for that in
 
-**5. Results**
+   $FPSCONV_ROOT/Software/adobler/git/QA-DKRZ_FPSCONV/example/templates/
 
-The outcome of the checking, via ASCII log file, can be found here, keep the
-logs, they might be needed as proof later on::
+**6. Results**
 
-$FPSCONV_ROOT/tmp/$USER/QA/results/check_logs/FZJ-IDL_SMHI-EC-EARTH_historical_fpsconv-x1n2-v1_r12i1p1_1hr.log
+The outcome of the checking, via ASCII log files, can be found in the QA_RESULT directory you defined in the task file, e.g.
 
-**6. Performance**
+   $FPSCONV_ROOT/tmp/$USER/QA/results/check_logs/FZJ-IDL_SMHI-EC-EARTH_historical_fpsconv-x1n2-v1_r12i1p1_1hr.log
+
+For testing the checker, it is useful to move, remove or have a unique name for the results folder
+each time you start the checker. Otherwise the reusults may be confusing.
+Once you enter the final checking stage however, keep the logs, they might be needed or at least useful as proof later on::
+
+**7. Performance**
 
 To run the QA-checker concurrently (x4) on several netCDF files and / or variables,
 set this in the ``qa-test.task``::
 
    NUM_EXEC_THREADS=4
 
-**7. Custom QA-tables**
+**8. Custom QA-tables**
 
 Customized tables in addition / combination with the official tables might help to
 capture real issues with the data which may just be ignored as warnings with the
@@ -158,12 +165,13 @@ QA-DKRZ applies Sphinx, and the latest documentation can be found on
 Getting Help
 ============
 
-T.b.d. (slack, etc.)
+Feel free to use the slack channel
+https://app.slack.com/client/T01FXMXLE4S/C01FR0ENXC6
 
 Bug tracker
 ===========
 
-T.b.d (issues tracker?)
+Please use the issue tracker here on github
 
 Contributing
 ============
@@ -175,4 +183,4 @@ You are highly encouraged to participate in the development.
 License
 =======
 
-t.b.d.
+For research purposes only.
