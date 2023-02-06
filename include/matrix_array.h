@@ -1454,7 +1454,7 @@ MtrxArr<T>::operator+(MtrxArr<T> &g)
   {
     status.push_back("MtrxArr objects of different size.");
 
-    return *this;
+    return ;
   }
 
   rep=rep->makeRoot();
@@ -1500,7 +1500,7 @@ MtrxArr<T>::operator-( MtrxArr<T> &g)
   {
     status.push_back("MtrxArr objects of different size.");
 
-    return *this;
+    return ;
   }
 
   rep=rep->makeRoot();
@@ -1544,7 +1544,7 @@ MtrxArr<T>::operator*( MtrxArr<T> &g)
   {
     status.push_back("MtrxArr objects of different size.");
 
-    return *this;
+    return ;
   }
 
   rep=rep->makeRoot();
@@ -1595,7 +1595,7 @@ MtrxArr<T>::operator/( MtrxArr<T> &g)
   {
     status.push_back("MtrxArr objects of different size.");
 
-    return *this;
+    return ;
   }
 
   rep=rep->makeRoot();
