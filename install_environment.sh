@@ -6,7 +6,7 @@ wget -O ${SCRATCH}/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-l
 bash ${SCRATCH}/miniconda.sh -b -p ${SCRATCH}/miniconda3
 
 # Configure Conda
-conda config --set always_yes yes --set changeps1 no
+conda config --set always_yes yes --set changeps1 yes
 conda config --add channels conda-forge 
 
 # Initialize conda
