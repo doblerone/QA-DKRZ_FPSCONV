@@ -33,6 +33,8 @@ Clone the repository and navigate into the directory::
 Activate the conda environment::
 
    conda activate qa-dkrz-cmip6 # if conda is not yet installed, use ./install_environment.sh
+   
+Now, adapt the ``LIB`` and ``INCLUDE`` paths in ``install_configure`` (absolute paths, no variables inside).
 
 Install::
 
@@ -40,8 +42,6 @@ Install::
    ./install --compile
    ./install --force CORDEX
    ./install --force CF
-   
-Now, adapt the ``LIB`` and ``INCLUDE`` paths in ``install_configure`` (absolute paths, no variables inside).
 
 Afterwards, edit ``qa-test.task`` for your own needs.
 
