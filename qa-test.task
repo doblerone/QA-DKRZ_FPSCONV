@@ -2,7 +2,8 @@
 # Note: all other sub-paths are appended to QC_RESULTS/data
 # Note: the former DATA_ROOT_FS was replaced by this, but is still valid.
 # PROJECT_DATA=your-path/QC/example/data/CMIP5
-  PROJECT_DATA=/scratch/snx3000/llehmann/CMOR/OUT/CORDEX-FPSCONV/output/ALP-3/CLMcom-ETH/ECMWF-ERAINT/PGW-MPI-rcp85/
+# PROJECT_DATA=/scratch/snx3000/llehmann/CMOR/OUT/CORDEX-FPSCONV/output/ALP-3/CLMcom-ETH/ECMWF-ERAINT/PGW-MPI-rcp85/
+  PROJECT_DATA=/scratch/snx3000/llehmann/CMOR/OUT/CORDEX-FPSCONV/output/CAN-11/CLMcom-ETH/ECMWF-ERAINT/evaluation/
 
 # automatic generation of unique experiment names composed of DRS path
 # items, which start from a base component (case-sensitive).
@@ -28,7 +29,7 @@
 # SELECT pr_*     # all variables named pr_What-Ever-You-Like
 # SELECT .*/6hr,.*/mon/atmos/=v1  # example for a path selection
 # SELECT := .*/v?[[:digit:]]{3}=  # example for all DRS versions
-SELECT .*/1hr/huss
+SELECT .*/1hr/cape
 
 # Send a summary of notifications and checked periods of variables
 # to this (list of) email recipients after each finished QC session.

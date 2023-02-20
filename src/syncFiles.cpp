@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 
   while( (copt = opt.getopt(argc, argv, oStr.c_str() )) != -1 )
   {
-    if( opt.longOption != "" )
+    if( opt.longOption > 0 )
     {
       str0=opt.longOption;
 
