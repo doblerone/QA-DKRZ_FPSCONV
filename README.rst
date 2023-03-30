@@ -15,10 +15,9 @@ supported. The check results are summarised in json-formatted files.
 THIS is the adaptation of the AQ-DKRZ tool (a.k.a. QA-checker) for the CORDEX FPS 
 Convection project.
 
-Getting Started
+General installation using your own conda environment
 ===============
 
-<<<<<<< HEAD
 Prerequisites
 -------------
 
@@ -50,10 +49,9 @@ Edit ``qa-test.task`` for your needs and:
 ::
 
   ./scripts/qa-dkrz -f qa-test.task
-=======
-Quick-start guide
------------------
->>>>>>> main
+
+Quick-start guide at FZJ
+=================
 
 This is a step-by-step guide to getting started in using the pre-installed 
 QA-checker at the project-internal ``jsc-cordex`` data processing exchange 
