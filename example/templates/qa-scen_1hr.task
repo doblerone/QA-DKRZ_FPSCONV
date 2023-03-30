@@ -56,3 +56,5 @@
 
 # ignore suspicion of outlier for minima and maxima
 # note={R400,R800,D}
+# Continue with variable when 'Gap between time values across files' detected instead of stopping
+ note={6_13,L1}
