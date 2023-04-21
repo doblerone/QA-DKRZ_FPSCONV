@@ -1663,14 +1663,17 @@ QA_Time::testPeriodAlignment(std::vector<std::string>& sd, Date** pDates,
     if( firstTimeValue != firstTimeBoundsValue[0] )
     {
       is[0] = is[1] = true;
+      
+      // allow for about 1 minute uncertainty in the time stamp
+      double uncertainty= 0.0007; 
 
       // time_bounds: left-side
-      if( ! (is[2] = *pDates[0] == *pDates[4]) )
-        dDiff[2] = *pDates[4] - *pDates[0] ;
+      dDiff[2] = fabs(*pDates[4] - *pDates[0]) ;
+      is[2] = dDiff[2] < uncertainty ;      
 
       // time_bounds: right-side
-      if( ! (is[3] = *pDates[1] == *pDates[5]) )
-        dDiff[3] = *pDates[5] - *pDates[1] ;
+      dDiff[3] = fabs(*pDates[5] - *pDates[1]) ;
+      is[3] = dDiff[3] < uncertainty ;      
     }
   }
 
