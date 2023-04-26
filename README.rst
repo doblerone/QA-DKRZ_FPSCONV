@@ -12,7 +12,7 @@ and rules of projects. At present, checking of CF Conventions, CORDEX, CMIP5,
 and CMIP6, the latter with the option to run PrePARE (D. Nadeau, LLNL) is 
 supported. The check results are summarised in json-formatted files.
 
-THIS is the adaptation of the AQ-DKRZ tool (a.k.a. QA-checker) for the CORDEX FPS 
+THIS is the adaptation of the QA-DKRZ tool (a.k.a. QA-checker) for the CORDEX FPS 
 Convection project.
 
 Getting Started
