@@ -217,27 +217,17 @@ The default tables are located here::
 
 If you want your own tables, do as follows.
 
-- Create an alternative table-directory, e.g. here: 
-``$FPSCONV_ROOT/tmp/$USER/qa_custom_tables``
-- In ``$HOME/.qa-dkrz/config.txt`` modify the path in ``QA_TABLES`` to this new 
-table-directory.
-- You do not need to do anything (I think), when running for the first time, the
-CORDEX-FPSCONV tables from the directory above are copied (or you copy them 
-beforehand yourself).
-- What would you edit? Maybe the "model_id" in ``CORDEX_RCMs_ToU.txt`` you have
-been using is not yet in the tables (e.g., WRF381BB). Or the driving GCM is not
-yet contained in ``CORDEX_GCMModelName.txt``. Just edit those tables and others
-according to your needs.
-- **BUT BE AWARE:** You can only change or add things within a certain limits! 
-What is not registered with the ESGF data nodes in the controlled vocabulary 
-you cannot yust add here as the ESGF data node will reject this data. So what 
-is not listed here https://github.com/ESGF/config/blob/master/publisher-configs/ini/esg.cordex-fpsconv.ini
-cannot be changed in the tables of the CORDEX-FPSCONV. *This ini file was 
-adjusted in cooperation with ESGF people a while ago.*
+- Create an alternative table-directory, e.g. here: ``$FPSCONV_ROOT/tmp/$USER/qa_custom_tables``
 
-Side-remark: In the task file ``PROJECT="CORDEX"`` is mentioned, this is needed 
-for some technical work-around; in fact in the software-directory above, 
-CORDEX points to CORDEX-FPSCONV with some modified tables.
+- In ``$HOME/.qa-dkrz/config.txt`` modify the path in ``QA_TABLES`` to this new table-directory.
+
+- You do not need to do anything (I think), when running for the first time, the CORDEX-FPSCONV tables from the directory above are copied (or you copy them  beforehand yourself).
+
+- What would you edit? Maybe the "model_id" in ``CORDEX_RCMs_ToU.txt`` you have been using is not yet in the tables (e.g., WRF381BB). Or the driving GCM is not yet contained in ``CORDEX_GCMModelName.txt``. Just edit those tables and others according to your needs.
+
+- **BUT BE AWARE:** You can only change or add things within a certain limits! What is not registered with the ESGF data nodes in the controlled vocabulary you cannot yust add here as the ESGF data node will reject this data. So what is not listed here https://github.com/ESGF/config/blob/master/publisher-configs/ini/esg.cordex-fpsconv.ini cannot be changed in the tables of the CORDEX-FPSCONV. *This ini file was adjusted in cooperation with ESGF people a while ago.*
+
+Side-remark: In the task file ``PROJECT="CORDEX"`` is mentioned, this is needed  for some technical work-around; in fact in the software-directory above, CORDEX points to CORDEX-FPSCONV with some modified tables.
 
 Documentation
 =============
