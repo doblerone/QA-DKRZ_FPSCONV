@@ -15,11 +15,43 @@ supported. The check results are summarised in json-formatted files.
 THIS is the adaptation of the QA-DKRZ tool (a.k.a. QA-checker) for the CORDEX FPS 
 Convection project.
 
-Getting Started
+General installation using your own conda environment
 ===============
 
-Quick-start guide
------------------
+Prerequisites
+-------------
+
+Use the conda environment provided:
+
+::
+
+  conda env create -f qa-dkrz-env.yml
+  conda activate qa-dkrz-env
+
+Installation
+------------
+
+Within the previous environment:
+
+::
+
+  git clone https://github.com/doblerone/QA-DKRZ_FPSCONV.git
+  cd QA-DKRZ_FPSCONV
+  ./install --compile # Enter QA tables path when prompted 
+  ./install --force CORDEX
+  ./install --force CF
+
+Test
+----
+
+Edit ``qa-test.task`` for your needs and:
+
+::
+
+  ./scripts/qa-dkrz -f qa-test.task
+
+Quick-start guide at FZJ
+=================
 
 This is a step-by-step guide to getting started in using the pre-installed 
 QA-checker at the project-internal ``jsc-cordex`` data processing exchange 
