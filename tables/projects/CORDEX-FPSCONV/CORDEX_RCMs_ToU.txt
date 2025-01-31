@@ -66,7 +66,7 @@ GERICS-AWI-ROM1.1        GERICS-AWI     unrestricted
 GERICS-REMO2009          GERICS         unrestricted   
 GERICS-REMO2015          GERICS         unrestricted
 HadREM3-RA-UM10.1        MOHC           unrestricted
-HCLIM38h1-AROME          KNMI           unrestricted
+KNMI-HCLIM38h1-AROME     KNMI           unrestricted
 HCLIMcom-HCLIM38-AROME   HCLIMcom       unrestricted
 HMS-ALADIN52             HMS            non-commercial 
 ICTP-RegCM4-3            ICTP           unrestricted   
