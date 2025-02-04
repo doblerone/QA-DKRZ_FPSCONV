@@ -1,1 +1,56 @@
-example/templates/qa-test.task
+# Path to the DRS directory tree with netCDF files to be checked.
+# Note: all other sub-paths are appended to QC_RESULTS/data
+# Note: the former DATA_ROOT_FS was replaced by this, but is still valid.
+# PROJECT_DATA=your-path/QC/example/data/CMIP5
+# PROJECT_DATA=/scratch/snx3000/llehmann/CMOR/OUT/CORDEX-FPSCONV/output/ALP-3/CLMcom-ETH/ECMWF-ERAINT/PGW-MPI-rcp85/
+  PROJECT_DATA=/scratch/snx3000/llehmann/CMOR/OUT/CORDEX-FPSCONV/output/CAN-11/CLMcom-ETH/ECMWF-ERAINT/evaluation/
+
+# automatic generation of unique experiment names composed of DRS path
+# items, which start from a base component (case-sensitive).
+  LOG_PATH_BASE=output
+
+# Path to QC's results and log dir. Required. This will be expanded
+# automatically by the last path component of option DATA_ROOT.
+# Note: the former QC_DATA_ROOT was replaced by this, but is still valid.
+  QA_RESULTS=/scratch/snx3000/mjaehn/Support/quality_checker/QA-DKRZ_FPSCONV/results
+
+# A project name. If the project is unknown, but it is similar to
+# a known one, then use additionaly PROJECT_AS=name
+  PROJECT=CORDEX
+
+# Selection of paths and variables (RegExp of the 'expr' command,
+# i.e. full specification from the beginning of the word).
+# Paths and vars are given by '[path1[,path2,..]]=[var1[,var2,..]]'.
+# Omission for path... selects the selected vars in all paths. Omission
+# of var... selects all variables in the path(s).
+# Full syntax rules appended at the end of this file.
+# Notice the '=' sign at the end of (the comma-sep list for) path(s).
+# SELECT path=var # [disabled]
+# SELECT pr_*     # all variables named pr_What-Ever-You-Like
+# SELECT .*/6hr,.*/mon/atmos/=v1  # example for a path selection
+# SELECT := .*/v?[[:digit:]]{3}=  # example for all DRS versions
+SELECT .*/1hr/cape
+
+# Send a summary of notifications and checked periods of variables
+# to this (list of) email recipients after each finished QC session.
+# Default: no email is sent.
+# Note: this is different from EMAIL_TO.
+# EMAIL_SUMMARY=andreasd@met.no
+
+# In case of notification: send e-mails to this comma-separated-list.
+# EMAIL_TO=name@site.dom #[disabled]
+
+# The QA checks are organised in modules, which can be selected
+# independently by a comma-separated list, case-independent list [all by default].
+# Modules: {DRS, CF, CV, CNSTY}=META, TIME, and DATA.
+# Acronyms: Data Reference System (DRS), Climate Forcing Convention (CF),
+# Controlled Vocabulary (CV), and consistency check (CNSTY).
+# CHECK_MODE=meta  #[data]
+
+  CHECKSUM
+
+# embedded path to another qc configuration file with lower priority
+  QA_CONF=CORDEX_qa.conf
+
+# ignore suspicion of outlier for minima and maxima
+note={R400,R800,D}

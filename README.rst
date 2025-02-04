@@ -18,8 +18,39 @@ Convection project.
 Getting Started
 ===============
 
-Quick-start guide
------------------
+Quick-start guide (CSCS)
+------------------------
+
+Clone the repository and navigate into the directory::   
+
+   git clone -b daint git@github.com:C2SM/QA-DKRZ_FPSCONV.git
+   cd QA-DKRZ_FPSCONV
+
+(Optional) Install miniconda::
+
+   ./install_environment.sh # skip this if conda is already installed
+   
+Activate the conda environment::
+
+   conda activate qa-dkrz-cmip6 # if conda is not yet installed, use ./install_environment.sh
+   
+Now, adapt the ``LIB`` and ``INCLUDE`` paths in ``install_configure`` (absolute paths, no variables inside).
+
+Install::
+
+   rm -f ~/.qa-dkrz/config.txt # optional, removes config (i.e., location of QA-Tables) from previous install
+   ./install --compile
+   ./install --force CORDEX
+   ./install --force CF
+
+Afterwards, edit ``qa-test.task`` for your own needs.
+
+Finally, run the checker::
+
+   ./scripts/qa-dkrz -f qa-test.task
+
+Quick-start guide (Jülich)
+--------------------------
 
 This is a step-by-step guide to getting started in using the pre-installed 
 QA-checker at the project-internal ``jsc-cordex`` data processing exchange 
